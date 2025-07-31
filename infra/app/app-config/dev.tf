@@ -3,9 +3,9 @@ module "dev_config" {
   project_name                    = local.project_name
   app_name                        = local.app_name
   default_region                  = module.project_config.default_region
-  environment                     = "dev"
-  network_name                    = "dev"
-  domain_name                     = "verify-demo.navapbc.cloud"
+  environment                     = "demo"
+  network_name                    = "demo"
+  domain_name                     = "demo.divt.app"
   enable_https                    = true
   has_database                    = local.has_database
   has_incident_management_service = local.has_incident_management_service
@@ -19,7 +19,7 @@ module "dev_config" {
 
   # Create DNS records for these `additional_domains` in the default hosted
   # zone (this is necessary to support CBV agency subdomains).
-  additional_domains = ["*.navapbc.cloud"]
+  additional_domains = ["*.divt.app"]
 
   # Enable and configure identity provider.
   enable_identity_provider = local.enable_identity_provider
