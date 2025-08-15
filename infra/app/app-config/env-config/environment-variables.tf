@@ -23,7 +23,7 @@ locals {
   #
   # {
   #   ENV_VAR_NAME = {
-  #     manage_method     = "generated" # or "manual" for a secret that was created and stored in SSM manually
+  #     manage_method     = "manual" # or "generated" for a secret that was created and stored in SSM manually
   #     secret_store_name = "/ssm/param/name"
   #   }
   # }
@@ -79,7 +79,6 @@ locals {
       manage_method     = "manual"
       secret_store_name = "/service/${var.app_name}-${var.environment}/active-record-encryption-key-derivation-salt"
     },
-
 
     # Transmission Configuration:
     LA_LDH_EMAIL = {

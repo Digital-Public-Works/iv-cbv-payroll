@@ -184,11 +184,12 @@ VOLUME /rails/tmp
 RUN useradd rails --create-home --shell /bin/bash --home /rails
 
 # Set permissions and ownership for the runtime files
-RUN chown -R rails:rails /rails/tmp /rails/log /rails/db /usr/local/bundle
+RUN chown -R rails:rails /rails/tmp /rails/log /rails/db /rails/config /usr/local/bundle
 
 # Switch to non-root user
 USER rails:rails
 
 # Invoke the entrypoint script, passing it the rails server command
 ENTRYPOINT ["rails.sh"]
+
 CMD ["bin/rails", "server", "-b", "0.0.0.0"]
