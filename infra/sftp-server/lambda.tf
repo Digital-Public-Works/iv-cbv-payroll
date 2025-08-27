@@ -32,7 +32,6 @@ resource "aws_lambda_function" "sftp_auth_lambda_function" {
   }
   #checkov:skip=CKV_AWS_117:Ensure that AWS Lambda function is configured inside a VPC
   # checkov:skip=CKV_AWS_272:TODO(https://github.com/navapbc/template-infra/issues/283)
-  # checkov:skip=CKV_AWS_116:Dead letter queue (DLQ) configuration is only relevant for asynchronous invocations
 
   dead_letter_config {
     target_arn = aws_sns_topic.sftp_auth_lambda_dlq.arn
