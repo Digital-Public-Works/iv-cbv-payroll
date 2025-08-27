@@ -74,8 +74,8 @@ resource "aws_iam_policy" "sftp_auth_lambda_policy" {
     {
       region                    = var.aws_region,
       account_id                = data.aws_caller_identity.current.account_id,
-      lambda_auth_function_name = local.auth_lambda_function_name,
-      transfer_server_id        = "*"
+      lambda_auth_function_name = local.auth_lambda_function_name
+      transfer_server_id        = "*" # avoids a circular dependency between the policy, the lambda, and the transfer_server
     }
   )
 }

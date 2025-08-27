@@ -17,7 +17,7 @@ module "storage" {
 # Enable default SSE-KMS on the S3 bucket to ensure writes succeed in environments
 # that enforce KMS encryption. We use the existing CMK used for SFTP secrets.
 resource "aws_s3_bucket_server_side_encryption_configuration" "sftp_bucket_encryption" {
-  bucket = module.storage.bucket.id
+  bucket = local.sftp_bucket_full_name
 
   rule {
     apply_server_side_encryption_by_default {
