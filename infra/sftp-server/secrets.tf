@@ -12,7 +12,7 @@ resource "aws_kms_key" "sftp_ssm_kms_key" {
 
 resource "aws_ssm_parameter" "sftp_test_user_password" {
   name        = "/sftp-server/sftp_test_user_password"
-  description = "The password for the provisioned SFTP tst user"
+  description = "The password for the provisioned SFTP test user"
   type        = "SecureString"
   value       = random_password.random_string.result
   key_id      = aws_kms_key.sftp_ssm_kms_key.arn
