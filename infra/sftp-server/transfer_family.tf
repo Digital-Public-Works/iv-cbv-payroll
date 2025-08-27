@@ -69,7 +69,8 @@ resource "aws_iam_role_policy" "sftp_s3_policy" {
       "Effect" : "Allow",
       "Action" : [
         "s3:ListBucket",
-        "s3:GetBucketLocation"
+        "s3:GetBucketLocation",
+        "s3:ListBucketMultipartUploads"
       ],
       "Resource" : "arn:aws:s3:::${local.sftp_bucket_full_name}"
       },
@@ -83,10 +84,35 @@ resource "aws_iam_role_policy" "sftp_s3_policy" {
           "s3:DeleteObjectVersion",
           "s3:DeleteObject",
           "s3:PutObjectAcl",
-          "s3:GetObjectVersion"
+          "s3:GetObjectVersion",
+          "s3:AbortMultipartUpload",
+          "s3:ListMultipartUploadParts"
         ],
         "Resource" : "arn:aws:s3:::${local.sftp_bucket_full_name}/*"
     }]
+  })
+}
+
+# Allow the Transfer Family role to use the KMS key for S3 SSE-KMS
+resource "aws_iam_role_policy" "sftp_s3_kms_policy" {
+  name = "sftp-s3-kms-policy-${local.sftp_bucket_full_name}"
+  role = aws_iam_role.sftp_role.id
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid    = "AllowUseOfKmsKeyForS3",
+        Effect = "Allow",
+        Action = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+        ],
+        Resource = aws_kms_key.sftp_ssm_kms_key.arn
+      }
+    ]
   })
 }
 
