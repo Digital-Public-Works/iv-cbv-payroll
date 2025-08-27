@@ -17,12 +17,12 @@ repos:
   #  files: '^app/.*\.rb$'
 
   - id: rubocop
-    name: RuboCop (autocorrect app/)
+    name: rubocop
     language: system
     entry: bash -lc 'BUNDLE_GEMFILE=app/Gemfile cd app && bundle exec rubocop -a --force-exclusion'
-    pass_filenames: false          # ← key: avoid mismatched paths/huge arglists
+    #pass_filenames: false          # ← key: avoid mismatched paths/huge arglists
     types: [ ruby ]
-    require_serial: true           # avoid concurrency while modifying files
+    #require_serial: true           # avoid concurrency while modifying files
 
   - id: erblint
     name: erblint
