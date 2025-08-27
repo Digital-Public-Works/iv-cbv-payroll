@@ -15,7 +15,7 @@ repos:
     entry: bin/run-linter --cd app -- bundle exec rubocop --autocorrect --force-exclusion
     language: ruby
     files: '^app/.*\.rb$'
-    pass_filenames: false
+    #pass_filenames: false
 
   #- id: rubocop
   #  name: rubocop
