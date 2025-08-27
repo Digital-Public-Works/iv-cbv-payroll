@@ -22,15 +22,15 @@ resource "aws_kms_key" "sftp_vpc_logs_kms_key" {
     Version = "2012-10-17",
     Statement = [
       {
-        Sid = "EnableIAMUserPermissions",
-        Effect = "Allow",
+        Sid       = "EnableIAMUserPermissions",
+        Effect    = "Allow",
         Principal = { AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root" },
-        Action = "kms:*",
-        Resource = "*"
+        Action    = "kms:*",
+        Resource  = "*"
       },
       {
-        Sid = "AllowCloudWatchLogsUseOfTheKey",
-        Effect = "Allow",
+        Sid       = "AllowCloudWatchLogsUseOfTheKey",
+        Effect    = "Allow",
         Principal = { Service = "logs.${var.aws_region}.amazonaws.com" },
         Action = [
           "kms:Encrypt",
@@ -50,9 +50,9 @@ resource "aws_kms_key" "sftp_vpc_logs_kms_key" {
   })
 }
 resource "aws_cloudwatch_log_group" "cloudwatch_log_group" {
-  name = "sftp-server-logs"
+  name              = "sftp-server-logs"
   retention_in_days = 365
-  kms_key_id = aws_kms_key.sftp_vpc_logs_kms_key.arn
+  kms_key_id        = aws_kms_key.sftp_vpc_logs_kms_key.arn
 }
 
 resource "aws_internet_gateway" "this" {
@@ -105,7 +105,7 @@ resource "aws_route" "subnet_to_igw" {
 }
 
 resource "aws_security_group" "sftp_sg" {
-  vpc_id = aws_vpc.this.id
+  vpc_id      = aws_vpc.this.id
   description = "Security Group for SFTP Test Server"
 
   #checkov:skip=CKV_AWS_24: Ensure no security groups allow ingress from 0.0.0.0:0 to port 22. - This is limited SFTP server.
@@ -158,7 +158,7 @@ data "aws_iam_policy_document" "log_stream_iam_policy_doc" {
     ]
 
 
-}
+  }
 }
 
 resource "aws_iam_role_policy" "log_stream_iam_policy" {

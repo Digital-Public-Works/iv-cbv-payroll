@@ -8,7 +8,7 @@ resource "aws_transfer_server" "this" {
   sftp_authentication_methods = "PASSWORD"
   protocols                   = ["SFTP"]
   structured_log_destinations = ["${aws_cloudwatch_log_group.sftp.arn}:*"]
-  security_policy_name = "TransferSecurityPolicy-2024-01"
+  security_policy_name        = "TransferSecurityPolicy-2024-01"
 
   endpoint_details {
     address_allocation_ids = aws_eip.static_sftp_ip[*].id
@@ -25,15 +25,15 @@ resource "aws_kms_key" "sftp_logs_kms_key" {
     Version = "2012-10-17",
     Statement = [
       {
-        Sid = "AllowAccountRootFullAccess",
-        Effect = "Allow",
+        Sid       = "AllowAccountRootFullAccess",
+        Effect    = "Allow",
         Principal = { AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root" },
-        Action = "kms:*",
-        Resource = "*"
+        Action    = "kms:*",
+        Resource  = "*"
       },
       {
-        Sid = "AllowCloudWatchLogsUseOfTheKey",
-        Effect = "Allow",
+        Sid       = "AllowCloudWatchLogsUseOfTheKey",
+        Effect    = "Allow",
         Principal = { Service = "logs.${var.aws_region}.amazonaws.com" },
         Action = [
           "kms:Encrypt",
@@ -53,9 +53,9 @@ resource "aws_kms_key" "sftp_logs_kms_key" {
   })
 }
 resource "aws_cloudwatch_log_group" "sftp" {
-  name_prefix = "sftp_"
+  name_prefix       = "sftp_"
   retention_in_days = 365
-  kms_key_id = aws_kms_key.sftp_logs_kms_key.arn
+  kms_key_id        = aws_kms_key.sftp_logs_kms_key.arn
 }
 
 

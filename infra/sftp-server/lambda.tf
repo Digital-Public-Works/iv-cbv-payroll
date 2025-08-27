@@ -4,7 +4,7 @@ locals {
 }
 
 resource "aws_sns_topic" "sftp_auth_lambda_dlq" {
-  name = "sftp-auth-lambda-function-dead-letter-queue"
+  name              = "sftp-auth-lambda-function-dead-letter-queue"
   kms_master_key_id = "alias/aws/sns"
 }
 
@@ -24,7 +24,7 @@ resource "aws_lambda_function" "sftp_auth_lambda_function" {
   architectures    = ["arm64"]
   layers           = ["arn:aws:lambda:us-east-1:017000801446:layer:AWSLambdaPowertoolsPythonV3-python38-arm64:4"]
   source_code_hash = data.archive_file.auth_lambda_function_archive.output_base64sha256
-  kms_key_arn = aws_kms_key.sftp_ssm_kms_key.arn
+  kms_key_arn      = aws_kms_key.sftp_ssm_kms_key.arn
 
   reserved_concurrent_executions = 10
   tracing_config {

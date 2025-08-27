@@ -9,7 +9,7 @@ locals {
 }
 
 module "storage" {
-  source = "../modules/storage"
+  source       = "../modules/storage"
   name         = local.sftp_bucket_full_name
   is_temporary = true
 }
