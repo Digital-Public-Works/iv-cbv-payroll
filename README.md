@@ -357,7 +357,7 @@ This repo's `release-demo` branch automatically deploys to our demo environment 
 
 ## Production
 
-This repo's `release-prod` branch automatically deploys to our demo environment via [a GitHub action](/.github/workflows/deploy-prod.yml).
+This repo's `release-prod` branch automatically deploys to our prod environment via [a GitHub action](/.github/workflows/deploy-prod.yml).
 
 ## Manual Deployment
 To manually deploy, go to the repo's "Actions" tab on Github, [click "Deploy App"](https://github.com/DSACMS/iv-cbv-payroll/actions/workflows/cd-app.yml), and "Run Workflow", selecting the environment you would like to deploy to.
