@@ -331,6 +331,7 @@ en:
     payment_details:
       show:
         additional_information_header: Additional comments (Optional)
+        additional_information_placeholder: Enter up to 1000 characters
         additional_information_label: Share any comments or additional information about the income details above that you’d like %{agency_acronym} to know. For example, you can share if the information is inaccurate or if you’re no longer working at that job.
         continue: Continue
         deductions: 'Deduction: %{category} (%{tax})'
