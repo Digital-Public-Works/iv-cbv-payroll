@@ -10,11 +10,11 @@ repos:
 
 - repo: local
   hooks:
-#  - id: rubocop
-#    name: rubocop
-#    entry: bin/run-linter --cd app -- bundle exec rubocop --autocorrect --force-exclusion
-#    language: ruby
-#    files: '^app/.*\.rb$'
+  - id: rubocop
+    name: rubocop
+    entry: bin/run-linter --cd app -- bundle exec rubocop --autocorrect --force-exclusion
+    language: ruby
+    files: '^app/.*\.rb$'
 
   # this rubocop hook works on windows/wsl, and is being left here as of 8/27/2025 to figure it out at some point
   #- id: rubocop
@@ -41,7 +41,8 @@ repos:
   - id: i18n-normalize
     name: i18n-normalize
     entry: bin/run-linter --cd app -- bundle exec i18n-tasks normalize
-    language: ruby
+#    entry: bash -lc 'BUNDLE_GEMFILE=app/Gemfile cd app && bundle exec i18n-tasks normalize'
+    language: system
     files: '^app/config/locales/.*\.yml$'
     pass_filenames: false
 
