@@ -32,7 +32,6 @@ repos:
   - id: i18n-normalize
     name: i18n-normalize
     entry: bin/run-linter --cd app -- bundle exec i18n-tasks normalize
-#    entry: bash -lc 'BUNDLE_GEMFILE=app/Gemfile cd app && bundle exec i18n-tasks normalize'
     language: system
     files: '^app/config/locales/.*\.yml$'
     pass_filenames: false
