@@ -1,3 +1,13 @@
+variable "num_availability_zones" {
+  type        = number
+  description = "Number of availability zones (AZs) to provision across"
+  default     = 3 # original hardcoded value
+  validation {
+    condition     = var.num_availability_zones > 0 && var.num_availability_zones <= 5
+    error_message = "Number of availability zones must be between 1 and 5 (inclusive)"
+  }
+}
+
 variable "aws_services_security_group_name_prefix" {
   type        = string
   description = "Prefix for the name of the security group attached to VPC endpoints"
