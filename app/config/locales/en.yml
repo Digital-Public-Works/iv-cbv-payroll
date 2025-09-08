@@ -25,6 +25,10 @@ en:
             date_of_birth:
               future_date: Date of birth must be today or in the past
               invalid_date: Enter a valid date of birth
+        cbv_applicant/pa_dhs:
+          attributes:
+            case_number:
+              blank: Enter the client's case number.
         cbv_applicant/sandbox:
           attributes:
             agency_id_number:
@@ -380,6 +384,7 @@ en:
           agency_header_name:
             az_des: Department of Economic Security
             la_ldh: Department of Health
+            pa_dhs: Department of Human Services
             sandbox: CBV Test Agency
           caseworker:
             agreement_consent_timestamp: Agreement Consent Timestamp
@@ -649,13 +654,16 @@ en:
     agency_acronym:
       az_des: DES/FAA
       la_ldh: LDH
+      pa_dhs: DHS
       sandbox: CBV
     agency_full_name:
       az_des: Department of Economic Security/Family Assistance Administration
       la_ldh: Louisiana Department of Health
+      pa_dhs: PA Department of HUman Services
       sandbox: CBV Test Agency
     app_name:
       az_des: MyFamilyBenefits
+      pa_dhs: VerifyMyIncome
       sandbox: CBVApp
     banner:
       lock: Lock
@@ -663,6 +671,7 @@ en:
     benefit:
       az_des: Nutrition Assistance
       la_ldh: Medicaid
+      pa_dhs: Nutrition Assistance
       sandbox: SNAP
     error_unauthorized: The URL you're accessing is forbidden for the current user. Please verify you are logged in as the correct user and try accessing the URL again.
     footer:
@@ -672,6 +681,7 @@ en:
       cbv_flow_title:
         az_des: Department of Economic Security
         la_ldh: Department of Health
+        pa_dhs: Department of Human Services
         sandbox: CBV Test Agency
       close: Close
       help: Help
@@ -680,6 +690,7 @@ en:
         az_des: A website in partnership with the Arizona Department of Economic Security.
         default: A website in partnership with CBV Test Agency.
         la_ldh: A website in partnership with the Louisiana Department of Health
+        pa_dhs: A website in partnership with the Pennsylvania Department of Human Services
       primary: Primary navigation
     languages:
       en: English
@@ -696,6 +707,7 @@ en:
     reporting_purpose:
       az_des: Mid Approval Contact form
       la_ldh: benefits
+      pa_dhs: SNAP Renewal
       sandbox: benefits
     select_placeholder: "- Select -"
     skip_link: Skip to main content

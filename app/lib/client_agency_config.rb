@@ -12,12 +12,19 @@ class ClientAgencyConfig
   # 'ninety_days'/'six_months' to see other places you will need to customize.
   VALID_PAY_INCOME_DAYS = [ 90, 182 ]
 
+  # load all configuration files in the configuration directory passed in
   def initialize(config_path)
-    template = ERB.new File.read(config_path)
-    @client_agencies = YAML
-      .safe_load(template.result(binding))
-      .map { |s| [ s["id"], ClientAgency.new(s) ] }
-      .to_h
+    @client_agencies = Dir.glob(File.join(config_path, "*.yml"))
+      .map do |path|
+      data = load_yaml(path)
+      [ data["id"], ClientAgency.new(data) ]
+    end
+    .to_h
+  end
+
+  def load_yaml(path)
+    template = ERB.new(File.read(path))
+    YAML.safe_load(template.result(binding))
   end
 
   def self.client_agencies

@@ -160,6 +160,7 @@ And the corresponding locale file:
 ```yaml
 learn_more_html:
   az_des: Learn more about <strong>Arizona Department of Economic Security</strong>
+  pa_dhs: Learn more about <strong>PA Department of Human Services</strong>
   la_ldh: Learn more about <strong>Louisiana Department of Health</strong>
   sandbox: Learn more about <strong>CBV Test Agency</strong>
   default: Learn more about <strong>Default Agency</strong>
