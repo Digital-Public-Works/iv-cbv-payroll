@@ -4,6 +4,7 @@ locals {
   # overridden per environment using terraform's `merge` function
   default_extra_environment_variables = {
     # Environment variables for all terraform-deployed environments
+    RAILS_ENV                = "production"
     RAILS_LOG_TO_STDOUT      = "true"
     RAILS_SERVE_STATIC_FILES = "true"
     RAILS_MAX_THREADS        = 10
@@ -12,6 +13,10 @@ locals {
     DOCKERIZED = "true"
     # LOG_LEVEL               = "info"
     # DB_CONNECTION_POOL_SIZE = 5
+  }
+
+  ssm_environment_variables = {
+    LA_LDH_PILOT_ENABLED = "/service/${var.app_name}-${var.environment}/la-ldh-pilot-enabled"
   }
 
   # Configuration for secrets
@@ -76,7 +81,6 @@ locals {
       manage_method     = "manual"
       secret_store_name = "/service/${var.app_name}-${var.environment}/active-record-encryption-key-derivation-salt"
     },
-
 
     # Transmission Configuration:
     LA_LDH_EMAIL = {

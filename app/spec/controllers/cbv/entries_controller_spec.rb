@@ -49,7 +49,7 @@ RSpec.describe Cbv::EntriesController do
         it "sends multiple related tracking events" do
           expect(EventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
             cbv_flow_id: be_a(Integer),
-            timestamp: be_a(Integer),
+            time: be_a(Integer),
             invitation_id: invitation.id,
             client_agency_id: invitation.client_agency_id,
             seconds_since_invitation: seconds_since_invitation
@@ -65,7 +65,7 @@ RSpec.describe Cbv::EntriesController do
 
           expect(EventTrackingJob).to receive(:perform_later).with("ApplicantViewedAgreement", anything, hash_including(
             cbv_flow_id: be_a(Integer),
-            timestamp: be_a(Integer),
+            time: be_a(Integer),
             invitation_id: invitation.id,
             client_agency_id: invitation.client_agency_id
           ))
@@ -80,7 +80,7 @@ RSpec.describe Cbv::EntriesController do
 
         expect(EventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
           cbv_flow_id: be_a(Integer),
-          timestamp: be_a(Integer),
+          time: be_a(Integer),
           invitation_id: invitation.id,
           client_agency_id: invitation.client_agency_id,
           seconds_since_invitation: seconds_since_invitation
@@ -96,7 +96,7 @@ RSpec.describe Cbv::EntriesController do
 
         expect(EventTrackingJob).to receive(:perform_later).with("ApplicantViewedAgreement", anything, hash_including(
           cbv_flow_id: be_a(Integer),
-          timestamp: be_a(Integer),
+          time: be_a(Integer),
           invitation_id: invitation.id,
           client_agency_id: invitation.client_agency_id
         ))
@@ -117,6 +117,28 @@ RSpec.describe Cbv::EntriesController do
 
         request.headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
         get :show, params: { token: invitation.auth_token }
+      end
+
+      it "includes origin information in ApplicantViewedAgreement event when set" do
+        session[:cbv_origin] = "mail"
+
+        allow(EventTrackingJob).to receive(:perform_later)
+        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantViewedAgreement", anything, hash_including(
+          origin: "mail"
+        ))
+
+        get :show, params: { token: invitation.auth_token }
+      end
+
+      it "includes origin information in ApplicantAgreed event when agreeing" do
+        session[:cbv_origin] = "sms"
+
+        allow(EventTrackingJob).to receive(:perform_later)
+        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantAgreed", anything, hash_including(
+          origin: "sms"
+        ))
+
+        post :create, params: { token: invitation.auth_token, agreement: "1" }
       end
 
       context "when returning to an already-visited flow invitation" do

@@ -11,9 +11,9 @@
 common: &default_settings
   # Required license key associated with your New Relic account.
   license_key: <%= ENV["NEWRELIC_KEY"] %>
-  # FEDRAMP-specific New Relic host
+  # Note: FEDRAMP-specific New Relic host is gov-collector.newrelic.com
   # https://docs.newrelic.com/docs/security/security-privacy/compliance/fedramp-compliant-endpoints/
-  host: 'gov-collector.newrelic.com'
+  host: 'collector.newrelic.com'
 
   # Your application name. Renaming here affects where data displays in New
   # Relic.  For more details, see https://docs.newrelic.com/docs/apm/new-relic-apm/maintenance/renaming-applications
@@ -60,7 +60,11 @@ common: &default_settings
 
 
 # Environment-specific settings are in this section.
-# RAILS_ENV or RACK_ENV (as appropriate) is used to determine the environment.
+# https://docs.newrelic.com/docs/apm/agents/ruby-agent/configuration/ruby-agent-configuration/
+# During deployment, the "/service/${var.app_name}-${var.environment}/new-relic-env" key
+# is used to determine the environment that drives NewRelic settings. If the environment
+# does not match up it will fail silently and still start, but you won't get logs.
+
 # If your application has other named environments, configure them here.
 development:
   <<: *default_settings
