@@ -25,10 +25,6 @@ en:
             date_of_birth:
               future_date: Date of birth must be today or in the past
               invalid_date: Enter a valid date of birth
-        cbv_applicant/pa_dhs:
-          attributes:
-            case_number:
-              blank: Enter the client's case number.
         cbv_applicant/sandbox:
           attributes:
             agency_id_number:
