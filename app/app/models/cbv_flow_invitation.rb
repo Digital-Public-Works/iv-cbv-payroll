@@ -70,7 +70,7 @@ class CbvFlowInvitation < ApplicationRecord
   end
 
   def applicant_information
-    # TODO: this configuration needs to be in the agency config file, not a hardcoded exception case here.
+    # TODO: this configuration needs to be in the agency config file, not a hardcoded exception case here
     return if client_agency_id == "az_des" || client_agency_id == "pa_dhs"
 
     errors.add(:'cbv_applicant.first_name', I18n.t("activerecord.errors.models.cbv_applicant.attributes.first_name.blank")) if cbv_applicant.first_name.blank?

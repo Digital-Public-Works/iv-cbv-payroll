@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe ClientAgencyConfig do
-  let(:config_dir) { "/fake/client-config" }
+  let(:config_dir) { "/fake/client-agency-config" }
   let(:foo_path)   { File.join(config_dir, "foo.yml") }
   let(:sample_config) { <<~YAML }
     id: foo

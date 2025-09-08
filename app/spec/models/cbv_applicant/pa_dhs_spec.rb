@@ -4,15 +4,18 @@ require_relative "../cbv_applicant_spec.rb"
 RSpec.describe CbvApplicant::PaDhs, type: :model do
   let(:pa_attributes) { attributes_for(:cbv_applicant, :pa_dhs) }
 
-  context "user input is invalid" do
-    it "requires case_number" do
-      applicant = CbvApplicant.new(pa_attributes.without(:case_number))
-      expect(applicant).not_to be_valid
-      expect(applicant.errors[:case_number]).to include(
-        I18n.t('activerecord.errors.models.cbv_applicant/pa_dhs.attributes.case_number.blank'),
-      )
-    end
-  end
+  # PA does not necessarily require case number; leaving this here as an example but may not be needed
+  # as we are waiting for PA requirements.
+
+  # context "user input is invalid" do
+  #   it "requires case_number" do
+  #     applicant = CbvApplicant.new(pa_attributes.without(:case_number))
+  #     expect(applicant).not_to be_valid
+  #     expect(applicant.errors[:case_number]).to include(
+  #       I18n.t('activerecord.errors.models.cbv_applicant/pa_dhs.attributes.case_number.blank'),
+  #     )
+  #   end
+  # end
 
   describe '#redact!' do
     context 'when input is valid' do
