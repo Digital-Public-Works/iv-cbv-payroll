@@ -231,7 +231,7 @@ This translation import system allows for efficient management of translations a
 If you're new to CBV, here's a summary of how to get started navigating the app.
 1. First, contact someone on the team to get you set up to log in.
 1. Follow the instructions in the Setup section to run locally, then go to `localhost:3000/sandbox/sso`
-1. The beginning of the workflow is to act as a caseworker to create an invitation. Start by signing in with your Nava credentials.
+1. The beginning of the workflow is to act as a caseworker to create an invitation. Start by signing in with your DPW credentials.
 1. Create an invitation for an applicant to start using the app (use any email, and don't worry -- it won't really send!)
 1. In your terminal session, navigate to the /app directory and run `rails c` to enter the irb prompt.
 1. At the irb prompt, run `CbvFlowInvitation.last.to_url`.
