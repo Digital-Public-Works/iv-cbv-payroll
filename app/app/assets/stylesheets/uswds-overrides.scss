@@ -5,14 +5,28 @@
   line-height: 1.2 !important;
 }
 
-.usa-date-picker__calendar {
-  top: 48px !important;
-  max-width: none;
+.usa-accordion .usa-accordion__button {
+  line-height: 1 !important;
 }
 
 .usa-hint p {
   margin: 3px 0;
 }
+
+// Form styles
+.usa-form .usa-button {
+  margin: units(4) 0;
+
+  @include at-media("mobile-lg") {
+    margin: units(5) 0;
+  }
+}
+
+.usa-date-picker__calendar {
+  top: 48px !important;
+  max-width: none;
+}
+
 
 // Make the navbar a bit taller on mobile, and increase the size of the "Menu"
 // button to compensate.
@@ -37,4 +51,8 @@ $mobile-navbar-height: 4rem;
 }
 .pointer-events-none {
   pointer-events: none;
+}
+
+tr td:first-child {
+  font-weight: bold;
 }

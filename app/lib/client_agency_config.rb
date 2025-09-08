@@ -40,6 +40,7 @@ class ClientAgencyConfig
       agency_domain
       authorized_emails
       caseworker_feedback_form
+      default_origin
       invitation_valid_days
       logo_path
       logo_square_path
@@ -55,6 +56,7 @@ class ClientAgencyConfig
       weekly_report
       applicant_attributes
       allow_invitation_reuse
+      generic_links_disabled
     ])
 
     def initialize(yaml)
@@ -64,6 +66,7 @@ class ClientAgencyConfig
       @agency_domain = yaml["agency_domain"]
       @authorized_emails = yaml["authorized_emails"] || ""
       @caseworker_feedback_form = yaml["caseworker_feedback_form"]
+      @default_origin = yaml["default_origin"]
       @invitation_valid_days = yaml["invitation_valid_days"]
       @logo_path = yaml["logo_path"]
       @logo_square_path = yaml["logo_square_path"]
@@ -78,6 +81,7 @@ class ClientAgencyConfig
       @weekly_report = yaml["weekly_report"]
       @applicant_attributes = yaml["applicant_attributes"] || {}
       @allow_invitation_reuse = yaml["allow_invitation_reuse"] || false
+      @generic_links_disabled = yaml["generic_links_disabled"]
 
       raise ArgumentError.new("Client Agency missing id") if @id.blank?
       raise ArgumentError.new("Client Agency #{@id} missing required attribute `agency_name`") if @agency_name.blank?
