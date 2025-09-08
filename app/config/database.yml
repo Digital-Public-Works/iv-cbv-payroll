@@ -97,7 +97,6 @@ development:
 test:
   <<: *default
   database: iv_cbv_payroll_test
-  aws_rds_iam_auth_token_generator: default
   host: <%= ENV.fetch("DB_HOST") { nil } %>
   username: <%= ENV.fetch("DB_USERNAME") { nil } %>
   # The password associated with the postgres role (username).
