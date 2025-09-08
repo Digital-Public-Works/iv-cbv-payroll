@@ -55,12 +55,16 @@ RSpec.describe "e2e CBV flow test", type: :feature, js: true do
 
     # /cbv/add_job
     verify_page(page, title: I18n.t("cbv.add_jobs.show.header"))
-    find("label", text: I18n.t("cbv.add_jobs.show.no_radio")).click
-    click_button I18n.t("cbv.add_jobs.show.continue")
+    find("label", text: I18n.t("cbv.add_jobs.show.radio_no")).click
+    click_on(I18n.t("continue"))
+
+    # /cbv/other_jobs
+    verify_page(page, title: I18n.t("cbv.other_jobs.show.header"), wait: 10, skip_axe_rules: %w[heading-order])
+    find("label", text: I18n.t("cbv.other_jobs.show.radio_yes")).click
+    click_on "Continue"
 
     # /cbv/summary
-    # TODO[FFS-2839]: Fix heading hierarchy on this page
-    verify_page(page, title: I18n.t("cbv.summaries.show.header"), skip_axe_rules: %w[heading-order])
+    verify_page(page, title: I18n.t("cbv.summaries.show.header"))
     click_on "Continue"
 
     # /cbv/submits
@@ -69,7 +73,7 @@ RSpec.describe "e2e CBV flow test", type: :feature, js: true do
     click_on "Share my report with CBV"
 
     # /cbv/success
-    verify_page(page, title: I18n.t("cbv.successes.show.header", agency_acronym: ""))
+    verify_page(page, title: I18n.t("cbv.successes.show.header", agency_acronym: "CBV"))
     # TODO: Test PDF rendering by writing it to a file
   end
 end

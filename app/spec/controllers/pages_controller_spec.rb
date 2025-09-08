@@ -21,6 +21,18 @@ RSpec.describe PagesController do
         get :home
         expect(response).to redirect_to(cbv_flow_new_path(client_agency_id: "la_ldh"))
       end
+
+      it "defaults to sms origin for LA when no origin provided" do
+        request.host = "la.reportmyincome.org"
+        get :home
+        expect(session[:cbv_origin]).to eq("sms")
+      end
+
+      it "uses provided origin parameter when given" do
+        request.host = "la.reportmyincome.org"
+        get :home, params: { origin: "mail" }
+        expect(session[:cbv_origin]).to eq("mail")
+      end
     end
 
     context "when on an agency subdomain with an ended pilot" do
@@ -33,6 +45,21 @@ RSpec.describe PagesController do
         request.host = "la.reportmyincome.org"
         get :home
         expect(response).to render_template("pages/_la_ldh_pilot_end")
+      end
+    end
+
+    context "when agency has generic links disabled" do
+      before do
+        stub_client_agency_config_value("sandbox", "agency_domain", "sandbox.reportmyincome.org")
+        stub_client_agency_config_value("sandbox", "pilot_ended", false)
+        stub_client_agency_config_value("sandbox", "generic_links_disabled", true)
+      end
+
+      it "does not redirect to generic links" do
+        request.host = "sandbox.reportmyincome.org"
+        get :home
+        expect(response).not_to redirect_to(cbv_flow_new_path(client_agency_id: "sandbox"))
+        expect(response).to have_http_status(:ok)
       end
     end
   end
