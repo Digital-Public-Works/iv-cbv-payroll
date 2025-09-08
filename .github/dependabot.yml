@@ -43,7 +43,6 @@ updates:
       - dependency-name: "ruby"
         update-types: [ "version-update:semver-major" ]
 
-
   - package-ecosystem: "terraform"
     directory: "/infra" # path to your Terraform configs (adjust if needed)
     schedule:
