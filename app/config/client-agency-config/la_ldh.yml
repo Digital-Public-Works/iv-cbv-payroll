@@ -1,4 +1,5 @@
 id: la_ldh
+active: <%= ENV["AGENCY_LA_LDH_ACTIVE"] %>
 agency_name: Department of Health
 agency_contact_website: https://ldh.la.gov/renew-medicaid
 agency_domain: "la"

@@ -1,4 +1,5 @@
 id: pa_dhs
+active: <%= ENV["AGENCY_PA_DHS_ACTIVE"] %>
 agency_name: Department of Human Services
 agency_contact_website: https://www.pa.gov/agencies/dhs/programs-services/apply-for-benefits
 agency_domain: "pa"

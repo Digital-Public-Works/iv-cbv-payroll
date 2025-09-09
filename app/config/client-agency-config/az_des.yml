@@ -1,4 +1,5 @@
 id: az_des
+active: <%= ENV["AGENCY_AZ_DES_ACTIVE"] %>
 agency_name: Department of Economic Security/Family Assistance Administration
 agency_contact_website: https://myfamilybenefits.azdes.gov/
 agency_domain: "az"

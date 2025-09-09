@@ -27,21 +27,21 @@ RSpec.describe ClientAgencyConfig do
   describe "#initialize" do
     it "loads the client agency config" do
       expect do
-        ClientAgencyConfig.new(config_dir)
+        ClientAgencyConfig.new(config_dir, true)
       end.not_to raise_error
     end
   end
 
   describe "#client_agency_ids" do
     it "returns the IDs" do
-      config = ClientAgencyConfig.new(config_dir)
+      config = ClientAgencyConfig.new(config_dir, true)
       expect(config.client_agency_ids).to match_array([ "foo" ])
     end
   end
 
   describe "for a particular client agency" do
     it "returns the config for that agency" do
-      config = ClientAgencyConfig.new(config_dir)
+      config = ClientAgencyConfig.new(config_dir, true)
       expect(config["foo"].agency_name).to eq("Foo Agency Name")
     end
   end

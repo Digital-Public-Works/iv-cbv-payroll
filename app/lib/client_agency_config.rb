@@ -12,14 +12,18 @@ class ClientAgencyConfig
   # 'ninety_days'/'six_months' to see other places you will need to customize.
   VALID_PAY_INCOME_DAYS = [ 90, 182 ]
 
-  # load all configuration files in the configuration directory passed in
-  def initialize(config_path)
+  # load all configuration files in the configuration directory passed in if load_all_agency_configs is true,
+  # otherwise load configurations where the environment variable for 'active' is set to true
+  def initialize(config_path, load_all_agency_configs)
     @client_agencies = Dir.glob(File.join(config_path, "*.yml"))
-      .map do |path|
+     .each_with_object({}) do |path, h|
       data = load_yaml(path)
-      [ data["id"], ClientAgency.new(data) ]
+      # load all in dev, otherwise load only if the 'active' property is true for the env (see agency config file)
+      next unless load_all_agency_configs || ActiveModel::Type::Boolean.new.cast(data["active"])
+
+      id = data["id"]
+      h[id] = ClientAgency.new(data)
     end
-    .to_h
   end
 
   def load_yaml(path)

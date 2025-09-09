@@ -1,6 +1,6 @@
 # This is the default environment configuration that will be loaded if no subdomain is provided
 id: sandbox
-subdomain: ""
+active: <%= ENV["AGENCY_DEFAULT_ACTIVE"] %>
 agency_name: CBV Test Agency
 agency_contact_website: https://www.example.com/contact
 agency_domain: <%= ENV["SANDBOX_DOMAIN_NAME"] %>

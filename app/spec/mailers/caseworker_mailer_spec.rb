@@ -19,7 +19,7 @@ RSpec.describe CaseworkerMailer, type: :mailer do
   let(:pinwheel_report) { build(:pinwheel_report, :with_pinwheel_account) }
   let(:email_address) { "test@example.com" }
   # TODO: test to make sure that it loads the correct agency for this test
-  let(:current_agency) { ClientAgencyConfig.new(File.join(Rails.root, 'config', 'client-agency-config', "#{cbv_flow.client_agency_id}.yml")) }
+  let(:current_agency) { ClientAgencyConfig.new(File.join(Rails.root, 'config', 'client-agency-config', "#{cbv_flow.client_agency_id}.yml"), true) }
 
   let(:mail) {
     CaseworkerMailer.with(
