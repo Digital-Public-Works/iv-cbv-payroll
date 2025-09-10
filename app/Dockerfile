@@ -189,10 +189,10 @@ RUN set -eux; \
     perl=5.36.0-7+deb12u3 \
     perl-base=5.36.0-7+deb12u3 \
     perl-modules-5.36=5.36.0-7+deb12u3 \
-    mariadb-common=1:10.11.13-0+deb12u1 \
-    libmariadb3=1:10.11.13-0+deb12u1 \
-    libmariadb-dev=1:10.11.13-0+deb12u1 \
-    libmariadb-dev-compat=1:10.11.13-0+deb12u1 \
+    mariadb-common=1:10.11.14-0+deb12u2 \
+    libmariadb3=1:10.11.14-0+deb12u2 \
+    libmariadb-dev=1:10.11.14-0+deb12u2 \
+    libmariadb-dev-compat=1:10.11.14-0+deb12u2 \
     ; \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*; \
     python3 -m venv /opt/aws-cli-venv && \
