@@ -52,6 +52,15 @@ FROM base AS build
 
 # Install packages needed to build gems
 RUN set -eux; \
+    apt-get update -qq && \
+    apt-get install -y --no-install-recommends \
+      libexpat1=2.5.0-1+deb12u2 \
+      libsqlite3-0=3.40.1-2+deb12u2 \
+      libperl5.36=5.36.0-7+deb12u3 \
+      perl=5.36.0-7+deb12u3 \
+      perl-base=5.36.0-7+deb12u3 \
+      perl-modules-5.36=5.36.0-7+deb12u3 \
+    ; \
     apt-get install --no-install-recommends -y \
       build-essential=12.9 \
       git=1:2.39.5-0+deb12u2 \
