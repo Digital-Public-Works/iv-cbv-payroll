@@ -154,8 +154,6 @@ ENV PIDFILE="/rails/tmp/pids/server.pid"
 #   apt-get install [package]
 #
 # and notice the version that was installed.
-# Install runtime packages (micro-pinned) and AWS CLI venv
-# NOTE: We keep postgres client pinned to Debian 12 build as you had.
 RUN set -eux; \
     apt-get update -qq; \
     apt-get install -y --no-install-recommends \
