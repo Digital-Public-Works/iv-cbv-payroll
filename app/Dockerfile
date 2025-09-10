@@ -68,7 +68,7 @@ RUN set -eux; \
       npm=9.2.0~ds1-1 \
       pkg-config=1.8.1-1 \
     ; \
-    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 # Copy application code
 COPY . .
