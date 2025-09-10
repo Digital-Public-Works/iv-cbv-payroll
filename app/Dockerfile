@@ -52,15 +52,15 @@ FROM base AS build
 
 # Install packages needed to build gems
 RUN apt-get update -qq && \
-    # versions of specific packages to resolve security vuln scan issues
     apt-get install -y --no-install-recommends \
       libexpat1=2.5.0-1+deb12u2 \
+      libexpat1-dev=2.5.0-1+deb12u2 \
       libsqlite3-0=3.40.1-2+deb12u2 \
+      libsqlite3-dev  =3.40.1-2+deb12u2 \
       libperl5.36=5.36.0-7+deb12u3 \
       perl=5.36.0-7+deb12u3 \
       perl-base=5.36.0-7+deb12u3 \
-      perl-modules-5.36=5.36.0-7+deb12u3 && \
-    apt-get install --no-install-recommends -y \
+      perl-modules-5.36=5.36.0-7+deb12u3 \
       build-essential=12.9 \
       git=1:2.39.5-0+deb12u2 \
       libpq-dev=15.13-0+deb12u1 \
