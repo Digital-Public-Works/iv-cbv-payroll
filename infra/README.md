@@ -78,8 +78,10 @@ To set up this project for the first time (i.e., it has never been deployed to t
     1. [Set up application build repository](/docs/infra/set-up-app-build-repository.md)
     2. [Set up application database](/docs/infra/set-up-database.md)
     3. [Set up application environment](/docs/infra/set-up-app-env.md)
-    4. [Configure environment variables and secrets](/docs/infra/environment-variables-and-secrets.md)
-    5. [Set up background jobs](/docs/infra/background-jobs.md)
+    4. [Configure application-specific environment variables](/docs/infra/application/application-configuration.md)
+    5. [Configure webhooks for payroll providers](/docs/infra/application/webhook-configuration.md)
+    6. [Complete post-deployment checklist](/docs/infra/reference/post-deployment-checklist.md)
+    7. [Set up background jobs](/docs/infra/background-jobs.md)
 
 ### 🆕 New developer
 
@@ -93,3 +95,16 @@ To get set up as a new developer on a project that has already been deployed to 
 ## 📇 Additional reading
 
 Additional documentation can be found in the [documentation directory](/docs/infra).
+
+### 🚀 Application Integration & Operations
+
+After infrastructure deployment, additional configuration is required:
+
+- **[Application Configuration](/docs/infra/application/application-configuration.md)** - Required environment variables and secrets
+- **[Webhook Configuration](/docs/infra/application/webhook-configuration.md)** - Essential for payroll synchronization
+- **[Post-Deployment Checklist](/docs/infra/reference/post-deployment-checklist.md)** - Comprehensive validation steps
+
+### 🔧 Troubleshooting & Operations
+
+- **[Deployment Failures](/docs/infra/troubleshooting/deployment-failures.md)** - Common deployment issues and solutions
+- **Operations Documentation** - Database management, debugging, monitoring (see `/docs/infra/operations/`)
