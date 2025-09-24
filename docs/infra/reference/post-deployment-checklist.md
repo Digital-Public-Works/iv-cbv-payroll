@@ -83,28 +83,12 @@ Use this checklist after deploying infrastructure and application to ensure all 
 
 ### Argyle Webhooks
 - [ ] **Sandbox webhooks registered** for demo/testing:
-  ```ruby
-  m = ArgyleWebhooksManager.new(agency_id: "sandbox")
-  m.create_subscriptions_if_necessary("https://your-domain.com", "env-argyle-sandbox")
-  ```
 - [ ] **Production webhooks registered** for live agencies:
-  ```ruby
-  m = ArgyleWebhooksManager.new(agency_id: "sandbox")
-  m.create_subscriptions_if_necessary("https://your-domain.com", "env-argyle-production")
-  ```
 - [ ] **Webhook delivery verified** in Argyle dashboard
 
 ### Pinwheel Webhooks
 - [ ] **Demo webhooks registered**:
-  ```ruby
-  m = PinwheelWebhookManager.new
-  m.create_subscription_if_necessary("https://your-domain.com", "DEMO")
-  ```
 - [ ] **Production webhooks registered**:
-  ```ruby
-  m = PinwheelWebhookManager.new
-  m.create_subscription_if_necessary("https://your-domain.com", "production-pinwheel")
-  ```
 - [ ] **Webhook delivery verified** in Pinwheel dashboard
 
 ## ✅ Multi-Tenant Configuration

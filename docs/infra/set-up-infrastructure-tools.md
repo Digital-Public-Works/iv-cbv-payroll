@@ -96,26 +96,17 @@ Then configure the AWS profile:
 Test your SSO configuration:
 
 ```bash
-aws sts get-caller-identity --profile cbv-demo
+aws sts get-caller-identity --profile demo
 ```
 
 This should return your user information and assumed role.
 
 #### 3. Use SSO Profiles with Environment Variables
 
-Set your environment to use the correct AWS profile. We recommend using [direnv](https://direnv.net/) to manage local environment variables:
-
 The AWS_PROFILE environment variable is the easiest way to select the right aws profile when interacting with terraform
 commands or this project's bin scripts across multiple environments.
 
-```bash
-# Create .envrc file in your project root
-echo 'export AWS_PROFILE=demo' > .envrc
-direnv allow
-```
-
-Or set manually for each session:
-
+Add to your .bashrc file or start each session
 ```bash
 export AWS_PROFILE=demo
 ```
@@ -148,64 +139,17 @@ aws configure sso --profile demo
 aws configure sso --profile prod
 ```
 
-#### 2. Environment-Specific Configuration
-
-Create separate profiles in `~/.aws/config`:
-
-```ini
-[profile cbv-demo]
-sso_session = cbv-project
-sso_account_id = 123456789012
-sso_role_name = CBV-Developer
-region = us-east-1
-output = json
-
-[profile cbv-prod]
-sso_session = cbv-project
-sso_account_id = 098765432109
-sso_role_name = CBV-Developer
-region = us-east-1
-output = json
-
-[sso-session cbv-project]
-sso_start_url = https://your-org.awsapps.com/start
-sso_region = us-east-1
-sso_registration_scopes = sso:account:access
-```
-
 #### 3. Switch Between Environments
 
 ```bash
 # Work with demo environment
-export AWS_PROFILE=cbv-demo
+export AWS_PROFILE=demo
 aws sts get-caller-identity
 
 # Switch to production
-export AWS_PROFILE=cbv-prod
+export AWS_PROFILE=prod
 aws sts get-caller-identity
 ```
-
-### Alternative: AWS Access Keys (Not Recommended)
-
-**⚠️ Security Warning:** Long-lived access keys are considered a security risk and should only be used for testing or when SSO is not available.
-
-If you must use access keys temporarily:
-
-```bash
-aws configure --profile cbv-demo
-AWS Access Key ID [None]: AKIA...
-AWS Secret Access Key [None]: ...
-Default region name [None]: us-east-1
-Default output format [None]: json
-```
-
-**Important Security Practices for Access Keys:**
-
-- **Rotate keys regularly** (every 90 days maximum)
-- **Use least-privilege IAM policies**
-- **Never commit keys to version control**
-- **Delete unused keys immediately**
-- **Monitor key usage via CloudTrail**
 
 ### Troubleshooting Authentication
 
@@ -214,7 +158,7 @@ Default output format [None]: json
 **Session expired error:**
 
 ```bash
-aws sso login --profile cbv-demo
+aws sso login --profile demo
 ```
 
 **Profile not found:**
@@ -222,76 +166,20 @@ aws sso login --profile cbv-demo
 - Verify profile exists: `aws configure list-profiles`
 - Check config file: `cat ~/.aws/config`
 
-**Browser doesn't open for SSO:**
-
-```bash
-aws sso login --profile cbv-demo --no-browser
-# Follow the manual URL provided
-```
-
 #### Terraform Authentication Issues
 
 **Terraform can't find credentials:**
 
 ```bash
 # Verify AWS CLI works first
-aws sts get-caller-identity --profile cbv-demo
+aws sts get-caller-identity --profile demo
 
 # Ensure AWS_PROFILE is set
 echo $AWS_PROFILE
 
 # Or specify profile for Terraform
-export AWS_PROFILE=cbv-demo
+export AWS_PROFILE=demo
 ```
-
-#### Verification Commands
-
-Always verify authentication before running Terraform:
-
-```bash
-# Check current identity
-aws sts get-caller-identity
-
-# Verify account access
-aws iam list-account-aliases
-
-# Test S3 access (if applicable)
-aws s3 ls
-
-# Check assumed role permissions
-aws iam get-role --role-name your-terraform-role
-```
-
-### Environment Variable Management
-
-Use direnv for automatic profile switching per project:
-
-#### 1. Install direnv
-
-```bash
-brew install direnv
-echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc  # or ~/.bashrc
-```
-
-#### 2. Create Project Environment
-
-```bash
-# In your project root
-cat > .envrc << EOF
-# AWS Configuration
-export AWS_PROFILE=cbv-demo
-export AWS_REGION=us-east-1
-
-# Terraform Configuration
-export TF_VAR_environment=demo
-EOF
-
-direnv allow
-```
-
-#### 3. Automatic Profile Switching
-
-Now when you `cd` into the project directory, the environment variables are automatically set.
 
 ### Security Best Practices
 

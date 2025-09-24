@@ -174,58 +174,20 @@ Webhooks are delivered to standard endpoints:
 **Symptom:** `/synchronizations` endpoint fails or payroll data sync doesn't work
 
 **Diagnosis Steps:**
-1. Check webhook registration status using verification commands above
+1. Check webhook registration status by logging into Aggregator provider dashboard.
 2. Verify webhook secrets match between Parameter Store and provider dashboards
 3. Check provider dashboards for webhook delivery failures
 4. Review application logs for webhook processing errors
 
 **Common Issues:**
 
-**No webhooks registered:**
-```ruby
-# Register missing webhooks using commands above
-# Verify environment variables are correct in Parameter Store
-```
-
-**Incorrect webhook URLs:**
-```ruby
-# Delete old webhooks and re-register with correct URLs
-# Ensure deployed application URL matches webhook registration
-```
-
-**Webhook secret mismatch:**
-```ruby
-# Verify secrets in Parameter Store match provider dashboard
-# Update Parameter Store values if needed
-# Re-register webhooks with correct secrets
-```
-
 ### Provider Dashboard Verification
 
-#### Argyle Dashboard
-1. Login to Argyle developer dashboard
-2. Navigate to Webhooks section
+#### Argyle Console
+1. Login to [Argyle developer console](https://console.argyle.com)
+2. Navigate to Developers -> Webhooks section
 3. Verify webhooks exist for your environment URLs
 4. Check delivery status and any failed deliveries
-
-#### Pinwheel Dashboard
-1. Login to Pinwheel developer portal
-2. Check webhook configuration section
-3. Verify endpoints are active and receiving events
-4. Review webhook delivery logs
-
-### Application-Level Debugging
-
-Check webhook processing in the application:
-
-```ruby
-# In Rails console (local or via ecs-console)
-# Check recent webhook deliveries
-WebhookDelivery.recent.limit(10)
-
-# Check for webhook processing errors
-Rails.logger.debug "Webhook processing status"
-```
 
 ## Security Considerations
 
@@ -248,27 +210,10 @@ Rails.logger.debug "Webhook processing status"
 
 After registration, validate webhooks are working:
 
-1. **Trigger a test sync** in the application
+1. **Trigger a test sync** in the application by starting a CBV flow and connecting an employer via Argyle.
 2. **Monitor provider dashboards** for webhook delivery attempts
-3. **Check application logs** for webhook receipt and processing
+3. **Check application logs and webhook_events db table** for webhook receipt and processing.
 4. **Verify synchronization completion** in the application
-
-### End-to-End Testing
-
-Complete flow validation:
-
-1. Create test user invitation
-2. Complete payroll connection flow
-3. Verify webhook delivery during sync process
-4. Confirm data appears in application
-5. Check weekly report generation includes synced data
-
-## Automation Considerations
-
-> **Note:** Currently webhook registration is a manual process. Consider automating this in the future:
-> - Add webhook registration to application deployment pipeline
-> - Create Terraform resources for webhook management
-> - Implement webhook validation in application health checks
 
 ## Related Documentation
 

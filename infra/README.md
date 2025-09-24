@@ -96,15 +96,6 @@ To get set up as a new developer on a project that has already been deployed to 
 
 Additional documentation can be found in the [documentation directory](/docs/infra).
 
-### 🚀 Application Integration & Operations
-
-After infrastructure deployment, additional configuration is required:
-
-- **[Application Configuration](/docs/infra/application/application-configuration.md)** - Required environment variables and secrets
-- **[Webhook Configuration](/docs/infra/application/webhook-configuration.md)** - Essential for payroll synchronization
-- **[Post-Deployment Checklist](/docs/infra/reference/post-deployment-checklist.md)** - Comprehensive validation steps
-
 ### 🔧 Troubleshooting & Operations
 
 - **[Deployment Failures](/docs/infra/troubleshooting/deployment-failures.md)** - Common deployment issues and solutions
-- **Operations Documentation** - Database management, debugging, monitoring (see `/docs/infra/operations/`)

@@ -55,22 +55,6 @@ make infra-update-app-service APP_NAME=app ENVIRONMENT=demo
 
 Check the application logs in CloudWatch to confirm migrations completed successfully.
 
-### Other Database Extension Issues
-
-Similar permission issues may occur with other PostgreSQL extensions:
-
-**Common Extensions Requiring Manual Setup:**
-- `pgcrypto` - Cryptographic functions
-- `uuid-ossp` - UUID generation
-- `pg_stat_statements` - Query statistics
-- `pgvector` - Vector operations (if configured)
-
-**General Resolution Pattern:**
-1. Connect as `postgres` user via RDS Query Editor
-2. Enable the extension: `CREATE EXTENSION IF NOT EXISTS extension_name;`
-3. Grant appropriate permissions to `app` and `migrator` users
-4. Retry application deployment
-
 ## Application Startup Failures
 
 ### Missing Environment Variables
@@ -104,29 +88,6 @@ Similar permission issues may occur with other PostgreSQL extensions:
 
 ## Network Connectivity Issues
 
-### VPC Endpoint Connectivity
-
-**Symptom:** ECS tasks fail to pull container images or log to CloudWatch.
-
-**Root Cause:** VPC endpoints not properly configured or security groups blocking traffic.
-
-**Diagnosis:**
-1. Check ECS service events in AWS Console
-2. Look for "CannotPullContainerError" or similar networking errors
-3. Verify VPC endpoints exist for:
-   - `com.amazonaws.region.ecr.dkr`
-   - `com.amazonaws.region.ecr.api`
-   - `com.amazonaws.region.logs`
-   - `com.amazonaws.region.s3`
-
-**Resolution:**
-1. Update network configuration to include required VPC endpoints:
-   ```bash
-   make infra-update-network NETWORK_NAME=demo
-   ```
-2. Verify security groups allow HTTPS (443) traffic to VPC endpoints
-3. Check route table configuration for private subnets
-
 ### Database Connectivity
 
 **Symptom:** Application starts but cannot connect to database.
@@ -147,40 +108,6 @@ Similar permission issues may occur with other PostgreSQL extensions:
    ./bin/ecs-console app demo
    # In Rails console:
    ActiveRecord::Base.connection.execute("SELECT 1")
-   ```
-
-## Terraform State Issues
-
-### State Lock Conflicts
-
-**Symptom:** Terraform operations fail with state lock errors.
-
-**Root Cause:** Previous Terraform operation didn't complete cleanly, leaving a stale lock.
-
-**Resolution:**
-1. Identify the lock ID from the error message
-2. Force unlock (use carefully):
-   ```bash
-   terraform force-unlock LOCK_ID
-   ```
-3. Only force unlock if you're certain no other Terraform operations are running
-
-### State File Corruption
-
-**Symptom:** Terraform reports resources exist that don't match AWS reality.
-
-**Resolution:**
-1. Import missing resources:
-   ```bash
-   terraform import aws_resource.name resource-id
-   ```
-2. Remove orphaned state entries:
-   ```bash
-   terraform state rm aws_resource.name
-   ```
-3. Refresh state to match reality:
-   ```bash
-   terraform refresh
    ```
 
 ## GitHub Actions CI/CD Failures
@@ -218,78 +145,6 @@ Similar permission issues may occur with other PostgreSQL extensions:
 2. Verify image was successfully pushed to ECR
 3. Review ECS service events in AWS Console
 4. Check application logs for migration or startup errors
-
-## Prevention Strategies
-
-### Deployment Validation Checklist
-
-Before deploying to a new environment:
-
-1. **Infrastructure Validation:**
-   - [ ] All Terraform applies completed successfully
-   - [ ] VPC endpoints created and accessible
-   - [ ] Database cluster running and accessible
-   - [ ] ECR repository exists and is accessible
-
-2. **Application Configuration:**
-   - [ ] All required environment variables configured
-   - [ ] Database extensions manually installed if needed
-   - [ ] Rails master key properly configured
-   - [ ] Third-party service credentials validated
-
-3. **Network Connectivity:**
-   - [ ] Security groups allow required traffic
-   - [ ] ECS tasks can reach database
-   - [ ] ECS tasks can pull container images
-   - [ ] ECS tasks can log to CloudWatch
-
-### Monitoring Setup
-
-Set up monitoring to detect deployment issues early:
-
-1. **CloudWatch Alarms:**
-   - ECS service task count
-   - Database connection errors
-   - Application error rates
-
-2. **Log Monitoring:**
-   - Application startup logs
-   - Database migration logs
-   - ECS service events
-
-3. **Regular Health Checks:**
-   - Application endpoint availability
-   - Database connectivity
-   - Background job processing
-
-## Emergency Recovery
-
-### Rollback Procedures
-
-If deployment fails and application is unavailable:
-
-1. **Application Rollback:**
-   ```bash
-   # Deploy previous working image tag
-   TF_CLI_ARGS_apply="-var=image_tag=PREVIOUS_TAG" make infra-update-app-service APP_NAME=app ENVIRONMENT=demo
-   ```
-
-2. **Database Rollback:**
-   - Identify failed migration from logs
-   - Manually rollback problematic migrations if safe
-   - Restore from database backup if necessary
-
-3. **Configuration Rollback:**
-   - Revert environment variable changes in Parameter Store
-   - Restart application service to load previous configuration
-
-### Emergency Contacts
-
-Document escalation procedures and emergency contacts for:
-- AWS support (if applicable)
-- Database administration
-- Application development team
-- Infrastructure team
 
 ## Related Documentation
 
