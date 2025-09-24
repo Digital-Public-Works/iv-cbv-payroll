@@ -82,13 +82,13 @@ Use this checklist after deploying infrastructure and application to ensure all 
 **⚠️ Warning:** Application will appear to work but synchronizations will fail without webhook setup.
 
 ### Argyle Webhooks
-- [ ] **Sandbox webhooks registered** for demo/testing:
-- [ ] **Production webhooks registered** for live agencies:
+- [ ] **Sandbox webhooks registered** for demo/testing
+- [ ] **Production webhooks registered** for live agencies
 - [ ] **Webhook delivery verified** in Argyle dashboard
 
 ### Pinwheel Webhooks
-- [ ] **Demo webhooks registered**:
-- [ ] **Production webhooks registered**:
+- [ ] **Demo webhooks registered**
+- [ ] **Production webhooks registered**
 - [ ] **Webhook delivery verified** in Pinwheel dashboard
 
 ## ✅ Multi-Tenant Configuration
