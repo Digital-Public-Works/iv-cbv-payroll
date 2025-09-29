@@ -70,8 +70,9 @@ RUN set -eux; \
     ; \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
-# Copy application code
-COPY . .
+# Copy dependency files for installation
+COPY Gemfile Gemfile.lock ./
+COPY package*.json ./
 
 # chromium is not available for arm64, this could be problematic when developing locally on an arm64 machine
 # and running tests that require puppeteer.
@@ -80,11 +81,19 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
 # Detect architecture and skip the installation of chromium if the architecture is arm64
 # see https://github.com/puppeteer/puppeteer/issues/7740#issuecomment-1016083451
-RUN if [ "$(uname -m)" = "arm64" ]; then \
-      export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=false; \
+RUN if [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "arm64" ]; then \
+      export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true; \
     fi
 
 RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=$PUPPETEER_SKIP_CHROMIUM_DOWNLOAD npm install
+
+# Install bundler and gems
+RUN gem install bundler --no-document -v ${BUNDLER_VERSION} && \
+    bundle install && \
+    rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git
+
+# Copy application code
+COPY . .
 
 ##########################################################################################
 # DEV: Used for development and test
@@ -105,8 +114,8 @@ RUN set -eux; \
     ; \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
-RUN gem install bundler --no-document -v ${BUNDLER_VERSION} && \
-    bundle config set --local without production && \
+# Reinstall gems with development/test groups
+RUN bundle config set --local without production && \
     bundle install && \
     rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git
 
@@ -117,6 +126,7 @@ CMD ["./bin/dev"]
 ##########################################################################################
 FROM build AS release-build
 
+# Reinstall gems without development/test groups
 RUN bundle config set --local without development test && \
     bundle install && \
     rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git
@@ -208,25 +218,15 @@ RUN gem uninstall -x -aIx debug || true && \
 # Install custom db migrate script
 COPY bin/db-migrate /usr/bin/
 
-# Copy built artifacts: gems, application, binary dependencies
-COPY --from=release-build /usr/local/bundle /usr/local/bundle
-COPY --from=release-build /rails /rails
+# Run and own only the runtime files as a non-root user for security
+RUN useradd rails --create-home --shell /bin/bash && mkdir -p /home/rails/tmp/pids /home/rails/log /home/rails/db
 
-# Clean up any unused gems and ensure we have the correct versions
-RUN bundle clean --force && \
-    bundle install --no-cache
-
-# Ensure all necessary directories exist
-RUN mkdir -p /rails/tmp/pids /rails/log /rails/db
+# Copy built artifacts with correct ownership
+COPY --from=release-build --chown=rails:rails /usr/local/bundle /usr/local/bundle
+COPY --from=release-build --chown=rails:rails /rails /rails
 
 # Create volume for /rails/tmp
 VOLUME /rails/tmp
-
-# Run and own only the runtime files as a non-root user for security
-RUN useradd rails --create-home --shell /bin/bash --home /rails
-
-# Set permissions and ownership for the runtime files
-RUN chown -R rails:rails /rails/tmp /rails/log /rails/db /usr/local/bundle
 
 # Switch to non-root user
 USER rails:rails

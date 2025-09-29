@@ -113,10 +113,14 @@ clean-container: ## Remove just the container related volumes
 ##################################################
 
 release-build:
+	@echo "Pulling latest image for cache..."
+	@docker pull $(shell echo "$(OPTS)" | grep -oP '(?<=--tag )[^ ]+' | head -1):latest 2>/dev/null || true
 	docker buildx build \
 		--platform=linux/amd64 \
 		--build-arg RUN_USER=$(RUN_USER) \
 		--build-arg RUN_UID=$(RUN_UID) \
+		--cache-from=type=registry,ref=$(shell echo "$(OPTS)" | grep -oP '(?<=--tag )[^ ]+' | head -1):latest \
+		--cache-to=type=inline \
 		$(OPTS) \
 		.
 
