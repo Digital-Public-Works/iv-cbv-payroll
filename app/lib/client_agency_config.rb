@@ -67,7 +67,6 @@ class ClientAgencyConfig
       transmission_method_configuration
       weekly_report
       applicant_attributes
-      allow_invitation_reuse
       generic_links_disabled
       report_customization_show_earnings_list
     ])
