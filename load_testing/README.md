@@ -13,26 +13,68 @@ Follow these steps to perform a load test:
     * https://demo.divt.app/jobs      (un/pw in 1Password)
 
 ### Running the test
-3. Get a fresh COOKIE by starting the CBV session and copying out the value of the cookie
-    ```
-    export COOKIE=$(curl -L --cookie-jar - https://demo.divt.app/cbv/links/sandbox | grep _iv_cbv_payroll_session | cut -f 7)
-    ```
-4. Then run this script like:
-    ```
-    k6 run loadtest.js --env "COOKIE=$COOKIE" --env URL=https://demo.divt.app/cbv/employer_search
-    ```
-5. Record the metrics.
+
+#### Step 1: Seed test sessions with synced data
+Generate test sessions with fully synced payroll accounts in the database:
+```bash
+# Generate 100 test sessions (creates CbvFlows with synced PayrollAccounts)
+bin/rails 'load_test:seed_sessions[100]'
+
+# Or specify a different client_agency_id
+bin/rails 'load_test:seed_sessions[100,sandbox]'
+```
+
+This will output a line like:
+```
+export COOKIES='cookie1,cookie2,cookie3,...'
+```
+
+Copy and run that export command.
+
+#### Step 2: Run the load test
+```bash
+# Test with mixed realistic traffic (recommended)
+k6 run loadtest.js --env "COOKIES=$COOKIES" --env URL=https://demo.divt.app
+
+# Or test specific scenarios:
+k6 run loadtest.js --env "COOKIES=$COOKIES" --env URL=https://demo.divt.app --env SCENARIO=sync
+k6 run loadtest.js --env "COOKIES=$COOKIES" --env URL=https://demo.divt.app --env SCENARIO=pdf
+k6 run loadtest.js --env "COOKIES=$COOKIES" --env URL=https://demo.divt.app --env SCENARIO=summary
+```
+
+Available scenarios:
+- `mixed` (default) - Weighted distribution: 50% sync polling, 20% payment details, 15% summary, 10% search, 5% PDF
+- `sync` - Database-intensive synchronization polling
+- `payment_details` - Per-account queries and aggregation
+- `summary` - Full summary with all accounts
+- `pdf` - CPU-intensive PDF generation
+- `employer_search` - Employer search page
+
+#### Step 3: Record the metrics
+
+The test will output performance metrics including:
+- Request duration (p95, p99, max)
+- Failed requests
+- SLO violations
+- Throughput per scenario
 
 ### Cleanup
-6. Delete all jobs enqueued within the "default" job queue:
+1. Delete test sessions from database:
+    ```bash
+    # In the Rails console or via rake task
+    bin/rails 'load_test:cleanup_sessions[sandbox]'
     ```
+
+2. Delete all jobs enqueued within the "default" job queue:
+    ```bash
     # in top-level of repo
     bin/ecs-console
 
     # in the Rails console that opens:
     > SolidQueue::Queue.new("default").clear
     ```
-7. Resume the "default" queue execution.
+
+3. Resume the "default" queue execution.
     * https://demo.divt.app/jobs      (un/pw in 1Password)
 
 
