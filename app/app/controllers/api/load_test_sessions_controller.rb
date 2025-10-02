@@ -54,20 +54,22 @@ class Api::LoadTestSessionsController < ApplicationController
     )
 
     # Create fully synced payroll account
-    account_id = "test_#{SecureRandom.hex(8)}"
+    account_id = "019571bc-2f60-3955-d972-dbadfe0913a8"
+    # account_id = "test_#{SecureRandom.hex(8)}"
     payroll_account = PayrollAccount::Argyle.create!(
       cbv_flow: cbv_flow,
       aggregator_account_id: account_id,
-      supported_jobs: %w[income paystubs employment identity],
+      pinwheel_account_id: account_id,
+      supported_jobs: %w[accounts income paystubs employment identity],
       synchronization_status: :succeeded
     )
 
-    # Create successful webhook events
+    # Create successful webhook events matching Argyle's actual event names
+    # See: Aggregators::Webhooks::Argyle::SUBSCRIBED_WEBHOOK_EVENTS
     [
-      { event_name: "paystubs.fully_synced", event_outcome: "success" },
-      { event_name: "employment.added", event_outcome: "success" },
-      { event_name: "income.added", event_outcome: "success" },
-      { event_name: "identity.added", event_outcome: "success" }
+      { event_name: "accounts.connected", event_outcome: "success" },       # accounts job
+      { event_name: "identities.added", event_outcome: "success" },        # identity + income jobs
+      { event_name: "paystubs.fully_synced", event_outcome: "success" }    # paystubs + employment jobs
     ].each do |event|
       WebhookEvent.create!(
         payroll_account: payroll_account,
@@ -88,11 +90,19 @@ class Api::LoadTestSessionsController < ApplicationController
 
     # Create pending payroll account
     account_id = "test_#{SecureRandom.hex(8)}"
-    PayrollAccount::Argyle.create!(
+    payroll_account = PayrollAccount::Argyle.create!(
       cbv_flow: cbv_flow,
+      pinwheel_account_id: account_id,
       aggregator_account_id: account_id,
-      supported_jobs: %w[income paystubs employment identity],
+      supported_jobs: %w[accounts income paystubs employment identity],
       synchronization_status: :in_progress
+    )
+
+    # Create initial webhook event (account connected, but sync still in progress)
+    WebhookEvent.create!(
+      payroll_account: payroll_account,
+      event_name: "accounts.connected",
+      event_outcome: "success"
     )
 
     [ cbv_flow, account_id ]
@@ -109,17 +119,23 @@ class Api::LoadTestSessionsController < ApplicationController
     account_id = "test_#{SecureRandom.hex(8)}"
     payroll_account = PayrollAccount::Argyle.create!(
       cbv_flow: cbv_flow,
+      pinwheel_account_id: account_id,
       aggregator_account_id: account_id,
-      supported_jobs: %w[income paystubs employment identity],
+      supported_jobs: %w[accounts income paystubs employment identity],
       synchronization_status: :failed
     )
 
-    # Create failed webhook events
-    WebhookEvent.create!(
-      payroll_account: payroll_account,
-      event_name: "paystubs.failed",
-      event_outcome: "error"
-    )
+    # Create failed webhook events - paystubs job failed
+    [
+      { event_name: "accounts.connected", event_outcome: "success" },
+      { event_name: "paystubs.fully_synced", event_outcome: "error" }  # This marks paystubs/employment as failed
+    ].each do |event|
+      WebhookEvent.create!(
+        payroll_account: payroll_account,
+        event_name: event[:event_name],
+        event_outcome: event[:event_outcome]
+      )
+    end
 
     [ cbv_flow, account_id ]
   end
