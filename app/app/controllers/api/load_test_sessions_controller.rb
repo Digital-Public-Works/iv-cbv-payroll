@@ -50,7 +50,8 @@ class Api::LoadTestSessionsController < ApplicationController
     cbv_applicant = CbvApplicant.create!(client_agency_id: client_agency_id)
     cbv_flow = CbvFlow.create!(
       client_agency_id: client_agency_id,
-      cbv_applicant: cbv_applicant
+      cbv_applicant: cbv_applicant,
+      consented_to_authorized_use_at: Time.current
     )
 
     # Create fully synced payroll account
@@ -85,7 +86,8 @@ class Api::LoadTestSessionsController < ApplicationController
     cbv_applicant = CbvApplicant.create!(client_agency_id: client_agency_id)
     cbv_flow = CbvFlow.create!(
       client_agency_id: client_agency_id,
-      cbv_applicant: cbv_applicant
+      cbv_applicant: cbv_applicant,
+      consented_to_authorized_use_at: Time.current
     )
 
     # Create pending payroll account
@@ -112,7 +114,8 @@ class Api::LoadTestSessionsController < ApplicationController
     cbv_applicant = CbvApplicant.create!(client_agency_id: client_agency_id)
     cbv_flow = CbvFlow.create!(
       client_agency_id: client_agency_id,
-      cbv_applicant: cbv_applicant
+      cbv_applicant: cbv_applicant,
+      consented_to_authorized_use_at: Time.current
     )
 
     # Create failed payroll account
