@@ -22,21 +22,29 @@ export let options = {
 
 const SLA_IN_MILLISECONDS = 2000;
 const COOKIES = __ENV.COOKIES ? __ENV.COOKIES.split(',') : [];
+const TOKENS = __ENV.TOKENS ? __ENV.TOKENS.split(',') : [];
 const URL = __ENV.URL;
 const SCENARIO = __ENV.SCENARIO || 'mixed'; // 'mixed', 'sync', 'summary', 'pdf'
+const CLIENT_AGENCY_ID = __ENV.CLIENT_AGENCY_ID || 'sandbox';
+const LOAD_TEST_SCENARIO = __ENV.LOAD_TEST_SCENARIO || 'synced'; // 'synced', 'pending', 'failed'
+const USE_DYNAMIC_SESSIONS = __ENV.USE_DYNAMIC_SESSIONS === 'true';
 const failedSloCounter = new Counter("failed_slo");
 
-if(COOKIES.length === 0) {
-    throw new Error("COOKIES environment variable is required. Run: bin/rails 'load_test:seed_sessions[100]'");
+if(!USE_DYNAMIC_SESSIONS && COOKIES.length === 0 && TOKENS.length === 0) {
+    throw new Error("Either COOKIES, TOKENS, or USE_DYNAMIC_SESSIONS=true is required");
 }
 
 if(URL === undefined) {
     throw new Error("URL environment variable is required");
 }
 
-// Get a unique cookie for each virtual user
+// Get a unique cookie or token for each virtual user
 function getCookie() {
     return COOKIES[__VU % COOKIES.length];
+}
+
+function getToken() {
+    return TOKENS[__VU % TOKENS.length];
 }
 
 // Get a unique account ID for each virtual user (matches the test data pattern)
@@ -45,21 +53,67 @@ function getAccountId() {
 }
 
 export default function () {
-    const cookie = getCookie();
-    const headers = {
-        'Cookie': `_iv_cbv_payroll_session=${cookie}`,
+    let headers = {
         'Accept': 'text/html,application/xhtml+xml,application/xml',
     };
+    let accountId = getAccountId(); // Default hardcoded account ID
+
+    // Three modes: dynamic sessions, tokens, or pre-baked cookies
+    if (USE_DYNAMIC_SESSIONS) {
+        // Request a fresh session from the dev endpoint
+        const sessionResponse = http.post(`${URL}/api/load_test/sessions`, JSON.stringify({
+            client_agency_id: CLIENT_AGENCY_ID,
+            scenario: LOAD_TEST_SCENARIO
+        }), {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (sessionResponse.status === 201) {
+            // Extract session cookie from Set-Cookie header (Rails automatically encrypts it)
+            const sessionCookie = sessionResponse.cookies['_iv_cbv_payroll_session'];
+            if (sessionCookie && sessionCookie[0]) {
+                headers['Cookie'] = `_iv_cbv_payroll_session=${sessionCookie[0].value}`;
+
+                // Extract account_id from response body
+                const sessionData = JSON.parse(sessionResponse.body);
+                accountId = sessionData.account_id;
+            } else {
+                console.error('No session cookie in response');
+                return;
+            }
+        } else {
+            console.error('Failed to create session:', sessionResponse.status, sessionResponse.body);
+            return;
+        }
+    } else if (TOKENS.length > 0) {
+        // Use token to get session cookie
+        const token = getToken();
+        const entryResponse = http.get(`${URL}/cbv/flow_entry?token=${token}`, {
+            headers,
+            redirects: 0
+        });
+
+        const sessionCookie = entryResponse.cookies['_iv_cbv_payroll_session'];
+        if (sessionCookie && sessionCookie[0]) {
+            headers['Cookie'] = `_iv_cbv_payroll_session=${sessionCookie[0].value}`;
+        }
+    } else {
+        // Using pre-baked cookies
+        const cookie = getCookie();
+        headers['Cookie'] = `_iv_cbv_payroll_session=${cookie}`;
+    }
 
     // Weighted distribution based on where users spend time in the flow
     const scenario = SCENARIO === 'mixed' ? selectScenario() : SCENARIO;
 
     switch(scenario) {
         case 'sync':
-            testSynchronization(headers);
+            testSynchronization(headers, accountId);
             break;
         case 'payment_details':
-            testPaymentDetails(headers);
+            testPaymentDetails(headers, accountId);
             break;
         case 'summary':
             testSummary(headers);
@@ -87,11 +141,14 @@ function selectScenario() {
     if (rand < 0.70) return 'payment_details';
     if (rand < 0.85) return 'summary';
     if (rand < 0.95) return 'employer_search';
+    // TODO: should add another load test for generating invitations as a separate load test. Create 10k invitations
     return 'pdf'; }
 
-function testSynchronization(headers) {
+function testSynchronization(headers, accountId) {
     group("Synchronization polling (DB intensive)", () => {
-        const accountId = getAccountId();
+        console.log("sync test")
+        console.log("accountid:", accountId)
+        console.log("headers:", headers)
         const response = http.patch(
             `${URL}/cbv/synchronizations?user%5Baccount_id%5D=${accountId}`, {},
             {
@@ -102,8 +159,6 @@ function testSynchronization(headers) {
                 }
             }
         );
-        console.log("response")
-        console.log(JSON.stringify(response, null, 2))
 
         check(response, {
             'synchronization check succeeded': (r) => r.status === 200,
@@ -118,9 +173,8 @@ function testSynchronization(headers) {
     sleep(3);
 }
 
-function testPaymentDetails(headers) {
+function testPaymentDetails(headers, accountId) {
     group("Payment details (DB + aggregation)", () => {
-        const accountId = getAccountId();
         const response = http.get(
             `${URL}/cbv/payment_details?user%5Baccount_id%5D=${accountId}`,
             { headers }

@@ -14,33 +14,67 @@ Follow these steps to perform a load test:
 
 ### Running the test
 
-#### Step 1: Seed test sessions with synced data
-Generate test sessions with fully synced payroll accounts in the database:
+There are three ways to generate test sessions:
+
+#### Option 1: Dynamic Session Generation (Recommended - Dev Only)
+**Best for:** Quick iteration, testing different scenarios without pre-baking sessions
+
+Uses a dev-only API endpoint to generate sessions on-demand during the test:
+```bash
+# Run k6 with dynamic session generation
+k6 run loadtest.js \
+  --env USE_DYNAMIC_SESSIONS=true \
+  --env URL=http://localhost:3000 \
+  --env CLIENT_AGENCY_ID=sandbox \
+  --env LOAD_TEST_SCENARIO=synced
+```
+
+Available `LOAD_TEST_SCENARIO` values:
+- `synced` (default) - Fully synced payroll accounts with successful webhook events
+- `pending` - Accounts still synchronizing (in_progress status)
+- `failed` - Failed synchronization with error webhook events
+
+**Note:** This endpoint is only available in development/test environments and will return 403 in production.
+
+#### Option 2: Tokenized Invitations
+**Best for:** Testing the full invitation flow, more realistic user journey
+
+Generate invitations with tokens, k6 will exchange tokens for session cookies:
+```bash
+# Generate invitations with tokens
+bin/rails 'load_test:bake_invitations[100,sandbox]'
+
+# Copy the output and export tokens
+export TOKENS='token1,token2,token3,...'
+
+# Run k6 with tokens
+k6 run loadtest.js --env "TOKENS=$TOKENS" --env URL=https://demo.divt.app
+```
+
+#### Option 3: Pre-baked Cookies (Legacy)
+**Best for:** Production load testing, maximum performance
+
+Generate encrypted session cookies in advance:
 ```bash
 # Generate 100 test sessions (creates CbvFlows with synced PayrollAccounts)
-bin/rails 'load_test:seed_sessions[100]'
+bin/rails 'load_test:bake_cookies[100,sandbox]'
 
-# Or specify a different client_agency_id
-bin/rails 'load_test:seed_sessions[100,sandbox]'
-```
-
-This will output a line like:
-```
+# Copy and run the export command
 export COOKIES='cookie1,cookie2,cookie3,...'
+
+# Run k6 with cookies
+k6 run loadtest.js --env "COOKIES=$COOKIES" --env URL=https://demo.divt.app
 ```
 
-Copy and run that export command.
+**Note:** For local testing or to avoid hitting real Argyle API limits, set `SANDBOX_ARGYLE_ENVIRONMENT=mock` to use fixture data from `spec/support/fixtures/argyle/bob/`.
 
-#### Step 2: Run the load test
+#### Step 2: Run with specific scenarios
 ```bash
-# Test with mixed realistic traffic (recommended)
-k6 run loadtest.js --env "COOKIES=$COOKIES" --env URL=https://demo.divt.app
-
-# Or test specific scenarios:
-k6 run loadtest.js --env "COOKIES=$COOKIES" --env URL=https://demo.divt.app --env SCENARIO=sync
-k6 run loadtest.js --env "COOKIES=$COOKIES" --env URL=https://demo.divt.app --env SCENARIO=pdf
-k6 run loadtest.js --env "COOKIES=$COOKIES" --env URL=https://demo.divt.app --env SCENARIO=summary
-k6 run loadtest.js --env "COOKIES=$COOKIES" --env URL=https://demo.divt.app --env SCENARIO=employer_search
+# Test specific scenarios (works with any of the 3 session generation methods)
+k6 run loadtest.js --env URL=https://demo.divt.app --env SCENARIO=sync
+k6 run loadtest.js --env URL=https://demo.divt.app --env SCENARIO=pdf
+k6 run loadtest.js --env URL=https://demo.divt.app --env SCENARIO=summary
+k6 run loadtest.js --env URL=https://demo.divt.app --env SCENARIO=employer_search
 ```
 
 Available scenarios:
