@@ -41,7 +41,7 @@ function getCookie() {
 
 // Get a unique account ID for each virtual user (matches the test data pattern)
 function getAccountId() {
-    return `test_account_${__VU % COOKIES.length}`;
+    return '0199a235-3e16-a138-f7a8-f2069507768d';
 }
 
 export default function () {
@@ -92,9 +92,8 @@ function selectScenario() {
 function testSynchronization(headers) {
     group("Synchronization polling (DB intensive)", () => {
         const accountId = getAccountId();
-        const response = http.post(
-            `${URL}/cbv/synchronizations`,
-            JSON.stringify({ user: { account_id: accountId } }),
+        const response = http.patch(
+            `${URL}/cbv/synchronizations?user%5Baccount_id%5D=${accountId}`, {},
             {
                 headers: {
                     ...headers,
@@ -103,6 +102,8 @@ function testSynchronization(headers) {
                 }
             }
         );
+        console.log("response")
+        console.log(JSON.stringify(response, null, 2))
 
         check(response, {
             'synchronization check succeeded': (r) => r.status === 200,
@@ -121,7 +122,7 @@ function testPaymentDetails(headers) {
     group("Payment details (DB + aggregation)", () => {
         const accountId = getAccountId();
         const response = http.get(
-            `${URL}/cbv/payment_details?user[account_id]=${accountId}`,
+            `${URL}/cbv/payment_details?user%5Baccount_id%5D=${accountId}`,
             { headers }
         );
 
@@ -187,15 +188,17 @@ function testPdfGeneration(headers) {
 function testEmployerSearch(headers) {
     console.log("hi")
     group("Employer search page", () => {
-        console.log("hi2")
+        console.log("request")
+        console.log(JSON.stringify(headers, null, 2))
         const response = http.get(
             `${URL}/cbv/employer_search`,
             { headers }
         );
-        console.log("hi3")
+        console.log("response")
+        console.log(JSON.stringify(response, null, 2))
 
         check(response, {
-            'employer search loaded': (r) => r.status === 200,
+            'is Status 200': (r) => r.status === 200,
         });
         console.log("hi4")
 

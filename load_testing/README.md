@@ -40,6 +40,7 @@ k6 run loadtest.js --env "COOKIES=$COOKIES" --env URL=https://demo.divt.app
 k6 run loadtest.js --env "COOKIES=$COOKIES" --env URL=https://demo.divt.app --env SCENARIO=sync
 k6 run loadtest.js --env "COOKIES=$COOKIES" --env URL=https://demo.divt.app --env SCENARIO=pdf
 k6 run loadtest.js --env "COOKIES=$COOKIES" --env URL=https://demo.divt.app --env SCENARIO=summary
+k6 run loadtest.js --env "COOKIES=$COOKIES" --env URL=https://demo.divt.app --env SCENARIO=employer_search
 ```
 
 Available scenarios:

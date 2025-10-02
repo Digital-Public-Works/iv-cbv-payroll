@@ -1,6 +1,6 @@
 namespace :load_test do
   desc "Generate test sessions with synced payroll accounts for load testing"
-  task :seed_sessions, [:count, :client_agency_id] => :environment do |t, args|
+  task :bake_cookies, [:count, :client_agency_id] => :environment do |t, args|
     count = args[:count]&.to_i || 100
     client_agency_id = args[:client_agency_id] || "sandbox"
 
@@ -27,11 +27,11 @@ namespace :load_test do
         cbv_applicant: cbv_applicant
       )
 
-      # Create a fully synced Pinwheel PayrollAccount
+      # Create a fully synced Argyle PayrollAccount
       account_id = "test_account_#{i}"
-      payroll_account = PayrollAccount::Pinwheel.create!(
+      payroll_account = PayrollAccount::Argyle.create!(
         cbv_flow: cbv_flow,
-        pinwheel_account_id: account_id,
+        aggregator_account_id: account_id,
         supported_jobs: %w[income paystubs employment identity],
         synchronization_status: :succeeded
       )
@@ -52,10 +52,19 @@ namespace :load_test do
         )
       end
 
-      # Generate a session cookie
-      session_data = { cbv_flow_id: cbv_flow.id }
-      cookie_value = Rails.application.message_verifier(:cookie_store)
-        .generate(session_data, purpose: "cookie.cbv_flow_id")
+      # Generate encrypted session cookie using the same encryption Rails uses
+      # Rails uses "authenticated encrypted cookie" salt for session cookies
+      secret_key_base = Rails.application.secret_key_base
+      salt = "authenticated encrypted cookie"
+      key_generator = ActiveSupport::KeyGenerator.new(secret_key_base, iterations: 1000)
+      secret = key_generator.generate_key(salt, 32)
+      sign_secret = key_generator.generate_key("signed #{salt}", 64)
+
+      encryptor = ActiveSupport::MessageEncryptor.new(secret, sign_secret, cipher: "aes-256-gcm", serializer: Marshal)
+
+      # Encrypt the session data
+      session_data = { "cbv_flow_id" => cbv_flow.id }
+      cookie_value = encryptor.encrypt_and_sign(session_data)
 
       cookies << cookie_value
 
@@ -73,7 +82,7 @@ namespace :load_test do
   end
 
   desc "Clean up test sessions created by seed_sessions"
-  task :cleanup_sessions, [:client_agency_id] => :environment do |t, args|
+  task :cleanup_cookies, [:client_agency_id] => :environment do |t, args|
     client_agency_id = args[:client_agency_id] || "sandbox"
 
     # Find flows without confirmation codes (incomplete) from the test agency
