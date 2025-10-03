@@ -13,26 +13,103 @@ Follow these steps to perform a load test:
     * https://demo.divt.app/jobs      (un/pw in 1Password)
 
 ### Running the test
-3. Get a fresh COOKIE by starting the CBV session and copying out the value of the cookie
-    ```
-    export COOKIE=$(curl -L --cookie-jar - https://demo.divt.app/cbv/links/sandbox | grep _iv_cbv_payroll_session | cut -f 7)
-    ```
-4. Then run this script like:
-    ```
-    k6 run loadtest.js --env "COOKIE=$COOKIE" --env URL=https://demo.divt.app/cbv/employer_search
-    ```
-5. Record the metrics.
+
+There are three ways to generate test sessions:
+
+#### Option 1: Dynamic Session Generation (Recommended - Dev Only)
+**Best for:** Quick iteration, testing different scenarios without pre-baking sessions
+
+Uses a dev-only API endpoint to generate sessions on-demand during the test:
+```bash
+# Run k6 with dynamic session generation
+k6 run loadtest.js \
+  --env USE_DYNAMIC_SESSIONS=true \
+  --env URL=http://localhost:3000 \
+  --env CLIENT_AGENCY_ID=sandbox \
+  --env LOAD_TEST_SCENARIO=synced
+```
+
+Available `LOAD_TEST_SCENARIO` values:
+- `synced` (default) - Fully synced payroll accounts with successful webhook events
+- `pending` - Accounts still synchronizing (in_progress status)
+- `failed` - Failed synchronization with error webhook events
+
+**Note:** This endpoint is only available in development/test environments and will return 403 in production.
+
+#### Option 2: Tokenized Invitations
+**Best for:** Testing the full invitation flow, more realistic user journey
+
+Generate invitations with tokens, k6 will exchange tokens for session cookies:
+```bash
+# Generate invitations with tokens
+bin/rails 'load_test:bake_invitations[100,sandbox]'
+
+# Copy the output and export tokens
+export TOKENS='token1,token2,token3,...'
+
+# Run k6 with tokens
+k6 run loadtest.js --env "TOKENS=$TOKENS" --env URL=https://demo.divt.app
+```
+
+#### Option 3: Pre-baked Cookies (Legacy)
+**Best for:** Production load testing, maximum performance
+
+Generate encrypted session cookies in advance:
+```bash
+# Generate 100 test sessions (creates CbvFlows with synced PayrollAccounts)
+bin/rails 'load_test:bake_cookies[100,sandbox]'
+
+# Copy and run the export command
+export COOKIES='cookie1,cookie2,cookie3,...'
+
+# Run k6 with cookies
+k6 run loadtest.js --env "COOKIES=$COOKIES" --env URL=https://demo.divt.app
+```
+
+**Note:** For local testing or to avoid hitting real Argyle API limits, set `SANDBOX_ARGYLE_ENVIRONMENT=mock` to use fixture data from `spec/support/fixtures/argyle/bob/`.
+
+#### Step 2: Run with specific scenarios
+```bash
+# Test specific scenarios (works with any of the 3 session generation methods)
+k6 run loadtest.js --env URL=https://demo.divt.app --env SCENARIO=sync
+k6 run loadtest.js --env URL=https://demo.divt.app --env SCENARIO=pdf
+k6 run loadtest.js --env URL=https://demo.divt.app --env SCENARIO=summary
+k6 run loadtest.js --env URL=https://demo.divt.app --env SCENARIO=employer_search
+```
+
+Available scenarios:
+- `mixed` (default) - Weighted distribution: 50% sync polling, 20% payment details, 15% summary, 10% search, 5% PDF
+- `sync` - Database-intensive synchronization polling
+- `payment_details` - Per-account queries and aggregation
+- `summary` - Full summary with all accounts
+- `pdf` - CPU-intensive PDF generation
+- `employer_search` - Employer search page
+
+#### Step 3: Record the metrics
+
+The test will output performance metrics including:
+- Request duration (p95, p99, max)
+- Failed requests
+- SLO violations
+- Throughput per scenario
 
 ### Cleanup
-6. Delete all jobs enqueued within the "default" job queue:
+1. Delete test sessions from database:
+    ```bash
+    # In the Rails console or via rake task
+    bin/rails 'load_test:cleanup_sessions[sandbox]'
     ```
+
+2. Delete all jobs enqueued within the "default" job queue:
+    ```bash
     # in top-level of repo
     bin/ecs-console
 
     # in the Rails console that opens:
     > SolidQueue::Queue.new("default").clear
     ```
-7. Resume the "default" queue execution.
+
+3. Resume the "default" queue execution.
     * https://demo.divt.app/jobs      (un/pw in 1Password)
 
 
