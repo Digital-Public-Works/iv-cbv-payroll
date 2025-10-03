@@ -20,7 +20,8 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
       :with_pinwheel_account,
       with_errored_jobs: errored_jobs,
       created_at: current_time - 10.minutes,
-      cbv_applicant: cbv_applicant
+      cbv_applicant: cbv_applicant,
+      client_agency_id: "pa_dhs" # TODO: this needs to be not agency-specific
     )
   end
 
