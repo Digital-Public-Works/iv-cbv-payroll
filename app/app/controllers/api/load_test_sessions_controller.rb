@@ -34,6 +34,7 @@ class Api::LoadTestSessionsController < ApplicationController
       account_id: account_id,
       client_agency_id: client_agency_id,
       scenario: scenario,
+      csrf_token: form_authenticity_token,
       message: "Session created. Cookie will be set in Set-Cookie header."
     }, status: :created
   end

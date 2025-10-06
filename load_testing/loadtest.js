@@ -57,6 +57,7 @@ export default function () {
         'Accept': 'text/html,application/xhtml+xml,application/xml',
     };
     let accountId = getAccountId(); // Default hardcoded account ID
+    let csrfToken = null;
 
     // Three modes: dynamic sessions, tokens, or pre-baked cookies
     if (USE_DYNAMIC_SESSIONS) {
@@ -76,9 +77,10 @@ export default function () {
             if (sessionCookie && sessionCookie[0]) {
                 headers['Cookie'] = `_iv_cbv_payroll_session=${sessionCookie[0].value}`;
 
-                // Extract account_id from response body
+                // Extract account_id and csrf_token from response body
                 const sessionData = JSON.parse(sessionResponse.body);
                 accountId = sessionData.account_id;
+                csrfToken = sessionData.csrf_token;
             } else {
                 console.error('No session cookie in response');
                 return;
@@ -110,7 +112,7 @@ export default function () {
 
     switch(scenario) {
         case 'sync':
-            testSynchronization(headers, accountId);
+            testSynchronization(headers, accountId, csrfToken);
             break;
         case 'payment_details':
             testPaymentDetails(headers, accountId);
@@ -144,21 +146,31 @@ function selectScenario() {
     // TODO: should add another load test for generating invitations as a separate load test. Create 10k invitations
     return 'pdf'; }
 
-function testSynchronization(headers, accountId) {
+function testSynchronization(headers, accountId, csrfToken) {
     group("Synchronization polling (DB intensive)", () => {
         console.log("sync test")
         console.log("accountid:", accountId)
         console.log("headers:", headers)
+        console.log("cookie:", headers["Cookie"])
+
+        const requestHeaders = {
+            ...headers,
+            'Content-Type': 'application/json',
+            'Accept': 'text/vnd.turbo-stream.html',
+        };
+
+        // Add CSRF token if available (for dynamic sessions)
+        if (csrfToken) {
+            requestHeaders['X-CSRF-Token'] = csrfToken;
+        }
+
         const response = http.patch(
             `${URL}/cbv/synchronizations?user%5Baccount_id%5D=${accountId}`, {},
-            {
-                headers: {
-                    ...headers,
-                    'Content-Type': 'application/json',
-                    'Accept': 'text/vnd.turbo-stream.html',
-                }
-            }
+            { headers: requestHeaders }
         );
+
+        console.log("response")
+        console.log(JSON.stringify(response, null, 2))
 
         check(response, {
             'synchronization check succeeded': (r) => r.status === 200,
