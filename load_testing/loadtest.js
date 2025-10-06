@@ -24,23 +24,42 @@ const SLA_IN_MILLISECONDS = 2000;
 const URL = __ENV.URL;
 const SCENARIO = __ENV.SCENARIO || 'mixed'; // 'mixed', 'sync', 'summary', 'pdf'
 const CLIENT_AGENCY_ID = __ENV.CLIENT_AGENCY_ID || 'sandbox';
-const LOAD_TEST_SCENARIO = __ENV.LOAD_TEST_SCENARIO || 'synced'; // 'synced', 'pending', 'failed'
 const failedSloCounter = new Counter("failed_slo");
 
 if(URL === undefined) {
     throw new Error("URL environment variable is required");
 }
 
+// Session manager - reuses sessions across iterations per VU
+const getOrCreateSession = (() => {
+    let pendingSession;  // For sync tests
+    let syncedSession;   // For everything else
+
+    return (scenario) => {
+        if (scenario === 'sync') {
+            if (!pendingSession) {
+                pendingSession = createSession('pending');
+            }
+            return pendingSession;
+        } else {
+            if (!syncedSession) {
+                syncedSession = createSession('synced');
+            }
+            return syncedSession;
+        }
+    };
+})();
+
 export default function () {
     const scenario = SCENARIO === 'mixed' ? selectScenario() : SCENARIO;
-    const session = createSession();
+    const session = getOrCreateSession(scenario);
 
     if (session) {
         executeTestScenario(scenario, session);
     }
 }
 
-function createSession() {
+function createSession(dataState) {
     const headers = {
         'Accept': 'text/html,application/xhtml+xml,application/xml',
     };
@@ -48,7 +67,7 @@ function createSession() {
     // Request a fresh session from the dev endpoint
     const sessionResponse = http.post(`${URL}/api/load_test/sessions`, JSON.stringify({
         client_agency_id: CLIENT_AGENCY_ID,
-        scenario: LOAD_TEST_SCENARIO
+        scenario: dataState
     }), {
         headers: {
             'Content-Type': 'application/json'
