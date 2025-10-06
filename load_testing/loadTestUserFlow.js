@@ -1,6 +1,6 @@
 import http from 'k6/http';
 import { sleep, check, group } from 'k6';
-import { Counter } from 'k6/metrics';
+import { SLA_IN_MILLISECONDS, URL, CLIENT_AGENCY_ID, failedSloCounter, checkSlo } from './common.js';
 
 export let options = {
     vus: 0, // start at 0 users, and ramp up linearly
@@ -20,15 +20,7 @@ export let options = {
     summaryTrendStats: ['avg', 'med', 'p(95)', 'p(99)', 'max'],
 };
 
-const SLA_IN_MILLISECONDS = 2000;
-const URL = __ENV.URL;
 const SCENARIO = __ENV.SCENARIO || 'mixed'; // 'mixed', 'sync', 'summary', 'pdf'
-const CLIENT_AGENCY_ID = __ENV.CLIENT_AGENCY_ID || 'sandbox';
-const failedSloCounter = new Counter("failed_slo");
-
-if(URL === undefined) {
-    throw new Error("URL environment variable is required");
-}
 
 // Session manager - reuses sessions across iterations per VU
 const getOrCreateSession = (() => {
@@ -132,7 +124,6 @@ function selectScenario() {
     if (rand < 0.70) return 'employer_search';
     if (rand < 0.85) return 'payment_details';
     if (rand < 0.95) return 'summary';
-    // TODO: should add another load test for generating invitations as a separate load test. Create 10k invitations
     return 'pdf';
 }
 
@@ -160,9 +151,7 @@ function testSynchronization(session) {
             'synchronization check succeeded': (r) => r.status === 200,
         });
 
-        if (response.timings.duration > SLA_IN_MILLISECONDS) {
-            failedSloCounter.add(1);
-        }
+        checkSlo(response);
     });
 
     // Realistic polling interval
@@ -182,9 +171,7 @@ function testPaymentDetails(session) {
             'payment details loaded': (r) => r.status === 200,
         });
 
-        if (response.timings.duration > SLA_IN_MILLISECONDS) {
-            failedSloCounter.add(1);
-        }
+        checkSlo(response);
     });
 
     // Time reviewing payment details
@@ -204,9 +191,7 @@ function testSummary(session) {
             'summary loaded': (r) => r.status === 200,
         });
 
-        if (response.timings.duration > SLA_IN_MILLISECONDS) {
-            failedSloCounter.add(1);
-        }
+        checkSlo(response);
     });
 
     // Time reviewing summary
@@ -232,9 +217,7 @@ function testPdfGeneration(session) {
             'pdf content type': (r) => r.headers['Content-Type'] && r.headers['Content-Type'].includes('pdf'),
         });
 
-        if (response.timings.duration > SLA_IN_MILLISECONDS) {
-            failedSloCounter.add(1);
-        }
+        checkSlo(response);
     });
 
     // PDFs are downloaded less frequently
@@ -254,9 +237,7 @@ function testEmployerSearch(session) {
             'is Status 200': (r) => r.status === 200,
         });
 
-        if (response.timings.duration > SLA_IN_MILLISECONDS) {
-            failedSloCounter.add(1);
-        }
+        checkSlo(response);
     });
 
     // Time searching for employer

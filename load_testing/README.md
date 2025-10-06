@@ -1,5 +1,20 @@
 # Load Testing
+
+## Overview
+
+### Test Files
+
+- **`loadTestUserFlow.js`** - Session-based user flow tests (sync polling, payment details, summary, PDF, employer search)
+- **`loadTestAPI.js`** - API key authenticated bulk invitation creation tests
+- **`loadTestAll.js`** - Orchestrator running both test suites in parallel
+- **`common.js`** - Shared utilities (constants, metrics, helper functions)
+
+### Architecture
+
+Each test file can run independently or be orchestrated together via `loadTestAll.js`. Sessions are automatically managed and reused within VUs for realistic user behavior.
+
 ## Running a Load Test
+
 Load tests must be performed from our loadtesting EC2 instance in order for accurate readings to be useful.
 
 Follow these steps to perform a load test:
@@ -7,91 +22,98 @@ Follow these steps to perform a load test:
 ### Preparation
 1. Ensure you're running k6 within EC2
 2. Ensure you've pre-scaled up the ECS service and database cluster to expected load levels. Standard levels are:
-    * ECS service (app-dev) = 10 containers (tasks)
-    * DB cluster (app-dev) = 10 ACUs
+    * ECS service (app-dev) = 5-10 containers (tasks)
+    * DB cluster (app-dev) = 5-10 ACUs
 3. Pause the "default" queue so we don't track a ton of useless Mixpanel events during the test.
     * https://demo.divt.app/jobs      (un/pw in 1Password)
 
-### Running the test
+### Running the tests
 
-There are three ways to generate test sessions:
+#### Option 1: User Flow Tests (`loadTestUserFlow.js`)
 
-#### Option 1: Dynamic Session Generation (Recommended - Dev Only)
-**Best for:** Quick iteration, testing different scenarios without pre-baking sessions
+Tests session-based user flows through the CBV application.
 
-Uses a dev-only API endpoint to generate sessions on-demand during the test:
+**Load pattern:**
+- 10 concurrent VUs (virtual users)
+- Ramp up: 60s, sustain: 30s, ramp down: 30s
+- Mixed scenario distribution: 50% sync polling, 20% employer search, 15% payment details, 10% summary, 5% PDF
+
+**Session generation:** Uses dynamic session generation via dev-only API endpoint (`/api/load_test/sessions`)
+
 ```bash
-# Run k6 with dynamic session generation
-k6 run loadtest.js \
-  --env USE_DYNAMIC_SESSIONS=true \
-  --env URL=http://localhost:3000 \
+# Run user flow tests with default mixed scenarios
+k6 run loadTestUserFlow.js \
+  --env URL=https://demo.divt.app \
+  --env CLIENT_AGENCY_ID=sandbox
+
+# Run specific scenario only
+k6 run loadTestUserFlow.js \
+  --env URL=https://demo.divt.app \
   --env CLIENT_AGENCY_ID=sandbox \
-  --env LOAD_TEST_SCENARIO=synced
+  --env SCENARIO=sync
 ```
 
-Available `LOAD_TEST_SCENARIO` values:
-- `synced` (default) - Fully synced payroll accounts with successful webhook events
-- `pending` - Accounts still synchronizing (in_progress status)
-- `failed` - Failed synchronization with error webhook events
-
-**Note:** This endpoint is only available in development/test environments and will return 403 in production.
-
-#### Option 2: Tokenized Invitations
-**Best for:** Testing the full invitation flow, more realistic user journey
-
-Generate invitations with tokens, k6 will exchange tokens for session cookies:
-```bash
-# Generate invitations with tokens
-bin/rails 'load_test:bake_invitations[100,sandbox]'
-
-# Copy the output and export tokens
-export TOKENS='token1,token2,token3,...'
-
-# Run k6 with tokens
-k6 run loadtest.js --env "TOKENS=$TOKENS" --env URL=https://demo.divt.app
-```
-
-#### Option 3: Pre-baked Cookies (Legacy)
-**Best for:** Production load testing, maximum performance
-
-Generate encrypted session cookies in advance:
-```bash
-# Generate 100 test sessions (creates CbvFlows with synced PayrollAccounts)
-bin/rails 'load_test:bake_cookies[100,sandbox]'
-
-# Copy and run the export command
-export COOKIES='cookie1,cookie2,cookie3,...'
-
-# Run k6 with cookies
-k6 run loadtest.js --env "COOKIES=$COOKIES" --env URL=https://demo.divt.app
-```
-
-**Note:** For local testing or to avoid hitting real Argyle API limits, set `SANDBOX_ARGYLE_ENVIRONMENT=mock` to use fixture data from `spec/support/fixtures/argyle/bob/`.
-
-#### Step 2: Run with specific scenarios
-```bash
-# Test specific scenarios (works with any of the 3 session generation methods)
-k6 run loadtest.js --env URL=https://demo.divt.app --env SCENARIO=sync
-k6 run loadtest.js --env URL=https://demo.divt.app --env SCENARIO=pdf
-k6 run loadtest.js --env URL=https://demo.divt.app --env SCENARIO=summary
-k6 run loadtest.js --env URL=https://demo.divt.app --env SCENARIO=employer_search
-```
-
-Available scenarios:
-- `mixed` (default) - Weighted distribution: 50% sync polling, 20% payment details, 15% summary, 10% search, 5% PDF
-- `sync` - Database-intensive synchronization polling
+**Available scenarios:**
+- `mixed` (default) - Weighted distribution across all scenarios
+- `sync` - Database-intensive synchronization polling (tests pending data)
 - `payment_details` - Per-account queries and aggregation
 - `summary` - Full summary with all accounts
 - `pdf` - CPU-intensive PDF generation
 - `employer_search` - Employer search page
 
-#### Step 3: Record the metrics
+**Note:** Sessions are automatically created with the appropriate data state:
+- `sync` scenario → creates sessions with `pending` data (to test polling behavior)
+- All other scenarios → creates sessions with `synced` data (to display results)
 
-The test will output performance metrics including:
-- Request duration (p95, p99, max)
-- Failed requests
-- SLO violations
-- Throughput per scenario
+#### Option 2: API Tests (`loadTestAPI.js`)
+
+Tests bulk invitation creation via API endpoint.
+
+**Load pattern:**
+- Constant arrival rate: 100 invitations/second
+- Duration: 2 minutes
+- Total invitations created: ~12,000
+- VUs: 10 pre-allocated, scales up to 50 if needed
+
+**Authentication:** Requires API key (Bearer token)
+
+```bash
+# Run API bulk creation test
+k6 run loadTestAPI.js \
+  --env URL=https://demo.divt.app \
+  --env API_KEY=your_api_token_here
+```
+
+**What it tests:**
+- POST `/api/v1/invitations` endpoint performance
+- Database write throughput
+- Invitation token generation
+- Response time under sustained load
+
+#### Option 3: Combined Tests (`loadTestAll.js`)
+
+Runs both user flow and API tests in parallel to simulate realistic mixed load.
+
+```bash
+# Run all tests simultaneously
+k6 run loadTestAll.js \
+  --env URL=https://demo.divt.app \
+  --env CLIENT_AGENCY_ID=sandbox \
+  --env API_KEY=your_api_token_here
+```
+
+**Combined load:**
+- User flows: 10 VUs doing mixed scenarios
+- API: 100 invitations/second bulk creation
+- Both run concurrently for realistic production simulation
+
+### Metrics
+
+All tests output performance metrics including:
+- Request duration (avg, median, p95, p99, max)
+- Check success rate
+- SLO violations (responses > 2000ms)
+- HTTP request duration thresholds (p95<500ms, p99<1000ms, max<2000ms)
 
 ### Cleanup
 1. Delete test sessions from database:
@@ -114,71 +136,115 @@ The test will output performance metrics including:
 
 
 ## Developing Locally with K6
+
 The instructions below are for local development/prototyping of the load testing script (not intended to produce calibrated metrics).
 
-### Installing k6 locally & starting container:
+### Installing k6 locally
 
-```
+```bash
 brew install k6
+```
 
+### Running tests locally
+
+**User flow tests:**
+```bash
+# Ensure your local server is running
+bin/rails server
+
+# Run user flow tests
+k6 run loadTestUserFlow.js \
+  --env URL=http://localhost:3000 \
+  --env CLIENT_AGENCY_ID=sandbox
+
+# Run specific scenario
+k6 run loadTestUserFlow.js \
+  --env URL=http://localhost:3000 \
+  --env CLIENT_AGENCY_ID=sandbox \
+  --env SCENARIO=sync
+```
+
+**API tests:**
+```bash
+# First, create an API access token in your local environment
+bin/rails console
+# > user = User.find_by(email: 'your@email.com')
+# > token = user.api_access_tokens.create!
+# > puts token.access_token
+
+# Run API tests with your token
+k6 run loadTestAPI.js \
+  --env URL=http://localhost:3000 \
+  --env API_KEY=your_token_here
+```
+
+**Combined tests:**
+```bash
+k6 run loadTestAll.js \
+  --env URL=http://localhost:3000 \
+  --env CLIENT_AGENCY_ID=sandbox \
+  --env API_KEY=your_token_here
+```
+
+### Monitoring with Grafana (Optional)
+
+For local metrics visualization:
+
+```bash
 docker-compose up
 ```
 
-### Instructions for running load tests locally:
+**Grafana setup:**
+1. Visit http://localhost:3001
+2. Login: admin / admin
+3. Add InfluxDB data source:
+   - URL: http://influxdb:8086
+   - Database: k6
+   - HTTP method: GET
+4. Import dashboard: https://grafana.com/grafana/dashboards/13719-k6-load-testing-results-by-groups/
 
-Grafana URL: http://localhost:3001
-Default username: admin
-Default password: admin
-
-In Grafana, add a data source: choose InfluxDB
-
-URL: http://influxdb:8086
-
-
-Database: k6
-
-HTTP method: GET
-
-Click save & test
-
-In Grafana, add a dashboard:
-
-use this dashboard as inspiration:
-https://grafana.com/grafana/dashboards/13719-k6-load-testing-results-by-groups/
-
-If you'd like to import this dashboard, select "import dashboard" and copy-paste the above URL.
-
-### Grabbing appropriate user tokens
-
-Set up a user in the environment you'd like to load test. While logged in as the user, in the browser console, grab the cookie `_iv_cbv_payroll_session`. Put the **NON** url decoded value, supply that into USER_TOKENS below.
-
-K6_OUT=influxdb k6 run loadtest.js --env USER_TOKENS=<COMMA_SEPERATED_TOKENS> --env URL=<example: https://demo.divt.app/cbv/employer_search>
-
-
-####
-
-instructions for running load tests on an ec2 instance
-Note that there might be an EC2 instance called loadtester that has the tools necessary installed onto it.
-
-copy the files into the ec2 instance using something like
-scp -i ~/.ssh/my-ec2-key.pem load_testing/* ec2-user@<internal-ec2-link>:/home/ec2-user/
-
-# for viewing the metrics
-
-```
-sudo yum install docker
-sudo service docker start
-sudo usermod -a -G docker ec2-user
-sudo curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-docker-compose up
+**Run tests with InfluxDB output:**
+```bash
+K6_OUT=influxdb k6 run loadTestUserFlow.js \
+  --env URL=http://localhost:3000 \
+  --env CLIENT_AGENCY_ID=sandbox
 ```
 
-# for running the load tests
 
+## Running on EC2 Instance
+
+For production-grade load testing, use the dedicated loadtester EC2 instance.
+
+### Setup
+
+**Checkout repo into EC2 container:**
+```bash
+git checkout https://github.com/Digital-Public-Works/iv-cbv-payroll.git
+cd load_testing
+```
+
+**Install k6 (one-time setup):**
+```bash
 sudo dnf install https://dl.k6.io/rpm/repo.rpm
 sudo dnf install k6
+```
 
-# running without dumping into influxdb
+### Running tests on EC2
 
-k6 run loadtest.js --env COOKIE=<YOUR_COOKIE> --env URL=https://demo.divt.app
+```bash
+# User flow tests
+k6 run loadTestUserFlow.js \
+  --env URL=https://demo.divt.app \
+  --env CLIENT_AGENCY_ID=sandbox
+
+# API tests
+k6 run loadTestAPI.js \
+  --env URL=https://demo.divt.app \
+  --env API_KEY=your_token_here
+
+# Combined tests
+k6 run loadTestAll.js \
+  --env URL=https://demo.divt.app \
+  --env CLIENT_AGENCY_ID=sandbox \
+  --env API_KEY=your_token_here
+```
