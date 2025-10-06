@@ -21,110 +21,80 @@ export let options = {
 };
 
 const SLA_IN_MILLISECONDS = 2000;
-const COOKIES = __ENV.COOKIES ? __ENV.COOKIES.split(',') : [];
-const TOKENS = __ENV.TOKENS ? __ENV.TOKENS.split(',') : [];
 const URL = __ENV.URL;
 const SCENARIO = __ENV.SCENARIO || 'mixed'; // 'mixed', 'sync', 'summary', 'pdf'
 const CLIENT_AGENCY_ID = __ENV.CLIENT_AGENCY_ID || 'sandbox';
 const LOAD_TEST_SCENARIO = __ENV.LOAD_TEST_SCENARIO || 'synced'; // 'synced', 'pending', 'failed'
-const USE_DYNAMIC_SESSIONS = __ENV.USE_DYNAMIC_SESSIONS === 'true';
 const failedSloCounter = new Counter("failed_slo");
-
-if(!USE_DYNAMIC_SESSIONS && COOKIES.length === 0 && TOKENS.length === 0) {
-    throw new Error("Either COOKIES, TOKENS, or USE_DYNAMIC_SESSIONS=true is required");
-}
 
 if(URL === undefined) {
     throw new Error("URL environment variable is required");
 }
 
-// Get a unique cookie or token for each virtual user
-function getCookie() {
-    return COOKIES[__VU % COOKIES.length];
-}
-
-function getToken() {
-    return TOKENS[__VU % TOKENS.length];
-}
-
-// Get a unique account ID for each virtual user (matches the test data pattern)
-function getAccountId() {
-    return '0199a235-3e16-a138-f7a8-f2069507768d';
-}
-
 export default function () {
-    let headers = {
+    const scenario = SCENARIO === 'mixed' ? selectScenario() : SCENARIO;
+    const session = createSession();
+
+    if (session) {
+        executeTestScenario(scenario, session);
+    }
+}
+
+function createSession() {
+    const headers = {
         'Accept': 'text/html,application/xhtml+xml,application/xml',
     };
-    let accountId = getAccountId(); // Default hardcoded account ID
-    let csrfToken = null;
 
-    // Three modes: dynamic sessions, tokens, or pre-baked cookies
-    if (USE_DYNAMIC_SESSIONS) {
-        // Request a fresh session from the dev endpoint
-        const sessionResponse = http.post(`${URL}/api/load_test/sessions`, JSON.stringify({
-            client_agency_id: CLIENT_AGENCY_ID,
-            scenario: LOAD_TEST_SCENARIO
-        }), {
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (sessionResponse.status === 201) {
-            // Extract session cookie from Set-Cookie header (Rails automatically encrypts it)
-            const sessionCookie = sessionResponse.cookies['_iv_cbv_payroll_session'];
-            if (sessionCookie && sessionCookie[0]) {
-                headers['Cookie'] = `_iv_cbv_payroll_session=${sessionCookie[0].value}`;
-
-                // Extract account_id and csrf_token from response body
-                const sessionData = JSON.parse(sessionResponse.body);
-                accountId = sessionData.account_id;
-                csrfToken = sessionData.csrf_token;
-            } else {
-                console.error('No session cookie in response');
-                return;
-            }
-        } else {
-            console.error('Failed to create session:', sessionResponse.status, sessionResponse.body);
-            return;
+    // Request a fresh session from the dev endpoint
+    const sessionResponse = http.post(`${URL}/api/load_test/sessions`, JSON.stringify({
+        client_agency_id: CLIENT_AGENCY_ID,
+        scenario: LOAD_TEST_SCENARIO
+    }), {
+        headers: {
+            'Content-Type': 'application/json'
         }
-    } else if (TOKENS.length > 0) {
-        // Use token to get session cookie
-        const token = getToken();
-        const entryResponse = http.get(`${URL}/cbv/flow_entry?token=${token}`, {
-            headers,
-            redirects: 0
-        });
+    });
 
-        const sessionCookie = entryResponse.cookies['_iv_cbv_payroll_session'];
+    if (sessionResponse.status === 201) {
+        // Extract session cookie from Set-Cookie header (Rails automatically encrypts it)
+        const sessionCookie = sessionResponse.cookies['_iv_cbv_payroll_session'];
         if (sessionCookie && sessionCookie[0]) {
             headers['Cookie'] = `_iv_cbv_payroll_session=${sessionCookie[0].value}`;
+
+            // Extract account_id and csrf_token from response body
+            const sessionData = JSON.parse(sessionResponse.body);
+
+            return {
+                headers: headers,
+                accountId: sessionData.account_id,
+                csrfToken: sessionData.csrf_token
+            };
+        } else {
+            console.error('No session cookie in response');
+            return null;
         }
     } else {
-        // Using pre-baked cookies
-        const cookie = getCookie();
-        headers['Cookie'] = `_iv_cbv_payroll_session=${cookie}`;
+        console.error('Failed to create session:', sessionResponse.status, sessionResponse.body);
+        return null;
     }
+}
 
-    // Weighted distribution based on where users spend time in the flow
-    const scenario = SCENARIO === 'mixed' ? selectScenario() : SCENARIO;
-
+function executeTestScenario(scenario, session) {
     switch(scenario) {
         case 'sync':
-            testSynchronization(headers, accountId, csrfToken);
+            testSynchronization(session);
             break;
         case 'payment_details':
-            testPaymentDetails(headers, accountId);
+            testPaymentDetails(session);
             break;
         case 'summary':
-            testSummary(headers);
+            testSummary(session);
             break;
         case 'pdf':
-            testPdfGeneration(headers);
+            testPdfGeneration(session);
             break;
         case 'employer_search':
-            testEmployerSearch(headers);
+            testEmployerSearch(session);
             break;
     }
 }
@@ -134,25 +104,23 @@ function selectScenario() {
 
     // Distribution based on typical user time per page:
     // - 50% Synchronization (longest wait, most DB polling)
-    // - 20% Payment details review
-    // - 15% Summary page
-    // - 10% Employer search
+    // - 20% Employer search
+    // - 15% Payment details review
+    // - 10% Summary page
     // - 5% PDF generation
 
     if (rand < 0.50) return 'sync';
-    if (rand < 0.70) return 'payment_details';
-    if (rand < 0.85) return 'summary';
-    if (rand < 0.95) return 'employer_search';
+    if (rand < 0.70) return 'employer_search';
+    if (rand < 0.85) return 'payment_details';
+    if (rand < 0.95) return 'summary';
     // TODO: should add another load test for generating invitations as a separate load test. Create 10k invitations
-    return 'pdf'; }
+    return 'pdf';
+}
 
-function testSynchronization(headers, accountId, csrfToken) {
+function testSynchronization(session) {
+    const { headers, accountId, csrfToken } = session;
+
     group("Synchronization polling (DB intensive)", () => {
-        console.log("sync test")
-        console.log("accountid:", accountId)
-        console.log("headers:", headers)
-        console.log("cookie:", headers["Cookie"])
-
         const requestHeaders = {
             ...headers,
             'Content-Type': 'application/json',
@@ -169,9 +137,6 @@ function testSynchronization(headers, accountId, csrfToken) {
             { headers: requestHeaders }
         );
 
-        console.log("response")
-        console.log(JSON.stringify(response, null, 2))
-
         check(response, {
             'synchronization check succeeded': (r) => r.status === 200,
         });
@@ -185,7 +150,9 @@ function testSynchronization(headers, accountId, csrfToken) {
     sleep(3);
 }
 
-function testPaymentDetails(headers, accountId) {
+function testPaymentDetails(session) {
+    const { headers, accountId } = session;
+
     group("Payment details (DB + aggregation)", () => {
         const response = http.get(
             `${URL}/cbv/payment_details?user%5Baccount_id%5D=${accountId}`,
@@ -205,7 +172,9 @@ function testPaymentDetails(headers, accountId) {
     sleep(15);
 }
 
-function testSummary(headers) {
+function testSummary(session) {
+    const { headers } = session;
+
     group("Summary page (aggregation)", () => {
         const response = http.get(
             `${URL}/cbv/summary`,
@@ -225,7 +194,9 @@ function testSummary(headers) {
     sleep(10);
 }
 
-function testPdfGeneration(headers) {
+function testPdfGeneration(session) {
+    const { headers } = session;
+
     group("PDF generation (CPU intensive)", () => {
         const response = http.get(
             `${URL}/cbv/submit.pdf`,
@@ -251,22 +222,18 @@ function testPdfGeneration(headers) {
     sleep(30);
 }
 
-function testEmployerSearch(headers) {
-    console.log("hi")
+function testEmployerSearch(session) {
+    const { headers } = session;
+
     group("Employer search page", () => {
-        console.log("request")
-        console.log(JSON.stringify(headers, null, 2))
         const response = http.get(
             `${URL}/cbv/employer_search`,
             { headers }
         );
-        console.log("response")
-        console.log(JSON.stringify(response, null, 2))
 
         check(response, {
             'is Status 200': (r) => r.status === 200,
         });
-        console.log("hi4")
 
         if (response.timings.duration > SLA_IN_MILLISECONDS) {
             failedSloCounter.add(1);
