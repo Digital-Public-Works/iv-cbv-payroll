@@ -1,8 +1,10 @@
 class Api::LoadTestSessionsController < ApplicationController
+  include NonProductionAccessible
+
   skip_forgery_protection
 
-  # Only allow in development/test environments
-  before_action :ensure_dev_environment
+  # Only allow in non-production environments (development/test/demo)
+  before_action :ensure_non_production_environment
 
   def create
     client_agency_id = params[:client_agency_id] || "sandbox"
@@ -41,9 +43,9 @@ class Api::LoadTestSessionsController < ApplicationController
 
   private
 
-  def ensure_dev_environment
-    unless Rails.env.development? || Rails.env.test?
-      render json: { error: "This endpoint is only available in development/test" }, status: :forbidden
+  def ensure_non_production_environment
+    unless non_production_mode?
+      render json: { error: "This endpoint is only available in non-production environments" }, status: :forbidden
     end
   end
 
