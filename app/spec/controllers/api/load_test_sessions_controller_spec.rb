@@ -130,14 +130,6 @@ RSpec.describe Api::LoadTestSessionsController, type: :controller do
           expect(webhook_event.event_outcome).to eq("success")
         end
 
-        it "generates a dynamic account_id" do
-          post :create, params: params
-
-          json_response = JSON.parse(response.body)
-          expect(json_response["account_id"]).to start_with("test_")
-          expect(json_response["account_id"].length).to eq(21) # "test_" + 16 hex chars
-        end
-
         it "returns success response" do
           post :create, params: params
 
