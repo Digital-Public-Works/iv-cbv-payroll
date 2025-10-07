@@ -43,6 +43,11 @@ class Api::LoadTestSessionsController < ApplicationController
 
   private
 
+  def argyle_account_id
+    # hard coded to bob's id to match the mock api service
+    "019571bc-2f60-3955-d972-dbadfe0913a8"
+  end
+
   def ensure_non_production_environment
     unless non_production_mode?
       render json: { error: "This endpoint is only available in non-production environments" }, status: :forbidden
@@ -58,12 +63,10 @@ class Api::LoadTestSessionsController < ApplicationController
     )
 
     # Create fully synced payroll account
-    account_id = "019571bc-2f60-3955-d972-dbadfe0913a8"
-    # account_id = "test_#{SecureRandom.hex(8)}"
     payroll_account = PayrollAccount::Argyle.create!(
       cbv_flow: cbv_flow,
-      aggregator_account_id: account_id,
-      pinwheel_account_id: account_id,
+      aggregator_account_id: argyle_account_id,
+      pinwheel_account_id: argyle_account_id,
       supported_jobs: %w[accounts income paystubs employment identity],
       synchronization_status: :succeeded
     )
@@ -82,7 +85,7 @@ class Api::LoadTestSessionsController < ApplicationController
       )
     end
 
-    [ cbv_flow, account_id ]
+    [ cbv_flow, argyle_account_id ]
   end
 
   def create_pending_flow(client_agency_id)
@@ -94,11 +97,10 @@ class Api::LoadTestSessionsController < ApplicationController
     )
 
     # Create pending payroll account
-    account_id = "test_#{SecureRandom.hex(8)}"
     payroll_account = PayrollAccount::Argyle.create!(
       cbv_flow: cbv_flow,
-      pinwheel_account_id: account_id,
-      aggregator_account_id: account_id,
+      pinwheel_account_id: argyle_account_id,
+      aggregator_account_id: argyle_account_id,
       supported_jobs: %w[accounts income paystubs employment identity],
       synchronization_status: :in_progress
     )
@@ -110,7 +112,7 @@ class Api::LoadTestSessionsController < ApplicationController
       event_outcome: "success"
     )
 
-    [ cbv_flow, account_id ]
+    [ cbv_flow, argyle_account_id ]
   end
 
   def create_failed_flow(client_agency_id)
@@ -122,11 +124,10 @@ class Api::LoadTestSessionsController < ApplicationController
     )
 
     # Create failed payroll account
-    account_id = "test_#{SecureRandom.hex(8)}"
     payroll_account = PayrollAccount::Argyle.create!(
       cbv_flow: cbv_flow,
-      pinwheel_account_id: account_id,
-      aggregator_account_id: account_id,
+      pinwheel_account_id: argyle_account_id,
+      aggregator_account_id: argyle_account_id,
       supported_jobs: %w[accounts income paystubs employment identity],
       synchronization_status: :failed
     )
@@ -143,6 +144,6 @@ class Api::LoadTestSessionsController < ApplicationController
       )
     end
 
-    [ cbv_flow, account_id ]
+    [ cbv_flow, argyle_account_id ]
   end
 end
