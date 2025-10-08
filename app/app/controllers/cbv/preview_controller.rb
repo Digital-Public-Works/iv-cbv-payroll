@@ -2,6 +2,8 @@ class Cbv::PreviewController < ApplicationController
   include NonProductionAccessible
   include Cbv::AggregatorDataHelper
 
+  layout "preview"
+
   skip_forgery_protection
   before_action :ensure_non_production_environment
   before_action :setup_preview_flow
@@ -86,8 +88,8 @@ class Cbv::PreviewController < ApplicationController
       }
     )
 
-    # Return as HTML instead of PDF
-    render html: html_content.html_safe
+    # Wrap in preview layout for consistency
+    render html: html_content.html_safe, layout: "preview"
   end
 
   private
@@ -127,8 +129,17 @@ class Cbv::PreviewController < ApplicationController
   end
 
   def argyle_account_id
-    # hard coded to bob's id to match the mock api service
-    "019571bc-2f60-3955-d972-dbadfe0913a8"
+    # Dynamically get account ID from the selected fixture user's data
+    fixture_user = params[:fixture_user] || "bob"
+    fixture_path = Rails.root.join("spec", "support", "fixtures", "argyle", fixture_user, "request_account.json")
+
+    if File.exist?(fixture_path)
+      account_data = JSON.parse(File.read(fixture_path))
+      account_data["id"]
+    else
+      # Fallback to Bob's ID if fixture doesn't exist
+      "019571bc-2f60-3955-d972-dbadfe0913a8"
+    end
   end
 
   def create_synced_flow(client_agency_id)
@@ -177,8 +188,9 @@ class Cbv::PreviewController < ApplicationController
   end
 
   def argyle
-    # Force mock environment for preview
-    Aggregators::Sdk::ArgyleService.new(:mock)
+    # Force mock environment for preview with selected fixture user
+    fixture_user = params[:fixture_user] || "bob"
+    Aggregators::Sdk::ArgyleService.new(:mock, fixture_user: fixture_user)
   end
 
   def pinwheel

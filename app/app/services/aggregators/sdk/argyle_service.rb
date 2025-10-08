@@ -44,11 +44,11 @@ module Aggregators::Sdk
     attr_reader :webhook_secret
 
     # Factory method to return MockArgyleService when environment is "mock"
-    def self.new(environment, api_key_id = nil, api_key_secret = nil, webhook_secret = nil)
+    def self.new(environment, api_key_id = nil, api_key_secret = nil, webhook_secret = nil, fixture_user: nil)
       if environment.to_s == "mock" || environment.to_sym == :mock
         require_relative "mock_argyle_service"
         MockArgyleService.allocate.tap do |instance|
-          instance.send(:initialize, environment, api_key_id, api_key_secret, webhook_secret)
+          instance.send(:initialize, environment, api_key_id, api_key_secret, webhook_secret, fixture_user: fixture_user)
         end
       else
         super
