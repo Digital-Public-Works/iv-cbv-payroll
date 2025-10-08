@@ -61,6 +61,32 @@ RSpec.describe Api::LoadTestSessionsController, type: :controller do
         expect(response).not_to have_http_status(:forbidden)
         expect(response).to have_http_status(:created)
       end
+
+      it "deny access to changed non-matching TLDs" do
+        allow(Rails.env).to receive(:production?).and_return(true)
+        allow(Rails.env).to receive(:test?).and_return(false)
+        allow(Rails.env).to receive(:development?).and_return(false)
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with("DOMAIN_NAME").and_return("demo.divt.app.fake.tld")
+
+        post :create
+
+        expect(response).to have_http_status(:forbidden)
+        expect(response).not_to have_http_status(:created)
+      end
+
+      it "deny access to fake url" do
+        allow(Rails.env).to receive(:production?).and_return(true)
+        allow(Rails.env).to receive(:test?).and_return(false)
+        allow(Rails.env).to receive(:development?).and_return(false)
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with("DOMAIN_NAME").and_return("pa.demo.not-divt.app")
+
+        post :create
+
+        expect(response).to have_http_status(:forbidden)
+        expect(response).not_to have_http_status(:created)
+      end
     end
 
     context "with valid parameters" do
