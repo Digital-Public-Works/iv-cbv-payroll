@@ -49,7 +49,7 @@ class Api::LoadTestSessionsController < ApplicationController
   end
 
   def ensure_non_production_environment
-    unless non_production_mode?
+    unless is_not_production?
       render json: { error: "This endpoint is only available in non-production environments" }, status: :forbidden
     end
   end
