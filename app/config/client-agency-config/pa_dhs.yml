@@ -1,7 +1,7 @@
 id: pa_dhs
 active: <%= ENV["AGENCY_PA_DHS_ACTIVE"] %>
 agency_name: Department of Human Services
-agency_contact_website: https://www.pa.gov/agencies/dhs/programs-services/apply-for-benefits
+agency_contact_website: https://www.compass.dhs.pa.gov/home/
 agency_domain: "pa"
 # No caseworker feedback form since they will only be interacting with the PDFs
 # caseworker_feedback_form: null
@@ -15,7 +15,8 @@ transmission_method_configuration:
   password: <%= ENV['PA_DHS_SFTP_PASSWORD'] %>
   url: <%= ENV['PA_DHS_SFTP_URL'] %>
   sftp_directory: <%= ENV['PA_DHS_SFTP_DIRECTORY'] %>
-  csv_summary_reports_enabled: false
+  # this controls if daily csv summaries are sent to configured SFTP
+  csv_summary_reports_enabled: true
 staff_portal_enabled: false
 pilot_ended: false
 generic_links_disabled: true
@@ -30,7 +31,7 @@ pay_income_days:
   gig: 90
 invitation_valid_days: 10
 allow_invitation_reuse: true
-logo_path: pa_logo.png
+logo_path: pa_compass_logo.svg
 weekly_report:
   recipient: <%= ENV['PA_DHS_WEEKLY_REPORT_RECIPIENTS'] %>
   report_variant: invitations
