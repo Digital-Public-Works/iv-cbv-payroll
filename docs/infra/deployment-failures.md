@@ -65,7 +65,7 @@ Check the application logs in CloudWatch to confirm migrations completed success
 
 **Resolution:**
 1. Check CloudWatch logs for specific missing variables
-2. Review [Application Configuration](../application/application-configuration.md) for complete variable list
+2. Review [Application Configuration](../app/runbooks/application-configuration.md) for complete variable list
 3. Add missing parameters to AWS Systems Manager Parameter Store
 4. Restart application service
 
@@ -148,6 +148,6 @@ Check the application logs in CloudWatch to confirm migrations completed success
 
 ## Related Documentation
 
-- [Application Configuration](../application/application-configuration.md) - Complete environment variable setup
+- [Application Configuration](../app/runbooks/application-configuration.md) - Complete environment variable setup
 - [Database Operations](../operations/database-operations.md) - Advanced database troubleshooting
 - [AWS Service Issues](./aws-service-issues.md) - AWS-specific service problems

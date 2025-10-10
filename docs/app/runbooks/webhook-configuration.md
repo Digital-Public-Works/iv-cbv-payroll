@@ -33,12 +33,12 @@ Each deployed environment requires webhook registration for:
 ### Demo Environment
 
 **URL Pattern:** `https://demo.divt.app`
-**Webhook Naming:** `demo-argyle-sandbox`, `demo-pinwheel`
+**Webhook Naming Prefix:** `demo-argyle-sandbox`, `demo-pinwheel`
 
 ### Production Environment
 
 **URL Pattern:** `https://verifymyincome.org`
-**Webhook Naming:** `production-argyle`, `production-pinwheel`
+**Webhook Naming Prefix:** `production-argyle`, `production-pinwheel`
 
 ## Argyle Webhook Configuration
 
@@ -213,7 +213,7 @@ After registration, validate webhooks are working:
 1. **Trigger a test sync** in the application by starting a CBV flow and connecting an employer via Argyle.
 2. **Monitor provider dashboards** for webhook delivery attempts
 3. **Check application logs and webhook_events db table** for webhook receipt and processing.
-4. **Verify synchronization completion** in the application
+4. **Verify synchronization completion** in the application.  This might take 30 seconds-2 minutes, even in demo with sandbox mode set.
 
 ## Related Documentation
 

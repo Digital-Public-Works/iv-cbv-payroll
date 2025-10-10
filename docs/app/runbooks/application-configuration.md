@@ -160,8 +160,25 @@ The CBV application serves multiple government agencies. Configure each tenant:
 | `AZ_DES_WEEKLY_REPORT_RECIPIENTS` | `/service/app-{env}/az-des-weekly-report-recipients` | String       | Comma-separated email list          |
 | `AGENCY_AZ_DES_ACTIVE`            | `/service/app-{env}/agency-az-des-active`            | String       | `true` to enable tenant             |
 
-### Louisiana LDH Tenant
+### PA DHS Tenant
 
+| Environment Variable              | Parameter Store Key                                  | Type         | Description                         |
+|-----------------------------------| ---------------------------------------------------- | ------------ | ----------------------------------- |
+| `PA_DHS_DOMAIN_NAME`              | `/service/app-{env}/pa-dhs-domain-name`              | String       | Agency-specific domain              |
+| `PA_DHS_SFTP_USER`                | `/service/app-{env}/pa-dhs-sftp-user`                | SecureString | SFTP username for file transmission |
+| `PA_DHS_SFTP_PASSWORD`            | `/service/app-{env}/pa-dhs-sftp-password`            | SecureString | SFTP password                       |
+| `PA_DHS_SFTP_URL`                 | `/service/app-{env}/pa-dhs-sftp-url`                 | String       | SFTP server URL                     |
+| `PA_DHS_SFTP_DIRECTORY`           | `/service/app-{env}/pa-dhs-sftp-directory`           | String       | Target directory path               |
+| `PA_DHS_ARGYLE_ENVIRONMENT`       | `/service/app-{env}/pa-dhs-argyle-environment`       | String       | `sandbox` or `production`           |
+| `PA_DHS_PINWHEEL_ENVIRONMENT`     | `/service/app-{env}/pa-dhs-pinwheel-environment`     | String       | `sandbox` or `production`           |
+| `PA_DHS_WEEKLY_REPORT_RECIPIENTS` | `/service/app-{env}/pa-dhs-weekly-report-recipients` | String       | Comma-separated email list          |
+| `AGENCY_PA_DHS_ACTIVE`             | `/service/app-{env}/agency-pa-dhs-active`            | String       | `true` to enable tenant             |
+
+
+### Louisiana LDH Tenant (Deprecated)
+
+Louisiana LDH is not currently used by this repo, but these environment variables are still necessary to define to properly launch the ECS task.
+Use placeholder values to create the Parameter Store keys.
 
 | Environment Variable              | Parameter Store Key                                  | Type   | Description                |
 | --------------------------------- | ---------------------------------------------------- | ------ | -------------------------- |
@@ -172,10 +189,10 @@ The CBV application serves multiple government agencies. Configure each tenant:
 | `LA_LDH_PINWHEEL_ENVIRONMENT`     | `/service/app-{env}/la-ldh-pinwheel-environment`     | String | `sandbox` or `production`  |
 | `LA_LDH_WEEKLY_REPORT_RECIPIENTS` | `/service/app-{env}/la-ldh-weekly-report-recipients` | String | Comma-separated email list |
 
-### Azure AD Integration (Optional)
+### Azure AD Integration (Deprecated)
 
-For agencies using Azure Active Directory SSO:
-
+Azure AD SSO integration is not currently used by this repo, but these environment variables are still necessary to define to properly launch the ECS task.
+Use placeholder values to create the Parameter Store keys.
 
 | Environment Variable          | Parameter Store Key                              | Type         |
 | ----------------------------- | ------------------------------------------------ | ------------ |
@@ -187,7 +204,7 @@ For agencies using Azure Active Directory SSO:
 
 ### 1. Create Parameter Store Entries
 
-Use AWS CLI or Console to create each parameter:
+Create via AWS CLI or AWS Console to create each parameter:
 
 ```bash
 # Example: Setting Rails secret key
@@ -250,4 +267,4 @@ After completing application configuration:
 
 1. [Configure webhooks for payroll providers](webhook-configuration.md)
 2. [Set up email service for production](../email-configuration.md)
-3. [Complete post-deployment checklist](../reference/post-deployment-checklist.md)
+3. [Complete post-deployment checklist](../../infra/post-deployment-checklist.md)

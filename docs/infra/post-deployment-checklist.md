@@ -35,7 +35,7 @@ Use this checklist after deploying infrastructure and application to ensure all 
 
 ### Database Setup
 - [ ] **Database migrations completed** successfully
-- [ ] **Database extensions enabled** (pgcrypto, etc.) - see [Deployment Failures](../troubleshooting/deployment-failures.md) if issues
+- [ ] **Database extensions enabled** (pgcrypto, etc.) - see [Deployment Failures](deployment-failures.md) if issues
 - [ ] **Database users configured** (app, migrator) with proper permissions
 - [ ] **Database connectivity verified** from application
 
@@ -101,10 +101,17 @@ Use this checklist after deploying infrastructure and application to ensure all 
 - [ ] **Arizona DES agency configured** (if applicable):
   - Domain, SFTP, environment settings
   - `AGENCY_AZ_DES_ACTIVE=true` if enabled
+  - Verify partner configuration at [az_des.yml](../../app/config/client-agency-config/az_des.yml)
+
+- [ ] **Pennsylvania DHS agency configured** (if applicable):
+    - Domain, SFTP, environment settings
+    - `AGENCY_PA_DHS_ACTIVE=true` if enabled
+    - Verify partner configuration at [pa_dhs.yml](../../app/config/client-agency-config/pa_dhs.yml)
 
 - [ ] **Louisiana LDH agency configured** (if applicable):
   - Domain, email, pilot status
   - Environment settings
+  - Verify partner configuration at [la_ldh.yml](../../app/config/client-agency-config/la_ldh.yml)
 
 ### SFTP Configuration (Arizona DES)
 - [ ] **SFTP credentials configured** in Parameter Store
@@ -236,7 +243,7 @@ If critical issues discovered post-deployment:
 
 ## Related Documentation
 
-- [Application Configuration](../application/application-configuration.md) - Complete environment variable setup
-- [Webhook Configuration](../application/webhook-configuration.md) - Required webhook setup
-- [Deployment Failures](../troubleshooting/deployment-failures.md) - Common deployment issues
+- [Application Configuration](../app/runbooks/application-configuration.md) - Complete environment variable setup
+- [Webhook Configuration](../app/runbooks/webhook-configuration.md) - Required webhook setup
+- [Deployment Failures](deployment-failures.md) - Common deployment issues
 - [Database Operations](../operations/database-operations.md) - Database management procedures
