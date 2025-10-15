@@ -186,6 +186,15 @@ k6 run loadTestAll.js \
   --env API_KEY=your_token_here
 ```
 
+### Monitoring with K6 Web Dashboard (Optional)
+
+To enable K6 web dashboard, set `K6_WEB_DASHBOARD=true` as environment variable the following
+```
+K6_WEB_DASHBOARD=true k6 run loadTestUserFlow.js \
+  --env URL=http://localhost:3000 \
+  --env CLIENT_AGENCY_ID=sandbox
+```
+
 ### Monitoring with Grafana (Optional)
 
 For local metrics visualization:

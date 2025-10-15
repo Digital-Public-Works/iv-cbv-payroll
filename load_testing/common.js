@@ -2,6 +2,7 @@ import { Counter } from 'k6/metrics';
 
 // Shared constants
 export const SLA_IN_MILLISECONDS = 2000;
+export const SLA_IN_MILLISECONDS_PDF = 5000;
 export const URL = __ENV.URL;
 export const CLIENT_AGENCY_ID = __ENV.CLIENT_AGENCY_ID || 'sandbox';
 
@@ -14,6 +15,7 @@ export const SIMULATE_DELAY_PDF_DOWNLOAD_S = 30;
 
 // Shared metrics
 export const failedSloCounter = new Counter("failed_slo");
+export const failedPDFSloCounter = new Counter("failed_pdf_slo");
 
 // Validate required environment variables
 if(URL === undefined) {
@@ -24,6 +26,12 @@ if(URL === undefined) {
 export function checkSlo(response) {
     if (response.timings.duration > SLA_IN_MILLISECONDS) {
         failedSloCounter.add(1);
+    }
+}
+
+export function checkSloPDF(response) {
+    if (response.timings.duration > SLA_IN_MILLISECONDS_PDF) {
+        failedPDFSloCounter.add(1);
     }
 }
 

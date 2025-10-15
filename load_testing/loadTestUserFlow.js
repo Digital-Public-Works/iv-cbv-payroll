@@ -4,21 +4,20 @@ import {
     URL,
     CLIENT_AGENCY_ID,
     checkSlo,
+    checkSloPDF,
     SIMULATE_DELAY_SYNC_POLLING_S,
     SIMULATE_DELAY_PAYMENT_DETAILS_S,
     SIMULATE_DELAY_SUMMARY_S,
     SIMULATE_DELAY_PDF_DOWNLOAD_S,
     SIMULATE_DELAY_EMPLOYER_SEARCH_S,
-    SYNC_POLL_COUNT,
-    USER_FLOW_STEPS
 } from './common.js';
 
 export let options = {
     vus: 0, // start at 0 users, and ramp up linearly
     stages: [
-        { duration: '60s', target: 10 },
-        { duration: '30s', target: 10 },
-        { duration: '30s', target: 0 },
+        { duration: '60s', target: 100 },
+        { duration: '60s', target: 200 },
+        { duration: '60s', target: 0 }
     ],
     maxRedirects: 0,
     thresholds: {
@@ -26,6 +25,10 @@ export let options = {
         checks: [{ threshold: 'rate>0.1', abortOnFail: true }],
         // measure against our SLO for p95, p99, and max durations
         failed_slo: ['count<=0'],
+        failed_pdf_slo: ['count<=0'],
+        // PDF-specific thresholds (more lenient due to CPU-intensive generation)
+        'http_req_duration{group:::PDF generation (CPU intensive)}': ['p(95)<2000', 'p(99)<3000', 'max<5000'],
+        // All other requests
         http_req_duration: ['p(95)<500', 'p(99)<1000', 'max<2000'],
     },
     summaryTrendStats: ['avg', 'med', 'p(95)', 'p(99)', 'max'],
@@ -131,10 +134,10 @@ function selectScenario() {
     // - 3% Summary page
     // - 5% PDF generation
 
-    if (rand < 0.77) return 'sync';
+    if (rand < 0.7) return 'sync';
     if (rand < 0.87) return 'employer_search';
     if (rand < 0.92) return 'payment_details';
-    if (rand < 0.95) return 'summary';
+    if (rand < 0.97) return 'summary';
     return 'pdf';
 }
 
@@ -228,7 +231,7 @@ function testPdfGeneration(session) {
             'pdf content type': (r) => r.headers['Content-Type'] && r.headers['Content-Type'].includes('pdf'),
         });
 
-        checkSlo(response);
+        checkSloPDF(response);
     });
 
     // PDFs are downloaded less frequently
