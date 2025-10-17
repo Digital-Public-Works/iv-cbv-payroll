@@ -76,10 +76,6 @@ class ApplicationController < ActionController::Base
     Rack::MiniProfiler.authorize_request
   end
 
-  def demo_mode?
-    ENV["DOMAIN_NAME"] == "demo.divt.app"
-  end
-
   def detect_client_agency_from_domain
     return nil unless request.host.present?
 
