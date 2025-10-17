@@ -33,7 +33,7 @@ class Cbv::SubmitsController < Cbv::BaseController
         render pdf: "#{@cbv_flow.id}",
           layout: "pdf",
           locals: {
-            is_caseworker: non_production_mode? && params[:is_caseworker],
+            is_caseworker: is_not_production? && params[:is_caseworker],
             aggregator_report: @aggregator_report
           },
           footer: { right: t(".pdf.footer.page_footer"), font_size: 10 },

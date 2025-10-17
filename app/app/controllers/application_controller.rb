@@ -71,9 +71,13 @@ class ApplicationController < ActionController::Base
   end
 
   def enable_mini_profiler_in_demo
-    return unless non_production_mode?
+    return unless is_not_production?
 
     Rack::MiniProfiler.authorize_request
+  end
+
+  def demo_mode?
+    ENV["DOMAIN_NAME"] == "demo.divt.app"
   end
 
   def detect_client_agency_from_domain
