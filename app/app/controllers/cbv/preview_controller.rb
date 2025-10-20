@@ -4,7 +4,6 @@ class Cbv::PreviewController < ApplicationController
 
   layout "preview"
 
-  skip_forgery_protection
   before_action :ensure_non_production_environment
   before_action :setup_preview_flow
   before_action :set_aggregator_report, only: %i[payment_details summary submit submit_pdf_as_html]
