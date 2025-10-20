@@ -55,7 +55,9 @@ module Aggregators::Sdk
       end
     end
 
-    def initialize(environment, api_key_id = nil, api_key_secret = nil, webhook_secret = nil)
+    def initialize(environment, api_key_id = nil, api_key_secret = nil, webhook_secret = nil, fixture_user: nil)
+      # Note: fixture_user is accepted but unused here. It's used by MockArgyleService
+      # and needs to be in this signature so the factory method's `super` call works.
       @environment = ENVIRONMENTS.fetch(environment.to_sym) { |env| raise KeyError.new("ArgyleService unknown environment: #{env}") }
       @api_key_id = api_key_id || @environment[:api_key_id]
       @api_key_secret = api_key_secret || @environment[:api_key_secret]
