@@ -307,3 +307,12 @@ input#invitation_link{
   padding-left: 0;
   vertical-align: top;
 }
+
+/*
+ * Employer search result cards
+ */
+@include at-media-max($theme-header-min-width) {
+  .cbv-employer-card__img img {
+    max-height: 100px;
+  }
+}
