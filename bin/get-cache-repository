@@ -1,0 +1,18 @@
+#!/bin/bash
+# Gets the ECR cache repository URL for the given app
+# Prints the cache repository URL (e.g., 123456789.dkr.ecr.us-east-1.amazonaws.com/app-cache)
+
+set -euo pipefail
+
+app_name="$1"
+
+# Initialize terraform to pull remote state
+terraform -chdir="infra/${app_name}/app-config" init > /dev/null
+
+# Read the image repository URL from state
+image_repository_url=$(terraform -chdir="infra/${app_name}/app-config" output -json build_repository_config | jq -r ".url")
+
+# Append -cache suffix to create cache repository URL
+cache_repository_url="${image_repository_url}-cache"
+
+echo "${cache_repository_url}"
