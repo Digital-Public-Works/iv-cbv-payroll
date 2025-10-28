@@ -94,7 +94,7 @@ class ClientAgencyConfig
       @weekly_report = yaml["weekly_report"]
       @applicant_attributes = yaml["applicant_attributes"] || {}
       @allow_invitation_reuse = yaml["allow_invitation_reuse"] || false
-      @report_customization_show_earnings_list = yaml["report_customization_show_earnings_list"] || false
+      @report_customization_show_earnings_list = !!yaml["report_customization_show_earnings_list"]
       @generic_links_disabled = yaml["generic_links_disabled"]
 
       raise ArgumentError.new("Client Agency missing id") if @id.blank?
