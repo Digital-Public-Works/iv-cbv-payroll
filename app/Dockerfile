@@ -21,9 +21,11 @@ ARG RUBY_VERSION=3.4.5
 ##########################################################################################
 FROM registry.docker.com/library/ruby:$RUBY_VERSION AS base
 
-# Upgrade packages in base image to address security issues.
-# We should be able to remove these after upgrading the base image to a version
-# that has the upgraded versions by default.
+# Install RUNTIME-ONLY system dependencies and security patches.
+# This layer changes rarely, providing excellent cache reuse in CI.
+#
+# IMPORTANT: Only runtime libraries here (no -dev packages).
+# Build dependencies go in the BUILD stage.
 # hadolint ignore=DL3008
 RUN set -eux; \
     apt-get update -qq; \
@@ -31,12 +33,32 @@ RUN set -eux; \
       libtasn1-6 \
       libgnutls30 \
       imagemagick \
-      libc-dev-bin \
       liblzma5 \
+      libxml2 \
+      libxslt1.1 \
+      libicu76 \
+      libexpat1 \
+      libsqlite3-0 \
+      libpq5 \
+      libgpgme11t64 \
+      libvips42 \
+      openssl \
+      postgresql-client-17 \
+    ; \
+    apt-get purge -y --auto-remove \
       linux-libc-dev \
-      libxml2 libxml2-dev \
-      libxslt1-dev \
-      icu-devtools libicu-dev \
+      libc-dev-bin \
+      libmagickcore-dev \
+      libmagickwand-dev \
+      libpq-dev \
+      libevent-dev \
+      libmariadb-dev \
+      libopenexr-dev \
+      libwmf-dev \
+      libdb5.3-dev \
+      dpkg-dev \
+      x11proto-dev \
+      xtrans-dev \
     ; \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
@@ -58,23 +80,28 @@ EXPOSE 3000
 ##########################################################################################
 FROM base AS build
 
-# Install packages needed to build gems
+# Install BUILD-TIME dependencies needed to compile gems and assets.
+# This includes -dev packages with headers/build tools.
+# This layer also changes rarely, providing good cache reuse.
+# hadolint ignore=DL3008
 RUN set -eux; \
     apt-get update -qq && \
     apt-get install -y --no-install-recommends \
-      libexpat1 \
-      libsqlite3-0 \
+      build-essential \
+      git \
+      npm \
+      pkg-config \
+      libc-dev-bin \
+      linux-libc-dev \
+      libxml2-dev \
+      libxslt1-dev \
+      libicu-dev \
+      icu-devtools \
+      libpq-dev \
       libperl5.40 \
       perl \
       perl-base \
       perl-modules-5.40 \
-    ; \
-    apt-get install -y --no-install-recommends \
-      build-essential \
-      git \
-      libpq-dev \
-      npm \
-      pkg-config \
     ; \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
@@ -153,30 +180,20 @@ ENV TMPDIR="/rails/tmp"
 ENV GNUPGHOME="/rails/tmp"
 ENV PIDFILE="/rails/tmp/pids/server.pid"
 
-# Install packages needed for deployment
-#
-# To debug a missing package version (i.e. if one of these versions gets
-# superceded in the upstream package repo), run:
-#
-#   docker run -ti registry.docker.com/library/ruby:3.3.5 bash
-#   apt-get install [package]
-#
-# and notice the version that was installed.
+# Install AWS CLI for deployment tasks.
+# NOTE: Consider moving this to your CI runner/ECS task definition instead
+# to keep the container image smaller and reduce attack surface.
 # hadolint ignore=DL3008
 RUN set -eux; \
     apt-get update -qq; \
     apt-get install -y --no-install-recommends \
-      libgpgme11t64 \
-      libvips42 \
-      openssl \
-      postgresql-client-17 \
       python-is-python3 \
       python3-venv \
       python3-pip \
     ; \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*; \
     python3 -m venv /opt/aws-cli-venv && \
-    /opt/aws-cli-venv/bin/pip install --no-cache-dir --upgrade pip && \
+    /opt/aws-sncli-venv/bin/pip install --no-cache-dir --upgrade pip && \
     /opt/aws-cli-venv/bin/pip install --no-cache-dir "setuptools>=78.1.1" && \
     /opt/aws-cli-venv/bin/pip install --no-cache-dir awscli && \
     ln -s /opt/aws-cli-venv/bin/aws /usr/local/bin/aws
@@ -194,9 +211,8 @@ COPY bin/db-migrate /usr/bin/
 COPY --from=release-build /usr/local/bundle /usr/local/bundle
 COPY --from=release-build /rails /rails
 
-# Clean up any unused gems and ensure we have the correct versions
-RUN bundle clean --force && \
-    bundle install --no-cache
+# Clean up any unused gems (no need to reinstall, artifacts already copied)
+RUN bundle clean --force
 
 # Ensure all necessary directories exist
 RUN mkdir -p /rails/tmp/pids /rails/log /rails/db
