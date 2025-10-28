@@ -95,6 +95,26 @@ jobs:
             CACHE_FROM="type=registry,ref=${{ steps.get-cache-repo.outputs.cache_repo }}:buildcache" \
             CACHE_TO="type=registry,ref=${{ steps.get-cache-repo.outputs.cache_repo }}:buildcache,mode=max"
 
+      - name: Smoke test release image
+        if: steps.check-image-published.outputs.is_image_published == 'false'
+        run: |
+          IMAGE_NAME=$(make APP_NAME=${{ inputs.app_name }} release-image-name)
+          IMAGE_TAG=$(make APP_NAME=${{ inputs.app_name }} release-image-tag)
+          echo "Testing image: ${IMAGE_NAME}:${IMAGE_TAG}"
+
+          # Verify Rails can start
+          docker run --rm "${IMAGE_NAME}:${IMAGE_TAG}" bundle exec rails runner "puts 'Rails environment: ' + Rails.env"
+
+          # Verify critical binaries exist
+          docker run --rm "${IMAGE_NAME}:${IMAGE_TAG}" bundle exec wkhtmltopdf --version
+
+          # Verify AWS CLI is NOT present (we removed it)
+          if docker run --rm "${IMAGE_NAME}:${IMAGE_TAG}" which aws 2>/dev/null; then
+            echo "ERROR: AWS CLI should not be in release image"
+            exit 1
+          fi
+          echo "✓ Smoke tests passed"
+
       # verify the settings
       - name: Debug before publish
         run: |
