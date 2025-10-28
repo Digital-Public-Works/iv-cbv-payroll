@@ -180,24 +180,6 @@ ENV TMPDIR="/rails/tmp"
 ENV GNUPGHOME="/rails/tmp"
 ENV PIDFILE="/rails/tmp/pids/server.pid"
 
-# Install AWS CLI for deployment tasks.
-# NOTE: Consider moving this to your CI runner/ECS task definition instead
-# to keep the container image smaller and reduce attack surface.
-# hadolint ignore=DL3008
-RUN set -eux; \
-    apt-get update -qq; \
-    apt-get install -y --no-install-recommends \
-      python-is-python3 \
-      python3-venv \
-      python3-pip \
-    ; \
-    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*; \
-    python3 -m venv /opt/aws-cli-venv && \
-    /opt/aws-sncli-venv/bin/pip install --no-cache-dir --upgrade pip && \
-    /opt/aws-cli-venv/bin/pip install --no-cache-dir "setuptools>=78.1.1" && \
-    /opt/aws-cli-venv/bin/pip install --no-cache-dir awscli && \
-    ln -s /opt/aws-cli-venv/bin/aws /usr/local/bin/aws
-
 # Remove unneeded stdlib gems if present. Uninstall executibles, all versions, ignore if not installed
 RUN gem uninstall -x -aIx debug || true && \
     gem uninstall -x -aIx rss || true && \
