@@ -82,6 +82,7 @@ Rails.application.routes.draw do
       # Session management
       post "session/refresh", to: "sessions#refresh", as: :session_refresh
       get "session/end", to: "sessions#end", as: :session_end
+      get "session/timeout", to: "sessions#timeout", as: :session_timeout
 
       # Preview routes (non-production only)
       scope "/preview", as: :preview do
