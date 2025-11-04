@@ -30,6 +30,7 @@ invitation_valid_days: 14
 # Set to false if an invitation can only be used once. A 'use' is counted as a completed invitation
 allow_invitation_reuse: true
 weekly_report:
+  enabled: false
   recipient: andre@digitalpublicworks.org,jeff@digitalpublicworks.org
 report_customization_show_earnings_list: false
 applicant_attributes:
