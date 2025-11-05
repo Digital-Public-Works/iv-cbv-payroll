@@ -29,6 +29,9 @@ runs:
         app_name: ${{ inputs.app_name }}
         environment: shared
 
+    - name: Login to Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v2
+
     - name: Get cache repository URL
       id: get-cache-repo
       shell: bash
