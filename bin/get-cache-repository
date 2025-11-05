@@ -11,6 +11,6 @@ terraform -chdir="infra/${app_name}/app-config" init > /dev/null
 
 # Read the image repository URL from state
 # Using the main repository for cache with a different tag
-image_repository_url=$(terraform -chdir="infra/${app_name}/app-config" output -json build_repository_config | jq -r ".url")
+image_repository_url=$(terraform -chdir="infra/${app_name}/app-config" output -json build_repository_config | jq -r ".repository_url")
 
 echo "${image_repository_url}"
