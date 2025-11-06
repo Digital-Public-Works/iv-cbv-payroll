@@ -1,71 +1,47 @@
 name: Build release image with cache
-description: Builds the Docker release image using Buildx registry cache for optimal performance
+description: Builds the Docker release image using GitHub Actions cache for optimal performance
 inputs:
   app_name:
     description: Name of application folder under infra directory
     required: true
-  export_cache:
-    description: Whether to export cache back to registry (default false for read-only)
-    required: false
-    default: 'false'
 outputs:
   image_name:
     description: The full image name
-    value: ${{ steps.build.outputs.image_name }}
+    value: ${{ steps.get-image-info.outputs.image_name }}
   image_tag:
     description: The image tag
-    value: ${{ steps.build.outputs.image_tag }}
+    value: ${{ steps.get-image-info.outputs.image_tag }}
   full_image:
     description: The full image reference (name:tag)
-    value: ${{ steps.build.outputs.full_image }}
+    value: ${{ steps.get-image-info.outputs.full_image }}
 runs:
   using: composite
   steps:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Set up Terraform
-      uses: ./.github/actions/setup-terraform
-
-    - name: Configure AWS credentials
-      uses: ./.github/actions/configure-aws-credentials
-      with:
-        app_name: ${{ inputs.app_name }}
-        environment: shared
-
-    - name: Login to Amazon ECR
-      uses: aws-actions/amazon-ecr-login@v2
-
-    - name: Get cache repository URL
-      id: get-cache-repo
-      shell: bash
-      run: |
-        cache_repo=$(./bin/get-cache-repository "${{ inputs.app_name }}")
-        echo "cache_repo=$cache_repo" >> "$GITHUB_OUTPUT"
-        echo "Cache repository: $cache_repo"
-
-    - name: Build release image with cache
-      id: build
+    - name: Get image info
+      id: get-image-info
       shell: bash
       run: |
         IMAGE_NAME=$(make APP_NAME=${{ inputs.app_name }} release-image-name)
         IMAGE_TAG=$(make release-image-tag)
-
-        # Build with cache import, conditionally export based on input
-        if [ "${{ inputs.export_cache }}" = "true" ]; then
-          echo "Building with cache import AND export (read-write mode)"
-          make APP_NAME=${{ inputs.app_name }} release-build \
-            OPTS="--load --tag ${IMAGE_NAME}:latest --tag ${IMAGE_NAME}:${IMAGE_TAG}" \
-            CACHE_FROM="type=registry,ref=${{ steps.get-cache-repo.outputs.cache_repo }}:buildcache" \
-            CACHE_TO="type=registry,ref=${{ steps.get-cache-repo.outputs.cache_repo }}:buildcache,mode=max"
-        else
-          echo "Building with cache import only (read-only mode)"
-          make APP_NAME=${{ inputs.app_name }} release-build \
-            OPTS="--load --tag ${IMAGE_NAME}:latest --tag ${IMAGE_NAME}:${IMAGE_TAG}" \
-            CACHE_FROM="type=registry,ref=${{ steps.get-cache-repo.outputs.cache_repo }}:buildcache"
-        fi
-
         echo "image_name=$IMAGE_NAME" >> "$GITHUB_OUTPUT"
         echo "image_tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
         echo "full_image=$IMAGE_NAME:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
-        echo "Built image: $IMAGE_NAME:$IMAGE_TAG"
+        echo "Building image: $IMAGE_NAME:$IMAGE_TAG"
+
+    - name: Build release image with cache
+      uses: docker/build-push-action@v5
+      with:
+        context: ./${{ inputs.app_name }}
+        push: false
+        load: true
+        tags: |
+          ${{ steps.get-image-info.outputs.image_name }}:latest
+          ${{ steps.get-image-info.outputs.image_name }}:${{ steps.get-image-info.outputs.image_tag }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          RUN_USER=${{ env.USER }}
+          RUN_UID=1001
