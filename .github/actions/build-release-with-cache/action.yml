@@ -4,6 +4,10 @@ inputs:
   app_name:
     description: Name of application folder under infra directory
     required: true
+  export_cache:
+    description: Whether to export cache back to registry (default false for read-only)
+    required: false
+    default: 'false'
 outputs:
   image_name:
     description: The full image name
@@ -44,11 +48,23 @@ runs:
       id: build
       shell: bash
       run: |
-        make APP_NAME=${{ inputs.app_name }} release-build \
-          CACHE_FROM="type=registry,ref=${{ steps.get-cache-repo.outputs.cache_repo }}:buildcache" \
-          CACHE_TO="type=registry,ref=${{ steps.get-cache-repo.outputs.cache_repo }}:buildcache,mode=max"
         IMAGE_NAME=$(make APP_NAME=${{ inputs.app_name }} release-image-name)
         IMAGE_TAG=$(make release-image-tag)
+
+        # Build with cache import, conditionally export based on input
+        if [ "${{ inputs.export_cache }}" = "true" ]; then
+          echo "Building with cache import AND export (read-write mode)"
+          make APP_NAME=${{ inputs.app_name }} release-build \
+            OPTS="--load --tag ${IMAGE_NAME}:latest --tag ${IMAGE_NAME}:${IMAGE_TAG}" \
+            CACHE_FROM="type=registry,ref=${{ steps.get-cache-repo.outputs.cache_repo }}:buildcache" \
+            CACHE_TO="type=registry,ref=${{ steps.get-cache-repo.outputs.cache_repo }}:buildcache,mode=max"
+        else
+          echo "Building with cache import only (read-only mode)"
+          make APP_NAME=${{ inputs.app_name }} release-build \
+            OPTS="--load --tag ${IMAGE_NAME}:latest --tag ${IMAGE_NAME}:${IMAGE_TAG}" \
+            CACHE_FROM="type=registry,ref=${{ steps.get-cache-repo.outputs.cache_repo }}:buildcache"
+        fi
+
         echo "image_name=$IMAGE_NAME" >> "$GITHUB_OUTPUT"
         echo "image_tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
         echo "full_image=$IMAGE_NAME:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
