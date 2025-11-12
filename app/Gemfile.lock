@@ -375,10 +375,10 @@ GEM
       nio4r (~> 2.0)
     raabro (1.4.0)
     racc (1.8.1)
-    rack (3.1.16)
+    rack (3.1.19)
     rack-mini-profiler (3.3.1)
       rack (>= 1.2.0)
-    rack-protection (4.1.1)
+    rack-protection (4.2.1)
       base64 (>= 0.1.0)
       logger (>= 1.6.0)
       rack (>= 3.0.0, < 4)
@@ -508,11 +508,11 @@ GEM
       aws-sdk-core (>= 2)
       concurrent-ruby
       thor
-    sinatra (4.1.1)
+    sinatra (4.2.1)
       logger (>= 1.6.0)
       mustermann (~> 3.0)
       rack (>= 3.0.0, < 4)
-      rack-protection (= 4.1.1)
+      rack-protection (= 4.2.1)
       rack-session (>= 2.0.0, < 3)
       tilt (~> 2.0)
     smart_properties (1.17.0)
@@ -640,6 +640,7 @@ DEPENDENCIES
   pg-aws_rds_iam (~> 0.5.0)
   premailer-rails
   puma (~> 6.6.0)
+  rack (~> 3.1.18)
   rack-mini-profiler
   rails (~> 7.2.2)
   rails-controller-testing
@@ -652,7 +653,7 @@ DEPENDENCIES
   rubocop-rspec
   selenium-webdriver (>= 4.26.0)
   shoryuken
-  sinatra (~> 4.0)
+  sinatra (~> 4.2)
   solid_queue (>= 0.3.0)
   sprockets-rails
   stackprof

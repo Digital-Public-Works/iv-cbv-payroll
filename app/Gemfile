@@ -75,6 +75,8 @@ gem "aws-actionmailer-ses"
 gem "rack-mini-profiler"
 gem "stackprof"
 
+gem "rack", "~> 3.1.18"
+
 # https://www.ruby-lang.org/en/news/2024/08/01/dos-rexml-cve-2024-41123/
 gem "rexml", "~> 3.4.2"
 gem "gpgme", "~> 2.0", ">= 2.0.12"
@@ -138,7 +140,7 @@ gem "net-sftp"
 gem "net-ssh"
 
 # Sinatra for JSON API reference implementation
-gem "sinatra", "~> 4.0"
+gem "sinatra", "~> 4.2"
 
 # AWS SQS
 gem "aws-sdk-sqs"
