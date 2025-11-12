@@ -117,8 +117,6 @@ release-build:
 		--platform=linux/amd64 \
 		--build-arg RUN_USER=$(RUN_USER) \
 		--build-arg RUN_UID=$(RUN_UID) \
-		$(if $(CACHE_FROM),--cache-from $(CACHE_FROM)) \
-		$(if $(CACHE_TO),--cache-to $(CACHE_TO)) \
 		$(OPTS) \
 		.
 

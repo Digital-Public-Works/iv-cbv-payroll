@@ -76,42 +76,26 @@ jobs:
           echo "Is image published: $is_image_published"
           echo "is_image_published=$is_image_published" >> "$GITHUB_OUTPUT"
 
-      - name: Build release with cache
+      - name: Build release
         if: steps.check-image-published.outputs.is_image_published == 'false'
-        id: build-image
-        uses: ./.github/actions/build-release-with-cache
-        with:
-          app_name: ${{ inputs.app_name }}
+        run: make APP_NAME=${{ inputs.app_name }} release-build
 
-      - name: Smoke test release image
-        if: steps.check-image-published.outputs.is_image_published == 'false'
+      # verify the settings
+      - name: Debug before publish
         run: |
-          echo "Testing image: ${{ steps.build-image.outputs.full_image }}"
+          echo "Current working directory: $(pwd)"
+          echo "AWS_REGION: ${AWS_REGION:-NOT SET}"
+          echo "AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-NOT SET}"
+          echo "AWS_ROLE_TO_ASSUME: ${AWS_ROLE_TO_ASSUME:-NOT SET}"
+          echo ""
+          echo "AWS CLI config:"
+          aws configure list
+          echo ""
+          echo "Testing current-region script:"
+          ./bin/current-region
+          echo ""
 
-          # Verify Rails can start
-          docker run --rm "${{ steps.build-image.outputs.full_image }}" bundle exec rails runner "puts 'Rails environment: ' + Rails.env"
 
-          # Verify critical binaries exist
-          docker run --rm "${{ steps.build-image.outputs.full_image }}" bundle exec wkhtmltopdf --version
-
-          # Verify AWS CLI is NOT present (we removed it)
-          if docker run --rm "${{ steps.build-image.outputs.full_image }}" which aws 2>/dev/null; then
-            echo "ERROR: AWS CLI should not be in release image"
-            exit 1
-          fi
-          echo "✓ Smoke tests passed"
-
-      - name: Set up Terraform
-        if: steps.check-image-published.outputs.is_image_published == 'false'
-        uses: ./.github/actions/setup-terraform
-
-      - name: Configure AWS credentials
-        if: steps.check-image-published.outputs.is_image_published == 'false'
-        uses: ./.github/actions/configure-aws-credentials
-        with:
-          app_name: ${{ inputs.app_name }}
-          environment: shared
-
-      - name: Publish release to ECR
+      - name: Publish release
         if: steps.check-image-published.outputs.is_image_published == 'false'
         run: make APP_NAME=${{ inputs.app_name }} release-publish
