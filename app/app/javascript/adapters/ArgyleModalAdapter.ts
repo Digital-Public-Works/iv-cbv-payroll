@@ -2,6 +2,89 @@ import { trackUserAction, fetchArgyleToken } from "@js/utilities/api.js"
 import { getDocumentLocale } from "@js/utilities/getDocumentLocale.js"
 import { ModalAdapter } from "./ModalAdapter.js"
 
+// Categorize Argyle error codes into meaningful groups for tracking
+function categorizeArgyleError(errorCode?: string): string {
+  if (!errorCode) return "ApplicantEncounteredArgyleSystemError"
+
+  // Authentication Errors (7) - User credential issues
+  const authErrors = new Set([
+    "auth_required",
+    "invalid_auth",
+    "invalid_credentials",
+    "expired_credentials",
+    "full_auth_required",
+    "tos_required",
+    "unsupported_auth_type",
+  ])
+
+  // MFA Errors (8) - Multi-factor authentication issues
+  const mfaErrors = new Set([
+    "invalid_mfa",
+    "mfa_cancelled_by_the_user",
+    "mfa_timeout",
+    "mfa_attempts_exceeded",
+    "mfa_exhausted",
+    "mfa_not_configured",
+    "physical_mfa_unsupported",
+    "unsupported_mfa_method",
+  ])
+
+  // Platform Errors (5) - Payroll system unavailable
+  const platformErrors = new Set([
+    "connection_unavailable",
+    "platform_temporarily_unavailable",
+    "platform_unavailable",
+    "service_unavailable",
+    "auth_method_temporarily_unavailable",
+  ])
+
+  // Account Errors (9) - Account state/configuration issues
+  const accountErrors = new Set([
+    "account_disabled",
+    "account_inaccessible",
+    "account_incomplete",
+    "account_nonunique",
+    "account_not_found",
+    "duplicate_account",
+    "existing_account_found",
+    "multi_driver_account",
+    "insufficient_account_data",
+  ])
+
+  // Credential Errors (8) - Employer/provider selection issues
+  const credentialErrors = new Set([
+    "invalid_account_type",
+    "invalid_employer_identifier",
+    "invalid_login_method",
+    "invalid_login_url",
+    "invalid_store_identifier",
+    "unrecognized_employer_email",
+    "unsupported_business_account",
+    "credentials_managed_by_organization",
+  ])
+
+  // Limit Errors (6) - Rate limits and user-triggered issues
+  const limitErrors = new Set([
+    "all_employers_connected",
+    "login_attempts_exceeded",
+    "session_limit_reached",
+    "trial_connections_exhausted",
+    "trial_period_expired",
+    "user_action_timeout",
+  ])
+
+  // Check categories and return corresponding event name
+  if (authErrors.has(errorCode)) return "ApplicantEncounteredArgyleAuthenticationError"
+  if (mfaErrors.has(errorCode)) return "ApplicantEncounteredArgleMfaError"
+  if (platformErrors.has(errorCode)) return "ApplicantEncounteredArglePlatformError"
+  if (accountErrors.has(errorCode)) return "ApplicantEncounteredArgyleAccountIssueError"
+  if (credentialErrors.has(errorCode)) return "ApplicantEncounteredArgyleCredentialError"
+  if (limitErrors.has(errorCode)) return "ApplicantEncounteredArgleLimitError"
+
+  // Default to system error for unknown codes
+  return "ApplicantEncounteredArgyleSystemError"
+}
+
 export default class ArgyleModalAdapter extends ModalAdapter {
   async open() {
     const locale = getDocumentLocale()
@@ -60,10 +143,25 @@ export default class ArgyleModalAdapter extends ModalAdapter {
     await this.onExit()
   }
 
-  async onUIEvent(payload: ArgyeUIEvent) {
+  async onUIEvent(payload: ArgyleUIEvent) {
     switch (payload.name) {
       case "search - opened":
         await trackUserAction("ApplicantViewedArgyleDefaultProviderSearch", payload)
+        break
+      case "account error - opened":
+        {
+          const eventName = categorizeArgyleError(payload.properties.errorCode)
+          await trackUserAction(eventName, payload)
+        }
+        break
+      case "error - opened":
+        {
+          const eventName = categorizeArgyleError(payload.properties.errorCode)
+          await trackUserAction(eventName, payload)
+        }
+        break
+      case "link closed":
+        await trackUserAction("ApplicantClosedArgyleLinkFromErrorScreen", payload)
         break
       case "login - opened":
         switch (payload.properties.errorCode) {
@@ -110,6 +208,11 @@ export default class ArgyleModalAdapter extends ModalAdapter {
         await trackUserAction("ApplicantAccessedArgyleModalMFAScreen", payload)
         break
       default:
+        console.warn("Unknown Argyle UI event:", payload.name, payload)
+        await trackUserAction("ApplicantEncounteredUnknownArgyleEvent", {
+          event_name: payload.name,
+          payload: payload,
+        })
         break
     }
   }
