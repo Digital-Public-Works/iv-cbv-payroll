@@ -32,7 +32,6 @@ RUN set -eux; \
     apt-get install -y --no-install-recommends \
       libtasn1-6 \
       libgnutls30 \
-      imagemagick \
       liblzma5 \
       libxml2 \
       libxslt1.1 \
@@ -41,15 +40,12 @@ RUN set -eux; \
       libsqlite3-0 \
       libpq5 \
       libgpgme11t64 \
-      libvips42 \
       openssl \
       postgresql-client-17 \
     ; \
     apt-get purge -y --auto-remove \
       linux-libc-dev \
       libc-dev-bin \
-      libmagickcore-dev \
-      libmagickwand-dev \
       libpq-dev \
       libevent-dev \
       libmariadb-dev \
