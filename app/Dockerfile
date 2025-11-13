@@ -55,6 +55,10 @@ RUN set -eux; \
       dpkg-dev \
       x11proto-dev \
       xtrans-dev \
+      imagemagick \
+      imagemagick-7.q16 \
+      libmagickcore-dev \
+      libmagickwand-dev \
     ; \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
