@@ -164,31 +164,11 @@ export default class ArgyleModalAdapter extends ModalAdapter {
         await trackUserAction("ApplicantClosedArgyleLinkFromErrorScreen", payload)
         break
       case "login - opened":
-        switch (payload.properties.errorCode) {
-          case "auth_required":
-            await trackUserAction("ApplicantEncounteredArgyleAuthRequiredLoginError", payload)
-            break
-          case "connection_unavailable":
-            await trackUserAction(
-              "ApplicantEncounteredArgyleConnectionUnavailableLoginError",
-              payload
-            )
-            break
-          case "expired_credentials":
-            await trackUserAction("ApplicantEncounteredArgyleExpiredCredentialsLoginError", payload)
-            break
-          case "invalid_auth":
-            await trackUserAction("ApplicantEncounteredArgyleInvalidAuthLoginError", payload)
-            break
-          case "invalid_credentials":
-            await trackUserAction("ApplicantEncounteredArgyleInvalidCredentialsLoginError", payload)
-            break
-          case "mfa_cancelled_by_the_user":
-            await trackUserAction("ApplicantEncounteredArgyleMfaCanceledLoginError", payload)
-            break
-          default:
-            await trackUserAction("ApplicantViewedArgyleLoginPage", payload)
-            break
+        if (payload.properties.errorCode) {
+          const eventName = categorizeArgyleError(payload.properties.errorCode)
+          await trackUserAction(eventName, payload)
+        } else {
+          await trackUserAction("ApplicantViewedArgyleLoginPage", payload)
         }
         break
       case "search - link item selected":

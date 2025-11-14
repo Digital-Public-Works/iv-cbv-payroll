@@ -30,7 +30,7 @@ export const mockApplicantEncounteredArgyleMfaCanceledLoginError = {
 }
 export const mockApplicantViewedArgyleLoginPage = {
   name: "login - opened",
-  properties: { errorCode: "other" },
+  properties: {},
 }
 export const mockApplicantViewedArgyleProviderConfirmation = { name: "search - link item selected" }
 export const mockApplicantUpdatedArgyleSearchTerm = {

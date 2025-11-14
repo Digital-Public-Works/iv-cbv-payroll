@@ -137,51 +137,47 @@ describe("ArgyleModalAdapter", () => {
       expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantViewedArgyleDefaultProviderSearch")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
-    it("logs ApplicantEncounteredArgyleAuthRequiredLoginError Event", async () => {
+    it("logs ApplicantEncounteredArgyleAuthenticationError for login with auth_required error", async () => {
       await triggers.triggerUIEvent(mockApplicantEncounteredArgyleAuthRequiredLoginError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
-      expect(trackUserAction.mock.calls[1][0]).toBe(
-        "ApplicantEncounteredArgyleAuthRequiredLoginError"
-      )
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleAuthenticationError")
+      expect(trackUserAction.mock.calls[1][1].properties.errorCode).toBe("auth_required")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
-    it("logs ApplicantEncounteredArgyleConnectionUnavailableLoginError Event", async () => {
+    it("logs ApplicantEncounteredArglePlatformError for login with connection_unavailable error", async () => {
       await triggers.triggerUIEvent(mockApplicantEncounteredArgyleConnectionUnavailableLoginError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
-      expect(trackUserAction.mock.calls[1][0]).toBe(
-        "ApplicantEncounteredArgyleConnectionUnavailableLoginError"
-      )
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArglePlatformError")
+      expect(trackUserAction.mock.calls[1][1].properties.errorCode).toBe("connection_unavailable")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
-    it("logs ApplicantEncounteredArgyleExpiredCredentialsLoginError Event", async () => {
+    it("logs ApplicantEncounteredArgyleAuthenticationError for login with expired_credentials error", async () => {
       await triggers.triggerUIEvent(mockApplicantEncounteredArgyleExpiredCredentialsLoginError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
-      expect(trackUserAction.mock.calls[1][0]).toBe(
-        "ApplicantEncounteredArgyleExpiredCredentialsLoginError"
-      )
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleAuthenticationError")
+      expect(trackUserAction.mock.calls[1][1].properties.errorCode).toBe("expired_credentials")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
-    it("logs ApplicantEncounteredArgyleInvalidAuthLoginError Event", async () => {
+    it("logs ApplicantEncounteredArgyleAuthenticationError for login with invalid_auth error", async () => {
       await triggers.triggerUIEvent(mockApplicantEncounteredArgyleInvalidAuthLoginError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
-      expect(trackUserAction.mock.calls[1][0]).toBe(
-        "ApplicantEncounteredArgyleInvalidAuthLoginError"
-      )
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleAuthenticationError")
+      expect(trackUserAction.mock.calls[1][1].properties.errorCode).toBe("invalid_auth")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
-    it("logs ApplicantEncounteredArgyleInvalidCredentialsLoginError Event", async () => {
+    it("logs ApplicantEncounteredArgyleAuthenticationError for login with invalid_credentials error", async () => {
       await triggers.triggerUIEvent(mockApplicantEncounteredArgyleInvalidCredentialsLoginError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
-      expect(trackUserAction.mock.calls[1][0]).toBe(
-        "ApplicantEncounteredArgyleInvalidCredentialsLoginError"
-      )
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleAuthenticationError")
+      expect(trackUserAction.mock.calls[1][1].properties.errorCode).toBe("invalid_credentials")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
-    it("logs ApplicantEncounteredArgyleMfaCanceledLoginError Event", async () => {
+    it("logs ApplicantEncounteredArgleMfaError for login with mfa_cancelled error", async () => {
       await triggers.triggerUIEvent(mockApplicantEncounteredArgyleMfaCanceledLoginError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
-      expect(trackUserAction.mock.calls[1][0]).toBe(
-        "ApplicantEncounteredArgyleMfaCanceledLoginError"
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgleMfaError")
+      expect(trackUserAction.mock.calls[1][1].properties.errorCode).toBe(
+        "mfa_cancelled_by_the_user"
       )
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
@@ -221,48 +217,60 @@ describe("ArgyleModalAdapter", () => {
       await triggers.triggerUIEvent(mockAccountErrorAuthenticationError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
       expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleAuthenticationError")
+      expect(trackUserAction.mock.calls[1][1].properties.errorCode).toBe("invalid_credentials")
+      expect(trackUserAction.mock.calls[1][1].properties.errorMessage).toBe("Invalid credentials")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
     it("logs ApplicantEncounteredArgleMfaError for account error with MFA error code", async () => {
       await triggers.triggerUIEvent(mockAccountErrorMfaError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
       expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgleMfaError")
+      expect(trackUserAction.mock.calls[1][1].properties.errorCode).toBe("mfa_timeout")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
     it("logs ApplicantEncounteredArglePlatformError for account error with platform error code", async () => {
       await triggers.triggerUIEvent(mockAccountErrorPlatformError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
       expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArglePlatformError")
+      expect(trackUserAction.mock.calls[1][1].properties.errorCode).toBe("platform_unavailable")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
     it("logs ApplicantEncounteredArgyleAccountIssueError for account error with account issue code", async () => {
       await triggers.triggerUIEvent(mockAccountErrorAccountIssueError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
       expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleAccountIssueError")
+      expect(trackUserAction.mock.calls[1][1].properties.errorCode).toBe("account_not_found")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
     it("logs ApplicantEncounteredArgyleCredentialError for account error with credential error code", async () => {
       await triggers.triggerUIEvent(mockAccountErrorCredentialError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
       expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleCredentialError")
+      expect(trackUserAction.mock.calls[1][1].properties.errorCode).toBe(
+        "invalid_employer_identifier"
+      )
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
     it("logs ApplicantEncounteredArgleLimitError for account error with limit error code", async () => {
       await triggers.triggerUIEvent(mockAccountErrorLimitError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
       expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgleLimitError")
+      expect(trackUserAction.mock.calls[1][1].properties.errorCode).toBe("login_attempts_exceeded")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
     it("logs ApplicantEncounteredArgyleSystemError for account error with system error code", async () => {
       await triggers.triggerUIEvent(mockAccountErrorSystemError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
       expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleSystemError")
+      expect(trackUserAction.mock.calls[1][1].properties.errorCode).toBe("system_error")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
     it("logs ApplicantEncounteredArgyleSystemError for account error with no error code", async () => {
       await triggers.triggerUIEvent(mockAccountErrorNoCode)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
       expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleSystemError")
+      expect(trackUserAction.mock.calls[1][1].properties.errorCode).toBeUndefined()
+      expect(trackUserAction.mock.calls[1][1].properties.errorMessage).toBe("Unknown error")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
 
@@ -271,6 +279,8 @@ describe("ArgyleModalAdapter", () => {
       await triggers.triggerUIEvent(mockErrorOpenedEvent)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
       expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleSystemError")
+      expect(trackUserAction.mock.calls[1][1].properties.errorCode).toBe("invalid_user_token")
+      expect(trackUserAction.mock.calls[1][1].properties.errorMessage).toBe("Invalid user token")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
 
