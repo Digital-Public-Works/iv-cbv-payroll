@@ -4,21 +4,23 @@ class WeeklyReportMailer < ApplicationMailer
 
   # Send email with a CSV file that reports on completed flows in past week
   def report_email
-    current_agency = client_agency_config[params[:client_agency_id]]
+    client_id    = params.fetch(:client_id)
+    # this needs to be @report_range as it is used in the view template
+    @report_range = params.fetch(:report_range)
+    recipient    = params.fetch(:recipient)
+
+    current_agency = client_agency_config[client_id]
     raise "Invalid `client_agency_id` parameter given: #{params[:client_agency_id].inspect}" unless current_agency.present?
 
-    raise "Missing `report_date` param" unless params[:report_date].present?
-    now = params[:report_date]
+    raise "Missing `report_range` param" unless @report_range.present?
 
-    raise "Missing `weekly_report.recipient` configuration for client agency: #{params[:client_agency_id]}" unless current_agency.weekly_report["recipient"]
-    @recipient = current_agency.weekly_report["recipient"]
+    raise "Missing `weekly_report.recipient` configuration for client agency: #{params[:client_agency_id]}" unless recipient
 
-    @report_range = now.prev_week.all_week
     csv_rows = weekly_report_data(current_agency, @report_range)
     attachments[report_filename(@report_range)] = generate_csv(csv_rows)
 
     mail(
-      to: @recipient,
+      to: recipient,
       subject: "CBV Pilot - Weekly Report Email",
     )
   end

@@ -5,6 +5,7 @@ RSpec.describe WeeklyReportMailer, type: :mailer do
   include ActiveSupport::Testing::TimeHelpers
 
   let(:now) { DateTime.new(2024, 9, 9, 9, 0, 0, "-04:00") }
+  let(:report_range) { now.prev_week.all_week }
   let(:invitation_sent_at) { now - 5.days }
   let(:client_agency_id) { "la_ldh" }
   let(:cbv_flow_invitation) { nil }
@@ -22,7 +23,7 @@ RSpec.describe WeeklyReportMailer, type: :mailer do
   let(:mail) do
     cbv_flow
     WeeklyReportMailer
-      .with(report_date: now, client_agency_id: client_agency_id)
+      .with(report_range: now, client_id: client_agency_id)
       .report_email
   end
   let(:parsed_csv) do

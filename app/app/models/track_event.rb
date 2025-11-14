@@ -37,5 +37,6 @@ module TrackEvent
   CaseworkerLoggedIn = "CaseworkerLoggedIn"
   CbvPageView = "CbvPageView"
   EmailSent = "EmailSent"
+  WeeklySummaryEmail = "WeeklySummaryEmail"
   IncomeSummaryMatchedAgencyNames = "IncomeSummaryMatchedAgencyNames"
 end
