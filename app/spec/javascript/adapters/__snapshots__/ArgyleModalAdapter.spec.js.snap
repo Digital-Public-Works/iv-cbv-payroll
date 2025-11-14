@@ -12,7 +12,56 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantAttemptedArgyleLogin E
 }
 `;
 
-exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleAuthRequiredLoginError Event 1`] = `
+exports[`ArgyleModalAdapter > event:other > logs ApplicantClickedArgyleLoginHelp for login help clicked event 1`] = `
+{
+  "name": "login - login help clicked",
+  "properties": {
+    "userId": "test-user-id",
+  },
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantClosedArgyleLinkFromErrorScreen for link closed event 1`] = `
+{
+  "name": "link closed",
+  "properties": {
+    "userId": "test-user-id",
+  },
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantDisconnectedArgyleAccount for account status disconnected event 1`] = `
+{
+  "name": "account status - disconnected",
+  "properties": {
+    "userId": "test-user-id",
+  },
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleAccountIssueError for account error with account issue code 1`] = `
+{
+  "name": "account error - opened",
+  "properties": {
+    "errorCode": "account_not_found",
+    "errorMessage": "Account not found",
+    "userId": "test-user-id",
+  },
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleAuthenticationError for account error with auth error code 1`] = `
+{
+  "name": "account error - opened",
+  "properties": {
+    "errorCode": "invalid_credentials",
+    "errorMessage": "Invalid credentials",
+    "userId": "test-user-id",
+  },
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleAuthenticationError for login with auth_required error 1`] = `
 {
   "name": "login - opened",
   "properties": {
@@ -21,16 +70,7 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleAuthR
 }
 `;
 
-exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleConnectionUnavailableLoginError Event 1`] = `
-{
-  "name": "login - opened",
-  "properties": {
-    "errorCode": "connection_unavailable",
-  },
-}
-`;
-
-exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleExpiredCredentialsLoginError Event 1`] = `
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleAuthenticationError for login with expired_credentials error 1`] = `
 {
   "name": "login - opened",
   "properties": {
@@ -39,7 +79,7 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleExpir
 }
 `;
 
-exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleInvalidAuthLoginError Event 1`] = `
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleAuthenticationError for login with invalid_auth error 1`] = `
 {
   "name": "login - opened",
   "properties": {
@@ -48,7 +88,7 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleInval
 }
 `;
 
-exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleInvalidCredentialsLoginError Event 1`] = `
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleAuthenticationError for login with invalid_credentials error 1`] = `
 {
   "name": "login - opened",
   "properties": {
@@ -57,11 +97,109 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleInval
 }
 `;
 
-exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleMfaCanceledLoginError Event 1`] = `
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleCredentialError for account error with credential error code 1`] = `
+{
+  "name": "account error - opened",
+  "properties": {
+    "errorCode": "invalid_employer_identifier",
+    "errorMessage": "Invalid employer",
+    "userId": "test-user-id",
+  },
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleLimitError for account error with limit error code 1`] = `
+{
+  "name": "account error - opened",
+  "properties": {
+    "errorCode": "login_attempts_exceeded",
+    "errorMessage": "Too many attempts",
+    "userId": "test-user-id",
+  },
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleMfaError for account error with MFA error code 1`] = `
+{
+  "name": "account error - opened",
+  "properties": {
+    "errorCode": "mfa_timeout",
+    "errorMessage": "MFA timeout",
+    "userId": "test-user-id",
+  },
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleMfaError for login with mfa_cancelled error 1`] = `
 {
   "name": "login - opened",
   "properties": {
     "errorCode": "mfa_cancelled_by_the_user",
+  },
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgylePlatformError for account error with platform error code 1`] = `
+{
+  "name": "account error - opened",
+  "properties": {
+    "errorCode": "platform_unavailable",
+    "errorMessage": "Platform unavailable",
+    "userId": "test-user-id",
+  },
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgylePlatformError for login with connection_unavailable error 1`] = `
+{
+  "name": "login - opened",
+  "properties": {
+    "errorCode": "connection_unavailable",
+  },
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleSystemError for account error with no error code 1`] = `
+{
+  "name": "account error - opened",
+  "properties": {
+    "errorMessage": "Unknown error",
+    "userId": "test-user-id",
+  },
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleSystemError for account error with system error code 1`] = `
+{
+  "name": "account error - opened",
+  "properties": {
+    "errorCode": "system_error",
+    "errorMessage": "System error",
+    "userId": "test-user-id",
+  },
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleSystemError for error opened event 1`] = `
+{
+  "name": "error - opened",
+  "properties": {
+    "errorCode": "invalid_user_token",
+    "errorMessage": "Invalid user token",
+    "userId": "test-user-id",
+  },
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredUnknownArgyleEvent for unknown events 1`] = `
+{
+  "event_name": "some-future-event",
+  "payload": {
+    "name": "some-future-event",
+    "properties": {
+      "someNewProperty": "value",
+      "userId": "test-user-id",
+    },
   },
 }
 `;
@@ -82,6 +220,15 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantUpdatedArgyleSearchTer
 }
 `;
 
+exports[`ArgyleModalAdapter > event:other > logs ApplicantViewedArgyleAccountStatus for account status opened event 1`] = `
+{
+  "name": "account status - opened",
+  "properties": {
+    "userId": "test-user-id",
+  },
+}
+`;
+
 exports[`ArgyleModalAdapter > event:other > logs ApplicantViewedArgyleDefaultProviderSearch Event 1`] = `
 {
   "name": "search - opened",
@@ -91,15 +238,22 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantViewedArgyleDefaultPro
 exports[`ArgyleModalAdapter > event:other > logs ApplicantViewedArgyleLoginPage Event 1`] = `
 {
   "name": "login - opened",
-  "properties": {
-    "errorCode": "other",
-  },
+  "properties": {},
 }
 `;
 
 exports[`ArgyleModalAdapter > event:other > logs ApplicantViewedArgyleProviderConfirmation Event 1`] = `
 {
   "name": "search - link item selected",
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantViewedArgyleSuccessScreen for success opened event 1`] = `
+{
+  "name": "success - opened",
+  "properties": {
+    "userId": "test-user-id",
+  },
 }
 `;
 

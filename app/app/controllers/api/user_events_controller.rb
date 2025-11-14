@@ -34,6 +34,19 @@ class Api::UserEventsController < ApplicationController
     ApplicantManuallySwitchedLanguage
     ApplicantConsentedToTerms
     ApplicantViewedHelpText
+    ApplicantEncounteredArgyleAuthenticationError
+    ApplicantEncounteredArgyleMfaError
+    ApplicantEncounteredArgylePlatformError
+    ApplicantEncounteredArgyleAccountIssueError
+    ApplicantEncounteredArgyleCredentialError
+    ApplicantEncounteredArgyleLimitError
+    ApplicantEncounteredArgyleSystemError
+    ApplicantClosedArgyleLinkFromErrorScreen
+    ApplicantEncounteredUnknownArgyleEvent
+    ApplicantClickedArgyleLoginHelp
+    ApplicantViewedArgyleSuccessScreen
+    ApplicantViewedArgyleAccountStatus
+    ApplicantDisconnectedArgyleAccount
   ]
 
   def user_action
