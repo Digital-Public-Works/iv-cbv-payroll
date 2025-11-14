@@ -148,10 +148,10 @@ describe("ArgyleModalAdapter", () => {
       expect(trackUserAction.mock.calls[1][1].properties.errorCode).toBe("auth_required")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
-    it("logs ApplicantEncounteredArglePlatformError for login with connection_unavailable error", async () => {
+    it("logs ApplicantEncounteredArgylePlatformError for login with connection_unavailable error", async () => {
       await triggers.triggerUIEvent(mockApplicantEncounteredArgyleConnectionUnavailableLoginError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
-      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArglePlatformError")
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgylePlatformError")
       expect(trackUserAction.mock.calls[1][1].properties.errorCode).toBe("connection_unavailable")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
@@ -176,10 +176,10 @@ describe("ArgyleModalAdapter", () => {
       expect(trackUserAction.mock.calls[1][1].properties.errorCode).toBe("invalid_credentials")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
-    it("logs ApplicantEncounteredArgleMfaError for login with mfa_cancelled error", async () => {
+    it("logs ApplicantEncounteredArgyleMfaError for login with mfa_cancelled error", async () => {
       await triggers.triggerUIEvent(mockApplicantEncounteredArgyleMfaCanceledLoginError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
-      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgleMfaError")
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleMfaError")
       expect(trackUserAction.mock.calls[1][1].properties.errorCode).toBe(
         "mfa_cancelled_by_the_user"
       )
@@ -225,17 +225,17 @@ describe("ArgyleModalAdapter", () => {
       expect(trackUserAction.mock.calls[1][1].properties.errorMessage).toBe("Invalid credentials")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
-    it("logs ApplicantEncounteredArgleMfaError for account error with MFA error code", async () => {
+    it("logs ApplicantEncounteredArgyleMfaError for account error with MFA error code", async () => {
       await triggers.triggerUIEvent(mockAccountErrorMfaError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
-      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgleMfaError")
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleMfaError")
       expect(trackUserAction.mock.calls[1][1].properties.errorCode).toBe("mfa_timeout")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
-    it("logs ApplicantEncounteredArglePlatformError for account error with platform error code", async () => {
+    it("logs ApplicantEncounteredArgylePlatformError for account error with platform error code", async () => {
       await triggers.triggerUIEvent(mockAccountErrorPlatformError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
-      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArglePlatformError")
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgylePlatformError")
       expect(trackUserAction.mock.calls[1][1].properties.errorCode).toBe("platform_unavailable")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
@@ -255,10 +255,10 @@ describe("ArgyleModalAdapter", () => {
       )
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
-    it("logs ApplicantEncounteredArgleLimitError for account error with limit error code", async () => {
+    it("logs ApplicantEncounteredArgyleLimitError for account error with limit error code", async () => {
       await triggers.triggerUIEvent(mockAccountErrorLimitError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
-      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgleLimitError")
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleLimitError")
       expect(trackUserAction.mock.calls[1][1].properties.errorCode).toBe("login_attempts_exceeded")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })

@@ -39,57 +39,6 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantDisconnectedArgyleAcco
 }
 `;
 
-exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgleLimitError for account error with limit error code 1`] = `
-{
-  "name": "account error - opened",
-  "properties": {
-    "errorCode": "login_attempts_exceeded",
-    "errorMessage": "Too many attempts",
-    "userId": "test-user-id",
-  },
-}
-`;
-
-exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgleMfaError for account error with MFA error code 1`] = `
-{
-  "name": "account error - opened",
-  "properties": {
-    "errorCode": "mfa_timeout",
-    "errorMessage": "MFA timeout",
-    "userId": "test-user-id",
-  },
-}
-`;
-
-exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgleMfaError for login with mfa_cancelled error 1`] = `
-{
-  "name": "login - opened",
-  "properties": {
-    "errorCode": "mfa_cancelled_by_the_user",
-  },
-}
-`;
-
-exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArglePlatformError for account error with platform error code 1`] = `
-{
-  "name": "account error - opened",
-  "properties": {
-    "errorCode": "platform_unavailable",
-    "errorMessage": "Platform unavailable",
-    "userId": "test-user-id",
-  },
-}
-`;
-
-exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArglePlatformError for login with connection_unavailable error 1`] = `
-{
-  "name": "login - opened",
-  "properties": {
-    "errorCode": "connection_unavailable",
-  },
-}
-`;
-
 exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleAccountIssueError for account error with account issue code 1`] = `
 {
   "name": "account error - opened",
@@ -155,6 +104,57 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleCrede
     "errorCode": "invalid_employer_identifier",
     "errorMessage": "Invalid employer",
     "userId": "test-user-id",
+  },
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleLimitError for account error with limit error code 1`] = `
+{
+  "name": "account error - opened",
+  "properties": {
+    "errorCode": "login_attempts_exceeded",
+    "errorMessage": "Too many attempts",
+    "userId": "test-user-id",
+  },
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleMfaError for account error with MFA error code 1`] = `
+{
+  "name": "account error - opened",
+  "properties": {
+    "errorCode": "mfa_timeout",
+    "errorMessage": "MFA timeout",
+    "userId": "test-user-id",
+  },
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleMfaError for login with mfa_cancelled error 1`] = `
+{
+  "name": "login - opened",
+  "properties": {
+    "errorCode": "mfa_cancelled_by_the_user",
+  },
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgylePlatformError for account error with platform error code 1`] = `
+{
+  "name": "account error - opened",
+  "properties": {
+    "errorCode": "platform_unavailable",
+    "errorMessage": "Platform unavailable",
+    "userId": "test-user-id",
+  },
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgylePlatformError for login with connection_unavailable error 1`] = `
+{
+  "name": "login - opened",
+  "properties": {
+    "errorCode": "connection_unavailable",
   },
 }
 `;

@@ -35,11 +35,11 @@ class Api::UserEventsController < ApplicationController
     ApplicantConsentedToTerms
     ApplicantViewedHelpText
     ApplicantEncounteredArgyleAuthenticationError
-    ApplicantEncounteredArgleMfaError
-    ApplicantEncounteredArglePlatformError
+    ApplicantEncounteredArgyleMfaError
+    ApplicantEncounteredArgylePlatformError
     ApplicantEncounteredArgyleAccountIssueError
     ApplicantEncounteredArgyleCredentialError
-    ApplicantEncounteredArgleLimitError
+    ApplicantEncounteredArgyleLimitError
     ApplicantEncounteredArgyleSystemError
     ApplicantClosedArgyleLinkFromErrorScreen
     ApplicantEncounteredUnknownArgyleEvent

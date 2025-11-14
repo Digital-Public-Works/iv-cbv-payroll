@@ -75,11 +75,11 @@ function categorizeArgyleError(errorCode?: string): string {
 
   // Check categories and return corresponding event name
   if (authErrors.has(errorCode)) return "ApplicantEncounteredArgyleAuthenticationError"
-  if (mfaErrors.has(errorCode)) return "ApplicantEncounteredArgleMfaError"
-  if (platformErrors.has(errorCode)) return "ApplicantEncounteredArglePlatformError"
+  if (mfaErrors.has(errorCode)) return "ApplicantEncounteredArgyleMfaError"
+  if (platformErrors.has(errorCode)) return "ApplicantEncounteredArgylePlatformError"
   if (accountErrors.has(errorCode)) return "ApplicantEncounteredArgyleAccountIssueError"
   if (credentialErrors.has(errorCode)) return "ApplicantEncounteredArgyleCredentialError"
-  if (limitErrors.has(errorCode)) return "ApplicantEncounteredArgleLimitError"
+  if (limitErrors.has(errorCode)) return "ApplicantEncounteredArgyleLimitError"
 
   // Default to system error for unknown codes
   return "ApplicantEncounteredArgyleSystemError"
