@@ -32,7 +32,7 @@ allow_invitation_reuse: true
 weekly_report:
   enabled: false
   recipient: andre@digitalpublicworks.org,jeff@digitalpublicworks.org
-report_customization_show_earnings_list: false
+report_customization_show_earnings_list: true
 applicant_attributes:
   first_name:
     required: true
