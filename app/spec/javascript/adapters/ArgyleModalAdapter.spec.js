@@ -292,21 +292,15 @@ describe("ArgyleModalAdapter", () => {
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
 
-    // Unknown event test (with console.warn spy)
-    it("logs ApplicantEncounteredUnknownArgyleEvent and warns console for unknown events", async () => {
-      const consoleWarnSpy = vi.spyOn(console, "warn")
+    // Unknown event test
+    it("logs ApplicantEncounteredUnknownArgyleEvent for unknown events", async () => {
       await triggers.triggerUIEvent(mockUnknownArgyleEvent)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
       expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredUnknownArgyleEvent")
       expect(trackUserAction.mock.calls[1][1]).toMatchObject({
         event_name: "some-future-event",
       })
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        "Unknown Argyle UI event:",
-        "some-future-event",
-        expect.any(Object)
-      )
-      consoleWarnSpy.mockRestore()
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
   })
 })

@@ -173,6 +173,19 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleSyste
 }
 `;
 
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredUnknownArgyleEvent for unknown events 1`] = `
+{
+  "event_name": "some-future-event",
+  "payload": {
+    "name": "some-future-event",
+    "properties": {
+      "someNewProperty": "value",
+      "userId": "test-user-id",
+    },
+  },
+}
+`;
+
 exports[`ArgyleModalAdapter > event:other > logs ApplicantUpdatedArgyleSearchTerm Event 1`] = `
 {
   "payload": {

@@ -188,7 +188,6 @@ export default class ArgyleModalAdapter extends ModalAdapter {
         await trackUserAction("ApplicantAccessedArgyleModalMFAScreen", payload)
         break
       default:
-        console.warn("Unknown Argyle UI event:", payload.name, payload)
         await trackUserAction("ApplicantEncounteredUnknownArgyleEvent", {
           event_name: payload.name,
           payload: payload,
