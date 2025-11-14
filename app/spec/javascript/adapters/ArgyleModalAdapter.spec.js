@@ -28,6 +28,10 @@ import {
   mockErrorOpenedEvent,
   mockLinkClosedEvent,
   mockUnknownArgyleEvent,
+  mockLoginHelpClickedEvent,
+  mockSuccessOpenedEvent,
+  mockAccountStatusOpenedEvent,
+  mockAccountStatusDisconnectedEvent,
 } from "@test/fixtures/argyle.fixture.js"
 
 const modalAdapterArgs = {
@@ -300,6 +304,32 @@ describe("ArgyleModalAdapter", () => {
       expect(trackUserAction.mock.calls[1][1]).toMatchObject({
         event_name: "some-future-event",
       })
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
+
+    // User journey event tests
+    it("logs ApplicantClickedArgyleLoginHelp for login help clicked event", async () => {
+      await triggers.triggerUIEvent(mockLoginHelpClickedEvent)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantClickedArgyleLoginHelp")
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
+    it("logs ApplicantViewedArgyleSuccessScreen for success opened event", async () => {
+      await triggers.triggerUIEvent(mockSuccessOpenedEvent)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantViewedArgyleSuccessScreen")
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
+    it("logs ApplicantViewedArgyleAccountStatus for account status opened event", async () => {
+      await triggers.triggerUIEvent(mockAccountStatusOpenedEvent)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantViewedArgyleAccountStatus")
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
+    it("logs ApplicantDisconnectedArgyleAccount for account status disconnected event", async () => {
+      await triggers.triggerUIEvent(mockAccountStatusDisconnectedEvent)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantDisconnectedArgyleAccount")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
   })

@@ -118,6 +118,24 @@ export const mockUnknownArgyleEvent = {
   properties: { userId: "test-user-id", someNewProperty: "value" },
 }
 
+// User journey event mocks
+export const mockLoginHelpClickedEvent = {
+  name: "login - login help clicked",
+  properties: { userId: "test-user-id" },
+}
+export const mockSuccessOpenedEvent = {
+  name: "success - opened",
+  properties: { userId: "test-user-id" },
+}
+export const mockAccountStatusOpenedEvent = {
+  name: "account status - opened",
+  properties: { userId: "test-user-id" },
+}
+export const mockAccountStatusDisconnectedEvent = {
+  name: "account status - disconnected",
+  properties: { userId: "test-user-id" },
+}
+
 const triggers = ({
   onAccountConnected,
   onClose,

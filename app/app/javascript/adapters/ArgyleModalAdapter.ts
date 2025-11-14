@@ -187,6 +187,18 @@ export default class ArgyleModalAdapter extends ModalAdapter {
       case "mfa - opened":
         await trackUserAction("ApplicantAccessedArgyleModalMFAScreen", payload)
         break
+      case "login - login help clicked":
+        await trackUserAction("ApplicantClickedArgyleLoginHelp", payload)
+        break
+      case "success - opened":
+        await trackUserAction("ApplicantViewedArgyleSuccessScreen", payload)
+        break
+      case "account status - opened":
+        await trackUserAction("ApplicantViewedArgyleAccountStatus", payload)
+        break
+      case "account status - disconnected":
+        await trackUserAction("ApplicantDisconnectedArgyleAccount", payload)
+        break
       default:
         await trackUserAction("ApplicantEncounteredUnknownArgyleEvent", {
           event_name: payload.name,

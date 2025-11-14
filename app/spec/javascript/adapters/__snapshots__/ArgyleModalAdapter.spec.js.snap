@@ -12,9 +12,27 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantAttemptedArgyleLogin E
 }
 `;
 
+exports[`ArgyleModalAdapter > event:other > logs ApplicantClickedArgyleLoginHelp for login help clicked event 1`] = `
+{
+  "name": "login - login help clicked",
+  "properties": {
+    "userId": "test-user-id",
+  },
+}
+`;
+
 exports[`ArgyleModalAdapter > event:other > logs ApplicantClosedArgyleLinkFromErrorScreen for link closed event 1`] = `
 {
   "name": "link closed",
+  "properties": {
+    "userId": "test-user-id",
+  },
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantDisconnectedArgyleAccount for account status disconnected event 1`] = `
+{
+  "name": "account status - disconnected",
   "properties": {
     "userId": "test-user-id",
   },
@@ -202,6 +220,15 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantUpdatedArgyleSearchTer
 }
 `;
 
+exports[`ArgyleModalAdapter > event:other > logs ApplicantViewedArgyleAccountStatus for account status opened event 1`] = `
+{
+  "name": "account status - opened",
+  "properties": {
+    "userId": "test-user-id",
+  },
+}
+`;
+
 exports[`ArgyleModalAdapter > event:other > logs ApplicantViewedArgyleDefaultProviderSearch Event 1`] = `
 {
   "name": "search - opened",
@@ -218,6 +245,15 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantViewedArgyleLoginPage 
 exports[`ArgyleModalAdapter > event:other > logs ApplicantViewedArgyleProviderConfirmation Event 1`] = `
 {
   "name": "search - link item selected",
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantViewedArgyleSuccessScreen for success opened event 1`] = `
+{
+  "name": "success - opened",
+  "properties": {
+    "userId": "test-user-id",
+  },
 }
 `;
 

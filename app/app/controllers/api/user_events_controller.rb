@@ -43,6 +43,10 @@ class Api::UserEventsController < ApplicationController
     ApplicantEncounteredArgyleSystemError
     ApplicantClosedArgyleLinkFromErrorScreen
     ApplicantEncounteredUnknownArgyleEvent
+    ApplicantClickedArgyleLoginHelp
+    ApplicantViewedArgyleSuccessScreen
+    ApplicantViewedArgyleAccountStatus
+    ApplicantDisconnectedArgyleAccount
   ]
 
   def user_action
