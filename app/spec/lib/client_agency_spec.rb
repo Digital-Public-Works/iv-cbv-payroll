@@ -7,6 +7,7 @@ RSpec.describe ClientAgency do
         let(:sample_config) { <<~YAML }
           - id:
             agency_name: Foo Agency Name
+            timezone: America/Los_Angeles
             pinwheel:
               environment: foo
             argyle:
@@ -28,6 +29,7 @@ RSpec.describe ClientAgency do
         let(:sample_config) { <<~YAML }
           - id: foo
             agency_name:
+            timezone: America/Los_Angeles
             pinwheel:
               environment: foo
             argyle:
@@ -42,10 +44,30 @@ RSpec.describe ClientAgency do
         end
       end
 
+      context "missing timezone" do
+        let(:sample_config) { <<~YAML }
+          - id: foo
+            agency_name: foo
+            timezone:
+            pinwheel:
+              environment: foo
+            argyle:
+              environment: foo
+        YAML
+
+        it "raises an error" do
+          config = YAML.safe_load(sample_config).first
+          expect do
+            ClientAgencyConfig::ClientAgency.new(config)
+          end.to raise_error(ArgumentError, "Client Agency foo missing required attribute `timezone`")
+        end
+      end
+
       context "incorrect pay income w2 configuration" do
         let(:sample_config) { <<~YAML }
           - id: foo
             agency_name: foo
+            timezone: America/Los_Angeles
             pinwheel:
               environment: foo
             argyle:
@@ -67,6 +89,7 @@ RSpec.describe ClientAgency do
         let(:sample_config) { <<~YAML }
           - id: foo
             agency_name: foo
+            timezone: America/Los_Angeles
             pinwheel:
               environment: foo
             argyle:
@@ -89,6 +112,7 @@ RSpec.describe ClientAgency do
         let(:sample_config) { <<~YAML }
           - id: foo
             agency_name: foo
+            timezone: America/Los_Angeles
             pinwheel:
               environment: foo
             argyle:

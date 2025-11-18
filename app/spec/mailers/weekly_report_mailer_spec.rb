@@ -22,9 +22,11 @@ RSpec.describe WeeklyReportMailer, type: :mailer do
   end
   let(:mail) do
     cbv_flow
-    WeeklyReportMailer
-      .with(report_range: now, client_id: client_agency_id)
-      .report_email
+    WeeklyReportMailer.with(
+      report_range: report_range,
+      client_id: client_agency_id,
+      recipient: "test@digitalpublicworks.org"
+    ).report_email
   end
   let(:parsed_csv) do
     CSV.parse(mail.attachments.first.body.encoded, headers: :first_row).map(&:to_h)

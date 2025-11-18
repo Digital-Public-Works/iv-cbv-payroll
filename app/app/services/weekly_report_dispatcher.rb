@@ -1,22 +1,20 @@
 require "csv"
-class WeeklyReportDispatcher < ApplicationMailer
-  helper :view
+class WeeklyReportDispatcher
+  def initialize(config:, event_logger:, nr: NewRelic::Agent, clock: -> { Time.current })
+    @config       = config
+    @event_logger = event_logger
+    @nr           = nr
+    @clock        = clock                   # injectable clock for deterministic tests
+  end
 
-  # Send email with a CSV file that reports on completed flows in the past week
-  def perform
-    # get today's date and then get the previous full week for the report send
-    report_date = Time.zone.now.in_time_zone("America/New_York").beginning_of_week
-    report_range = report_date.prev_week.all_week
-
-    # iterate over all configured agencies to determine which agencies should receive the report
-    enabled = client_agency_config.client_agency_ids.filter_map do |client_id|
-      cfg = client_agency_config[client_id]
-      [ client_id, cfg ] if cfg.weekly_report["enabled"]
-    end.to_h
-    agent_ids = enabled.map(&:first)
+  # send email to all enabled agencies for the last full week
+  def send_weekly_summary_emails
+    # 1) Get enabled agencies safely from a Hash-like config
+    enabled = enabled_clients(@config)
+    agent_ids = enabled.keys
 
     # send newrelic event including how many we should send and which ones
-    NewRelic::Agent.record_custom_event(
+    @nr.record_custom_event(
       "WeeklyReportMailerStarted",
       {
         time: Time.current.to_i,
@@ -29,11 +27,11 @@ class WeeklyReportDispatcher < ApplicationMailer
     failure_ids = []
 
     enabled.each do |client_id, cfg|
+      recipient, report_range = nil, nil
       begin
-        recipient = cfg.weekly_report["recipient"] ||
-                    raise("Missing `weekly_report.recipient` for #{client_id}")
+        recipient = fetch_recipient!(cfg, client_id)
+        report_range = compute_last_full_week_for(cfg)
 
-        puts "Send to #{client_id} at #{recipient}"
         # One email per call = fresh mailer instance, isolated attachments
         WeeklyReportMailer
           .with(client_id:, report_range:, recipient:)
@@ -44,7 +42,7 @@ class WeeklyReportDispatcher < ApplicationMailer
         Rails.logger.info("Weekly report sent for #{client_id} to #{recipient}")
 
         # send mixpanel event for success
-        event_logger.track(TrackEvent::WeeklySummaryEmail, nil, {
+        @event_logger.track(TrackEvent::WeeklySummaryEmail, nil, {
           client_agency_id: client_id,
           recipient: recipient,
           report_start: report_range.begin,
@@ -56,14 +54,14 @@ class WeeklyReportDispatcher < ApplicationMailer
       rescue => e
         failure_ids << client_id
         Rails.logger.error("Weekly report FAILED for #{client_id}: #{e.class} - #{e.message}")
-        NewRelic::Agent.notice_error(e, custom_params: { client_agency_id: client_id })
+        @nr.notice_error(e, custom_params: { client_agency_id: client_id })
 
         # send mixpanel event for failure
-        event_logger.track(TrackEvent::WeeklySummaryEmail, nil, {
+        @event_logger.track(TrackEvent::WeeklySummaryEmail, nil, {
           client_agency_id: client_id,
           recipient: recipient,
-          report_start: report_range.begin,
-          report_end: report_range.end,
+          report_start: report_range&.begin,
+          report_end: report_range&.end,
           status: "failure",
           time: Time.current.to_i
         })
@@ -71,7 +69,7 @@ class WeeklyReportDispatcher < ApplicationMailer
     end
 
     # record completed event with stats
-    NewRelic::Agent.record_custom_event(
+    @nr.record_custom_event(
       "WeeklyReportMailerCompleted",
       {
         time: Time.current.to_i,
@@ -82,5 +80,24 @@ class WeeklyReportDispatcher < ApplicationMailer
         failure_ids: failure_ids.join(",")
       }
     )
+  end
+
+  private
+  def enabled_clients(config)
+    config
+      .select { |_id, cfg| cfg.weekly_report["enabled"] }
+      .sort_by { |id, _| id } # sort for specific order, helps with spec
+      .to_h
+  end
+
+  def fetch_recipient!(cfg, client_id)
+    cfg.weekly_report["recipient"] || raise("No weekly report recipients configured for for #{client_id}")
+  end
+
+  def compute_last_full_week_for(cfg)
+    tz = cfg.timezone
+    now = @clock.call
+    report_date  = tz ? now.in_time_zone(tz).beginning_of_week : now.beginning_of_week
+    report_date.prev_week.all_week
   end
 end

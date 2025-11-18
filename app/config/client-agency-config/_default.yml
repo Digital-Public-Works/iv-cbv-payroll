@@ -1,6 +1,7 @@
 # This is the default environment configuration that will be loaded if no subdomain is provided
 id: sandbox
 active: <%= ENV["AGENCY_DEFAULT_ACTIVE"] %>
+timezone: America/New_York
 agency_name: CBV Test Agency
 agency_contact_website: https://www.example.com/contact
 agency_domain: "sandbox"
@@ -33,6 +34,7 @@ weekly_report:
   enabled: false
   recipient: andre@digitalpublicworks.org,jeff@digitalpublicworks.org
 report_customization_show_earnings_list: true
+require_applicant_information_on_invitation: true
 applicant_attributes:
   first_name:
     required: true

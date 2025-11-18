@@ -48,6 +48,7 @@ class ClientAgencyConfig
     attr_reader(*%i[
       id
       agency_name
+      timezone
       agency_contact_website
       agency_domain
       authorized_emails
@@ -70,10 +71,12 @@ class ClientAgencyConfig
       allow_invitation_reuse
       generic_links_disabled
       report_customization_show_earnings_list
+      require_applicant_information_on_invitation
     ])
 
     def initialize(yaml)
       @id = yaml["id"]
+      @timezone = yaml["timezone"]
       @agency_name = yaml["agency_name"]
       @agency_contact_website = yaml["agency_contact_website"]
       @agency_domain = yaml["agency_domain"]
@@ -96,8 +99,10 @@ class ClientAgencyConfig
       @allow_invitation_reuse = yaml["allow_invitation_reuse"] || false
       @report_customization_show_earnings_list = !!yaml["report_customization_show_earnings_list"]
       @generic_links_disabled = yaml["generic_links_disabled"]
+      @require_applicant_information_on_invitation = yaml["require_applicant_information_on_invitation"] || false
 
       raise ArgumentError.new("Client Agency missing id") if @id.blank?
+      raise ArgumentError.new("Client Agency #{@id} missing required attribute `timezone`") if @timezone.blank?
       raise ArgumentError.new("Client Agency #{@id} missing required attribute `agency_name`") if @agency_name.blank?
       raise ArgumentError.new("Client Agency #{@id} invalid value for pay_income_days.w2") unless VALID_PAY_INCOME_DAYS.include?(@pay_income_days[:w2])
       raise ArgumentError.new("Client Agency #{@id} invalid value for pay_income_days.gig") unless VALID_PAY_INCOME_DAYS.include?(@pay_income_days[:gig])
