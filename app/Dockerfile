@@ -29,7 +29,16 @@ FROM registry.docker.com/library/ruby:$RUBY_VERSION AS base
 # hadolint ignore=DL3008
 RUN set -eux; \
     apt-get update -qq; \
+    apt-get upgrade -y libcurl3t64-gnutls; \
     apt-get install -y --no-install-recommends \
+      # Required for wkhtmltopdf (PDF generation)
+      libjpeg62-turbo \
+      libpng16-16t64 \
+      libxrender1 \
+      libfontconfig1 \
+      libfreetype6 \
+      libx11-6 \
+      # End wkhtmltopdf dependencies
       libtasn1-6 \
       libgnutls30 \
       liblzma5 \
