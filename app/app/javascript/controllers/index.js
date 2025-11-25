@@ -18,7 +18,6 @@ application.register("language", LanguageController)
 application.register("copy-link", CopyLinkController)
 application.register("cbv-entry-page", CbvEntryPageController)
 application.register("preview-form", PreviewFormController)
-application.register("common-questions", CommonQuestionsController)
 application.register("session-timeout", SessionTimeoutPageController)
 
 Turbo.StreamActions.redirect = function () {

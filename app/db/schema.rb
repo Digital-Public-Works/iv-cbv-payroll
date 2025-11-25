@@ -53,7 +53,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_11_06_143433) do
     t.string "language"
     t.bigint "cbv_applicant_id"
     t.datetime "expires_at", precision: nil
-    t.index ["auth_token"], name: "index_cbv_flow_invitations_on_auth_token", unique: true, where: "(redacted_at IS NULL)"
+    t.index ["auth_token"], name: "index_cbv_flow_invitations_on_auth_token", unique: true
     t.index ["cbv_applicant_id"], name: "index_cbv_flow_invitations_on_cbv_applicant_id"
     t.index ["user_id"], name: "index_cbv_flow_invitations_on_user_id"
   end
@@ -81,7 +81,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_11_06_143433) do
 
   create_table "payroll_accounts", force: :cascade do |t|
     t.bigint "cbv_flow_id", null: false
-    t.string "pinwheel_account_id"
+    t.string "aggregator_account_id"
     t.datetime "income_synced_at", precision: nil
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -89,7 +89,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_11_06_143433) do
     t.string "type", default: "pinwheel", null: false
     t.string "synchronization_status", default: "unknown"
     t.datetime "redacted_at"
-    t.string "aggregator_account_id"
     t.index ["cbv_flow_id"], name: "index_payroll_accounts_on_cbv_flow_id"
   end
 
