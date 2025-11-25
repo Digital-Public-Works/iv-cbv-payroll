@@ -12,8 +12,12 @@
   <li><%= t(".header_2_bullet_3") %></li>
 </ul>
 
-<div data-controller="cbv-employer-search common">
-  <%= form_with(url: cbv_flow_add_job_path, builder: UswdsFormBuilder, id: "add_job_form") do |f| %>
+  <%= form_with(url: cbv_flow_add_job_path, 
+          builder: UswdsFormBuilder, 
+          id: "add_job_form",
+          data: {
+            controller: "cbv-employer-search common"
+          }) do |f| %>
     <%= f.radio_button(:additional_jobs, true, { label: t(".radio_yes") }) %>
     <%= f.radio_button(:additional_jobs, false, { label: t(".radio_no") }) %>
 
@@ -29,4 +33,3 @@
         }
     %>
   <% end %>
-</div>
