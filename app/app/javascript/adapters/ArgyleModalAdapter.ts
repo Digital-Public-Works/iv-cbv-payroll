@@ -150,15 +150,20 @@ export default class ArgyleModalAdapter extends ModalAdapter {
         break
       case "account error - opened":
         {
-          const eventName = categorizeArgyleError(payload.properties.errorCode)
-          await trackUserAction(eventName, payload)
+          const eventName = categorizeArgyleError(payload.properties.connectionErrorCode)
+          await trackUserAction(eventName, {
+            connectionErrorCode: payload.properties.connectionErrorCode,
+            connectionStatus: payload.properties.connectionStatus,
+            payload,
+          })
         }
         break
       case "error - opened":
-        {
-          const eventName = categorizeArgyleError(payload.properties.errorCode)
-          await trackUserAction(eventName, payload)
-        }
+        // error - opened uses errorType, not errorCode
+        await trackUserAction("ApplicantEncounteredArgyleSystemError", {
+          errorType: payload.properties.errorType,
+          payload,
+        })
         break
       case "link closed":
         await trackUserAction("ApplicantClosedArgyleLinkFromErrorScreen", payload)
@@ -166,7 +171,11 @@ export default class ArgyleModalAdapter extends ModalAdapter {
       case "login - opened":
         if (payload.properties.errorCode) {
           const eventName = categorizeArgyleError(payload.properties.errorCode)
-          await trackUserAction(eventName, payload)
+          await trackUserAction(eventName, {
+            errorCode: payload.properties.errorCode,
+            errorMessage: payload.properties.errorMessage,
+            payload,
+          })
         } else {
           await trackUserAction("ApplicantViewedArgyleLoginPage", payload)
         }
