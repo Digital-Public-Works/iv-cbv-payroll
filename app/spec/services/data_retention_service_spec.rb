@@ -291,7 +291,7 @@ RSpec.describe DataRetentionService do
     end
     let!(:cbv_flow) do
       CbvFlow
-        .create_from_invitation(cbv_flow_invitation)
+        .create_from_invitation(cbv_flow_invitation, 'test_device_id')
         .tap do |cbv_flow|
         cbv_flow.update(
           end_user_id: "11111111-1111-1111-1111-111111111111",

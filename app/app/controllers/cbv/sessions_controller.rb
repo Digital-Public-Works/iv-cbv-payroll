@@ -16,6 +16,7 @@ class Cbv::SessionsController < Cbv::BaseController
       root_url(cbv_flow_timeout: true)
     end
 
+    reset_cbv_session!
     redirect_to redirect_target
   end
 

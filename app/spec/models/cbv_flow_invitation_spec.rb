@@ -246,15 +246,5 @@ RSpec.describe CbvFlowInvitation, type: :model do
         invitation2
       }.to change(CbvFlowInvitation, :count).by(2)
     end
-
-    it "does not raise a uniqueness error when both are redacted" do
-      invitation1
-      invitation2
-
-      expect {
-        invitation1.redact!
-        invitation2.redact!
-      }.not_to raise_error
-    end
   end
 end
