@@ -519,6 +519,7 @@ en:
         paystub_heading_prefix: 'Payment details:'
         your_details: Your details
   continue: Continue
+  back: Back
   date:
     formats:
       default: "%Y-%m-%d"
