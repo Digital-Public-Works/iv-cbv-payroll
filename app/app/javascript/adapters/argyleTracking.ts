@@ -102,7 +102,7 @@ export function argyleErrorToTrackingName(errorCode: string): string {
     case "existing_account_found":
     case "multi_driver_account":
     case "insufficient_account_data":
-      return "ApplicantEncounteredArgyleAccountIssueError"
+      return "ApplicantEncounteredArgyleAccountStateError"
 
     // Credential Errors - Employer/provider selection issues
     case "invalid_account_type":

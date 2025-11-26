@@ -29,7 +29,7 @@ export default class ArgyleModalAdapter extends ModalAdapter {
             await trackUserAction("ApplicantCreatedArgyleAccount", payload)
           },
           onAccountError: async (payload) => {
-            await trackUserAction("ApplicantEncounteredArgyleAccountError", payload)
+            await trackUserAction("ApplicantEncounteredArgyleAccountCallbackError", payload)
           },
           onAccountRemoved: async (payload) => {
             await trackUserAction("ApplicantRemovedArgyleAccount", payload)

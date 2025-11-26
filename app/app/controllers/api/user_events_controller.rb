@@ -13,7 +13,7 @@ class Api::UserEventsController < ApplicationController
     ApplicantSucceededWithPinwheelLogin
     ApplicantSucceededWithArgyleLogin
     ApplicantCreatedArgyleAccount
-    ApplicantEncounteredArgyleAccountError
+    ApplicantEncounteredArgyleAccountCallbackError
     ApplicantRemovedArgyleAccount
     ApplicantClosedArgyleModal
     ApplicantEncounteredArgyleError
@@ -24,12 +24,6 @@ class Api::UserEventsController < ApplicationController
     ApplicantAttemptedArgyleLogin
     ApplicantViewedArgyleDefaultProviderSearch
     ApplicantAccessedArgyleModalMFAScreen
-    ApplicantEncounteredArgyleInvalidCredentialsLoginError
-    ApplicantEncounteredArgyleAuthRequiredLoginError
-    ApplicantEncounteredArgyleConnectionUnavailableLoginError
-    ApplicantEncounteredArgyleExpiredCredentialsLoginError
-    ApplicantEncounteredArgyleInvalidAuthLoginError
-    ApplicantEncounteredArgyleMfaCanceledLoginError
     ApplicantUpdatedArgyleSearchTerm
     ApplicantManuallySwitchedLanguage
     ApplicantConsentedToTerms
@@ -37,10 +31,12 @@ class Api::UserEventsController < ApplicationController
     ApplicantEncounteredArgyleAuthenticationError
     ApplicantEncounteredArgyleMfaError
     ApplicantEncounteredArgylePlatformError
-    ApplicantEncounteredArgyleAccountIssueError
+    ApplicantEncounteredArgyleAccountStateError
     ApplicantEncounteredArgyleCredentialError
     ApplicantEncounteredArgyleLimitError
     ApplicantEncounteredArgyleSystemError
+    ApplicantEncounteredArgyleUnknownError
+    ApplicantEncounteredArgyleUndefinedAccountError
     ApplicantClosedArgyleLinkFromErrorScreen
     ApplicantEncounteredUnknownArgyleEvent
     ApplicantClickedArgyleLoginHelp

@@ -1,4 +1,4 @@
-import { vi, describe, beforeEach, it, expect } from "vitest"
+import { vi } from "vitest"
 import loadScript from "load-script"
 
 export const mockArgyleAuthToken = { user: { user_token: "test-token" }, isSandbox: true }
@@ -19,10 +19,6 @@ export const mockApplicantEncounteredArgyleExpiredCredentialsLoginError = {
 export const mockApplicantEncounteredArgyleInvalidAuthLoginError = {
   name: "login - opened",
   properties: { errorCode: "invalid_auth" },
-}
-export const mockApplicantEncounteredArgyleInvalidCredentialsLoginError = {
-  name: "login - opened",
-  properties: { errorCode: "invalid_credentials" },
 }
 export const mockApplicantEncounteredArgyleMfaCanceledLoginError = {
   name: "login - opened",

@@ -10,7 +10,6 @@ import {
   mockApplicantEncounteredArgyleConnectionUnavailableLoginError,
   mockApplicantEncounteredArgyleExpiredCredentialsLoginError,
   mockApplicantEncounteredArgyleInvalidAuthLoginError,
-  mockApplicantEncounteredArgyleInvalidCredentialsLoginError,
   mockApplicantEncounteredArgyleMfaCanceledLoginError,
   mockApplicantViewedArgyleLoginPage,
   mockApplicantViewedArgyleProviderConfirmation,
@@ -33,6 +32,7 @@ import {
   mockAccountStatusOpenedEvent,
   mockAccountStatusDisconnectedEvent,
 } from "@test/fixtures/argyle.fixture.js"
+import { mockApplicantEncounteredArgyleInvalidCredentialsLoginError } from "@test/fixtures/mockApplicantEncounteredArgyleInvalidCredentialsLoginError.js"
 
 const modalAdapterArgs = {
   onSuccess: vi.fn(),
@@ -125,7 +125,9 @@ describe("ArgyleModalAdapter", () => {
     it("logs onAccountError Event", async () => {
       await triggers.triggerAccountError()
       expect(trackUserAction).toHaveBeenCalledTimes(2)
-      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleAccountError")
+      expect(trackUserAction.mock.calls[1][0]).toBe(
+        "ApplicantEncounteredArgyleAccountCallbackError"
+      )
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
     it("refreshes token onTokenExpired", async () => {
@@ -242,10 +244,10 @@ describe("ArgyleModalAdapter", () => {
       )
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
-    it("logs ApplicantEncounteredArgyleAccountIssueError for account error with account issue code", async () => {
+    it("logs ApplicantEncounteredArgyleAccountStateError for account error with account issue code", async () => {
       await triggers.triggerUIEvent(mockAccountErrorAccountIssueError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
-      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleAccountIssueError")
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleAccountStateError")
       expect(trackUserAction.mock.calls[1][1]["argyle.connectionErrorCode"]).toBe(
         "account_not_found"
       )

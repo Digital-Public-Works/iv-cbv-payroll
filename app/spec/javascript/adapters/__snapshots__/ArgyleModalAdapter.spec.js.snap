@@ -22,7 +22,7 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantDisconnectedArgyleAcco
 }
 `;
 
-exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleAccountIssueError for account error with account issue code 1`] = `
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleAccountStateError for account error with account issue code 1`] = `
 {
   "argyle.connectionErrorCode": "account_not_found",
   "argyle.connectionStatus": "error",
