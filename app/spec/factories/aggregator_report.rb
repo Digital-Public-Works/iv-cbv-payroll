@@ -46,7 +46,7 @@ FactoryBot.define do
         pay_date: "2021-09-20",
         hours: 40,
         hours_by_earning_category: [
-          { category: "regular", hours: 40 }
+          { category: "hourly", hours: 40 }
         ],
         deductions: [
           OpenStruct.new(
@@ -64,7 +64,7 @@ FactoryBot.define do
         pay_date: "2021-10-07",
         hours: 40,
         hours_by_earning_category: [
-          { category: "regular", hours: 40 },
+          { category: "hourly", hours: 40 },
           { category: "overtime", hours: 10 }
         ],
         deductions: [
@@ -189,7 +189,7 @@ FactoryBot.define do
         pay_date: "2021-09-20",
         hours: 20,
         hours_by_earning_category: [
-          { category: "regular", hours: 20 }
+          { category: "hourly", hours: 20 }
         ],
         deductions: [
           OpenStruct.new(
@@ -207,7 +207,7 @@ FactoryBot.define do
         pay_date: "2021-10-07",
         hours: 20,
         hours_by_earning_category: [
-          { category: "regular", hours: 20 }
+          { category: "hourly", hours: 20 }
         ],
         deductions: [
           OpenStruct.new(
