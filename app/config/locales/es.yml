@@ -578,7 +578,7 @@ es:
       heading: "¿Necesita más tiempo en la sesión?"
     page:
       description: Las sesiones terminan después de 30 minutos de inactividad. Esto ayuda a que su información esté segura.
-      info_box_html: Para verificar sus ingresos, devuélvalo a <a href="%{agency_contact_website}" target="_blank" rel="noopener noreferrer">%{agency_full_name}</a>
+      info_box_html: Para verificar sus ingresos, devuélvalo a <a href="%{agency_contact_website}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
       title: Su sesión ha terminado.
   shared:
     agency_acronym:

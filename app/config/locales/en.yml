@@ -653,7 +653,7 @@ en:
       heading: Do you need more time?
     page:
       description: Sessions end after 30 minutes of being away from the page. This helps keep your information safe.
-      info_box_html: To verify your income return to <a href="%{agency_contact_website}" target="_blank" rel="noopener noreferrer">%{agency_full_name}</a>
+      info_box_html: To verify your income return to <a href="%{agency_contact_website}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
       title: Your session has timed out
   shared:
     agency_acronym:
