@@ -1,6 +1,6 @@
 // Namespace payload properties with "argyle." prefix for tracking
 export function namespaceTrackingProperties(
-  properties: ArgyleUIEvent["properties"]
+  properties: Record<string, any>
 ): Record<string, unknown> {
   if (!properties) {
     return {}

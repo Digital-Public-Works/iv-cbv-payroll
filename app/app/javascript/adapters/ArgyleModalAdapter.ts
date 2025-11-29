@@ -26,13 +26,22 @@ export default class ArgyleModalAdapter extends ModalAdapter {
           onAccountConnected: this.onSuccess.bind(this),
           onTokenExpired: this.onTokenExpired.bind(this),
           onAccountCreated: async (payload) => {
-            await trackUserAction("ApplicantCreatedArgyleAccount", payload)
+            await trackUserAction(
+              "ApplicantCreatedArgyleAccount",
+              namespaceTrackingProperties(payload)
+            )
           },
           onAccountError: async (payload) => {
-            await trackUserAction("ApplicantEncounteredArgyleAccountCallbackError", payload)
+            await trackUserAction(
+              "ApplicantEncounteredArgyleAccountCallbackError",
+              namespaceTrackingProperties(payload)
+            )
           },
           onAccountRemoved: async (payload) => {
-            await trackUserAction("ApplicantRemovedArgyleAccount", payload)
+            await trackUserAction(
+              "ApplicantRemovedArgyleAccount",
+              namespaceTrackingProperties(payload)
+            )
           },
           onUIEvent: async (payload) => {
             await this.onUIEvent(payload)

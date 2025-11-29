@@ -162,22 +162,22 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantViewedArgyleSuccessScr
 
 exports[`ArgyleModalAdapter > event:other > logs onAccountCreated Event 1`] = `
 {
-  "accountId": "account-id",
-  "platformId": "platform-id",
+  "argyle.accountId": "account-id",
+  "argyle.platformId": "platform-id",
 }
 `;
 
 exports[`ArgyleModalAdapter > event:other > logs onAccountError Event 1`] = `
 {
-  "accountId": "account-id",
-  "platformId": "platform-id",
+  "argyle.accountId": "account-id",
+  "argyle.platformId": "platform-id",
 }
 `;
 
 exports[`ArgyleModalAdapter > event:other > logs onAccountRemoved Event 1`] = `
 {
-  "accountId": "account-id",
-  "platformId": "platform-id",
+  "argyle.accountId": "account-id",
+  "argyle.platformId": "platform-id",
 }
 `;
 

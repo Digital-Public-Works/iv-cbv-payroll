@@ -10,6 +10,7 @@ import {
   mockApplicantEncounteredArgyleConnectionUnavailableLoginError,
   mockApplicantEncounteredArgyleExpiredCredentialsLoginError,
   mockApplicantEncounteredArgyleInvalidAuthLoginError,
+  mockApplicantEncounteredArgyleInvalidCredentialsLoginError,
   mockApplicantEncounteredArgyleMfaCanceledLoginError,
   mockApplicantViewedArgyleLoginPage,
   mockApplicantViewedArgyleProviderConfirmation,
@@ -32,7 +33,6 @@ import {
   mockAccountStatusOpenedEvent,
   mockAccountStatusDisconnectedEvent,
 } from "@test/fixtures/argyle.fixture.js"
-import { mockApplicantEncounteredArgyleInvalidCredentialsLoginError } from "@test/fixtures/mockApplicantEncounteredArgyleInvalidCredentialsLoginError.js"
 
 const modalAdapterArgs = {
   onSuccess: vi.fn(),

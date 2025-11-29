@@ -20,6 +20,10 @@ export const mockApplicantEncounteredArgyleInvalidAuthLoginError = {
   name: "login - opened",
   properties: { errorCode: "invalid_auth" },
 }
+export const mockApplicantEncounteredArgyleInvalidCredentialsLoginError = {
+  name: "login - opened",
+  properties: { errorCode: "invalid_credentials" },
+}
 export const mockApplicantEncounteredArgyleMfaCanceledLoginError = {
   name: "login - opened",
   properties: { errorCode: "mfa_cancelled_by_the_user" },
