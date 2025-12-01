@@ -26,7 +26,7 @@ class Cbv::PreviewController < ApplicationController
   def synchronizations
     @payroll_account = @cbv_flow.payroll_accounts.first
     # Set params that the view expects
-    params[:user] = { account_id: @payroll_account.pinwheel_account_id }
+    params[:user] = { account_id: @payroll_account.aggregator_account_id }
 
     render_as("synchronizations")
   end
@@ -34,9 +34,9 @@ class Cbv::PreviewController < ApplicationController
   def payment_details
     @payroll_account = @cbv_flow.payroll_accounts.first
     # Set params that the view expects
-    params[:user] = { account_id: @payroll_account.pinwheel_account_id }
+    params[:user] = { account_id: @payroll_account.aggregator_account_id }
 
-    @payroll_account_report = @aggregator_report.find_account_report(@payroll_account.pinwheel_account_id)
+    @payroll_account_report = @aggregator_report.find_account_report(@payroll_account.aggregator_account_id)
     @is_w2_worker = @payroll_account_report.employment.employment_type == :w2
     @account_comment = account_comment
 
@@ -160,7 +160,6 @@ class Cbv::PreviewController < ApplicationController
     payroll_account = PayrollAccount::Argyle.create!(
       cbv_flow: cbv_flow,
       aggregator_account_id: argyle_account_id,
-      pinwheel_account_id: argyle_account_id,
       supported_jobs: %w[accounts income paystubs employment identity],
       synchronization_status: :succeeded
     )

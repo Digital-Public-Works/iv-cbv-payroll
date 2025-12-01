@@ -35,8 +35,11 @@ RSpec.describe Cbv::SuccessesController do
 
       it "shows a link to the CBV survey" do
         get :show
-        expect(response.body).to include(I18n.t("cbv.successes.show.survey"))
-        expect(response.body).to include(feedbacks_path(form: "survey"))
+        page = Nokogiri::HTML(response.body)
+        survey_link = page.at_xpath("//*[normalize-space(text()) = '#{I18n.t("cbv.successes.show.survey")}']")
+
+        expect(survey_link).to be_present
+        expect(survey_link["href"]).to eq(feedbacks_path(form: "survey", referer: cbv_flow_success_url))
       end
 
       describe "#invitation_link" do
@@ -48,7 +51,7 @@ RSpec.describe Cbv::SuccessesController do
           it "uses agency demo domain with shared origin" do
             get :show
 
-            expected_url = "https://sandbox.#{ENV["DOMAIN_NAME"]}/en/cbv/entry?origin=shared&amp;token=#{cbv_flow.cbv_flow_invitation.auth_token}"
+            expected_url = "https://sandbox.#{ENV["DOMAIN_NAME"]}/en/start/#{cbv_flow.cbv_flow_invitation.auth_token}?origin=shared"
             expect(response.body).to include(expected_url)
           end
         end
@@ -60,9 +63,7 @@ RSpec.describe Cbv::SuccessesController do
 
           it "uses agency demo domain with shared origin" do
             get :show
-            expected_url = "https://demo.divt.app.#{ENV["DOMAIN_NAME"]}/en/cbv/entry?origin=shared&amp;token=#{cbv_flow.cbv_flow_invitation.auth_token}"
-
-            puts "EXPECTED URL: #{expected_url}"
+            expected_url = "https://demo.divt.app.#{ENV["DOMAIN_NAME"]}/en/start/#{cbv_flow.cbv_flow_invitation.auth_token}?origin=shared"
             expect(response.body).to include(expected_url)
           end
         end

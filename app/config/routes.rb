@@ -1,3 +1,4 @@
+
 require "constraints/configured_agency_constraint"
 
 Rails.application.routes.draw do
@@ -55,6 +56,9 @@ Rails.application.routes.draw do
     # RFI (mail) origin tracking route for LA
     get "/start", to: "pages#home", defaults: { origin: "mail" }
 
+    # Tokenized links
+    get "/start/:token", to: "cbv/entries#show", as: :start_flow, token: /[^\/]+/
+
     scope "/cbv", as: :cbv_flow, module: :cbv do
       resource :entry, only: %i[show create]
       resource :employer_search, only: %i[show]
@@ -78,6 +82,7 @@ Rails.application.routes.draw do
       # Session management
       post "session/refresh", to: "sessions#refresh", as: :session_refresh
       get "session/end", to: "sessions#end", as: :session_end
+      get "session/timeout", to: "sessions#timeout", as: :session_timeout
 
       # Preview routes (non-production only)
       scope "/preview", as: :preview do
