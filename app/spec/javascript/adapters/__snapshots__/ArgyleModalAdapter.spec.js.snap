@@ -78,6 +78,13 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleLimit
 }
 `;
 
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleLinkOpenError for error opened event 1`] = `
+{
+  "argyle.errorType": "invalid_user_token",
+  "argyle.userId": "test-user-id",
+}
+`;
+
 exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleMfaError for account error with MFA error code 1`] = `
 {
   "argyle.connectionErrorCode": "mfa_timeout",
@@ -103,13 +110,6 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgylePlatf
 exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgylePlatformError for login with connection_unavailable error 1`] = `
 {
   "argyle.errorCode": "connection_unavailable",
-}
-`;
-
-exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleSystemError for error opened event 1`] = `
-{
-  "argyle.errorType": "invalid_user_token",
-  "argyle.userId": "test-user-id",
 }
 `;
 

@@ -35,7 +35,7 @@ class Api::UserEventsController < ApplicationController
     ApplicantEncounteredArgyleCredentialError
     ApplicantEncounteredArgyleLanguageError
     ApplicantEncounteredArgyleLimitError
-    ApplicantEncounteredArgyleSystemError
+    ApplicantEncounteredArgyleLinkOpenError
     ApplicantEncounteredArgyleUnknownError
     ApplicantEncounteredArgyleUndefinedAccountError
     ApplicantClosedArgyleLinkFromErrorScreen

@@ -290,10 +290,10 @@ describe("ArgyleModalAdapter", () => {
 
     // New "error - opened" event test
     // Per Argyle docs: error - opened uses errorType, not errorCode
-    it("logs ApplicantEncounteredArgyleSystemError for error opened event", async () => {
+    it("logs ApplicantEncounteredArgyleLinkOpenError for error opened event", async () => {
       await triggers.triggerUIEvent(mockErrorOpenedEvent)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
-      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleSystemError")
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleLinkOpenError")
       expect(trackUserAction.mock.calls[1][1]["argyle.errorType"]).toBe("invalid_user_token")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })

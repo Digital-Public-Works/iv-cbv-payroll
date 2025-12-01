@@ -36,7 +36,7 @@ export function argyleUIEventToTrackingName(event: ArgyleUIEvent): string {
     case "search - opened":
       return "ApplicantViewedArgyleDefaultProviderSearch"
     case "error - opened":
-      return "ApplicantEncounteredArgyleSystemError"
+      return "ApplicantEncounteredArgyleLinkOpenError"
     case "link closed":
       return "ApplicantClosedArgyleLinkFromErrorScreen"
     case "search - link item selected":
