@@ -83,7 +83,7 @@ es:
   cbv:
     add_jobs:
       show:
-        header: "¿Tiene otro trabajo que declarar?"
+        header: "¿Tiene otro trabajo que verificar?"
         header_2: "¿Tiene otro trabajo que reportar usando Verificar Mis Ingresos?"
         header_2_bullet_1: Tiene un proveedor de nómina en línea, o
         header_2_bullet_2: Le permite ver talones de pago en línea, o
