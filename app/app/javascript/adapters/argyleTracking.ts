@@ -115,6 +115,10 @@ export function argyleErrorToTrackingName(errorCode: string): string {
     case "credentials_managed_by_organization":
       return "ApplicantEncounteredArgyleCredentialError"
 
+    // Credential Errors - Employer/provider selection issues
+    case "unsupported_language":
+      return "ApplicantEncounteredArgyleLanguageError"
+
     // Limit Errors - Rate limits and user-triggered issues
     case "all_employers_connected":
     case "login_attempts_exceeded":
