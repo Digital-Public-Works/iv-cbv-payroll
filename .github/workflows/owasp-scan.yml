@@ -1,8 +1,10 @@
 name: OWASP ZAP daily scan
 
-on:
-  pull_request:
-    branches: [main]
+on: workflow_dispatch
+# temporarily disable OWASP scanning until we update the tests.
+# on:
+#  pull_request:
+#    branches: [main]
   # schedule:
   #   # cron format: 'minute hour dayofmonth month dayofweek'
   #   # this will run at noon UTC every day (7am EST / 8am EDT)

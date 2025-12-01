@@ -68,7 +68,6 @@ class ClientAgencyConfig
       transmission_method_configuration
       weekly_report
       applicant_attributes
-      allow_invitation_reuse
       generic_links_disabled
       report_customization_show_earnings_list
       require_applicant_information_on_invitation
@@ -96,7 +95,6 @@ class ClientAgencyConfig
       @sso = yaml["sso"]
       @weekly_report = yaml["weekly_report"]
       @applicant_attributes = yaml["applicant_attributes"] || {}
-      @allow_invitation_reuse = yaml["allow_invitation_reuse"] || false
       @report_customization_show_earnings_list = !!yaml["report_customization_show_earnings_list"]
       @generic_links_disabled = yaml["generic_links_disabled"]
       @require_applicant_information_on_invitation = yaml["require_applicant_information_on_invitation"] || false
