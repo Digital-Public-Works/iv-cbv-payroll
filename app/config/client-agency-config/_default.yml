@@ -27,8 +27,6 @@ pay_income_days:
   gig: 90
 # How many days from date of generation is the link valid for
 invitation_valid_days: 14
-# Set to false if an invitation can only be used once. A 'use' is counted as a completed invitation
-allow_invitation_reuse: true
 weekly_report:
   recipient: andre@digitalpublicworks.org,jeff@digitalpublicworks.org
 report_customization_show_earnings_list: true
