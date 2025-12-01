@@ -20,7 +20,6 @@ RSpec.describe "Help Features", type: :feature, js: true do
     before do
       visit URI(cbv_flow_invitation.to_url).request_uri
       verify_page(page, title: I18n.t("cbv.entries.show.header", agency_full_name: I18n.t("shared.agency_full_name.sandbox")))
-      find("label", text: I18n.t("cbv.entries.show.checkbox_large_text.default", agency_full_name: I18n.t("shared.agency_full_name.sandbox"))).click
       click_button I18n.t("cbv.entries.show.continue")
     end
 
@@ -105,7 +104,7 @@ RSpec.describe "Help Features", type: :feature, js: true do
 
         # Verify feedback link opens in new tab with correct URL
         feedback_link = find_link(I18n.t("help.index.feedback"))
-        expect(feedback_link[:href]).to eq("https://docs.google.com/forms/d/e/1FAIpQLSfrUiz0oWE5jbXjPfl-idQQGPgxKplqFtcKq08UOhTaEa2k6A/viewform")
+        expect(feedback_link[:href]).to eq("https://forms.gle/Qb7D12kHZymur5jKA")
         expect(feedback_link[:target]).to eq("_blank")
       end
     end

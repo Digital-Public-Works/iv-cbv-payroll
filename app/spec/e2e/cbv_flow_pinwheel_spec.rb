@@ -17,11 +17,8 @@ RSpec.describe "e2e CBV flow pinwheel test", type: :feature, js: true do
     visit URI(root_url).request_uri
     visit URI(cbv_flow_invitation.to_url).request_uri
 
-    # THIS WILL PROBSBLY BREAK AS PART OF DSAC MERGE, NEED TO RESOLVE
-    verify_page(page, title: I18n.t("cbv.entries.show.header"))
-    find("label", text: I18n.t("cbv.entries.show.checkbox.default", agency_full_name: I18n.t("shared.agency_full_name.sandbox"))).click
     verify_page(page, title: I18n.t("cbv.entries.show.header", agency_full_name: I18n.t("shared.agency_full_name.sandbox")))
-    find('[data-cbv-entry-page-target="consentCheckbox"]').click
+    find("label", text: I18n.t("cbv.entries.show.checkbox.default", agency_full_name: I18n.t("shared.agency_full_name.sandbox"))).click
 
     click_button I18n.t("cbv.entries.show.continue")
 

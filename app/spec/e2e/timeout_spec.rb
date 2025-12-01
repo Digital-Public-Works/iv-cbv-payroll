@@ -20,9 +20,7 @@ RSpec.describe "timeout test", type: :feature, js: true do
     end
     click_link I18n.t("session_timeout.modal.end_button")
     verify_page(page, title: I18n.t("session_timeout.page.title"))
-
-    click_link "click here"
-    expect(page).to have_content(I18n.t("cbv.entries.show.header"))
-    expect(page).to_not have_content(I18n.t("cbv.error_missing_token_html"))
+    # needs to be hardcoded because it is html-replace with agency link
+    expect(page).to have_content("To verify your income")
   end
 end
