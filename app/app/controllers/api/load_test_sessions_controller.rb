@@ -66,7 +66,6 @@ class Api::LoadTestSessionsController < ApplicationController
     payroll_account = PayrollAccount::Argyle.create!(
       cbv_flow: cbv_flow,
       aggregator_account_id: argyle_account_id,
-      pinwheel_account_id: argyle_account_id,
       supported_jobs: %w[accounts income paystubs employment identity],
       synchronization_status: :succeeded
     )
@@ -99,7 +98,6 @@ class Api::LoadTestSessionsController < ApplicationController
     # Create pending payroll account
     payroll_account = PayrollAccount::Argyle.create!(
       cbv_flow: cbv_flow,
-      pinwheel_account_id: argyle_account_id,
       aggregator_account_id: argyle_account_id,
       supported_jobs: %w[accounts income paystubs employment identity],
       synchronization_status: :in_progress
@@ -126,7 +124,6 @@ class Api::LoadTestSessionsController < ApplicationController
     # Create failed payroll account
     payroll_account = PayrollAccount::Argyle.create!(
       cbv_flow: cbv_flow,
-      pinwheel_account_id: argyle_account_id,
       aggregator_account_id: argyle_account_id,
       supported_jobs: %w[accounts income paystubs employment identity],
       synchronization_status: :failed

@@ -45,6 +45,26 @@ RSpec.describe Cbv::EntriesController do
         )
       end
 
+      it "successfully starts the flow with a 10-character token" do
+        expect(invitation.auth_token.length).to eq(10)
+
+        get :show, params: { token: invitation.auth_token }
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Review your payment information.")
+      end
+
+      it "successfully starts the flow with a 36-character legacy token" do
+        legacy_uuid = SecureRandom.alphanumeric(36)
+        invitation.update_column(:auth_token, legacy_uuid)
+
+        expect(invitation.reload.auth_token).to eq(legacy_uuid)
+        expect(invitation.auth_token.length).to eq(36)
+
+        get :show, params: { token: invitation.auth_token }
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Review your payment information.")
+      end
+
       context "with multiple cbv flows" do
         it "sends multiple related tracking events" do
           expect(EventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
@@ -60,7 +80,7 @@ RSpec.describe Cbv::EntriesController do
             invitation_id: invitation.id,
             cbv_flow_id: be_a(Integer),
             client_agency_id: invitation.client_agency_id,
-            path: "/cbv/entry"
+            path: a_string_starting_with("/start/")
           ))
 
           expect(EventTrackingJob).to receive(:perform_later).with("ApplicantViewedAgreement", anything, hash_including(
@@ -91,7 +111,7 @@ RSpec.describe Cbv::EntriesController do
           invitation_id: invitation.id,
           cbv_flow_id: be_a(Integer),
           client_agency_id: invitation.client_agency_id,
-          path: "/cbv/entry"
+          path: a_string_starting_with("/start/")
         ))
 
         expect(EventTrackingJob).to receive(:perform_later).with("ApplicantViewedAgreement", anything, hash_including(
@@ -109,7 +129,7 @@ RSpec.describe Cbv::EntriesController do
           invitation_id: invitation.id,
           cbv_flow_id: be_a(Integer),
           client_agency_id: invitation.client_agency_id,
-          path: "/cbv/entry"
+          path: a_string_starting_with("/start/")
         ))
 
         allow(EventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, anything)
@@ -157,43 +177,20 @@ RSpec.describe Cbv::EntriesController do
           let!(:connected_account) do
             create(:payroll_account,
               cbv_flow: existing_cbv_flow,
-              pinwheel_account_id: SecureRandom.uuid,
+              aggregator_account_id: SecureRandom.uuid,
               created_at: 4.minutes.ago
             )
           end
 
-          context "when an agency doesn't allow invitation reuse" do
-            before do
-              allow_any_instance_of(ClientAgencyConfig::ClientAgency)
-                .to receive(:allow_invitation_reuse)
-                .and_return(false)
-            end
+          it "creates a new CbvFlow object" do
+            expect { get :show, params: { token: invitation.auth_token } }
+              .to change { session[:cbv_flow_id] }
+                .from(nil)
+                .to(be_an(Integer))
+              .and change(CbvFlow, :count).by(1)
 
-            it "redirects to the expired invitation URL" do
-              expect { get :show, params: { token: invitation.auth_token } }
-                .not_to change { session[:cbv_flow_id] }
-
-              expect(response).to redirect_to(cbv_flow_expired_invitation_path(client_agency_id: invitation.client_agency_id))
-            end
-          end
-
-          context "when an agency allows invitation reuse" do
-            before do
-              allow_any_instance_of(ClientAgencyConfig::ClientAgency)
-                .to receive(:allow_invitation_reuse)
-                .and_return(true)
-            end
-
-            it "creates a new CbvFlow object" do
-              expect { get :show, params: { token: invitation.auth_token } }
-                .to change { session[:cbv_flow_id] }
-                  .from(nil)
-                  .to(be_an(Integer))
-                .and change(CbvFlow, :count).by(1)
-
-              expect(assigns(:cbv_flow)).to be_present
-              expect(assigns(:cbv_flow).cbv_flow_invitation).to eq(invitation)
-            end
+            expect(assigns(:cbv_flow)).to be_present
+            expect(assigns(:cbv_flow).cbv_flow_invitation).to eq(invitation)
           end
         end
       end

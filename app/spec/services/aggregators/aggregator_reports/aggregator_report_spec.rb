@@ -18,7 +18,7 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
 
     describe '#summarize_by_employer' do
       it "returns nil for income, employment & identity when job succeeds but no data found" do
-        account_id = report.payroll_accounts.first.pinwheel_account_id
+        account_id = report.payroll_accounts.first.aggregator_account_id
 
         allow(report.payroll_accounts.first).to receive(:job_succeeded?).with("income").and_return(false)
         allow(report.payroll_accounts.first).to receive(:job_succeeded?).with("employment").and_return(true)
@@ -32,7 +32,7 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
       end
 
       it "returns nil for income, employment & identity when job fails" do
-        account_id = report.payroll_accounts.first.pinwheel_account_id
+        account_id = report.payroll_accounts.first.aggregator_account_id
 
         allow(report.payroll_accounts.first).to receive(:job_succeeded?).with("income").and_return(false)
         allow(report.payroll_accounts.first).to receive(:job_succeeded?).with("employment").and_return(false)
@@ -55,7 +55,7 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
 
     let(:account) { "01959b15-8b7f-5487-212d-2c0f50e3ec96" }
     let!(:payroll_account) do
-      create(:payroll_account, :argyle_fully_synced, pinwheel_account_id: account)
+      create(:payroll_account, :argyle_fully_synced, aggregator_account_id: account)
     end
     let(:days_ago_to_fetch) { 90 }
     let(:days_ago_to_fetch_for_gig) { 90 }
@@ -117,6 +117,50 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
           expect(summary[account][:identity].employment_id).to eq(summary[account][:employment].employment_matching_id)
         end
       end
+    end
+  end
+
+  describe '#income_report' do
+    let(:comment) { "cool stuff" }
+    let(:cbv_flow) { create(:cbv_flow, has_other_jobs: false, additional_information: { comment: comment }) }
+    let(:report) { build(:pinwheel_report, :hydrated, :with_pinwheel_account) }
+
+    before do
+      report.payroll_accounts.first.cbv_flow = cbv_flow
+    end
+
+    it 'income information' do
+      expect(report.income_report).to eq(
+        has_other_jobs: false,
+        employments: [
+          {
+            applicant_full_name: "Cool Guy",
+            applicant_ssn: "XXX-XX-1234",
+            applicant_extra_comments: "cool stuff",
+            employer_name: "Cool Company",
+            employer_phone: "604-555-1234",
+            employer_address: "1234 Main St Vancouver BC V5K 0A1",
+            employment_status: "inactive",
+            employment_type: "gig",
+            employment_start_date: Date.new(2014, 1, 1).iso8601,
+            employment_end_date: Date.new(2014, 1, 2).iso8601,
+            pay_frequency: "variable",
+            compensation_amount: 100,
+            compensation_unit: "hour",
+            paystubs: [
+              {
+                pay_date: Date.new(2014, 1, 1).iso8601,
+                pay_period_start: Date.new(2014, 1, 1),
+                pay_period_end: Date.new(2014, 1, 2),
+                pay_gross: 12345,
+                pay_gross_ytd: 12345,
+                pay_net: 12345,
+                hours_paid: 12.0
+              }
+            ]
+          }
+        ]
+      )
     end
   end
 end

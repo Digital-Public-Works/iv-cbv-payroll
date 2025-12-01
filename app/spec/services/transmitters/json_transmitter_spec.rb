@@ -31,10 +31,12 @@ RSpec.describe Transmitters::JsonTransmitter do
     allow(mock_client_agency).to receive(:transmission_method_configuration).and_return(transmission_method_configuration)
     allow(mock_client_agency).to receive(:id).and_return("sandbox")
     allow(CbvApplicant).to receive(:valid_attributes_for_agency).with("sandbox").and_return([ "case_number" ])
+    allow(Rails.logger).to receive(:error)
   end
 
   context 'agency responds with 200' do
     it 'posts to the endpoint with the expected data' do
+      expect(aggregator_report).to receive(:income_report).and_return({ cool: "report" })
       VCR.use_cassette("json_transmitter_200") do
         described_class.new(cbv_flow, mock_client_agency, aggregator_report).deliver
       end
@@ -42,24 +44,34 @@ RSpec.describe Transmitters::JsonTransmitter do
   end
 
   context 'agency responds with 500' do
-    it 'logs an error' do
+    it 'raises an HTTP error' do
       VCR.use_cassette("json_transmitter_500") do
-        expect { described_class.new(cbv_flow, mock_client_agency, aggregator_report).deliver }.to raise_error("Received 500 from agency")
+        expect { described_class.new(cbv_flow, mock_client_agency, aggregator_report).deliver }.to raise_error("Unexpected response from agency: 500 Internal Server Error")
       end
+
+      expect(Rails.logger).to have_received(:error).with(/Unexpected response: 500/)
     end
   end
 
   context 'any other non-200 response' do
     it 'raises an HTTP error' do
       VCR.use_cassette("json_transmitter_418") do
-        expect { described_class.new(cbv_flow, mock_client_agency, aggregator_report).deliver }.to raise_error("Unexpected response from agency: 418 I'm a teapot")
+        expect { described_class.new(cbv_flow, mock_client_agency, aggregator_report).deliver }
+          .to raise_error("Unexpected response from agency: 418 I'm a teapot")
       end
+
+      expect(Rails.logger).to have_received(:error).with(/Unexpected response: 418/)
+      expect(Rails.logger).to have_received(:error).with(/Here is my handle, here is my spout./)
     end
   end
 
   context 'signature generation' do
-    it 'generates and sends signature headers' do
-      expect(JsonApiSignature).to receive(:generate).and_return("mock-signature")
+    it 'generates signature with the request body' do
+      expect(JsonApiSignature).to receive(:generate).with(
+        a_string_including(cbv_flow.confirmation_code),
+        anything,
+        anything
+      ).and_return("mock-signature")
 
       VCR.use_cassette("json_transmitter_200") do
         described_class.new(cbv_flow, mock_client_agency, aggregator_report).deliver
@@ -77,6 +89,27 @@ RSpec.describe Transmitters::JsonTransmitter do
           described_class.new(cbv_flow, mock_client_agency, aggregator_report).deliver
         end
       end
+    end
+  end
+
+  context 'custom headers' do
+    let(:transmission_method_configuration) do
+      {
+        "url" => "http://fake-state.api.gov/api/v1/income-report",
+        "custom_headers" => {
+          "X-Client-ID" => "test-client-id",
+          "X-Request-ID" => "test-request-id"
+        }
+      }
+    end
+
+    it 'sends configured custom headers' do
+      stub = stub_request(:post, "http://fake-state.api.gov/api/v1/income-report")
+        .with(headers: { 'X-Client-ID' => 'test-client-id', 'X-Request-ID' => 'test-request-id' })
+        .to_return(status: 200, body: '{"status": "success"}')
+
+      expect(described_class.new(cbv_flow, mock_client_agency, aggregator_report).deliver).to eq("ok")
+      expect(stub).to have_been_requested
     end
   end
 end
