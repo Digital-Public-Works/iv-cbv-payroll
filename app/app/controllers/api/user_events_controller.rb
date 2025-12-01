@@ -13,7 +13,7 @@ class Api::UserEventsController < ApplicationController
     ApplicantSucceededWithPinwheelLogin
     ApplicantSucceededWithArgyleLogin
     ApplicantCreatedArgyleAccount
-    ApplicantEncounteredArgyleAccountError
+    ApplicantEncounteredArgyleAccountCallbackError
     ApplicantRemovedArgyleAccount
     ApplicantClosedArgyleModal
     ApplicantEncounteredArgyleError
@@ -24,16 +24,26 @@ class Api::UserEventsController < ApplicationController
     ApplicantAttemptedArgyleLogin
     ApplicantViewedArgyleDefaultProviderSearch
     ApplicantAccessedArgyleModalMFAScreen
-    ApplicantEncounteredArgyleInvalidCredentialsLoginError
-    ApplicantEncounteredArgyleAuthRequiredLoginError
-    ApplicantEncounteredArgyleConnectionUnavailableLoginError
-    ApplicantEncounteredArgyleExpiredCredentialsLoginError
-    ApplicantEncounteredArgyleInvalidAuthLoginError
-    ApplicantEncounteredArgyleMfaCanceledLoginError
     ApplicantUpdatedArgyleSearchTerm
     ApplicantManuallySwitchedLanguage
     ApplicantConsentedToTerms
     ApplicantViewedHelpText
+    ApplicantEncounteredArgyleAuthenticationError
+    ApplicantEncounteredArgyleMfaError
+    ApplicantEncounteredArgylePlatformError
+    ApplicantEncounteredArgyleAccountStateError
+    ApplicantEncounteredArgyleCredentialError
+    ApplicantEncounteredArgyleLanguageError
+    ApplicantEncounteredArgyleLimitError
+    ApplicantEncounteredArgyleSystemError
+    ApplicantEncounteredArgyleUnknownError
+    ApplicantEncounteredArgyleUndefinedAccountError
+    ApplicantClosedArgyleLinkFromErrorScreen
+    ApplicantEncounteredUnknownArgyleEvent
+    ApplicantClickedArgyleLoginHelp
+    ApplicantViewedArgyleSuccessScreen
+    ApplicantViewedArgyleAccountStatus
+    ApplicantDisconnectedArgyleAccount
   ]
 
   def user_action
