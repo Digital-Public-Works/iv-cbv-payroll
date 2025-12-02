@@ -8,8 +8,6 @@ class CbvFlowInvitation < ApplicationRecord
   # to be of practical use here.
   EMAIL_REGEX = /\A([\w+\-].?)+@[a-z\d\-]+(\.[a-z\d\-]+)*\.[a-z\d\-]+\z/i
 
-  INVITATION_VALIDITY_TIME_ZONE = "America/New_York"
-
   MAX_FLOWS_PER_INVITATION = 100
 
   VALID_LOCALES = Rails.application.config.i18n.available_locales.map(&:to_s).freeze
@@ -44,7 +42,7 @@ class CbvFlowInvitation < ApplicationRecord
   scope :unstarted, -> { left_outer_joins(:cbv_flows).where(cbv_flows: { id: nil }) }
 
   def expires_at_local
-    expires_at&.in_time_zone(INVITATION_VALIDITY_TIME_ZONE)
+    expires_at&.in_time_zone(agency_time_zone)
   end
 
   def expired?
@@ -79,8 +77,7 @@ class CbvFlowInvitation < ApplicationRecord
   end
 
   def applicant_information
-    # TODO: this configuration needs to be in the agency config file, not a hardcoded exception case here
-    return if client_agency_id == "az_des" || client_agency_id == "pa_dhs" || client_agency_id == "la_ldh"
+    return unless !!agency_config.require_applicant_information_on_invitation
 
     errors.add(:'cbv_applicant.first_name', I18n.t("activerecord.errors.models.cbv_applicant.attributes.first_name.blank")) if cbv_applicant.first_name.blank?
     errors.add(:'cbv_applicant.last_name', I18n.t("activerecord.errors.models.cbv_applicant.attributes.last_name.blank")) if cbv_applicant.last_name.blank?
@@ -93,12 +90,20 @@ class CbvFlowInvitation < ApplicationRecord
     self.expires_at ||= calculate_expires_at
   end
 
-  # Invitations are valid until 11:59pm Eastern Time on the (e.g.) 14th day
+  # Invitations are valid until 11:59pm in the agency's time zone on the Nth day
   # after sending the invitation.
   def calculate_expires_at
-    end_of_day_sent = created_at.in_time_zone(INVITATION_VALIDITY_TIME_ZONE).end_of_day
-    days_valid_for = Rails.application.config.client_agencies[client_agency_id].invitation_valid_days
-
+    base_time = (created_at || Time.current)
+    end_of_day_sent = base_time.in_time_zone(agency_time_zone).end_of_day
+    days_valid_for  = agency_config.invitation_valid_days
     end_of_day_sent + days_valid_for.days
+  end
+
+  def agency_config
+    Rails.application.config.client_agencies[client_agency_id]
+  end
+
+  def agency_time_zone
+    agency_config.timezone
   end
 end
