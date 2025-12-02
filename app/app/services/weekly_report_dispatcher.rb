@@ -1,5 +1,6 @@
 require "csv"
 class WeeklyReportDispatcher
+  # config is an instance of AgencyConfig, turned into a hash. See weekly_reports.rake for where this is used
   def initialize(config:, event_logger:, nr: NewRelic::Agent, clock: -> { Time.current })
     @config       = config
     @event_logger = event_logger
