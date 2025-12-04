@@ -19,7 +19,7 @@ class Webhooks::Argyle::EventsController < ApplicationController
       # All other webhooks have a params["data"]["account"], which we can use
       # to find the account.
       account_id = params.dig("data", "account")
-      payroll_account = @cbv_flow.payroll_accounts.find_or_create_by(type: :argyle, pinwheel_account_id: account_id) do |new_payroll_account|
+      payroll_account = @cbv_flow.payroll_accounts.find_or_create_by(type: :argyle, aggregator_account_id: account_id) do |new_payroll_account|
         new_payroll_account.synchronization_status = :in_progress
         new_payroll_account.supported_jobs = Aggregators::Webhooks::Argyle.get_supported_jobs
       end
@@ -100,6 +100,7 @@ class Webhooks::Argyle::EventsController < ApplicationController
       time: Time.now.to_i,
       cbv_applicant_id: @cbv_flow.cbv_applicant_id,
       cbv_flow_id: @cbv_flow.id,
+      device_id: @cbv_flow.device_id,
       invitation_id: @cbv_flow.cbv_flow_invitation_id,
       connection_status: connection_status,
       argyle_error_code: error_code,
@@ -168,6 +169,7 @@ class Webhooks::Argyle::EventsController < ApplicationController
         time: Time.now.to_i,
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,
         cbv_flow_id: @cbv_flow.id,
+        device_id: @cbv_flow.device_id,
         invitation_id: @cbv_flow.cbv_flow_invitation_id,
         sync_data: sync_data.to_s,
         sync_duration_seconds: Time.now - payroll_account.sync_started_at,
@@ -178,6 +180,7 @@ class Webhooks::Argyle::EventsController < ApplicationController
         time: Time.now.to_i,
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,
         cbv_flow_id: @cbv_flow.id,
+        device_id: @cbv_flow.device_id,
         invitation_id: @cbv_flow.cbv_flow_invitation_id,
         sync_data: "fully_synced",
         sync_duration_seconds: Time.now - payroll_account.sync_started_at,
@@ -196,6 +199,7 @@ class Webhooks::Argyle::EventsController < ApplicationController
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,
         cbv_flow_id: @cbv_flow.id,
         client_agency_id: @cbv_flow.client_agency_id,
+        device_id: @cbv_flow.device_id,
         invitation_id: @cbv_flow.cbv_flow_invitation_id,
         argyle_environment: agency_config[@cbv_flow.client_agency_id].argyle_environment,
         sync_duration_seconds: Time.now - payroll_account.sync_started_at,
@@ -253,10 +257,12 @@ class Webhooks::Argyle::EventsController < ApplicationController
         paystubs_gross_pay_amounts_average: paystub_gross_pay_amounts.sum.to_f / paystub_gross_pay_amounts.length,
         paystubs_gross_pay_amounts_min: paystub_gross_pay_amounts.min,
         paystubs_days_since_last_pay_date: report.paystubs.map { |p| Date.parse(p.pay_date) }.compact.max&.then { |last_pay_date| (Date.current - last_pay_date).to_i },
+        paystubs_employment_id_unique_count: report.paystubs.map(&:employment_id).uniq.count,
 
         # Employment fields (originally from "identities" endpoint)
         employment_success: payroll_account.job_succeeded?("employment"),
         employment_supported: payroll_account.supported_jobs.include?("employment"),
+        employment_count: report.employments.length,
         employment_status: report.employments.first&.status,
         employment_employer_name: report.employments.first&.employer_name,
         employment_account_source: report.employments.first&.account_source,
@@ -303,6 +309,7 @@ class Webhooks::Argyle::EventsController < ApplicationController
         time: Time.now.to_i,
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,
         cbv_flow_id: @cbv_flow.id,
+        device_id: @cbv_flow.device_id,
         invitation_id: @cbv_flow.cbv_flow_invitation_id
       )
     else
@@ -310,6 +317,7 @@ class Webhooks::Argyle::EventsController < ApplicationController
         time: Time.now.to_i,
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,
         cbv_flow_id: @cbv_flow.id,
+        device_id: @cbv_flow.device_id,
         invitation_id: @cbv_flow.cbv_flow_invitation_id,
         errors: report.errors.full_messages.join(", ")
       })

@@ -59,9 +59,7 @@ __check_defined = \
 	release-image-name \
 	release-image-tag \
 	release-publish \
-	release-run-database-migrations \
-	e2e-setup \
-	e2e-test
+	release-run-database-migrations
 
 infra-set-up-account: ## Configure and create resources for current AWS profile and save tfbackend file to infra/accounts/$ACCOUNT_NAME.ACCOUNT_ID.s3.tfbackend
 	@:$(call check_defined, ACCOUNT_NAME, human readable name for account e.g. "prod" or the AWS account alias)

@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.describe Api::InvitationsController do
+  include ActiveSupport::Testing::TimeHelpers
+
   describe "#create" do
     let(:client_agency_id) { "sandbox".to_sym }
     let(:api_access_token_instance) do
@@ -191,6 +193,24 @@ RSpec.describe Api::InvitationsController do
         expect(parsed_response).to have_key("errors")
         expect(parsed_response["errors"].map { |e| e["field"] }).to include("language")
       end
+    end
+
+    it "computes expiration_date using the agency's timezone" do
+      travel_to(Time.zone.parse("2025-01-15 12:00:00")) do
+        subject
+      end
+
+      invitation = CbvFlowInvitation.last
+      parsed_response = JSON.parse(response.body)
+
+      expiration_from_response = Date.parse(parsed_response["expiration_date"].to_s)
+
+      agency_config = ClientAgencyConfig.client_agencies[client_agency_id.to_s]
+
+      expected_expiration_date =
+        (invitation.created_at.in_time_zone(agency_config.timezone) + agency_config.invitation_valid_days.days).to_date
+
+      expect(expiration_from_response).to eq(expected_expiration_date)
     end
   end
 end

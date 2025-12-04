@@ -21,7 +21,7 @@ module "prod_config" {
   # https://conchchow.medium.com/aws-ecs-fargate-compute-capacity-planning-a5025cb40bd0
   service_cpu                      = 1024
   service_memory                   = 4096
-  service_desired_instance_count   = 1
+  service_desired_instance_count   = 2
   shoryuken_desired_instance_count = 1
 
   # Create DNS records for these `additional_domains` in the default hosted

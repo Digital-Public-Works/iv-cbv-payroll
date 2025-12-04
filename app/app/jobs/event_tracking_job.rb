@@ -17,13 +17,14 @@ class EventTrackingJob < ApplicationJob
       attributes[:device_name] = device_detector.device_name
       attributes[:device_type] = device_detector.device_type
       attributes[:browser] = device_detector.name
+      attributes[:is_bot] = device_detector.bot?
     end
 
     event_tracker = MixpanelEventTracker.new
     begin
       event_tracker.track(event_type, request, attributes)
     rescue StandardError => e
-      Rails.logger.error "  Failed to track #{event_type} in #{service}: #{e.message}"
+      Rails.logger.error "  Failed to track #{event_type}: #{e.message}"
       raise e
     end
   end
