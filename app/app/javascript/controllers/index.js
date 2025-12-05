@@ -1,5 +1,6 @@
 import { application } from "./application"
 
+import BackButtonController from "./cbv/back_button_controller.js"
 import CbvEmployerSearch from "./cbv/employer_search"
 import SessionTimeoutPageController from "./cbv/sessions_timeout_controller.js"
 import SessionTimeoutModalController from "./cbv/sessions_controller.js"
@@ -10,6 +11,7 @@ import CopyLinkController from "./copy_link_controller.js"
 import CbvEntryPageController from "./cbv/entry_page_controller.js"
 import PreviewFormController from "./preview_form_controller.js"
 
+application.register("back-button", BackButtonController)
 application.register("cbv-employer-search", CbvEmployerSearch)
 application.register("polling", PollingController)
 application.register("session", SessionTimeoutModalController)

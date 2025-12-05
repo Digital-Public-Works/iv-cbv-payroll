@@ -16,7 +16,7 @@
     <div id="root">
       <a class="usa-skipnav" href="#main-content"><%= t("shared.skip_link") %></a>
       <%= render "application/header" %>
-      <main id="main-content">
+      <main id="main-content" data-controller="back-button">
         <section class="grid-container usa-section">
 
           <% if flash[:notice] %>
