@@ -121,6 +121,7 @@ en:
         sandbox: CBV Test Agency has sent you an invitation to verify your income
       subject:
         default: Verify your income for your SNAP application or renewal
+  back: Back
   caseworker:
     cbv_flow_invitations:
       az_des:
@@ -519,7 +520,6 @@ en:
         paystub_heading_prefix: 'Payment details:'
         your_details: Your details
   continue: Continue
-  back: Back
   date:
     formats:
       default: "%Y-%m-%d"

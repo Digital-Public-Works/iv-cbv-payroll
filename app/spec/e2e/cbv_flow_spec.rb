@@ -8,9 +8,9 @@ RSpec.describe "e2e CBV flow test", type: :feature, js: true do
   around do |ex|
     override_supported_providers([ :argyle ]) do
       @e2e = E2e::MockingService.new(server_url: URI(page.server_url))
-      
+
       allow_repeats = ex.metadata[:allow_playback_repeats] || false
-      
+
       @e2e.use_recording("e2e_cbv_flow_english_argyle_only", allow_playback_repeats: allow_repeats, &ex)
     end
   end
@@ -79,7 +79,7 @@ RSpec.describe "e2e CBV flow test", type: :feature, js: true do
     verify_page(page, title: I18n.t("cbv.successes.show.header", agency_acronym: "CBV"))
     # TODO: Test PDF rendering by writing it to a file
   end
-  
+
   it "ensures the back buttons work", :allow_playback_repeats do
     raise "Argyle not in supported_providers!" unless Rails.application.config.supported_providers.include?(:argyle)
 
@@ -124,13 +124,12 @@ RSpec.describe "e2e CBV flow test", type: :feature, js: true do
     # /cbv/add_job
     verify_page(page, title: I18n.t("cbv.add_jobs.show.header"))
     find("label", text: I18n.t("cbv.add_jobs.show.radio_no")).click
-    #click_on(I18n.t("continue"))
     click_on(I18n.t("back"))
-    
+
     # /cbv/payment_details
     verify_page(page, title: I18n.t("cbv.payment_details.show.header", employer_name: ""), wait: 60)
     click_button I18n.t("cbv.payment_details.show.continue")
-    
+
     # /cbv/add_job
     verify_page(page, title: I18n.t("cbv.add_jobs.show.header"))
     find("label", text: I18n.t("cbv.add_jobs.show.radio_no")).click
@@ -140,12 +139,12 @@ RSpec.describe "e2e CBV flow test", type: :feature, js: true do
     verify_page(page, title: I18n.t("cbv.other_jobs.show.header"), wait: 10, skip_axe_rules: %w[heading-order])
     find("label", text: I18n.t("cbv.other_jobs.show.radio_yes")).click
     click_on(I18n.t("back"))
-    
+
     # /cbv/add_job
-    verify_page(page, title: I18n.t("cbv.add_jobs.show.header"))    
+    verify_page(page, title: I18n.t("cbv.add_jobs.show.header"))
     expect(find("label", text: I18n.t("cbv.add_jobs.show.radio_no"))[:checked]).to eq("checked")
     click_on(I18n.t("back"))
-    
+
     # /cbv/payment_details
     verify_page(page, title: I18n.t("cbv.payment_details.show.header", employer_name: ""), wait: 60)
     click_button I18n.t("cbv.payment_details.show.continue")
@@ -177,7 +176,7 @@ RSpec.describe "e2e CBV flow test", type: :feature, js: true do
     verify_page(page, title: I18n.t("cbv.submits.show.page_header"), wait: 10)
     find(:css, "label[for=cbv_flow_consent_to_authorized_use]").click
     click_on(I18n.t("back"))
-    
+
     # /cbv/summary
     verify_page(page, title: I18n.t("cbv.summaries.show.header"))
     click_on(I18n.t("continue"))
