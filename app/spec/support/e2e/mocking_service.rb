@@ -38,7 +38,7 @@ module E2e
       end
     end
 
-    def use_recording(cassette_name, &block)
+    def use_recording(cassette_name, allow_playback_repeats: false, &block)
       @cassette_name = cassette_name
       @webhook_replayer = E2e::NgrokRequestReplayer.new(
         logger: @logger,
@@ -55,7 +55,9 @@ module E2e
         c.cassette_library_dir = fixture_directory
       end
 
-      VCR.use_cassette("vcr_http_requests", record: @record_mode ? :once : :none) do |vcr_cassette|
+      VCR.use_cassette("vcr_http_requests", 
+        record: @record_mode ? :once : :none, 
+        allow_playback_repeats: allow_playback_repeats) do |vcr_cassette|
         freeze_time_and_remove_session_expiration(vcr_cassette.originally_recorded_at || Time.now) do
           block.call
         end

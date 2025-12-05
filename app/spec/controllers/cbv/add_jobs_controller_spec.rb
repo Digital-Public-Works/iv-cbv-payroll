@@ -17,6 +17,24 @@ RSpec.describe Cbv::AddJobsController do
   end
 
   describe "#create" do
+    it 'updates session with additional_jobs value (false)' do
+      post :create, params: { 'additional_jobs': 'false' }
+      
+      expect(session[:additional_jobs]).to eq('false')
+    end
+
+    it 'updates session with additional_jobs value (true)' do
+      post :create, params: { 'additional_jobs': 'true' }
+      
+      expect(session[:additional_jobs]).to eq('true')
+    end
+
+    it 'does not set session when additional_jobs is not set' do
+      post :create, params: { }
+      
+      expect(session[:additional_jobs]).to eq(nil)
+    end
+    
     it 'redirects when true radio button is selected' do
       post :create, params: { 'additional_jobs': 'true' }
       expect(response).to redirect_to(cbv_flow_employer_search_path)

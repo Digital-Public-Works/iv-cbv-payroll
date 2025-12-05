@@ -22,14 +22,6 @@
   }
 }
 
-button.usa-button:not(:first-child) {
-  margin: units(0.5) 0;
-
-  @include at-media("mobile-lg") {
-    margin: units(0.5) 0;
-  }
-}
-
 .usa-date-picker__calendar {
   top: 48px !important;
   max-width: none;

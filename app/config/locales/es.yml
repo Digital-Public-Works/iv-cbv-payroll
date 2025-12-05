@@ -400,6 +400,7 @@ es:
         paystub_heading_prefix: 'Detalles del pago:'
         your_details: Sus datos
   continue: Continuar
+  back: Atrás
   date:
     abbr_day_names:
     - dom
