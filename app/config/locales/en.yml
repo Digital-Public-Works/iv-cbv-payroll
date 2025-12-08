@@ -53,6 +53,7 @@ en:
       garnishment: Garnishment
       other: Other
       roth: Roth
+      tax: Tax
       vision: Vision
     earnings_category:
       base: Base Pay
@@ -89,16 +90,14 @@ en:
       terminated: terminated
     payment_frequencies:
       annual: Annually
-      annually: Annually
-      bi_weekly: Bi-weekly
       biweekly: Bi-weekly
       daily: Daily
       hourly: Hourly
       monthly: Monthly
       per_mile: Per mile
       quarterly: Quarterly
-      semi_monthly: Semi-monthly
       semimonthly: Semi-monthly
+      semiweekly: Semi-weekly
       variable: Variable
       weekly: Weekly
     tax_category:
@@ -192,7 +191,7 @@ en:
   cbv:
     add_jobs:
       show:
-        header: Do you have another job to report?
+        header: Do you have another job to verify?
         header_2: Do you have another job to report using Verify My Income?
         header_2_bullet_1: Has an online payroll provider, or
         header_2_bullet_2: Lets you view pay stubs online, or
@@ -270,7 +269,7 @@ en:
         select: Select
         to_continue: 'If you still don’t see your employer or payroll provider listed:'
         to_continue_li_1: You’ll need to submit that income information separately.
-        to_continue_li_1_html: <a href="%{agency_contact_website}" target="_blank" rel="noopener noreferrer">Go to the %{agency_portal_name} website</a> to learn about other ways to report your income.
+        to_continue_li_1_html: <a href="%{agency_contact_website}" target="_blank" rel="noopener noreferrer">Go to the %{agency_portal_name} website</a> to learn about other ways to verify your income.
         to_continue_li_2: If you have other jobs to add, search for them.
         to_continue_li_3: If you have no other jobs to add here, you can exit this site.
         to_continue_li_3_continue: If you have no other jobs to add here, continue to review your income report.
@@ -290,7 +289,7 @@ en:
         step3: Submit your payment information.
         step3_description: We’ll automatically send it to %{agency_acronym}. This will help you prove your income and can help %{agency_acronym} get to a decision faster.
         subheader_html: 'We’ll send your payment records from your employer(s) to %{agency_full_name} to verify your income. <strong>Most people complete this process in about 5 minutes.</strong> Just follow these steps:'
-        what_if_i_cant_use_this_body_1: If you need to report your income and can’t use this tool, then you’ll need to share your income information for this job directly with %{agency_portal_name}.
+        what_if_i_cant_use_this_body_1: If you need to verify your income and can’t use this tool, then you’ll need to share your income information for this job directly with %{agency_portal_name}.
         what_if_i_cant_use_this_body_2_html:
           default: Visit the <a href="%{agency_url}" target="_blank" rel="noopener noreferrer">%{agency_portal_name} website</a> for more information on how to submit documents.
           la_ldh: 'You can: <ul><li>Upload documents through the Self Service Portal online at <a href="https://mymedicaid.la.gov/" target="_blank" rel="noopener noreferrer">https://mymedicaid.la.gov/</a></li><li>Send documents through US Mail: Louisiana Medicaid/LaCHIP, P.O. Box 91283, Baton Rouge, LA 70821-9278</li><li>Email documents: <a href="mailto:MyMedicaid@la.gov">MyMedicaid@la.gov</a></li><li>Bring your documents to the Medicaid office of choice.</li></ul>'
@@ -315,9 +314,9 @@ en:
         continue_button: Continue to review my report
         continue_to_review: Continue to review the income information you were able to find before you submit it to %{agency_acronym}.
         exit_button_html: <a href="%{agency_contact_website}" class="usa-button" target="_blank" rel="noopener noreferrer">Exit and go to %{agency_portal_name}</a>
-        header: How to report income if your employer or payroll provider isn’t listed
-        more_jobs: If you have more jobs to report
-        no_more_jobs: If you don't have more jobs to report
+        header: How to verify income if your employer or payroll provider isn’t listed
+        more_jobs: If you have more jobs to verify
+        no_more_jobs: If you don't have more jobs to verify
         not_listed_p1: If your employer or payroll provider isn’t listed on this site, you’ll need to share your income information for this job directly with %{agency_acronym}.
         not_listed_p2: Visit the %{agency_portal_name} website for more information on how to submit documents.
         not_listed_p2_link_html: Visit the <a href="%{agency_url}" target="_blank" rel="noopener noreferrer">%{agency_portal_name} website</a> for more information on how to submit documents.
@@ -328,12 +327,12 @@ en:
         bullet_2: Pays you in cash
         bullet_3: Pays you with a paper check and you can’t view your paycheck online
         bullet_4: Issues you a 1099
-        header: Do you need to report any jobs outside Verify My Income?
-        header_html: Do you need to report any jobs <em>outside</em> Verify My Income?
+        header: Do you need to verify any jobs outside Verify My Income?
+        header_html: Do you need to verify any jobs <em>outside</em> Verify My Income?
         header_sub_text: 'Tell us about any other jobs you’ve had in the past 90 days, even if you’re no longer at that job. This includes current or recent jobs you’ve had in the past 90 days that may:'
-        note_html: 'Note: If you’ve had other jobs in the past 90 days that you won’t report using Verify My Income, you will need to submit that income information separately. <a href="%{agency_site}" target="_blank" rel="noopener noreferrer">Learn more on %{agency_portal_name}.</a>'
-        radio_no: No, I don’t have another job to report separately
-        radio_yes: Yes, I have another job I’ll report separately
+        note_html: 'Note: If you’ve had other jobs in the past 90 days that you won’t verify using Verify My Income, you will need to submit that income information separately. <a href="%{agency_site}" target="_blank" rel="noopener noreferrer">Learn more on %{agency_portal_name}.</a>'
+        radio_no: No, I don’t have another job to verify separately
+        radio_yes: Yes, I have another job I’ll verify separately
     payment_details:
       show:
         additional_information_header: Additional comments (Optional)
@@ -411,8 +410,8 @@ en:
           footer:
             page_footer: Income Verification Report | Page [page] of [topage]
           shared:
-            additional_jobs_to_report: Does the client have additional jobs they will report separately?
-            additional_jobs_to_report_html: Does the client have additional jobs they will report separately?<sup>1</sup>
+            additional_jobs_to_report: Does the client have additional jobs they will verify separately?
+            additional_jobs_to_report_html: Does the client have additional jobs they will verify separately?<sup>1</sup>
             client_information: Client information
             confirmation_code: Confirmation code
             employment_information: Employment information
@@ -432,13 +431,13 @@ en:
         download: Download my report
         header: Your income report was successfully sent to %{agency_acronym}.
         invitation_link_label: Invitation link
-        share_invitation_link_content: Share this link to anyone in your household who needs to report their income.
-        share_invitation_link_title: Share a link if others in your household need to report their income.
+        share_invitation_link_content: Share this link to anyone in your household who needs to verify their income.
+        share_invitation_link_title: Share a link if others in your household need to verify their income.
         survey: Take the 5 question survey
         whats_next: What's next?
-        whats_next_1_li_1: If you couldn’t find a job or don’t get paystubs, report your income to %{agency_acronym} online, in person, or by mail.
+        whats_next_1_li_1: If you couldn’t find a job or don’t get paystubs, verify your income to %{agency_acronym} online, in person, or by mail.
         whats_next_1_li_2_html: Go to the <a href="%{agency_website}" target="_blank" rel="noopener noreferrer">%{agency_portal_name} website</a>
-        whats_next_1_title: Report other income, if needed.
+        whats_next_1_title: Verify other income, if needed.
         whats_next_2_li_1_html: We’d like to hear more about your experience using this site.
         whats_next_2_title: Help make this experience better.
     summaries:
@@ -640,7 +639,7 @@ en:
       header: Welcome to Verify My Income
       pilot_ended:
         la_ldh:
-          body: "<strong>The pilot period for Louisiana has ended.</strong> If you still need to report your income, you can:"
+          body: "<strong>The pilot period for Louisiana has ended.</strong> If you still need to verify your income, you can:"
           body_bullet_1: Upload documents through the Self Service Portal online at <a href="http://MyMedicaid.LA.GOV" target="_blank" rel="noopener noreferrer">http://MyMedicaid.LA.GOV</a>
           body_bullet_2: 'Send documents through US Mail:  Louisiana Medicaid/LaCHIP, P.O. Box 91283, Baton Rouge, LA 70821-9278'
           body_bullet_3: 'Email documents to: <a href="mailto:%{agency_email}">%{agency_email}</a>'
@@ -653,6 +652,10 @@ en:
       end_button: End session
       extend_button: Yes, extend my session
       heading: Do you need more time?
+    page:
+      description: Sessions end after 30 minutes of being away from the page. This helps keep your information safe.
+      info_box_html: To verify your income return to <a href="%{agency_contact_website}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
+      title: Your session has timed out
   shared:
     agency_acronym:
       az_des: DES/FAA
