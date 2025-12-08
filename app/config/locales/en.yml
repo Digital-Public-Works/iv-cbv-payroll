@@ -309,61 +309,54 @@ en:
         title: Your invitation to verify income has expired
     missing_results:
       show:
-        header: Options to verify your income
-        intro: Use the quick links below to find the best way to submit income information for this job.
-        quick_link_search_tips: Search tips
-        quick_link_other_ways: Other ways to verify job income
-
-        search_tips_heading: Search tips
+        back_button: Go back to employer search
+        check_search_term_example: 'For example: If you initially searched "DHS" the best search term would be "Department of Human Services".'
         check_search_term_heading: Check your search term
         check_search_term_text: Use the full or official name of your employer or payroll provider. Avoid abbreviations.
-        check_search_term_example: 'For example: If you initially searched "DHS" the best search term would be "Department of Human Services".'
-        search_payroll_heading: Search for your payroll provider
-        search_payroll_text: Many jobs use a payroll provider. A payroll provider has a website where you log in to view your paystubs, tax documents, and work hours online.
-        search_payroll_link: How to find your payroll provider
+        continue_button: Continue to review my report
+        continue_to_review: Continue to review the income information you were able to find before you submit it to %{agency_acronym}.
+        find_payroll_fallback: If you were unable to find your payroll provider, searching for your employer is the next best option.
         find_payroll_heading: How to find your payroll provider if you receive direct deposit or paystubs
-        find_payroll_text: Many jobs use a payroll provider. A payroll provider has a website where you log in to view paystubs online.
-        find_payroll_places: 'Look for the name of the payroll provider in these places:'
         find_payroll_place_1: Your pay statement email notification
         find_payroll_place_2: A pay statement email notification
         find_payroll_place_3: Your employer's HR system
-        find_payroll_fallback: If you were unable to find your payroll provider, searching for your employer is the next best option.
-        right_company_heading: Make sure you're searching for the right company
-        right_company_text: Sounds silly, but sometimes one company is owned by another one. You might be receiving payments from a 'parent company' that has a different name.
-        right_company_link: How to find your employer's parent company
-
-        parent_company_heading: How to find your employer's parent company
-        parent_company_website_heading: Check the company's website.
-        parent_company_website_text: Look in the About Us section for the name of a parent company. Annual Reports may also have this information.
-        parent_company_google_heading: Try a Google search.
-        parent_company_google_text: Google your employer's name along with "parent company".
-        parent_company_manager_heading: Ask your manager or supervisor.
-        parent_company_manager_text: Your manager or supervisor will be able to tell you who the parent company is.
-
-        try_searching_again: Try searching again
-
+        find_payroll_places: 'Look for the name of the payroll provider in these places:'
+        find_payroll_text: Many jobs use a payroll provider. A payroll provider has a website where you log in to view paystubs online.
+        go_to_agency_portal: Go to %{agency_portal_name}
+        header: Options to verify your income
+        in_person_heading: Go in-person to a %{agency_acronym} office
+        in_person_text: Bring your income documents into a local %{agency_acronym} office.
+        intro: Use the quick links below to find the best way to submit income information for this job.
+        local_help: Local libraries and community organizations may be able to help you.
+        mail_heading: Mail or fax documents to %{agency_acronym}
+        mail_text: Check a recent notice from %{agency_acronym} to find the best fax number or office. Fax or mail in your income documents.
+        more_jobs: If you have more jobs to verify
+        no_more_jobs: If you don't have more jobs to verify
         other_ways_heading: Other ways to verify job income
         other_ways_intro: It's ok if you can't find a job, or have trouble logging into a job with Verify My Income. You may be able to upload documents, mail in income information, or visit your agency in person.
         other_ways_link: Other ways to submit income
-
+        parent_company_google_heading: Try a Google search.
+        parent_company_google_text: Google your employer's name along with "parent company".
+        parent_company_heading: How to find your employer's parent company
+        parent_company_manager_heading: Ask your manager or supervisor.
+        parent_company_manager_text: Your manager or supervisor will be able to tell you who the parent company is.
+        parent_company_website_heading: Check the company's website.
+        parent_company_website_text: Look in the About Us section for the name of a parent company. Annual Reports may also have this information.
+        quick_link_other_ways: Other ways to verify job income
+        quick_link_search_tips: Search tips
+        right_company_heading: Make sure you're searching for the right company
+        right_company_link: How to find your employer's parent company
+        right_company_text: Sounds silly, but sometimes one company is owned by another one. You might be receiving payments from a 'parent company' that has a different name.
+        search_payroll_heading: Search for your payroll provider
+        search_payroll_link: How to find your payroll provider
+        search_payroll_text: Many jobs use a payroll provider. A payroll provider has a website where you log in to view your paystubs, tax documents, and work hours online.
+        search_tips_heading: Search tips
+        share_feedback: Share feedback
         submit_income_heading: Other ways to submit income
+        try_searching_again: Try searching again
         upload_heading: Upload documents in %{agency_portal_name}.
         upload_text: Use the document uploader provided in the online portal. Have your income documents ready to upload and show all of your pay and employer information.
-        mail_heading: Mail or fax documents to %{agency_acronym}
-        mail_text: Check a recent notice from %{agency_acronym} to find the best fax number or office. Fax or mail in your income documents.
-        local_help: Local libraries and community organizations may be able to help you.
-        in_person_heading: Go in-person to a %{agency_acronym} office
-        in_person_text: Bring your income documents into a local %{agency_acronym} office.
-
-        go_to_agency_portal: Go to %{agency_portal_name}
         verify_my_income: Verify My Income
-        share_feedback: Share feedback
-
-        continue_button: Continue to review my report
-        continue_to_review: Continue to review the income information you were able to find before you submit it to %{agency_acronym}.
-        back_button: Go back to employer search
-        no_more_jobs: If you don't have more jobs to verify
-        more_jobs: If you have more jobs to verify
     other_jobs:
       show:
         bullet_1: Pays you via PayPal, Venmo, Cash App, etc
