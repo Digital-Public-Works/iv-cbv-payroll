@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { trackUserAction } from "@js/utilities/api.js"
 
 export default class extends Controller {
   connect() {
@@ -8,6 +9,7 @@ export default class extends Controller {
   }
 
   back() {
+    trackUserAction("ApplicantClickedBackButton", { from_page: window.location.pathname })
     window.history.back()
   }
 }
