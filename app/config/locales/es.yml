@@ -202,17 +202,61 @@ es:
         title: Su invitación para verificar ingresos ha expirado
     missing_results:
       show:
-        back_button: Regrese a la búsqueda del empleador
+        header: Opciones para verificar sus ingresos
+        intro: Use los enlaces rápidos a continuación para encontrar la mejor manera de enviar información de ingresos para este trabajo.
+        quick_link_search_tips: Consejos de búsqueda
+        quick_link_other_ways: Otras formas de verificar ingresos del trabajo
+
+        search_tips_heading: Consejos de búsqueda
+        check_search_term_heading: Verifique su término de búsqueda
+        check_search_term_text: Use el nombre completo u oficial de su empleador o proveedor de nómina. Evite las abreviaturas.
+        check_search_term_example: 'Por ejemplo: Si inicialmente buscó "DHS", el mejor término de búsqueda sería "Department of Human Services".'
+        search_payroll_heading: Busque su proveedor de nómina
+        search_payroll_text: Muchos trabajos usan un proveedor de nómina. Un proveedor de nómina tiene un sitio web donde puede iniciar sesión para ver sus talones de pago, documentos de impuestos y horas de trabajo en línea.
+        search_payroll_link: Cómo encontrar su proveedor de nómina
+        find_payroll_heading: Cómo encontrar su proveedor de nómina si recibe depósito directo o talones de pago
+        find_payroll_text: Muchos trabajos usan un proveedor de nómina. Un proveedor de nómina tiene un sitio web donde puede iniciar sesión para ver sus talones de pago en línea.
+        find_payroll_places: 'Busque el nombre del proveedor de nómina en estos lugares:'
+        find_payroll_place_1: Su notificación por correo electrónico del estado de pago
+        find_payroll_place_2: Una notificación por correo electrónico del estado de pago
+        find_payroll_place_3: El sistema de recursos humanos de su empleador
+        find_payroll_fallback: Si no pudo encontrar su proveedor de nómina, buscar su empleador es la siguiente mejor opción.
+        right_company_heading: Asegúrese de estar buscando la empresa correcta
+        right_company_text: Suena tonto, pero a veces una empresa es propiedad de otra. Puede estar recibiendo pagos de una 'empresa matriz' que tiene un nombre diferente.
+        right_company_link: Cómo encontrar la empresa matriz de su empleador
+
+        parent_company_heading: Cómo encontrar la empresa matriz de su empleador
+        parent_company_website_heading: Consulte el sitio web de la empresa.
+        parent_company_website_text: Busque en la sección Acerca de nosotros el nombre de una empresa matriz. Los informes anuales también pueden tener esta información.
+        parent_company_google_heading: Intente una búsqueda en Google.
+        parent_company_google_text: Busque en Google el nombre de su empleador junto con "empresa matriz".
+        parent_company_manager_heading: Pregunte a su gerente o supervisor.
+        parent_company_manager_text: Su gerente o supervisor podrá decirle quién es la empresa matriz.
+
+        try_searching_again: Intente buscar de nuevo
+
+        other_ways_heading: Otras formas de verificar ingresos del trabajo
+        other_ways_intro: Está bien si no puede encontrar un trabajo o tiene problemas para iniciar sesión en un trabajo con Verificar Mis Ingresos. Puede cargar documentos, enviar información de ingresos por correo o visitar su agencia en persona.
+        other_ways_link: Otras formas de enviar ingresos
+
+        submit_income_heading: Otras formas de enviar ingresos
+        upload_heading: Cargue documentos en %{agency_portal_name}.
+        upload_text: Use el cargador de documentos proporcionado en el portal en línea. Tenga sus documentos de ingresos listos para cargar y muestre toda su información de pago y empleador.
+        mail_heading: Envíe documentos por correo o fax a %{agency_acronym}
+        mail_text: Consulte un aviso reciente de %{agency_acronym} para encontrar el mejor número de fax u oficina. Envíe sus documentos de ingresos por fax o correo.
+        local_help: Las bibliotecas locales y las organizaciones comunitarias pueden ayudarle.
+        in_person_heading: Vaya en persona a una oficina de %{agency_acronym}
+        in_person_text: Lleve sus documentos de ingresos a una oficina local de %{agency_acronym}.
+
+        go_to_agency_portal: Ir a %{agency_portal_name}
+        verify_my_income: Verificar Mis Ingresos
+        share_feedback: Compartir comentarios
+
         continue_button: Continúe a «Revisar mi reporte»
         continue_to_review: Continúe a revisar la información de ingresos que pudo encontrar antes de enviarla a %{agency_acronym}.
-        exit_button_html: <a href="%{agency_contact_website}" class="usa-button" target="_blank" rel="noopener noreferrer">Salir y acceder a %{agency_portal_name}</a>
-        header: Cómo verificar ingresos si su empleador o proveedor de nómina no figura en la lista
-        more_jobs: Si tiene más trabajos que verificar
+        back_button: Regrese a la búsqueda del empleador
         no_more_jobs: Si no tiene más trabajos que verificar
-        not_listed_p1: Si su empleador o proveedor de nómina no están listados en este sitio, tendrá que compartir su información de ingresos por este trabajo directamente con %{agency_acronym}.
-        not_listed_p2: Para obtener más información sobre cómo enviar los documentos requeridos, visite el sitio web de %{agency_portal_name}.
-        not_listed_p2_link_html: Visite <a href="%{agency_url}" target="_blank" rel="noopener noreferrer">el sitio web del %{agency_portal_name}</a> para obtener más información sobre cómo enviar documentos.
-        you_can_search: Puede buscar otro empleador o proveedor de nómina. Este sitio apoya a los empleadores con proveedores de nómina en línea o servicios basados en aplicaciones. Algunos ejemplos son Amazon, Walmart, McDonald’s, Uber, DoorDash, Lyft e Instacart.
+        more_jobs: Si tiene más trabajos que verificar
     other_jobs:
       show:
         bullet_1: Le paga a través de PayPal, Venmo, Cash App, etc.
