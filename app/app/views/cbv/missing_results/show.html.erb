@@ -121,7 +121,6 @@
 <%# Other ways to verify job income %>
 <div id="other-ways" class="margin-top-5">
   <h2><%= t(".other_ways_heading") %></h2>
-nd
   <% if @cbv_flow.has_account_with_required_data? %>
     <% job_count = @cbv_flow.payroll_accounts.select(&:sync_succeeded?).count %>
     <p><%= t(".other_ways_intro_with_jobs", count: job_count) %></p>
