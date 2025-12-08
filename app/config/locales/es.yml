@@ -227,7 +227,15 @@ es:
         no_more_jobs: Si no tiene más trabajos que verificar
         other_ways_heading: Otras formas de verificar ingresos del trabajo
         other_ways_intro: Está bien si no puede encontrar un trabajo o tiene problemas para iniciar sesión en un trabajo con Verificar Mis Ingresos. Puede cargar documentos, enviar información de ingresos por correo o visitar su agencia en persona.
+        other_ways_intro_with_jobs:
+          one: Está bien si no puede encontrar un trabajo o tiene problemas para iniciar sesión en un trabajo con Verificar Mis Ingresos. Como ya ha iniciado sesión en %{count} trabajo, estos son sus próximos pasos.
+          other: Está bien si no puede encontrar un trabajo o tiene problemas para iniciar sesión en un trabajo con Verificar Mis Ingresos. Como ya ha iniciado sesión en %{count} trabajos, estos son sus próximos pasos.
+        other_ways_step_1:
+          one: Continúe en Verificar Mis Ingresos para enviar información de ingresos del %{count} trabajo en el que ya ha iniciado sesión.
+          other: Continúe en Verificar Mis Ingresos para enviar información de ingresos de los %{count} trabajos en los que ya ha iniciado sesión.
+        other_ways_step_2: Después de enviar su reporte de ingresos, envíe ingresos de trabajos que no pudo encontrar o iniciar sesión de otra manera.
         other_ways_link: Otras formas de enviar ingresos
+        go_to_income_summary: Ir al Resumen de Ingresos
         parent_company_google_heading: Intente una búsqueda en Google.
         parent_company_google_text: Busque en Google el nombre de su empleador junto con "empresa matriz".
         parent_company_heading: Cómo encontrar la empresa matriz de su empleador

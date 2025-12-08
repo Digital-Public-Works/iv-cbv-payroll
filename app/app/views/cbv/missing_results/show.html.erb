@@ -121,7 +121,18 @@
 <%# Other ways to verify job income %>
 <div id="other-ways" class="margin-top-5">
   <h2><%= t(".other_ways_heading") %></h2>
-  <p><%= t(".other_ways_intro") %></p>
+nd
+  <% if @cbv_flow.has_account_with_required_data? %>
+    <% job_count = @cbv_flow.payroll_accounts.select(&:sync_succeeded?).count %>
+    <p><%= t(".other_ways_intro_with_jobs", count: job_count) %></p>
+
+    <ol class="usa-list">
+      <li><%= t(".other_ways_step_1", count: job_count) %></li>
+      <li><%= t(".other_ways_step_2") %></li>
+    </ol>
+  <% else %>
+    <p><%= t(".other_ways_intro") %></p>
+  <% end %>
 
   <%# Other ways to submit income - Accordion %>
   <div class="usa-accordion margin-top-3">
@@ -160,19 +171,16 @@
     </div>
   </div>
 
-  <%# Go to Agency Portal button %>
+  <%# Action button - different based on whether user has job data %>
   <div class="margin-top-4">
-    <%= link_to t(".go_to_agency_portal", agency_portal_name: agency_translation("shared.agency_portal_name")),
-        current_agency.agency_contact_website,
-        class: "usa-button",
-        target: "_blank",
-        rel: "noopener noreferrer" %>
+    <% if @cbv_flow.has_account_with_required_data? %>
+      <%= link_to t(".go_to_income_summary"), next_path, class: "usa-button" %>
+    <% else %>
+      <%= link_to t(".go_to_agency_portal", agency_portal_name: agency_translation("shared.agency_portal_name")),
+          current_agency.agency_contact_website,
+          class: "usa-button",
+          target: "_blank",
+          rel: "noopener noreferrer" %>
+    <% end %>
   </div>
 </div>
-
-<% if @cbv_flow.has_account_with_required_data? %>
-  <hr class="margin-top-5 margin-bottom-5 border-base-light border-top-0">
-  <h2><%= t(".no_more_jobs") %></h2>
-  <p><%= t(".continue_to_review", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
-  <%= link_to t(".continue_button"), next_path, class: "usa-button" %>
-<% end %>

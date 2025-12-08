@@ -334,7 +334,15 @@ en:
         no_more_jobs: If you don't have more jobs to verify
         other_ways_heading: Other ways to verify job income
         other_ways_intro: It's ok if you can't find a job, or have trouble logging into a job with Verify My Income. You may be able to upload documents, mail in income information, or visit your agency in person.
+        other_ways_intro_with_jobs:
+          one: It's ok if you can't find a job, or have trouble logging into a job with Verify My Income. Since you have already logged into %{count} job, here are your next steps.
+          other: It's ok if you can't find a job, or have trouble logging into a job with Verify My Income. Since you have already logged into %{count} jobs, here are your next steps.
+        other_ways_step_1:
+          one: Continue in Verify My Income to submit income information for the %{count} job you've already logged into.
+          other: Continue in Verify My Income to submit income information for the %{count} jobs you've already logged into.
+        other_ways_step_2: After submitting your income report, send income for jobs you could not find or log into another way.
         other_ways_link: Other ways to submit income
+        go_to_income_summary: Go to Income Summary
         parent_company_google_heading: Try a Google search.
         parent_company_google_text: Google your employer's name along with "parent company".
         parent_company_heading: How to find your employer's parent company
