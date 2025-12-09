@@ -302,13 +302,13 @@ en:
         continue_to_review: Continue to review the income information you were able to find before you submit it to %{agency_acronym}.
         find_payroll_fallback: If you were unable to find your payroll provider, searching for your employer is the next best option.
         find_payroll_heading: How to find your payroll provider if you receive direct deposit or paystubs
-        find_payroll_place_1: Your pay statement email notification
+        find_payroll_place_1: Your pay statement
         find_payroll_place_2: A pay statement email notification
         find_payroll_place_3: Your employer's HR system
         find_payroll_places: 'Look for the name of the payroll provider in these places:'
         find_payroll_text: Many jobs use a payroll provider. A payroll provider has a website where you log in to view paystubs online.
         go_to_agency_portal: Go to %{agency_portal_name}
-        go_to_income_summary: Go to Income Summary
+        go_to_income_summary: Continue to Income Summary
         header: Options to verify your income
         in_person_heading: Go in-person to a %{agency_acronym} office
         in_person_text: Bring your income documents into a local %{agency_acronym} office.

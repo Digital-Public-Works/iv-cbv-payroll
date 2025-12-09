@@ -195,13 +195,13 @@ es:
         continue_to_review: Continúe a revisar la información de ingresos que pudo encontrar antes de enviarla a %{agency_acronym}.
         find_payroll_fallback: Si no pudo encontrar su proveedor de nómina, buscar su empleador es la siguiente mejor opción.
         find_payroll_heading: Cómo encontrar su proveedor de nómina si recibe depósito directo o talones de pago
-        find_payroll_place_1: Su notificación por correo electrónico del estado de pago
+        find_payroll_place_1: Su estado de pago
         find_payroll_place_2: Una notificación por correo electrónico del estado de pago
         find_payroll_place_3: El sistema de recursos humanos de su empleador
         find_payroll_places: 'Busque el nombre del proveedor de nómina en estos lugares:'
         find_payroll_text: Muchos trabajos usan un proveedor de nómina. Un proveedor de nómina tiene un sitio web donde puede iniciar sesión para ver sus talones de pago en línea.
         go_to_agency_portal: Ir a %{agency_portal_name}
-        go_to_income_summary: Ir al Resumen de Ingresos
+        go_to_income_summary: Continuar al Resumen de Ingresos
         header: Opciones para verificar sus ingresos
         in_person_heading: Vaya en persona a una oficina de %{agency_acronym}
         in_person_text: Lleve sus documentos de ingresos a una oficina local de %{agency_acronym}.
