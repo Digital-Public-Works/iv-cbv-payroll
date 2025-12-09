@@ -9,8 +9,10 @@ import LanguageController from "./language_controller.js"
 import CopyLinkController from "./copy_link_controller.js"
 import CbvEntryPageController from "./cbv/entry_page_controller.js"
 import PreviewFormController from "./preview_form_controller.js"
+import ClickTrackerController from "./click_tracker_controller.js"
 
 application.register("cbv-employer-search", CbvEmployerSearch)
+application.register("click-tracker", ClickTrackerController)
 application.register("polling", PollingController)
 application.register("session", SessionTimeoutModalController)
 application.register("help", HelpController)
