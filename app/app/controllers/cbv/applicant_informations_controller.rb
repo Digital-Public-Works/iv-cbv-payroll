@@ -50,7 +50,7 @@ class Cbv::ApplicantInformationsController < Cbv::BaseController
     return if params[:force_show] == "true"
 
     return unless params[:skip_edit] == "true"
-    
+
     redirect_to next_path unless @cbv_applicant.has_applicant_attribute_missing?
   end
 
