@@ -2,7 +2,7 @@ class Cbv::ApplicantInformationsController < Cbv::BaseController
   include ApplicationHelper
 
   before_action :set_cbv_applicant, only: %i[show update]
-  before_action :redirect_when_in_invitation_flow, :redirect_when_info_present, only: :show
+  before_action :redirect_when_in_invitation_flow, only: :show
 
   def show
     track_applicant_information_access_event
@@ -49,7 +49,7 @@ class Cbv::ApplicantInformationsController < Cbv::BaseController
   def redirect_when_info_present
     return if params[:force_show] == "true"
 
-    #redirect_to next_path unless @cbv_applicant.has_applicant_attribute_missing?
+    redirect_to next_path unless @cbv_applicant.has_applicant_attribute_missing?
   end
 
   def redirect_when_in_invitation_flow
