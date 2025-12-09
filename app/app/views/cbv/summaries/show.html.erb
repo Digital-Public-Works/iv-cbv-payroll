@@ -62,7 +62,7 @@
 <!-- Other jobs -->
 <div class="display-flex flex-justify font-body-md">
   <h3><%= t("cbv.summaries.show.other_jobs") %></h3>
-  <%= link_to t("cbv.summaries.show.edit"), cbv_flow_other_job_path, class: "usa-link text-bold margin-0" %>
+  <%= link_to t("cbv.summaries.show.edit"), cbv_flow_other_job_path(return_to_path: request.fullpath), class: "usa-link text-bold margin-0" %>
 </div>
 <%= render(TableComponent.new(is_responsive: true, class_names: "margin-top-2", thead_class_names: "", attributes: { "data-testid" => "other-jobs-table" })) do |table| %>
   <%= table.with_subheader_row(class_names: "subheader-row base-lightest border-top-1px") do |row| %>

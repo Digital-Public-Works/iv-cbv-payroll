@@ -20,6 +20,10 @@ class Cbv::OtherJobsController < Cbv::BaseController
     })
     redirect_to next_path
   end
+  
+  def next_path
+    params[:cbv_flow][:return_to_path].present? ? params[:cbv_flow][:return_to_path] : super
+  end
 
   private
 
