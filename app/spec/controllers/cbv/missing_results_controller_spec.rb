@@ -5,14 +5,31 @@ RSpec.describe Cbv::MissingResultsController do
     render_views
 
     let(:cbv_flow) { create(:cbv_flow, :invited) }
+    let(:event_logger) { instance_double(GenericEventTracker) }
 
     before do
       session[:cbv_flow_id] = cbv_flow.id
+      allow(controller).to receive(:event_logger).and_return(event_logger)
+      allow(event_logger).to receive(:track)
     end
 
     it "renders successfully" do
       get :show
       expect(response).to be_successful
+    end
+
+    describe "event tracking" do
+      it "tracks ApplicantAccessedMissingResultsPage with version v2" do
+        get :show
+        expect(event_logger).to have_received(:track).with(
+          TrackEvent::ApplicantAccessedMissingResultsPage,
+          kind_of(ActionDispatch::Request),
+          hash_including(
+            cbv_flow_id: cbv_flow.id,
+            version: "v2"
+          )
+        )
+      end
     end
 
     it "renders the page header" do

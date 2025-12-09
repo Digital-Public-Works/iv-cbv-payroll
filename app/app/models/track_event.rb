@@ -16,6 +16,7 @@ module TrackEvent
   ApplicantBeganLinkingEmployer = "ApplicantBeganLinkingEmployer"
   ApplicantClickedCBVInvitationLink = "ApplicantClickedCBVInvitationLink"
   ApplicantClickedEditInformationLink = "ApplicantClickedEditInformationLink"
+  ApplicantClickedElement = "ApplicantClickedElement"
   ApplicantClickedGenericLink = "ApplicantClickedGenericLink"
   ApplicantClickedPopularAppEmployers = "ApplicantClickedPopularAppEmployers"
   ApplicantClickedPopularPayrollProviders = "ApplicantClickedPopularPayrollProviders"

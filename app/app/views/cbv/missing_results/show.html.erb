@@ -1,11 +1,14 @@
 <% content_for :title, t(".header") %>
+<% job_count = @cbv_flow.payroll_accounts.select(&:sync_succeeded?).count %>
+
+<div data-controller="click-tracker" data-click-tracker-page-value="missing_results" data-click-tracker-context-value="<%= { jobs_already_added: job_count }.to_json %>">
 
 <h1><%= t(".header") %></h1>
 <p><%= t(".intro") %></p>
 
 <ul class="usa-list">
-  <li><a href="#search-tips" class="usa-link"><%= t(".quick_link_search_tips") %></a></li>
-  <li><a href="#other-ways" class="usa-link"><%= t(".quick_link_other_ways") %></a></li>
+  <li><a href="#search-tips" class="usa-link" data-action="click->click-tracker#track" data-track-name="search_tips_anchor"><%= t(".quick_link_search_tips") %></a></li>
+  <li><a href="#other-ways" class="usa-link" data-action="click->click-tracker#track" data-track-name="other_ways_anchor"><%= t(".quick_link_other_ways") %></a></li>
 </ul>
 
 <%# Search Tips Section %>
@@ -45,7 +48,7 @@
         <li class="margin-bottom-3 margin-left-4">
           <div class="usa-accordion">
             <h3 class="usa-accordion__heading">
-              <button type="button" class="usa-accordion__button padding-y-1" aria-expanded="false" aria-controls="find-payroll-content">
+              <button type="button" class="usa-accordion__button padding-y-1" aria-expanded="false" aria-controls="find-payroll-content" data-action="click->click-tracker#track" data-track-name="payroll_provider_help">
                 <span class="display-flex flex-align-center">
                   <%= t(".search_payroll_link") %>
                 </span>
@@ -90,7 +93,7 @@
         <li class="margin-top-3 margin-left-4">
           <div class="usa-accordion">
             <h3 class="usa-accordion__heading">
-              <button type="button" class="usa-accordion__button padding-y-1" aria-expanded="false" aria-controls="parent-company-content">
+              <button type="button" class="usa-accordion__button padding-y-1" aria-expanded="false" aria-controls="parent-company-content" data-action="click->click-tracker#track" data-track-name="parent_company_help">
                 <%= t(".right_company_link") %>
               </button>
             </h3>
@@ -115,14 +118,13 @@
 
 <%# Try searching again button %>
 <div class="margin-top-4">
-  <%= link_to t(".try_searching_again"), cbv_flow_employer_search_path, class: "usa-button" %>
+  <%= link_to t(".try_searching_again"), cbv_flow_employer_search_path, class: "usa-button", data: { action: "click->click-tracker#track", track_name: "try_searching_again" } %>
 </div>
 
 <%# Other ways to verify job income %>
 <div id="other-ways" class="margin-top-5">
   <h2><%= t(".other_ways_heading") %></h2>
   <% if @cbv_flow.has_account_with_required_data? %>
-    <% job_count = @cbv_flow.payroll_accounts.select(&:sync_succeeded?).count %>
     <p><%= t(".other_ways_intro_with_jobs", count: job_count) %></p>
 
     <ol class="usa-list">
@@ -136,7 +138,7 @@
   <%# Other ways to submit income - Accordion %>
   <div class="usa-accordion margin-top-3">
     <h3 class="usa-accordion__heading">
-      <button type="button" class="usa-accordion__button" aria-expanded="false" aria-controls="submit-income-content">
+      <button type="button" class="usa-accordion__button" aria-expanded="false" aria-controls="submit-income-content" data-action="click->click-tracker#track" data-track-name="other_ways_to_submit_help">
         <%= t(".other_ways_link") %>
       </button>
     </h3>
@@ -173,13 +175,16 @@
   <%# Action button - different based on whether user has job data %>
   <div class="margin-top-4">
     <% if @cbv_flow.has_account_with_required_data? %>
-      <%= link_to t(".go_to_income_summary"), next_path, class: "usa-button" %>
+      <%= link_to t(".go_to_income_summary"), next_path, class: "usa-button", data: { action: "click->click-tracker#track", track_name: "go_to_income_summary" } %>
     <% else %>
       <%= link_to t(".go_to_agency_portal", agency_portal_name: agency_translation("shared.agency_portal_name")),
           current_agency.agency_contact_website,
           class: "usa-button",
           target: "_blank",
-          rel: "noopener noreferrer" %>
+          rel: "noopener noreferrer",
+          data: { action: "click->click-tracker#track", track_name: "go_to_agency_portal" } %>
     <% end %>
   </div>
+</div>
+
 </div>
