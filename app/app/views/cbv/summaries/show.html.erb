@@ -62,7 +62,7 @@
 <!-- Other jobs -->
 <div class="display-flex flex-justify font-body-md">
   <h3><%= t("cbv.summaries.show.other_jobs") %></h3>
-  <%= link_to t("cbv.summaries.show.edit"), cbv_flow_other_job_path, class: "usa-link text-bold margin-0" %>
+  <%= link_to t("cbv.summaries.show.edit"), cbv_flow_other_job_path(return_to_path: request.fullpath), class: "usa-link text-bold margin-0" %>
 </div>
 <%= render(TableComponent.new(is_responsive: true, class_names: "margin-top-2", thead_class_names: "", attributes: { "data-testid" => "other-jobs-table" })) do |table| %>
   <%= table.with_subheader_row(class_names: "subheader-row base-lightest border-top-1px") do |row| %>
@@ -76,4 +76,13 @@
 <% end %>
 <% end %>
 
-<%= button_to t("continue"), cbv_flow_submit_path, class: "btn btn-primary usa-button margin-y-5", method: :get %>
+<%= form_with url: cbv_flow_submit_path, method: :get, class: "usa-form usa-form--large" do %>
+  <%= button_tag t("continue"), type: "submit", class: "btn btn-primary usa-button margin-top-5 margin-bottom-2", method: :get %>
+  <%= button_tag t("back"),
+      type: "button",
+      class: "usa-button usa-button--outline margin-y-1",
+      data: {
+          action: "click->back-button#back",
+          is_default_option: false
+      } %>
+<% end %>
