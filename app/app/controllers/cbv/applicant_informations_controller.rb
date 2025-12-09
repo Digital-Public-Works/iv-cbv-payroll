@@ -49,7 +49,7 @@ class Cbv::ApplicantInformationsController < Cbv::BaseController
   def redirect_when_info_present
     return if params[:force_show] == "true"
 
-    redirect_to next_path unless @cbv_applicant.has_applicant_attribute_missing?
+    #redirect_to next_path unless @cbv_applicant.has_applicant_attribute_missing?
   end
 
   def redirect_when_in_invitation_flow
