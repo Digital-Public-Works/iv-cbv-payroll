@@ -38,7 +38,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_11_06_143433) do
     t.string "client_agency_id"
     t.jsonb "income_changes"
     t.date "date_of_birth"
-    t.uuid "case_guid"
     t.string "doc_id"
   end
 
@@ -53,7 +52,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_11_06_143433) do
     t.string "language"
     t.bigint "cbv_applicant_id"
     t.datetime "expires_at", precision: nil
-    t.index ["auth_token"], name: "index_cbv_flow_invitations_on_auth_token", unique: true
+    t.index ["auth_token"], name: "index_cbv_flow_invitations_on_auth_token", unique: true, where: "(redacted_at IS NULL)"
     t.index ["cbv_applicant_id"], name: "index_cbv_flow_invitations_on_cbv_applicant_id"
     t.index ["user_id"], name: "index_cbv_flow_invitations_on_user_id"
   end

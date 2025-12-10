@@ -74,6 +74,7 @@ es:
         sandbox: La Agencia de pruebas CBV le ha enviado una invitación para verificar sus ingresos
       subject:
         default: Verifique sus ingresos para su solicitud o renovación de SNAP
+  back: Atrás
   caseworker:
     cbv_flow_invitations:
       create:
