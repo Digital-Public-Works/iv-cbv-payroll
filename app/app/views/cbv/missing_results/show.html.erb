@@ -8,8 +8,8 @@
 
 <nav class="margin-y-2" aria-label="<%= t(".quick_link_nav_label", default: "Page sections") %>">
   <ul class="usa-list">
-    <li><a href="#search-tips" class="usa-link" tabindex="1" data-action="click->click-tracker#track" data-track-type="<%= ClickTracker::ElementType::AnchorLink %>" data-track-name="search_tips_anchor"><%= t(".quick_link_search_tips") %></a></li>
-    <li><a href="#other-ways" class="usa-link" tabindex="2" data-action="click->click-tracker#track" data-track-type="<%= ClickTracker::ElementType::AnchorLink %>" data-track-name="other_ways_anchor"><%= t(".quick_link_other_ways") %></a></li>
+    <li><a href="#search-tips" class="usa-link" data-action="click->click-tracker#track" data-track-type="<%= ClickTracker::ElementType::AnchorLink %>" data-track-name="search_tips_anchor"><%= t(".quick_link_search_tips") %></a></li>
+    <li><a href="#other-ways" class="usa-link" data-action="click->click-tracker#track" data-track-type="<%= ClickTracker::ElementType::AnchorLink %>" data-track-name="other_ways_anchor"><%= t(".quick_link_other_ways") %></a></li>
   </ul>
 </nav>
 
@@ -38,37 +38,25 @@
         <svg class="usa-icon usa-icon--size-3 margin-right-105 text-primary flex-shrink-0 minw-3" aria-hidden="true" focusable="false" role="img">
           <use href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#search") %>"></use>
         </svg>
-        <div>
+        <div class="overflow-hidden minw-0 flex-1 maxw-tablet padding-05 margin-neg-05">
           <h3 class="margin-top-0 margin-bottom-05"><%= t(".search_payroll_heading") %></h3>
           <p class="margin-top-0 margin-bottom-0"><%= t(".search_payroll_text") %></p>
 
-          <%# How to find your payroll provider - Accordion %>
-          <div class="usa-accordion margin-top-2">
-            <div class="usa-accordion__heading">
-              <button type="button" class="usa-accordion__button padding-y-1" aria-expanded="false" aria-controls="find-payroll-content" tabindex="4" data-action="click->click-tracker#track" data-track-type="<%= ClickTracker::ElementType::Accordion %>" data-track-name="payroll_provider_help">
-                <%= t(".search_payroll_link") %>
-              </button>
-            </div>
-            <div id="find-payroll-content" class="usa-accordion__content" hidden>
-              <div class="usa-summary-box" role="region" aria-labelledby="find-payroll-heading">
-                <div class="usa-summary-box__body">
-                  <h4 class="usa-summary-box__heading" id="find-payroll-heading">
-                    <%= t(".find_payroll_heading") %>
-                  </h4>
-                  <div class="usa-summary-box__text">
-                    <p><%= t(".find_payroll_text") %></p>
-                    <p><%= t(".find_payroll_places") %></p>
-                    <ol class="usa-list">
-                      <li><%= t(".find_payroll_place_1") %></li>
-                      <li><%= t(".find_payroll_place_2") %></li>
-                      <li><%= t(".find_payroll_place_3") %></li>
-                    </ol>
-                    <p><%= t(".find_payroll_fallback") %></p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <%= render ExpandableHelpComponent.new(
+            id: "find-payroll",
+            trigger_label: t(".search_payroll_link"),
+            heading: t(".find_payroll_heading"),
+            track_name: "payroll_provider_help"
+          ) do %>
+            <p><%= t(".find_payroll_text") %></p>
+            <p><%= t(".find_payroll_places") %></p>
+            <ol class="usa-list">
+              <li><%= t(".find_payroll_place_1") %></li>
+              <li><%= t(".find_payroll_place_2") %></li>
+              <li><%= t(".find_payroll_place_3") %></li>
+            </ol>
+            <p><%= t(".find_payroll_fallback") %></p>
+          <% end %>
         </div>
       </div>
     </li>
@@ -79,38 +67,26 @@
         <svg class="usa-icon usa-icon--size-3 margin-right-105 text-primary flex-shrink-0 minw-3" aria-hidden="true" focusable="false" role="img">
           <use href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#store") %>"></use>
         </svg>
-        <div>
+        <div class="overflow-hidden minw-0 flex-1 maxw-tablet padding-05 margin-neg-05">
           <h3 class="margin-top-0 margin-bottom-05"><%= t(".right_company_heading") %></h3>
           <p class="margin-top-0 margin-bottom-0"><%= t(".right_company_text") %></p>
 
-          <%# How to find your employer's parent company - Accordion %>
-          <div class="usa-accordion margin-top-2">
-            <div class="usa-accordion__heading">
-              <button type="button" class="usa-accordion__button padding-y-1" aria-expanded="false" aria-controls="parent-company-content" tabindex="5" data-action="click->click-tracker#track" data-track-type="<%= ClickTracker::ElementType::Accordion %>" data-track-name="parent_company_help">
-                <%= t(".right_company_link") %>
-              </button>
-            </div>
-            <div id="parent-company-content" class="usa-accordion__content" hidden>
-              <div class="usa-summary-box" role="region" aria-labelledby="parent-company-heading">
-                <div class="usa-summary-box__body">
-                  <h4 class="usa-summary-box__heading" id="parent-company-heading">
-                    <%= t(".parent_company_heading") %>
-                  </h4>
-                  <div class="usa-summary-box__text">
-                    <p><strong><%= t(".parent_company_website_heading") %></strong> <%= t(".parent_company_website_text") %></p>
-                    <p><strong><%= t(".parent_company_google_heading") %></strong> <%= t(".parent_company_google_text") %></p>
-                    <p><strong><%= t(".parent_company_manager_heading") %></strong> <%= t(".parent_company_manager_text") %></p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <%= render ExpandableHelpComponent.new(
+            id: "parent-company",
+            trigger_label: t(".right_company_link"),
+            heading: t(".parent_company_heading"),
+            track_name: "parent_company_help"
+          ) do %>
+            <p><strong><%= t(".parent_company_website_heading") %></strong> <%= t(".parent_company_website_text") %></p>
+            <p><strong><%= t(".parent_company_google_heading") %></strong> <%= t(".parent_company_google_text") %></p>
+            <p><strong><%= t(".parent_company_manager_heading") %></strong> <%= t(".parent_company_manager_text") %></p>
+          <% end %>
         </div>
       </div>
     </li>
   </ul>
 
-  <%= link_to t(".try_searching_again"), cbv_flow_employer_search_path, class: "usa-button margin-top-4", tabindex: "3", data: { action: "click->click-tracker#track", track_type: ClickTracker::ElementType::InternalLink, track_name: "try_searching_again" } %>
+  <%= link_to t(".try_searching_again"), cbv_flow_employer_search_path, class: "usa-button margin-top-4", data: { action: "click->click-tracker#track", track_type: ClickTracker::ElementType::InternalLink, track_name: "try_searching_again" } %>
 </section>
 
 <%# Other ways to verify job income %>
@@ -127,50 +103,38 @@
     <p><%= t(".other_ways_intro") %></p>
   <% end %>
 
-  <%# Other ways to submit income - Accordion %>
-  <div class="usa-accordion margin-top-3">
-    <div class="usa-accordion__heading">
-      <button type="button" class="usa-accordion__button" aria-expanded="false" aria-controls="submit-income-content" tabindex="7" data-action="click->click-tracker#track" data-track-type="<%= ClickTracker::ElementType::Accordion %>" data-track-name="other_ways_to_submit_help">
-        <%= t(".other_ways_link") %>
-      </button>
-    </div>
-    <div id="submit-income-content" class="usa-accordion__content" hidden>
-      <div class="usa-summary-box" role="region" aria-labelledby="submit-income-heading">
-        <div class="usa-summary-box__body">
-          <h4 class="usa-summary-box__heading" id="submit-income-heading">
-            <%= t(".submit_income_heading") %>
-          </h4>
-          <div class="usa-summary-box__text">
-            <ul class="usa-list usa-list--unstyled">
-              <li class="margin-bottom-2">
-                <strong><%= t(".upload_heading", agency_portal_name: agency_translation("shared.agency_portal_name")) %></strong>
-                <p class="margin-top-05 margin-bottom-0"><%= t(".upload_text") %></p>
-              </li>
-              <li class="margin-bottom-2">
-                <strong><%= t(".mail_heading", agency_acronym: agency_translation("shared.agency_acronym")) %></strong>
-                <p class="margin-top-05 margin-bottom-0"><%= t(".mail_text", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
-              </li>
-              <li class="margin-bottom-2">
-                <p class="margin-y-0"><%= t(".local_help") %></p>
-              </li>
-              <li class="margin-bottom-0">
-                <strong><%= t(".in_person_heading", agency_acronym: agency_translation("shared.agency_acronym")) %></strong>
-                <p class="margin-top-05 margin-bottom-0"><%= t(".in_person_text", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <%= render ExpandableHelpComponent.new(
+    id: "submit-income",
+    trigger_label: t(".other_ways_link"),
+    heading: t(".submit_income_heading"),
+    track_name: "other_ways_to_submit_help",
+    margin_class: "margin-top-3"
+  ) do %>
+    <ul class="usa-list usa-list--unstyled">
+      <li class="margin-bottom-2">
+        <strong><%= t(".upload_heading", agency_portal_name: agency_translation("shared.agency_portal_name")) %></strong>
+        <p class="margin-top-05 margin-bottom-0"><%= t(".upload_text") %></p>
+      </li>
+      <li class="margin-bottom-2">
+        <strong><%= t(".mail_heading", agency_acronym: agency_translation("shared.agency_acronym")) %></strong>
+        <p class="margin-top-05 margin-bottom-0"><%= t(".mail_text", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
+      </li>
+      <li class="margin-bottom-2">
+        <p class="margin-y-0"><%= t(".local_help") %></p>
+      </li>
+      <li class="margin-bottom-0">
+        <strong><%= t(".in_person_heading", agency_acronym: agency_translation("shared.agency_acronym")) %></strong>
+        <p class="margin-top-05 margin-bottom-0"><%= t(".in_person_text", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
+      </li>
+    </ul>
+  <% end %>
 
   <% if @cbv_flow.has_account_with_required_data? %>
-    <%= link_to t(".go_to_income_summary"), next_path, class: "usa-button margin-top-4", tabindex: "6", data: { action: "click->click-tracker#track", track_type: ClickTracker::ElementType::InternalLink, track_name: "go_to_income_summary" } %>
+    <%= link_to t(".go_to_income_summary"), next_path, class: "usa-button margin-top-4", data: { action: "click->click-tracker#track", track_type: ClickTracker::ElementType::InternalLink, track_name: "go_to_income_summary" } %>
   <% else %>
     <%= link_to t(".go_to_agency_portal", agency_portal_name: agency_translation("shared.agency_portal_name")),
         current_agency.agency_contact_website,
         class: "usa-button margin-top-4",
-        tabindex: "6",
         target: "_blank",
         rel: "noopener noreferrer",
         data: { action: "click->click-tracker#track", track_type: ClickTracker::ElementType::ExternalLink, track_name: "go_to_agency_portal" } %>

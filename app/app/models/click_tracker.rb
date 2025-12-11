@@ -7,6 +7,6 @@ module ClickTracker
     InternalLink = "internal_link"
     ExternalLink = "external_link"
     Button = "button"
-    Accordion = "accordion"
+    ExpandableHelpAccordion = "expandable_help_accordion"
   end
 end
