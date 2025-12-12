@@ -35,6 +35,8 @@ import { trackUserAction } from "../utilities/api"
  *   Values: Generic (default), AnchorLink, InternalLink, ExternalLink, Button, Accordion
  * - `data-element-name` (required): Unique identifier for this element
  * - `data-track-event` (optional): Override the default event name (ApplicantClickedElement)
+ * - `data-context-*` (optional): Element-specific context
+ *   Example: data-context-version="v2" data-context-from-page="missing_results"
  *
  * ## Analytics payload
  *

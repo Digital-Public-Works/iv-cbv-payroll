@@ -8,8 +8,8 @@
 
 <nav class="margin-y-2" aria-label="<%= t(".quick_link_nav_label", default: "Page sections") %>">
   <ul class="usa-list">
-    <li><a href="#search-tips" class="usa-link" data-action="click->click-tracker#track" data-element-type="<%= ClickTracker::ElementType::AnchorLink %>" data-element-name="search_tips_anchor"><%= t(".quick_link_search_tips") %></a></li>
-    <li><a href="#other-ways" class="usa-link" data-action="click->click-tracker#track" data-element-type="<%= ClickTracker::ElementType::AnchorLink %>" data-element-name="other_ways_anchor"><%= t(".quick_link_other_ways") %></a></li>
+    <li><a href="#search-tips" class="usa-link" data-action="click->click-tracker#track" data-element-type="<%= ClickTracker::ElementType::AnchorLink %>" data-element-name="search_tips_anchor" data-track-event="<%= TrackEvent::ApplicantClickedSearchTips %>"><%= t(".quick_link_search_tips") %></a></li>
+    <li><a href="#other-ways" class="usa-link" data-action="click->click-tracker#track" data-element-type="<%= ClickTracker::ElementType::AnchorLink %>" data-element-name="other_ways_anchor" data-track-event="<%= TrackEvent::ApplicantClickedOtherWaysToVerify %>"><%= t(".quick_link_other_ways") %></a></li>
   </ul>
 </nav>
 
@@ -46,7 +46,8 @@
             id: "find-payroll",
             trigger_label: t(".search_payroll_link"),
             heading: t(".find_payroll_heading"),
-            element_name: "payroll_provider_help"
+            element_name: "payroll_provider_help",
+            track_event: TrackEvent::ApplicantOpenedPayrollProviderHelp
           ) do %>
             <p><%= t(".find_payroll_text") %></p>
             <p><%= t(".find_payroll_places") %></p>
@@ -75,7 +76,8 @@
             id: "parent-company",
             trigger_label: t(".right_company_link"),
             heading: t(".parent_company_heading"),
-            element_name: "parent_company_help"
+            element_name: "parent_company_help",
+            track_event: TrackEvent::ApplicantOpenedParentCompanyHelp
           ) do %>
             <p><strong><%= t(".parent_company_website_heading") %></strong> <%= t(".parent_company_website_text") %></p>
             <p><strong><%= t(".parent_company_google_heading") %></strong> <%= t(".parent_company_google_text") %></p>
@@ -86,7 +88,7 @@
     </li>
   </ul>
 
-  <%= link_to t(".try_searching_again"), cbv_flow_employer_search_path, class: "usa-button margin-top-4", data: { action: "click->click-tracker#track", element_type: ClickTracker::ElementType::InternalLink, element_name: "try_searching_again" } %>
+  <%= link_to t(".try_searching_again"), cbv_flow_employer_search_path, class: "usa-button margin-top-4", data: { action: "click->click-tracker#track", element_type: ClickTracker::ElementType::InternalLink, element_name: "try_searching_again", track_event: TrackEvent::ApplicantAccessedSearchPage, context_version: "v2", context_from_page: "missing_results" } %>
 </section>
 
 <%# Other ways to verify job income %>
@@ -108,6 +110,7 @@
     trigger_label: t(".other_ways_link"),
     heading: t(".submit_income_heading"),
     element_name: "other_ways_to_submit_help",
+    track_event: TrackEvent::ApplicantOpenedOtherWaysToSubmitHelp,
     margin_class: "margin-top-3"
   ) do %>
     <ul class="usa-list usa-list--unstyled">
@@ -130,14 +133,14 @@
   <% end %>
 
   <% if @cbv_flow.has_account_with_required_data? %>
-    <%= link_to t(".go_to_income_summary"), next_path, class: "usa-button margin-top-4", data: { action: "click->click-tracker#track", element_type: ClickTracker::ElementType::InternalLink, element_name: "go_to_income_summary" } %>
+    <%= link_to t(".go_to_income_summary"), next_path, class: "usa-button margin-top-4", data: { action: "click->click-tracker#track", element_type: ClickTracker::ElementType::InternalLink, element_name: "go_to_income_summary", track_event: TrackEvent::ApplicantAccessedIncomeSummary } %>
   <% else %>
     <%= link_to t(".go_to_agency_portal", agency_portal_name: agency_translation("shared.agency_portal_name")),
         current_agency.agency_contact_website,
         class: "usa-button margin-top-4",
         target: "_blank",
         rel: "noopener noreferrer",
-        data: { action: "click->click-tracker#track", element_type: ClickTracker::ElementType::ExternalLink, element_name: "go_to_agency_portal" } %>
+        data: { action: "click->click-tracker#track", element_type: ClickTracker::ElementType::ExternalLink, element_name: "go_to_agency_portal", track_event: TrackEvent::ApplicantAccessedAgencyPortal, context_version: "v2" } %>
   <% end %>
 </section>
 

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module TrackEvent
+  ApplicantAccessedAgencyPortal = "ApplicantAccessedAgencyPortal"
   ApplicantAccessedArgyleModalMFAScreen = "ApplicantAccessedArgyleModalMFAScreen"
   ApplicantAccessedExpiredLinkPage = "ApplicantAccessedExpiredLinkPage"
   ApplicantAccessedFlowWithoutCookie = "ApplicantAccessedFlowWithoutCookie"
@@ -18,8 +19,10 @@ module TrackEvent
   ApplicantClickedEditInformationLink = "ApplicantClickedEditInformationLink"
   ApplicantClickedElement = "ApplicantClickedElement"
   ApplicantClickedGenericLink = "ApplicantClickedGenericLink"
+  ApplicantClickedOtherWaysToVerify = "ApplicantClickedOtherWaysToVerify"
   ApplicantClickedPopularAppEmployers = "ApplicantClickedPopularAppEmployers"
   ApplicantClickedPopularPayrollProviders = "ApplicantClickedPopularPayrollProviders"
+  ApplicantClickedSearchTips = "ApplicantClickedSearchTips"
   ApplicantClosedArgyleModal = "ApplicantClosedArgyleModal"
   ApplicantClosedPinwheelModal = "ApplicantClosedPinwheelModal"
   ApplicantConsentedToTerms = "ApplicantConsentedToTerms"
@@ -48,6 +51,9 @@ module TrackEvent
   ApplicantFinishedPinwheelSync = "ApplicantFinishedPinwheelSync"
   ApplicantManuallySwitchedLanguage = "ApplicantManuallySwitchedLanguage"
   ApplicantOpenedHelpModal = "ApplicantOpenedHelpModal"
+  ApplicantOpenedOtherWaysToSubmitHelp = "ApplicantOpenedOtherWaysToSubmitHelp"
+  ApplicantOpenedParentCompanyHelp = "ApplicantOpenedParentCompanyHelp"
+  ApplicantOpenedPayrollProviderHelp = "ApplicantOpenedPayrollProviderHelp"
   ApplicantReceivedArgyleData = "ApplicantReceivedArgyleData"
   ApplicantRemovedArgyleAccount = "ApplicantRemovedArgyleAccount"
   ApplicantReportFailedUsefulRequirements = "ApplicantReportFailedUsefulRequirements"

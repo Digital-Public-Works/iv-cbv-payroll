@@ -8,6 +8,7 @@
       data-action="click->click-tracker#track"
       data-element-type="<%= ClickTracker::ElementType::ExpandableHelpAccordion %>"
       data-element-name="<%= element_name %>"
+      <%= "data-track-event=#{track_event}" if track_event %>
     >
       <%= trigger_label %>
     </button>

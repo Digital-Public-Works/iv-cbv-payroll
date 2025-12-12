@@ -133,6 +133,21 @@ describe("click_tracker_controller", () => {
       )
     })
 
+    it("uses custom event name from data-track-event", async () => {
+      application = await setupController(`
+        <div data-controller="click-tracker" data-click-tracker-page-value="test_page">
+          <a id="link" href="#test" data-action="click->click-tracker#track" data-element-name="test" data-track-event="ApplicantClickedSearchTips">Test</a>
+        </div>
+      `)
+      document.getElementById("link").click()
+      expect(trackUserAction).toHaveBeenCalledWith(
+        "ApplicantClickedSearchTips",
+        expect.objectContaining({
+          "click.element_name": "test",
+        })
+      )
+    })
+
     describe("missing_results page elements", () => {
       it("tracks anchor link with anchor_link type", async () => {
         application = await setupController(`
@@ -169,7 +184,7 @@ describe("click_tracker_controller", () => {
       it("tracks internal link with internal_link type", async () => {
         application = await setupController(`
           <div data-controller="click-tracker" data-click-tracker-page-value="missing_results" data-context-jobs-already-added="0">
-            <a id="link" href="/search" data-action="click->click-tracker#track" data-element-type="internal_link" data-element-name="try_searching_again">Try again</a>
+            <a id="link" href="#search" data-action="click->click-tracker#track" data-element-type="internal_link" data-element-name="try_searching_again">Try again</a>
           </div>
         `)
         document.getElementById("link").click()

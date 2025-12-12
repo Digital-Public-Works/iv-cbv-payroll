@@ -1,13 +1,14 @@
 # frozen_string_literal: true
 
 class ExpandableHelpComponent < ViewComponent::Base
-  attr_reader :id, :trigger_label, :heading, :element_name, :margin_class
+  attr_reader :id, :trigger_label, :heading, :element_name, :track_event, :margin_class
 
-  def initialize(id:, trigger_label:, heading:, element_name:, margin_class: "margin-top-2")
+  def initialize(id:, trigger_label:, heading:, element_name:, track_event: nil, margin_class: "margin-top-2")
     @id = id
     @trigger_label = trigger_label
     @heading = heading
     @element_name = element_name
+    @track_event = track_event
     @margin_class = margin_class
   end
 
