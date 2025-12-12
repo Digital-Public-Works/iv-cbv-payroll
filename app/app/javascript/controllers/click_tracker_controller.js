@@ -20,27 +20,28 @@ import { trackUserAction } from "../utilities/api"
  * ## Tracking an element
  *
  *   <button data-action="click->click-tracker#track"
- *           data-track-type="<%= ClickTracker::ElementType::Accordion %>"
- *           data-track-name="payroll_provider_help">
+ *           data-element-type="<%= ClickTracker::ElementType::Accordion %>"
+ *           data-element-name="payroll_provider_help">
  *
  *   <%= link_to "Try again", some_path,
  *         data: {
  *           action: "click->click-tracker#track",
- *           track_type: ClickTracker::ElementType::InternalLink,
- *           track_name: "try_searching_again"
+ *           element_type: ClickTracker::ElementType::InternalLink,
+ *           element_name: "try_searching_again"
  *         } %>
  *
  * - `data-action` (required): Wires up the click event
- * - `data-track-type` (optional): Element type from ClickTracker::ElementType
+ * - `data-element-type` (optional): Element type from ClickTracker::ElementType
  *   Values: Generic (default), AnchorLink, InternalLink, ExternalLink, Button, Accordion
- * - `data-track-name` (required): Unique identifier for this element
+ * - `data-element-name` (required): Unique identifier for this element
+ * - `data-track-event` (optional): Override the default event name (ApplicantClickedElement)
  *
  * ## Analytics payload
  *
  *   {
- *     element_type: "accordion",      // from data-track-type or "generic"
+ *     element_type: "accordion",      // from data-element-type or "generic"
  *     element_tag_name: "button",     // HTML tag name
- *     element_name: "payroll_help",   // from data-track-name
+ *     element_name: "payroll_help",   // from data-element-name
  *     page: "missing_results",        // from data-click-tracker-page-value
  *     ...contextData                  // from data-context-* attributes
  *   }
@@ -61,7 +62,7 @@ export default class extends Controller {
           .replace(/([A-Z])/g, "_$1")
           .toLowerCase()
           .replace(/^_/, "")
-        context[snakeKey] = isNaN(value) ? value : Number(value)
+        context["click_context." + snakeKey] = isNaN(value) ? value : Number(value)
       }
     }
     return context
@@ -69,12 +70,13 @@ export default class extends Controller {
 
   track(event) {
     const element = event.currentTarget
+    const eventName = element.dataset.trackEvent || "ApplicantClickedElement"
 
-    trackUserAction("ApplicantClickedElement", {
-      element_type: element.dataset.trackType || "generic",
-      element_tag_name: element.tagName.toLowerCase(),
-      element_name: element.dataset.trackName,
-      page: this.pageValue,
+    trackUserAction(eventName, {
+      "click.element_type": element.dataset.elementType || "generic",
+      "click.element_tag_name": element.tagName.toLowerCase(),
+      "click.element_name": element.dataset.elementName,
+      "click.page": this.pageValue,
       ...this.contextData,
     })
   }

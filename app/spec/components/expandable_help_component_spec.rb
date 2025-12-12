@@ -8,7 +8,7 @@ RSpec.describe ExpandableHelpComponent, type: :component do
       id: "test-help",
       trigger_label: "How do I find this?",
       heading: "Finding your information",
-      track_name: "test_help_accordion"
+      element_name: "ApplicantClickedHelpAccordionOnPage"
     }
   end
 
@@ -63,24 +63,8 @@ RSpec.describe ExpandableHelpComponent, type: :component do
 
     button = page.find(:css, "button.usa-accordion__button")
     expect(button["data-action"]).to eq("click->click-tracker#track")
-    expect(button["data-track-type"]).to eq("accordion")
-    expect(button["data-track-name"]).to eq("test_help_accordion")
-  end
-
-  context "with tabindex" do
-    it "sets tabindex when provided" do
-      render_inline(described_class.new(**default_params, tabindex: 5)) { "Help content here" }
-
-      button = page.find(:css, "button.usa-accordion__button")
-      expect(button["tabindex"]).to eq("5")
-    end
-
-    it "omits tabindex when not provided" do
-      render_inline(described_class.new(**default_params)) { "Help content here" }
-
-      button = page.find(:css, "button.usa-accordion__button")
-      expect(button["tabindex"]).to be_nil
-    end
+    expect(button["data-element-type"]).to eq("expandable_help_accordion")
+    expect(button["data-element-name"]).to eq("ApplicantClickedHelpAccordionOnPage")
   end
 
   context "with margin_class" do
