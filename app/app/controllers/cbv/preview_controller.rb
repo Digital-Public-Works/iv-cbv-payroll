@@ -47,6 +47,10 @@ class Cbv::PreviewController < ApplicationController
     render_as("summaries")
   end
 
+  def missing_results
+    render_as("missing_results")
+  end
+
   def submit
     respond_to do |format|
       format.html do
