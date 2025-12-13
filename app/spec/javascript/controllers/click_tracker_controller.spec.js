@@ -25,27 +25,31 @@ describe("click_tracker_controller", () => {
   })
 
   describe("track", () => {
-    it("tracks ApplicantClickedElement with element properties", async () => {
+    it("tracks click with element properties", async () => {
       application = await setupController(`
-        <div data-controller="click-tracker" data-click-tracker-page-value="missing_results" data-context-jobs-already-added="0">
-          <a id="link" href="#test" data-action="click->click-tracker#track" data-element-type="anchor_link" data-element-name="test_link">Test</a>
-        </div>
+        <a id="link" href="#test"
+           data-controller="click-tracker"
+           data-click-tracker-page-value="test_page"
+           data-action="click->click-tracker#track"
+           data-element-type="anchor_link"
+           data-element-name="test_link">Test</a>
       `)
       document.getElementById("link").click()
       expect(trackUserAction).toHaveBeenCalledWith("ApplicantClickedElement", {
         "click.element_type": "anchor_link",
         "click.element_tag_name": "a",
         "click.element_name": "test_link",
-        "click.page": "missing_results",
-        "click_context.jobs_already_added": 0,
+        "click.page": "test_page",
       })
     })
 
     it("defaults element_type to generic when not specified", async () => {
       application = await setupController(`
-        <div data-controller="click-tracker" data-click-tracker-page-value="test_page">
-          <a id="link" href="#test" data-action="click->click-tracker#track" data-element-name="test_link">Test</a>
-        </div>
+        <a id="link" href="#test"
+           data-controller="click-tracker"
+           data-click-tracker-page-value="test_page"
+           data-action="click->click-tracker#track"
+           data-element-name="test_link">Test</a>
       `)
       document.getElementById("link").click()
       expect(trackUserAction).toHaveBeenCalledWith(
@@ -58,9 +62,11 @@ describe("click_tracker_controller", () => {
 
     it("includes element_tag_name for anchor elements", async () => {
       application = await setupController(`
-        <div data-controller="click-tracker" data-click-tracker-page-value="test_page">
-          <a id="link" href="#test" data-action="click->click-tracker#track" data-element-name="anchor_link">Test</a>
-        </div>
+        <a id="link" href="#test"
+           data-controller="click-tracker"
+           data-click-tracker-page-value="test_page"
+           data-action="click->click-tracker#track"
+           data-element-name="test_link">Test</a>
       `)
       document.getElementById("link").click()
       expect(trackUserAction).toHaveBeenCalledWith(
@@ -73,9 +79,12 @@ describe("click_tracker_controller", () => {
 
     it("includes element_tag_name for button elements", async () => {
       application = await setupController(`
-        <div data-controller="click-tracker" data-click-tracker-page-value="test_page">
-          <button id="btn" data-action="click->click-tracker#track" data-element-type="accordion" data-element-name="test_button">Test</button>
-        </div>
+        <button id="btn"
+                data-controller="click-tracker"
+                data-click-tracker-page-value="test_page"
+                data-action="click->click-tracker#track"
+                data-element-type="accordion"
+                data-element-name="test_button">Test</button>
       `)
       document.getElementById("btn").click()
       expect(trackUserAction).toHaveBeenCalledWith(
@@ -87,130 +96,94 @@ describe("click_tracker_controller", () => {
       )
     })
 
-    it("includes context values from data-context-* attributes", async () => {
-      application = await setupController(`
-        <div data-controller="click-tracker" data-click-tracker-page-value="test_page" data-context-jobs-already-added="3">
-          <a id="link" href="#test" data-action="click->click-tracker#track" data-element-name="test">Test</a>
-        </div>
-      `)
-      document.getElementById("link").click()
-      expect(trackUserAction).toHaveBeenCalledWith(
-        "ApplicantClickedElement",
-        expect.objectContaining({
-          "click_context.jobs_already_added": 3,
-        })
-      )
-    })
-
-    it("supports multiple context attributes", async () => {
-      application = await setupController(`
-        <div data-controller="click-tracker" data-click-tracker-page-value="test_page" data-context-jobs-already-added="2" data-context-user-type="applicant">
-          <a id="link" href="#test" data-action="click->click-tracker#track" data-element-name="test">Test</a>
-        </div>
-      `)
-      document.getElementById("link").click()
-      expect(trackUserAction).toHaveBeenCalledWith(
-        "ApplicantClickedElement",
-        expect.objectContaining({
-          "click_context.jobs_already_added": 2,
-          "click_context.user_type": "applicant",
-        })
-      )
-    })
-
-    it("includes page value from controller", async () => {
-      application = await setupController(`
-        <div data-controller="click-tracker" data-click-tracker-page-value="custom_page">
-          <a id="link" href="#test" data-action="click->click-tracker#track" data-element-name="test">Test</a>
-        </div>
-      `)
-      document.getElementById("link").click()
-      expect(trackUserAction).toHaveBeenCalledWith(
-        "ApplicantClickedElement",
-        expect.objectContaining({
-          "click.page": "custom_page",
-        })
-      )
-    })
-
     it("uses custom event name from data-track-event", async () => {
       application = await setupController(`
-        <div data-controller="click-tracker" data-click-tracker-page-value="test_page">
-          <a id="link" href="#test" data-action="click->click-tracker#track" data-element-name="test" data-track-event="ApplicantClickedSearchTips">Test</a>
-        </div>
+        <a id="link" href="#test"
+           data-controller="click-tracker"
+           data-click-tracker-page-value="test_page"
+           data-action="click->click-tracker#track"
+           data-element-name="search_tips"
+           data-track-event="ApplicantClickedSearchTips">Test</a>
       `)
       document.getElementById("link").click()
       expect(trackUserAction).toHaveBeenCalledWith(
         "ApplicantClickedSearchTips",
         expect.objectContaining({
-          "click.element_name": "test",
+          "click.element_name": "search_tips",
         })
       )
     })
 
-    describe("missing_results page elements", () => {
-      it("tracks anchor link with anchor_link type", async () => {
+    describe("context data", () => {
+      it("includes context from controller element", async () => {
         application = await setupController(`
-          <div data-controller="click-tracker" data-click-tracker-page-value="missing_results" data-context-jobs-already-added="2">
-            <a id="link" href="#search-tips" data-action="click->click-tracker#track" data-element-type="anchor_link" data-element-name="search_tips_anchor">Search tips</a>
+          <div data-controller="click-tracker"
+               data-click-tracker-page-value="missing_results"
+               data-context-jobs-already-added="3">
+            <a id="link" href="#test"
+               data-action="click->click-tracker#track"
+               data-element-name="test">Test</a>
           </div>
         `)
         document.getElementById("link").click()
-        expect(trackUserAction).toHaveBeenCalledWith("ApplicantClickedElement", {
-          "click.element_type": "anchor_link",
-          "click.element_tag_name": "a",
-          "click.element_name": "search_tips_anchor",
-          "click.page": "missing_results",
-          "click_context.jobs_already_added": 2,
-        })
+        expect(trackUserAction).toHaveBeenCalledWith(
+          "ApplicantClickedElement",
+          expect.objectContaining({
+            "click_context.jobs_already_added": 3,
+          })
+        )
       })
 
-      it("tracks accordion button with accordion type", async () => {
+      it("supports multiple context attributes", async () => {
         application = await setupController(`
-          <div data-controller="click-tracker" data-click-tracker-page-value="missing_results" data-context-jobs-already-added="1">
-            <button id="btn" data-action="click->click-tracker#track" data-element-type="accordion" data-element-name="payroll_provider_help">Help</button>
-          </div>
-        `)
-        document.getElementById("btn").click()
-        expect(trackUserAction).toHaveBeenCalledWith("ApplicantClickedElement", {
-          "click.element_type": "accordion",
-          "click.element_tag_name": "button",
-          "click.element_name": "payroll_provider_help",
-          "click.page": "missing_results",
-          "click_context.jobs_already_added": 1,
-        })
-      })
-
-      it("tracks internal link with internal_link type", async () => {
-        application = await setupController(`
-          <div data-controller="click-tracker" data-click-tracker-page-value="missing_results" data-context-jobs-already-added="0">
-            <a id="link" href="#search" data-action="click->click-tracker#track" data-element-type="internal_link" data-element-name="try_searching_again">Try again</a>
+          <div data-controller="click-tracker"
+               data-click-tracker-page-value="test_page"
+               data-context-jobs-already-added="2"
+               data-context-user-type="applicant">
+            <a id="link" href="#test"
+               data-action="click->click-tracker#track"
+               data-element-name="test">Test</a>
           </div>
         `)
         document.getElementById("link").click()
-        expect(trackUserAction).toHaveBeenCalledWith("ApplicantClickedElement", {
-          "click.element_type": "internal_link",
-          "click.element_tag_name": "a",
-          "click.element_name": "try_searching_again",
-          "click.page": "missing_results",
-          "click_context.jobs_already_added": 0,
-        })
+        expect(trackUserAction).toHaveBeenCalledWith(
+          "ApplicantClickedElement",
+          expect.objectContaining({
+            "click_context.jobs_already_added": 2,
+            "click_context.user_type": "applicant",
+          })
+        )
       })
 
-      it("tracks external link with external_link type", async () => {
+      it("shares context across multiple tracked elements", async () => {
         application = await setupController(`
-          <div data-controller="click-tracker" data-click-tracker-page-value="missing_results" data-context-jobs-already-added="0">
-            <a id="link" href="https://agency.gov" data-action="click->click-tracker#track" data-element-type="external_link" data-element-name="go_to_agency_portal">Go to portal</a>
+          <div data-controller="click-tracker"
+               data-click-tracker-page-value="missing_results"
+               data-context-jobs-already-added="1">
+            <a id="link1" href="#tips" data-action="click->click-tracker#track" data-element-name="search_tips">Tips</a>
+            <a id="link2" href="#other" data-action="click->click-tracker#track" data-element-name="other_ways">Other</a>
           </div>
         `)
-        document.getElementById("link").click()
-        expect(trackUserAction).toHaveBeenCalledWith("ApplicantClickedElement", {
-          "click.element_type": "external_link",
-          "click.element_tag_name": "a",
-          "click.element_name": "go_to_agency_portal",
-          "click.page": "missing_results",
-          "click_context.jobs_already_added": 0,
-        })
+
+        document.getElementById("link1").click()
+        expect(trackUserAction).toHaveBeenCalledWith(
+          "ApplicantClickedElement",
+          expect.objectContaining({
+            "click.element_name": "search_tips",
+            "click_context.jobs_already_added": 1,
+          })
+        )
+
+        vi.resetAllMocks()
+
+        document.getElementById("link2").click()
+        expect(trackUserAction).toHaveBeenCalledWith(
+          "ApplicantClickedElement",
+          expect.objectContaining({
+            "click.element_name": "other_ways",
+            "click_context.jobs_already_added": 1,
+          })
+        )
       })
     })
   })

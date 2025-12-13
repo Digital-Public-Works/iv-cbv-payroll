@@ -13,9 +13,8 @@ import { trackUserAction } from "../utilities/api"
  *        data-context-some-key="value">
  *
  * - `data-click-tracker-page-value` (required): Page identifier for analytics
- * - `data-context-*` (optional): Additional context sent with every click event
+ * - `data-context-*` (optional): Shared context sent with every click event
  *   Examples: data-context-jobs-already-added="<%= count %>"
- *             data-context-user-type="applicant"
  *
  * ## Tracking an element
  *
@@ -27,7 +26,8 @@ import { trackUserAction } from "../utilities/api"
  *         data: {
  *           action: "click->click-tracker#track",
  *           element_type: ClickTracker::ElementType::InternalLink,
- *           element_name: "try_searching_again"
+ *           element_name: "try_searching_again",
+ *           context_version: "v2"
  *         } %>
  *
  * - `data-action` (required): Wires up the click event
@@ -35,8 +35,16 @@ import { trackUserAction } from "../utilities/api"
  *   Values: Generic (default), AnchorLink, InternalLink, ExternalLink, Button, Accordion
  * - `data-element-name` (required): Unique identifier for this element
  * - `data-track-event` (optional): Override the default event name (ApplicantClickedElement)
- * - `data-context-*` (optional): Element-specific context
+ * - `data-context-*` (optional): Element-specific context (overrides controller context)
  *   Example: data-context-version="v2" data-context-from-page="missing_results"
+ *
+ * ## Context data precedence
+ *
+ * Context attributes (`data-context-*`) can be placed on either:
+ * 1. The controller element - shared across all tracked elements
+ * 2. The tracked element - specific to that element
+ *
+ * Element-level context takes precedence over controller-level context.
  *
  * ## Analytics payload
  *
@@ -45,20 +53,21 @@ import { trackUserAction } from "../utilities/api"
  *     element_tag_name: "button",     // HTML tag name
  *     element_name: "payroll_help",   // from data-element-name
  *     page: "missing_results",        // from data-click-tracker-page-value
- *     ...contextData                  // from data-context-* attributes
+ *     ...contextData                  // merged from controller + element data-context-*
  *   }
  */
 export default class extends Controller {
   static values = {
     page: String,
   }
-
-  get contextData() {
+  transformContextData(mergedDataset) {
     const context = {}
-    // Auto-collect all data-context-* attributes on the controller element
-    for (const [key, value] of Object.entries(this.element.dataset)) {
+    // Extract data-context-* attributes from merged controller + element dataset
+    for (const [key, value] of Object.entries(mergedDataset)) {
       if (key.startsWith("context")) {
-        // Convert "contextJobsAlreadyAdded" to "jobs_already_added"
+        // HTML: data-context-jobs-already-added (kebab-case)
+        // dataset: contextJobsAlreadyAdded (browser auto-converts to camelCase)
+        // output: jobs_already_added (we convert to snake_case)
         const snakeKey = key
           .replace("context", "")
           .replace(/([A-Z])/g, "_$1")
@@ -71,15 +80,19 @@ export default class extends Controller {
   }
 
   track(event) {
-    const element = event.currentTarget
-    const eventName = element.dataset.trackEvent || "ApplicantClickedElement"
+    const combinedElementDataset = Object.assign(
+      {},
+      this.element.dataset,
+      event.currentTarget.dataset
+    )
+    const eventName = combinedElementDataset.trackEvent || "ApplicantClickedElement"
 
     trackUserAction(eventName, {
-      "click.element_type": element.dataset.elementType || "generic",
-      "click.element_tag_name": element.tagName.toLowerCase(),
-      "click.element_name": element.dataset.elementName,
+      "click.element_tag_name": event.currentTarget.tagName.toLowerCase(),
+      "click.element_type": combinedElementDataset.elementType || "generic",
+      "click.element_name": combinedElementDataset.elementName,
       "click.page": this.pageValue,
-      ...this.contextData,
+      ...this.transformContextData(combinedElementDataset),
     })
   }
 }
