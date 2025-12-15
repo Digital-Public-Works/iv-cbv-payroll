@@ -195,8 +195,8 @@ es:
         continue_to_review: Continúe a revisar la información de ingresos que pudo encontrar antes de enviarla a %{agency_acronym}.
         find_payroll_fallback: Si no pudo encontrar su proveedor de nómina, buscar su empleador es la siguiente mejor opción.
         find_payroll_heading: Cómo encontrar su proveedor de nómina si recibe depósito directo o talones de pago
-        find_payroll_place_1: Su estado de pago
-        find_payroll_place_2: Una notificación por correo electrónico del estado de pago
+        find_payroll_place_1: Su talón de pago
+        find_payroll_place_2: Una notificación por correo electrónico de su talón de pago
         find_payroll_place_3: El sistema de recursos humanos de su empleador
         find_payroll_places: 'Busque el nombre del proveedor de nómina en estos lugares:'
         find_payroll_text: Muchos trabajos usan un proveedor de nómina. Un proveedor de nómina tiene un sitio web donde puede iniciar sesión para ver sus talones de pago en línea.
@@ -218,7 +218,7 @@ es:
         other_ways_step_1:
           one: Continúe en Verificar Mis Ingresos para enviar información de ingresos del %{count} trabajo en el que ya ha iniciado sesión.
           other: Continúe en Verificar Mis Ingresos para enviar información de ingresos de los %{count} trabajos en los que ya ha iniciado sesión.
-        other_ways_step_2: Después de enviar su reporte de ingresos, envíe ingresos de trabajos que no pudo encontrar o iniciar sesión de otra manera.
+        other_ways_step_2: Después de enviar su reporte de ingresos, envíe la información de ingresos de los trabajos que no pudo encontrar o en los que no pudo iniciar sesión usando otro método.
         parent_company_google_heading: Intente una búsqueda en Google.
         parent_company_google_text: Busque en Google el nombre de su empleador junto con "empresa matriz".
         parent_company_heading: Cómo encontrar la empresa matriz de su empleador
@@ -230,7 +230,7 @@ es:
         quick_link_search_tips: Consejos de búsqueda
         right_company_heading: Asegúrese de estar buscando la empresa correcta
         right_company_link: Cómo encontrar la empresa matriz de su empleador
-        right_company_text: Suena tonto, pero a veces una empresa es propiedad de otra. Puede estar recibiendo pagos de una 'empresa matriz' que tiene un nombre diferente.
+        right_company_text: Esto puede parecer obvio, pero a veces una empresa es propiedad de otra. Es posible que esté recibiendo pagos de una "empresa matriz" que tiene un nombre diferente.
         search_payroll_heading: Busque su proveedor de nómina
         search_payroll_link: Cómo encontrar su proveedor de nómina
         search_payroll_text: Muchos trabajos usan un proveedor de nómina. Un proveedor de nómina tiene un sitio web donde puede iniciar sesión para ver sus talones de pago, documentos de impuestos y horas de trabajo en línea.
@@ -238,7 +238,7 @@ es:
         submit_income_heading: Otras formas de enviar ingresos
         try_searching_again: Intente buscar de nuevo
         upload_heading: Cargue documentos en %{agency_portal_name}.
-        upload_text: Use el cargador de documentos proporcionado en el portal en línea. Tenga sus documentos de ingresos listos para cargar y muestre toda su información de pago y empleador.
+        upload_text: Use la herramienta para cargar documentos en el portal en línea. Tenga listos sus documentos de ingresos para cargar. Asegúrese de que muestren toda su información de pago y de su empleador.
     other_jobs:
       show:
         bullet_1: Le paga a través de PayPal, Venmo, Cash App, etc.
