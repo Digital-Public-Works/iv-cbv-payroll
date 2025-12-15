@@ -8,8 +8,8 @@
 
 <nav class="margin-y-2" aria-label="<%= t(".quick_link_nav_label", default: "Page sections") %>">
   <ul class="usa-list">
-    <li><a href="#search-tips" class="usa-link" data-action="click->click-tracker#track" data-element-type="<%= ClickTracker::ElementType::AnchorLink %>" data-element-name="search_tips_anchor" data-track-event="<%= TrackEvent::ApplicantClickedSearchTips %>"><%= t(".quick_link_search_tips") %></a></li>
-    <li><a href="#other-ways" class="usa-link" data-action="click->click-tracker#track" data-element-type="<%= ClickTracker::ElementType::AnchorLink %>" data-element-name="other_ways_anchor" data-track-event="<%= TrackEvent::ApplicantClickedOtherWaysToVerify %>"><%= t(".quick_link_other_ways") %></a></li>
+    <li><a href="#search-tips" class="usa-link" data-action="click->click-tracker#track" data-element-type="<%= ClickTracker::ElementType::AnchorLink %>" data-element-name="search_tips_anchor" data-track-event="<%= TrackEvent::ApplicantClickedSearchTipsAnchor %>"><%= t(".quick_link_search_tips") %></a></li>
+    <li><a href="#other-ways" class="usa-link" data-action="click->click-tracker#track" data-element-type="<%= ClickTracker::ElementType::AnchorLink %>" data-element-name="other_ways_anchor" data-track-event="<%= TrackEvent::ApplicantClickedOtherWaysToSubmitHelpAnchor %>"><%= t(".quick_link_other_ways") %></a></li>
   </ul>
 </nav>
 
@@ -47,7 +47,7 @@
             trigger_label: t(".search_payroll_link"),
             heading: t(".find_payroll_heading"),
             element_name: "payroll_provider_help",
-            track_event: TrackEvent::ApplicantOpenedPayrollProviderHelp
+            track_event: TrackEvent::ApplicantClickedPayrollProviderHelpAccordion
           ) do %>
             <p><%= t(".find_payroll_text") %></p>
             <p><%= t(".find_payroll_places") %></p>
@@ -77,7 +77,7 @@
             trigger_label: t(".right_company_link"),
             heading: t(".parent_company_heading"),
             element_name: "parent_company_help",
-            track_event: TrackEvent::ApplicantOpenedParentCompanyHelp
+            track_event: TrackEvent::ApplicantClickedParentCompanyHelpAccordion
           ) do %>
             <p><strong><%= t(".parent_company_website_heading") %></strong> <%= t(".parent_company_website_text") %></p>
             <p><strong><%= t(".parent_company_google_heading") %></strong> <%= t(".parent_company_google_text") %></p>
@@ -110,7 +110,7 @@
     trigger_label: t(".other_ways_link"),
     heading: t(".submit_income_heading"),
     element_name: "other_ways_to_submit_help",
-    track_event: TrackEvent::ApplicantOpenedOtherWaysToSubmitHelp,
+    track_event: TrackEvent::ApplicantClickedOtherWaysToVerifyAccordion,
     margin_class: "margin-top-3"
   ) do %>
     <ul class="usa-list usa-list--unstyled">
