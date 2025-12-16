@@ -360,6 +360,36 @@ es:
       status:
         fetching_payroll_description: Esto puede tardar algunos minutos. Mantenga abierta esta ventana mientras trabajamos en esto.
         header: Estamos recopilando los detalles de pago de su empleador.
+    validation_failures:
+      show:
+        not_enough_information: Esta cuenta no tenía suficiente información
+        not_enough_information_description: Pudimos conectarnos a su cuenta de nómina, pero no había suficiente información para verificar sus ingresos. Esto sucede cuando la cuenta no puede mostrar su nombre, el nombre de su empleador o ingresos de los últimos 90 días.
+        options_next_steps: Sus opciones y próximos pasos
+        try_different_credentials: Intente iniciar sesión con una cuenta o credenciales diferentes
+        try_different_credentials_description: A veces ocurre un error si ha iniciado sesión en una cuenta de administrador, no en una cuenta de empleado. Si cree que esto sucedió, regrese a la búsqueda e inicie sesión con una cuenta diferente.
+        other_ways: Otras maneras de verificar ingresos para este trabajo
+      other_ways_no_employer:
+        other_ways_description: 'Si no hay otra cuenta en la que pueda iniciar sesión, es necesario entregar información de ingresos para este trabajo fuera de Verify My Income. Puede entregar los últimos 30 días de ingresos a %{agency_name}:'
+        other_ways_option_1: Usando el cargador de documentos en %{agency_portal_name}
+        other_ways_option_2: Enviando por correo o por fax documentos de ingresos impresos
+        other_ways_option_3: Llevando documentos de ingresos a una oficina de %{agency_acronym}
+        try_searching_again: Intente buscar de nuevo
+        go_to_agency_portal: Ir a %{agency_portal_name}
+      other_ways_with_employer:
+        other_ways_description_single_job: 'Como ya inició sesión en 1 trabajo, estos son sus siguientes pasos:'
+        other_ways_description_multiple_jobs: 'Como ya inició sesión en %{job_count} trabajos, estos son sus siguientes pasos:'
+        step_1: Paso 1
+        step_1_text_single_job: Continúe en Verify My Income para entregar información de ingresos para %{job_count} trabajo en el que ya ha iniciado sesión.
+        step_1_text_multiple_jobs: Continúe en Verify My Income para entregar información de ingresos para %{job_count} trabajos en los que ya ha iniciado sesión.
+        step_2: Paso 2
+        step_2_text: Después de entregar su informe de ingresos, entregue información de ingresos para trabajos que no pudo encontrar o donde no pudo iniciar sesión de otra manera
+        more_options: Más opciones
+        more_options_text: 'Puede entregar los últimos 30 días de ingresos a %{agency_name}:'
+        more_options_1: Usando el cargador de documentos en %{agency_portal_name}
+        more_options_2: Enviando por correo o por fax documentos de ingresos impresos
+        more_options_3: Llevando documentos de ingresos a una oficina de %{agency_acronym}
+        try_searching_again: Intente buscar de nuevo
+        continue_to_income_summary: Continuar al Resumen de Ingresos
   components:
     report:
       employment_details_table:

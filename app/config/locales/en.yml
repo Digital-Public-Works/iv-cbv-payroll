@@ -479,6 +479,36 @@ en:
       status:
         fetching_payroll_description: This may take a few minutes. Please keep this window open while we work on this.
         header: We’re gathering your payment details from your employer
+    validation_failures:
+      show:
+        not_enough_information: This account did not have enough information
+        not_enough_information_description: We were able to connect to your payroll account, but there was not enough information to verify your income. This happens when the account is unable to provide your name, employer’s name, or income from the last 90 days.
+        options_next_steps: Your options and next steps
+        try_different_credentials: Try logging in with a different account or credentials
+        try_different_credentials_description: Sometimes an error occurs if you have logged into an administrator account, not an employee account. If you think this has happened, go back to search and log in with a different account.
+        other_ways: Other ways to verify income for this job
+      other_ways_no_employer:
+        other_ways_description: 'If there is not another account to log into, you will need to submit income for this job outside of Verify My Income. You can submit the last 30 days of income to %{agency_name} by:'
+        other_ways_option_1: Using the document uploader in %{agency_portal_name}
+        other_ways_option_2: Mailing or faxing printed income documents
+        other_ways_option_3: Taking income documents to a %{agency_acronym} office
+        try_searching_again: Try searching again
+        go_to_agency_portal: Go to %{agency_portal_name}
+      other_ways_with_employer:
+        other_ways_description_single_job: 'Since you have already logged into %{job_count} job, here are your next steps:'
+        other_ways_description_multiple_jobs: 'Since you have already logged into %{job_count} jobs, here are your next steps:'
+        step_1: Step 1
+        step_1_text_single_job: Continue in Verify My Income to submit income information for the %{job_count} job you’ve already logged into.
+        step_1_text_multiple_jobs: Continue in Verify My Income to submit income information for the %{job_count} jobs you’ve already logged into.
+        step_2: Step 2
+        step_2_text: After submitting your income report, send income for jobs you could not find or log into another way.
+        more_options: More options
+        more_options_text: 'You can submit the last 30 days of income to %{agency_name} by:'
+        more_options_1: Using the document uploader in %{agency_portal_name}
+        more_options_2: Mailing or faxing printed income documents
+        more_options_3: Taking income documents to a %{agency_acronym} office
+        try_searching_again: Try searching again
+        continue_to_income_summary: Continue to Income Summary
   components:
     report:
       employment_details_table:
