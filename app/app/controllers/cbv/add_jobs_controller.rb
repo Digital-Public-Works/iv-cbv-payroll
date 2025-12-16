@@ -17,6 +17,8 @@ class Cbv::AddJobsController < Cbv::BaseController
       has_additional_jobs: params[:additional_jobs] == "true"
     })
 
+    session[:additional_jobs] = params[:additional_jobs]
+
     redirect_to next_path
   end
 

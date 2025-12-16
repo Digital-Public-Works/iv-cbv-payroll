@@ -9,6 +9,8 @@ class Cbv::EmployerSearchesController < Cbv::BaseController
     @has_payroll_account = @cbv_flow.payroll_accounts.any?
     @selected_tab = search_params[:type] || "payroll"
 
+    session[:additional_jobs] = nil
+
     case search_params[:type]
     when "payroll"
       track_clicked_popular_payroll_providers_event
