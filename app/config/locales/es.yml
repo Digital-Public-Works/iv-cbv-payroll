@@ -205,7 +205,7 @@ es:
         header: Opciones para verificar sus ingresos
         in_person_heading: Vaya en persona a una oficina de %{agency_acronym}
         in_person_text: Lleve sus documentos de ingresos a una oficina local de %{agency_acronym}.
-        intro: Use los enlaces rápidos a continuación para encontrar la mejor manera de enviar información de ingresos para este trabajo.
+        intro: Use los siguientes enlaces rápidos para encontrar la mejor manera de enviar información de ingresos para este trabajo.
         local_help: Las bibliotecas locales y las organizaciones comunitarias pueden ayudarle.
         mail_heading: Envíe documentos por correo o fax a %{agency_acronym}
         mail_text: Consulte un aviso reciente de %{agency_acronym} para encontrar el mejor número de fax u oficina. Envíe sus documentos de ingresos por fax o correo.
