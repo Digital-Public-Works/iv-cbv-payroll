@@ -189,7 +189,7 @@ es:
         title: Su invitación para verificar ingresos ha expirado
     missing_results:
       show:
-        check_search_term_example: 'Por ejemplo: Si inicialmente buscó "DHS", el mejor término de búsqueda sería "Department of Human Services".'
+        check_search_term_example: 'Por ejemplo: Si buscó primero "DHS", el mejor término de búsqueda sería "Department of Human Services".'
         check_search_term_heading: Verifique su término de búsqueda
         check_search_term_text: Use el nombre completo u oficial de su empleador o proveedor de nómina. Evite las abreviaturas.
         continue_to_review: Continúe a revisar la información de ingresos que pudo encontrar antes de enviarla a %{agency_acronym}.
