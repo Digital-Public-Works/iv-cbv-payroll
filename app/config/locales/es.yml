@@ -193,7 +193,7 @@ es:
         check_search_term_heading: Verifique su término de búsqueda
         check_search_term_text: Use el nombre completo u oficial de su empleador o proveedor de nómina. Evite las abreviaturas.
         continue_to_review: Continúe a revisar la información de ingresos que pudo encontrar antes de enviarla a %{agency_acronym}.
-        find_payroll_fallback: Si no pudo encontrar su proveedor de nómina, buscar su empleador es la siguiente mejor opción.
+        find_payroll_fallback: Si no pudo encontrar su proveedor de nómina, buscando su empleador es la siguiente mejor opción.
         find_payroll_heading: Cómo encontrar su proveedor de nómina si recibe depósito directo o talones de pago
         find_payroll_place_1: Su talón de pago
         find_payroll_place_2: Una notificación por correo electrónico de su talón de pago
