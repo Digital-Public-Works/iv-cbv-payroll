@@ -225,7 +225,7 @@ es:
         parent_company_manager_heading: Pregunte a su gerente o supervisor.
         parent_company_manager_text: Su gerente o supervisor podrá decirle quién es la empresa matriz.
         parent_company_website_heading: Consulte el sitio web de la empresa.
-        parent_company_website_text: Busque en la sección Acerca de nosotros el nombre de una empresa matriz. Los informes anuales también pueden tener esta información.
+        parent_company_website_text: 'Busque en la sección "Acerca de nosotros" el nombre de la empresa matriz. Los informes anuales también pueden tener esta información.'
         quick_link_other_ways: Otras formas de verificar ingresos del trabajo
         quick_link_search_tips: Consejos de búsqueda
         right_company_heading: Asegúrese de estar buscando la empresa correcta
