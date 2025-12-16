@@ -509,9 +509,11 @@ RSpec.describe Aggregators::Validators::UsefulReportValidator do
       let(:employments) { [ empty_employment_no_start_date ] }
       let(:paystubs) { [] }
 
-      it 'is valid with no paystubs and no start date' do
-        expect(report).to be_valid(:useful_report)
-        expect(report.errors).to be_empty
+      it 'is invalid with no paystubs and no start date' do
+        expect(report).not_to be_valid(:useful_report)
+        expect(report.errors[:paystubs]).to include(
+          /No paystubs found/
+        )
       end
 
       context 'and termination date' do

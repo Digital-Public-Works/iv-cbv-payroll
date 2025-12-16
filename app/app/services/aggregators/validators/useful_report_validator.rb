@@ -12,7 +12,7 @@ module Aggregators::Validators
 
       valid_paystubs = valid_paystubs(report)
       if is_w2_worker && valid_paystubs.empty?
-        unless has_no_or_new_start_date?(report) || has_new_termination_date?(report)
+        unless has_recent_start_date?(report) || has_recent_termination_date?(report)
           report.errors.add(:paystubs, "No paystubs found")
         end
       elsif valid_paystubs.any?
@@ -34,13 +34,12 @@ module Aggregators::Validators
       report.errors.add(:employments, "Employment has no employer_name") unless employment.employer_name.present?
     end
 
-    def has_new_termination_date?(report)
+    def has_recent_termination_date?(report)
       report.employments.compact.map(&:termination_date).any? { |termination_date| before_or_equal?(18.months.ago, safe_parse_date(termination_date)) }
     end
 
-    def has_no_or_new_start_date?(report)
-      report.employments.none? { |employment| employment.start_date.present? } ||
-        report.employments.compact.map(&:start_date).any? { |start_date| before_or_equal?(32.days.ago, safe_parse_date(start_date)) }
+    def has_recent_start_date?(report)
+      report.employments.compact.map(&:start_date).any? { |start_date| start_date.present? && before_or_equal?(32.days.ago, safe_parse_date(start_date)) }
     end
 
     # str_date will look something like: "2025-11-17"
