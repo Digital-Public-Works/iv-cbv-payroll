@@ -199,7 +199,7 @@ es:
         find_payroll_place_2: Una notificación por correo electrónico de su talón de pago
         find_payroll_place_3: El sistema de recursos humanos de su empleador
         find_payroll_places: 'Busque el nombre del proveedor de nómina en estos lugares:'
-        find_payroll_text: Muchos trabajos usan un proveedor de nómina. Un proveedor de nómina tiene un sitio web donde puede iniciar sesión para ver sus talones de pago en línea.
+        find_payroll_text: Muchos trabajos usan un proveedor de nómina. Un proveedor de nómina tiene un sitio web donde usted puede iniciar sesión para ver sus talones de pago en línea.
         go_to_agency_portal: Ir a %{agency_portal_name}
         go_to_income_summary: Continuar al Resumen de Ingresos
         header: Opciones para verificar sus ingresos
