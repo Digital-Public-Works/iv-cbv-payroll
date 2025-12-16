@@ -15,11 +15,8 @@ module TrackEvent
   ApplicantAttemptedClosingPinwheelModal = "ApplicantAttemptedClosingPinwheelModal"
   ApplicantAttemptedPinwheelLogin = "ApplicantAttemptedPinwheelLogin"
   ApplicantBeganLinkingEmployer = "ApplicantBeganLinkingEmployer"
-<<<<<<< jeffcatania/offboarding-pathways
   ApplicantClickedCannotFindEmployer = "ApplicantClickedCannotFindEmployer"
-=======
   ApplicantClickedBackButton = "ApplicantClickedBackButton"
->>>>>>> main
   ApplicantClickedCBVInvitationLink = "ApplicantClickedCBVInvitationLink"
   ApplicantClickedEditInformationLink = "ApplicantClickedEditInformationLink"
   ApplicantClickedElement = "ApplicantClickedElement"
