@@ -1,51 +1,4 @@
 class Api::UserEventsController < ApplicationController
-  EVENT_NAMES = %w[
-    ApplicantOpenedHelpModal
-    ApplicantCopiedInvitationLink
-    ApplicantSelectedEmployerOrPlatformItem
-    ApplicantAttemptedClosingPinwheelModal
-    ApplicantAttemptedPinwheelLogin
-    ApplicantClosedPinwheelModal
-    ApplicantEncounteredPinwheelError
-    ApplicantViewedPinwheelDefaultProviderSearch
-    ApplicantViewedPinwheelLoginPage
-    ApplicantViewedPinwheelProviderConfirmation
-    ApplicantSucceededWithPinwheelLogin
-    ApplicantSucceededWithArgyleLogin
-    ApplicantCreatedArgyleAccount
-    ApplicantEncounteredArgyleAccountCallbackError
-    ApplicantRemovedArgyleAccount
-    ApplicantClosedArgyleModal
-    ApplicantEncounteredArgyleError
-    ApplicantEncounteredArgyleTokenExpired
-    ApplicantEncounteredModalAdapterError
-    ApplicantViewedArgyleProviderConfirmation
-    ApplicantViewedArgyleLoginPage
-    ApplicantAttemptedArgyleLogin
-    ApplicantViewedArgyleDefaultProviderSearch
-    ApplicantAccessedArgyleModalMFAScreen
-    ApplicantUpdatedArgyleSearchTerm
-    ApplicantManuallySwitchedLanguage
-    ApplicantConsentedToTerms
-    ApplicantViewedHelpText
-    ApplicantEncounteredArgyleAuthenticationError
-    ApplicantEncounteredArgyleMfaError
-    ApplicantEncounteredArgylePlatformError
-    ApplicantEncounteredArgyleAccountStateError
-    ApplicantEncounteredArgyleCredentialError
-    ApplicantEncounteredArgyleLanguageError
-    ApplicantEncounteredArgyleLimitError
-    ApplicantEncounteredArgyleLinkOpenError
-    ApplicantEncounteredArgyleUnknownError
-    ApplicantEncounteredArgyleUndefinedAccountError
-    ApplicantClosedArgyleLinkFromErrorScreen
-    ApplicantEncounteredUnknownArgyleEvent
-    ApplicantClickedArgyleLoginHelp
-    ApplicantViewedArgyleSuccessScreen
-    ApplicantViewedArgyleAccountStatus
-    ApplicantDisconnectedArgyleAccount
-  ]
-
   def user_action
     base_attributes = {
       time: Time.now.to_i
@@ -58,6 +11,7 @@ class Api::UserEventsController < ApplicationController
         cbv_flow_id: @cbv_flow.id,
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,
         client_agency_id: @cbv_flow.client_agency_id,
+        device_id: @cbv_flow.device_id,
         invitation_id: @cbv_flow.cbv_flow_invitation_id
       })
     end
@@ -65,7 +19,7 @@ class Api::UserEventsController < ApplicationController
     event_attributes = (user_action_params[:attributes] || {}).merge(base_attributes)
     event_name = user_action_params[:event_name]
 
-    if EVENT_NAMES.include?(event_name)
+    if TrackEvent.constants.map(&:to_s).include?(event_name)
       event_logger.track(
         event_name,
         request,
