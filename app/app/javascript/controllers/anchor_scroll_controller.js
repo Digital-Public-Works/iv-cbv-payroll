@@ -38,7 +38,6 @@ export default class extends Controller {
     if (targetElement) {
       event.preventDefault()
       targetElement.scrollIntoView({ behavior: "smooth" })
-      history.pushState(null, "", href)
     }
   }
 }
