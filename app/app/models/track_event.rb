@@ -14,6 +14,7 @@ module TrackEvent
   ApplicantAttemptedClosingPinwheelModal = "ApplicantAttemptedClosingPinwheelModal"
   ApplicantAttemptedPinwheelLogin = "ApplicantAttemptedPinwheelLogin"
   ApplicantBeganLinkingEmployer = "ApplicantBeganLinkingEmployer"
+  ApplicantClickedBackButton = "ApplicantClickedBackButton"
   ApplicantClickedCBVInvitationLink = "ApplicantClickedCBVInvitationLink"
   ApplicantClickedEditInformationLink = "ApplicantClickedEditInformationLink"
   ApplicantClickedGenericLink = "ApplicantClickedGenericLink"
