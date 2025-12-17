@@ -1,15 +1,15 @@
 <% content_for :title, t(".header") %>
 <% job_count = @cbv_flow.payroll_accounts.select(&:sync_succeeded?).count %>
 
-<div data-controller="click-tracker" data-click-tracker-page-value="missing_results" data-context-jobs-already-added="<%= job_count %>">
+<div data-controller="scroll-reset click-tracker" data-click-tracker-page-value="missing_results" data-context-jobs-already-added="<%= job_count %>">
 
 <h1><%= t(".header") %></h1>
 <p><%= t(".intro") %></p>
 
-<nav class="margin-y-2" aria-label="<%= t(".quick_link_nav_label") %>">
+<nav class="margin-y-2" aria-label="<%= t(".quick_link_nav_label") %>" data-controller="anchor-scroll">
   <ul class="usa-list">
-    <li><a href="#search-tips" class="usa-link" data-action="click->click-tracker#track" data-element-type="<%= ClickTracker::ElementType::AnchorLink %>" data-element-name="search_tips_anchor" data-track-event="<%= TrackEvent::ApplicantClickedSearchTipsAnchor %>"><%= t(".quick_link_search_tips") %></a></li>
-    <li><a href="#other-ways" class="usa-link" data-action="click->click-tracker#track" data-element-type="<%= ClickTracker::ElementType::AnchorLink %>" data-element-name="other_ways_anchor" data-track-event="<%= TrackEvent::ApplicantClickedOtherWaysToSubmitHelpAnchor %>"><%= t(".quick_link_other_ways") %></a></li>
+    <li><a href="#search-tips" class="usa-link" data-action="click->anchor-scroll#scroll click->click-tracker#track" data-element-type="<%= ClickTracker::ElementType::AnchorLink %>" data-element-name="search_tips_anchor" data-track-event="<%= TrackEvent::ApplicantClickedSearchTipsAnchor %>"><%= t(".quick_link_search_tips") %></a></li>
+    <li><a href="#other-ways" class="usa-link" data-action="click->anchor-scroll#scroll click->click-tracker#track" data-element-type="<%= ClickTracker::ElementType::AnchorLink %>" data-element-name="other_ways_anchor" data-track-event="<%= TrackEvent::ApplicantClickedOtherWaysToSubmitHelpAnchor %>"><%= t(".quick_link_other_ways") %></a></li>
   </ul>
 </nav>
 
