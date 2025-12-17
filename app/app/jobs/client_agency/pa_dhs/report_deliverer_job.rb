@@ -18,6 +18,7 @@ class ClientAgency::PaDhs::ReportDelivererJob < ApplicationJob
   end
 
   def filename(date_start)
+    # while the timezone here is hard coded, it is fine as this deliverer is specific to pa_dhs
     "#{date_start.in_time_zone("America/New_York").strftime('%Y%m%d')}_summary.csv"
   end
 

@@ -169,17 +169,10 @@ RSpec.describe CbvFlowInvitation, type: :model do
     end
 
     it "returns URL with token and locale" do
-      expected_url = "https://sandbox.#{ENV["DOMAIN_NAME"]}/en/cbv/entry?token=#{invitation.auth_token}"
-      expect(invitation.to_url).to eq(expected_url)
-    end
-
-    it "includes origin parameter when provided" do
-      expected_url = "https://sandbox.#{ENV["DOMAIN_NAME"]}/en/cbv/entry?origin=shared&token=#{invitation.auth_token}"
-      expect(invitation.to_url(origin: "shared")).to eq(expected_url)
+      expected_url = "https://sandbox.#{ENV["DOMAIN_NAME"]}/en/start/#{invitation.auth_token}"
+      expect(invitation.to_url).to eq("#{expected_url}?")
     end
   end
-
-
 
   describe "foreign key constraints" do
     context "has an associated user" do
@@ -235,6 +228,40 @@ RSpec.describe CbvFlowInvitation, type: :model do
       it 'returns true' do
         expect(invitation.at_flow_limit?).to be true
       end
+    end
+  end
+
+  describe "uniquness constraints" do
+    let(:invitation1) { create(:cbv_flow_invitation, client_agency_id: "sandbox", language: "en") }
+    let(:invitation2) { create(:cbv_flow_invitation, client_agency_id: "sandbox", language: "en") }
+
+    it "is able to create two invitations" do
+      expect {
+        invitation1
+        invitation2
+      }.to change(CbvFlowInvitation, :count).by(2)
+    end
+  end
+
+  describe "#normalize_language" do
+    it "downcases the language" do
+      invitation = build(:cbv_flow_invitation, valid_attributes.merge(language: "EN"))
+      invitation.validate
+      expect(invitation.language).to eq("en")
+    end
+  end
+
+  describe ".unstarted" do
+    let!(:invitation_without_flows) { create(:cbv_flow_invitation, valid_attributes) }
+    let!(:invitation_with_flow) do
+      create(:cbv_flow_invitation, valid_attributes).tap do |inv|
+        create(:cbv_flow, cbv_flow_invitation: inv)
+      end
+    end
+
+    it "returns invitations with no flows" do
+      expect(CbvFlowInvitation.unstarted).to include(invitation_without_flows)
+      expect(CbvFlowInvitation.unstarted).not_to include(invitation_with_flow)
     end
   end
 end

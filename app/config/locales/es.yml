@@ -7,6 +7,7 @@ es:
       garnishment: Derecho de retención
       other: Otro
       roth: Cuenta Roth
+      tax: Impuesto
       vision: Plan de seguro de la vista
     earnings_category:
       base: Salario Base
@@ -43,16 +44,14 @@ es:
       terminated: Desactivado
     payment_frequencies:
       annual: Anual
-      annually: Anualmente
-      bi_weekly: Cada dos semanas
       biweekly: Cada dos semanas
       daily: Diario
       hourly: Por hora
       monthly: Mensual
       per_mile: Por milla
       quarterly: Trimestralmente
-      semi_monthly: Dos veces al mes
       semimonthly: Dos veces al mes
+      semiweekly: Dos veces a la semana
       variable: Variable
       weekly: Semanal
     tax_category:
@@ -75,6 +74,7 @@ es:
         sandbox: La Agencia de pruebas CBV le ha enviado una invitación para verificar sus ingresos
       subject:
         default: Verifique sus ingresos para su solicitud o renovación de SNAP
+  back: Atrás
   caseworker:
     cbv_flow_invitations:
       create:
@@ -84,7 +84,7 @@ es:
   cbv:
     add_jobs:
       show:
-        header: "¿Tiene otro trabajo que declarar?"
+        header: "¿Tiene otro trabajo que verificar?"
         header_2: "¿Tiene otro trabajo que reportar usando Verificar Mis Ingresos?"
         header_2_bullet_1: Tiene un proveedor de nómina en línea, o
         header_2_bullet_2: Le permite ver talones de pago en línea, o
@@ -162,7 +162,7 @@ es:
         select: Seleccione
         to_continue: 'Si aún no ve enumerado a su empleador ni a su proveedor de nómina:'
         to_continue_li_1: Deberá enviar esa información de ingresos por separado.
-        to_continue_li_1_html: <a href="%{agency_contact_website}" target="_blank" rel="noopener noreferrer">Visite el sitio web del %{agency_portal_name}</a> para informarse de otras formas de notificar sus ingresos.
+        to_continue_li_1_html: <a href="%{agency_contact_website}" target="_blank" rel="noopener noreferrer">Visite el sitio web del %{agency_portal_name}</a> para informarse de otras formas de verificar sus ingresos.
         to_continue_li_2: Si tiene otros trabajos que añadir, búsquelos.
         to_continue_li_3: Si no tiene otros trabajos que añadir aquí, puede salir de este sitio.
         to_continue_li_3_continue: Si no tiene otros trabajos que agregar aquí, continúe para revisar su reporte de ingresos.
@@ -182,7 +182,7 @@ es:
         step3: Envíe su información de pago.
         step3_description: La enviaremos automáticamente a %{agency_acronym}. Esto lo ayudará a demostrar y comprobar sus ingresos y puede ayudar a %{agency_acronym} a tomar una decisión más rápida.
         subheader_html: 'Enviaremos los registros de pago de su(s) empleador(es) a %{agency_full_name} para verificar sus ingresos.<strong> La mayoría de las personas completan este proceso en aproximadamente 5 minutos.</strong> Solo siga estos pasos:'
-        what_if_i_cant_use_this_body_1: Si necesita declarar sus ingresos y no puede usar esta herramienta, deberá compartir, de manera directa, la información de sus ingresos para este trabajo con %{agency_portal_name}.
+        what_if_i_cant_use_this_body_1: Si necesita verificar sus ingresos y no puede usar esta herramienta, deberá compartir, de manera directa, la información de sus ingresos para este trabajo con %{agency_portal_name}.
         what_if_i_cant_use_this_body_2_html:
           default: Para obtener más información sobre cómo enviar documentos, visite el sitio web de <a href="%{agency_url}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
           la_ldh: 'Usted puede: <ul><li>Subir documentos a través del Portal de Autoservicio en línea en <a href="https://mymedicaid.la.gov/" target="_blank" rel="noopener noreferrer">https://mymedicaid.la.gov/</a></li><li>Enviar documentos por correo postal: Louisiana Medicaid/LaCHIP, P.O. Box 91283, Baton Rouge, LA 70821-9278</li><li>Enviar documentos por correo electrónico: <a href="mailto:MyMedicaid@la.gov">MyMedicaid@la.gov</a></li><li>Llevar sus documentos a la oficina de Medicaid de su elección.</li></ul>'
@@ -207,9 +207,9 @@ es:
         continue_button: Continúe a «Revisar mi reporte»
         continue_to_review: Continúe a revisar la información de ingresos que pudo encontrar antes de enviarla a %{agency_acronym}.
         exit_button_html: <a href="%{agency_contact_website}" class="usa-button" target="_blank" rel="noopener noreferrer">Salir y acceder a %{agency_portal_name}</a>
-        header: Cómo reportar ingresos si su empleador o proveedor de nómina no figura en la lista
-        more_jobs: Si tiene más trabajos que reportar
-        no_more_jobs: Si no tiene más trabajos que reportar
+        header: Cómo verificar ingresos si su empleador o proveedor de nómina no figura en la lista
+        more_jobs: Si tiene más trabajos que verificar
+        no_more_jobs: Si no tiene más trabajos que verificar
         not_listed_p1: Si su empleador o proveedor de nómina no están listados en este sitio, tendrá que compartir su información de ingresos por este trabajo directamente con %{agency_acronym}.
         not_listed_p2: Para obtener más información sobre cómo enviar los documentos requeridos, visite el sitio web de %{agency_portal_name}.
         not_listed_p2_link_html: Visite <a href="%{agency_url}" target="_blank" rel="noopener noreferrer">el sitio web del %{agency_portal_name}</a> para obtener más información sobre cómo enviar documentos.
@@ -220,12 +220,12 @@ es:
         bullet_2: Le paga en efectivo
         bullet_3: Le paga con un cheque en papel y no puede ver su cheque de pago en línea
         bullet_4: Le emite un 1099
-        header: "¿Tiene que informar de algún trabajo sin usar la herramienta Verificar Mis Ingresos?"
-        header_html: "¿Tiene que informar de algún trabajo <em>sin usar</em> la herramienta Verificar Mis Ingresos?"
+        header: "¿Tiene que verificar de algún trabajo sin usar la herramienta Verificar Mis Ingresos?"
+        header_html: "¿Tiene que verificar de algún trabajo <em>sin usar</em> la herramienta Verificar Mis Ingresos?"
         header_sub_text: 'Cuéntenos sobre cualquier otro trabajo que haya tenido en los últimos 90 días, incluso si ya no está en ese trabajo. Al hacerlo, incluya cualquier trabajo, actual o reciente, que haya tenido en los últimos 90 días que reúna estos requisitos:'
-        note_html: 'Importante: Si tuvo otros trabajos en los últimos 90 días que no va a reportar usando la herramienta Verify My Income, debe enviar esa información de ingresos por separado. <a href="%{agency_site}" target="_blank" rel="noopener noreferrer">Más información en %{agency_portal_name}.</a>'
-        radio_no: No, no tengo otro trabajo que reportar por separado
-        radio_yes: Sí, tengo otro trabajo que reportaré por separado
+        note_html: 'Importante: Si tuvo otros trabajos en los últimos 90 días que no va a verificar usando la herramienta Verify My Income, debe enviar esa información de ingresos por separado. <a href="%{agency_site}" target="_blank" rel="noopener noreferrer">Más información en %{agency_portal_name}.</a>'
+        radio_no: No, no tengo ningún otro trabajo que verificar por separado.
+        radio_yes: Sí, tengo otro trabajo que verificar por separado
     payment_details:
       show:
         additional_information_header: Comentarios adicionales (Opcional)
@@ -291,8 +291,8 @@ es:
           footer:
             page_footer: Informe de verificación de ingresos | Página [page] de [topage]
           shared:
-            additional_jobs_to_report: "¿El cliente tiene trabajos adicionales que informará por separado?"
-            additional_jobs_to_report_html: "¿El cliente tiene trabajos adicionales que informará por separado? <sup>1</sup>"
+            additional_jobs_to_report: "¿El cliente tiene trabajos adicionales que verificará por separado?"
+            additional_jobs_to_report_html: "¿El cliente tiene trabajos adicionales que verificará por separado? <sup>1</sup>"
             client_information: Información del cliente
             confirmation_code: Código de confirmación
             employment_information: Información del empleo
@@ -312,13 +312,13 @@ es:
         download: Descargar mi informe
         header: Su informe de ingresos se envió correctamente a %{agency_acronym}.
         invitation_link_label: Enlace de invitación
-        share_invitation_link_content: Comparta este enlace con todos los miembros de su hogar que necesiten reportar sus ingresos.
-        share_invitation_link_title: Comparta el enlace si otras personas en su hogar necesitan reportar sus ingresos.
+        share_invitation_link_content: Comparta este enlace con todos los miembros de su hogar que necesiten verificar sus ingresos.
+        share_invitation_link_title: Comparta el enlace si otras personas en su hogar necesitan verificar sus ingresos.
         survey: Responda esta encuesta de 5 preguntas
         whats_next: "¿Qué sigue?"
-        whats_next_1_li_1: Si no pudo encontrar empleo o no dispone de talones de pago, reporte sus ingresos a %{agency_acronym} en línea, en persona o por correo.
+        whats_next_1_li_1: Si no pudo encontrar empleo o no tiene recibos de sueldo, verifique sus ingresos en %{agency_acronym} en línea, en persona o por correo.
         whats_next_1_li_2_html: Visite el <a href="%{agency_website}" target="_blank" rel="noopener noreferrer">sitio web de %{agency_portal_name}</a>
-        whats_next_1_title: Reporte otros ingresos, si es necesario.
+        whats_next_1_title: Verificar otros ingresos, si es necesario.
         whats_next_2_li_1_html: Nos gustaría saber más sobre su experiencia al usar este sitio.
         whats_next_2_title: Ayude a mejorar esta experiencia.
     summaries:
@@ -564,7 +564,7 @@ es:
       header: Bienvenido a Verificar Mis Ingresos
       pilot_ended:
         la_ldh:
-          body: "<strong>El período piloto para Luisiana ha terminado.</strong> Si aún necesita declarar sus ingresos, puede hacer lo siguiente:"
+          body: "<strong>El período piloto para Luisiana ha terminado.</strong> Si aún necesita verificar sus ingresos, puede hacer lo siguiente:"
           body_bullet_1: Subir los documentos a través del Portal de autoservicio en línea en <a href="http://MyMedicaid.LA.GOV" target="_blank" rel="noopener noreferrer">http://MyMedicaid.LA.GOV</a>
           body_bullet_2: 'Enviar los documentos por correo postal a: Louisiana Medicaid/LaCHIP, P.O. Box 91283, Baton Rouge, LA 70821-9278'
           body_bullet_3: 'Enviar los documentos por correo electrónico a: <a href="mailto:%{agency_email}">%{agency_email}</a>'
@@ -577,6 +577,10 @@ es:
       end_button: Finalizar esta sesión.
       extend_button: Sí, extender el tiempo de mi sesión.
       heading: "¿Necesita más tiempo en la sesión?"
+    page:
+      description: Las sesiones terminan después de 30 minutos de inactividad. Esto ayuda a que su información esté segura.
+      info_box_html: Para verificar sus ingresos, devuélvalo a <a href="%{agency_contact_website}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
+      title: Su sesión ha terminado.
   shared:
     agency_acronym:
       az_des: DES/FAA
