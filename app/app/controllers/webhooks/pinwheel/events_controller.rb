@@ -11,7 +11,7 @@ class Webhooks::Pinwheel::EventsController < ApplicationController
   DUMMY_API_KEY = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
 
   def create
-    @payroll_account = @cbv_flow.payroll_accounts.find_or_create_by(type: :pinwheel, pinwheel_account_id: params["payload"]["account_id"]) do |new_payroll_account|
+    @payroll_account = @cbv_flow.payroll_accounts.find_or_create_by(type: :pinwheel, aggregator_account_id: params["payload"]["account_id"]) do |new_payroll_account|
       new_payroll_account.supported_jobs = get_supported_jobs(params["payload"]["platform_id"])
     end
 
@@ -58,6 +58,7 @@ class Webhooks::Pinwheel::EventsController < ApplicationController
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,
         cbv_flow_id: @cbv_flow.id,
         client_agency_id: @cbv_flow.client_agency_id,
+        device_id: @cbv_flow.device_id,
         invitation_id: @cbv_flow.cbv_flow_invitation_id,
         platform_name: params["payload"]["platform_name"]
       })
@@ -84,6 +85,7 @@ class Webhooks::Pinwheel::EventsController < ApplicationController
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,
         cbv_flow_id: @cbv_flow.id,
         client_agency_id: @cbv_flow.client_agency_id,
+        device_id: @cbv_flow.device_id,
         invitation_id: @cbv_flow.cbv_flow_invitation_id,
         pinwheel_environment: agency_config[@cbv_flow.client_agency_id].pinwheel_environment,
         sync_duration_seconds: Time.now - @payroll_account.created_at,
@@ -144,6 +146,7 @@ class Webhooks::Pinwheel::EventsController < ApplicationController
         # Employment fields
         employment_success: @payroll_account.job_succeeded?("employment"),
         employment_supported: @payroll_account.supported_jobs.include?("employment"),
+        employment_count: report.employments.length,
         employment_status: report.employments.first&.status,
         employment_employer_name: report.employments.first&.employer_name,
         employment_account_source: report.employments.first&.account_source,
@@ -181,6 +184,7 @@ class Webhooks::Pinwheel::EventsController < ApplicationController
         time: Time.now.to_i,
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,
         cbv_flow_id: @cbv_flow.id,
+        device_id: @cbv_flow.device_id,
         invitation_id: @cbv_flow.cbv_flow_invitation_id
       )
     else
@@ -188,6 +192,7 @@ class Webhooks::Pinwheel::EventsController < ApplicationController
         time: Time.now.to_i,
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,
         cbv_flow_id: @cbv_flow.id,
+        device_id: @cbv_flow.device_id,
         invitation_id: @cbv_flow.cbv_flow_invitation_id,
         errors: report.errors.full_messages.join(", ")
       )

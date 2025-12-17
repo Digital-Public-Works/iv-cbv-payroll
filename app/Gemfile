@@ -75,6 +75,8 @@ gem "aws-actionmailer-ses"
 gem "rack-mini-profiler"
 gem "stackprof"
 
+gem "rack", "~> 3.1.18"
+
 # https://www.ruby-lang.org/en/news/2024/08/01/dos-rexml-cve-2024-41123/
 gem "rexml", "~> 3.4.2"
 gem "gpgme", "~> 2.0", ">= 2.0.12"
@@ -82,6 +84,7 @@ gem "pdf-reader", "~> 2.15.0"
 gem "net-imap", "0.5.10"  # Fixing GHSA-j3g3-5qv5-52m
 gem "cgi", ">= 0.4.2"     # Fixing GHSA-mhwm-jh88-3gjf
 gem "thor", ">= 1.4.0"    # Fixing GHSA-mqcp-p2hv-vw6x
+gem "uri", ">= 1.0.4"     # Fixing CVE-2025-61594
 
 group :development, :test do
   gem "brakeman"
@@ -98,6 +101,8 @@ group :development, :test do
   gem "selenium-webdriver", ">= 4.26.0"
   gem "timecop"
   gem "mutex_m"
+  gem "pry"
+  gem "openssl"
 end
 
 group :development do
@@ -138,4 +143,9 @@ gem "net-sftp"
 gem "net-ssh"
 
 # Sinatra for JSON API reference implementation
-gem "sinatra", "~> 4.0"
+gem "sinatra", "~> 4.2"
+
+# AWS SQS
+gem "aws-sdk-sqs"
+# Shoryuken for SQS
+gem "shoryuken"

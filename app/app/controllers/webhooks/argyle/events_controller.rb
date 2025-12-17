@@ -19,7 +19,7 @@ class Webhooks::Argyle::EventsController < ApplicationController
       # All other webhooks have a params["data"]["account"], which we can use
       # to find the account.
       account_id = params.dig("data", "account")
-      payroll_account = @cbv_flow.payroll_accounts.find_or_create_by(type: :argyle, pinwheel_account_id: account_id) do |new_payroll_account|
+      payroll_account = @cbv_flow.payroll_accounts.find_or_create_by(type: :argyle, aggregator_account_id: account_id) do |new_payroll_account|
         new_payroll_account.synchronization_status = :in_progress
         new_payroll_account.supported_jobs = Aggregators::Webhooks::Argyle.get_supported_jobs
       end
@@ -100,6 +100,7 @@ class Webhooks::Argyle::EventsController < ApplicationController
       time: Time.now.to_i,
       cbv_applicant_id: @cbv_flow.cbv_applicant_id,
       cbv_flow_id: @cbv_flow.id,
+      device_id: @cbv_flow.device_id,
       invitation_id: @cbv_flow.cbv_flow_invitation_id,
       connection_status: connection_status,
       argyle_error_code: error_code,
@@ -168,6 +169,7 @@ class Webhooks::Argyle::EventsController < ApplicationController
         time: Time.now.to_i,
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,
         cbv_flow_id: @cbv_flow.id,
+        device_id: @cbv_flow.device_id,
         invitation_id: @cbv_flow.cbv_flow_invitation_id,
         sync_data: sync_data.to_s,
         sync_duration_seconds: Time.now - payroll_account.sync_started_at,
@@ -178,6 +180,7 @@ class Webhooks::Argyle::EventsController < ApplicationController
         time: Time.now.to_i,
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,
         cbv_flow_id: @cbv_flow.id,
+        device_id: @cbv_flow.device_id,
         invitation_id: @cbv_flow.cbv_flow_invitation_id,
         sync_data: "fully_synced",
         sync_duration_seconds: Time.now - payroll_account.sync_started_at,
@@ -188,14 +191,15 @@ class Webhooks::Argyle::EventsController < ApplicationController
 
   def log_sync_finish(payroll_account, report)
     begin
-      paystub_hours = report.paystubs.filter_map(&:hours).map(&:to_f)
-      paystub_gross_pay_amounts = report.paystubs.filter_map(&:gross_pay_amount)
+      paystub_hours = report.paystubs.filter_map(&:hours).map(&:to_f).presence || [ 0 ]
+      paystub_gross_pay_amounts = report.paystubs.filter_map(&:gross_pay_amount).presence || [ 0 ]
 
       event_logger.track(TrackEvent::ApplicantFinishedArgyleSync, request, {
         time: Time.now.to_i,
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,
         cbv_flow_id: @cbv_flow.id,
         client_agency_id: @cbv_flow.client_agency_id,
+        device_id: @cbv_flow.device_id,
         invitation_id: @cbv_flow.cbv_flow_invitation_id,
         argyle_environment: agency_config[@cbv_flow.client_agency_id].argyle_environment,
         sync_duration_seconds: Time.now - payroll_account.sync_started_at,
@@ -213,10 +217,10 @@ class Webhooks::Argyle::EventsController < ApplicationController
         identity_success: payroll_account.job_succeeded?("identity"),
         identity_supported: payroll_account.supported_jobs.include?("identity"),
         identity_count: report.identities.length,
-        identity_full_name_present: report.identities.first&.full_name&.present?,
+        identity_full_name_present: !!report.identities.first&.full_name&.present?,
         identity_full_name_length: report.identities.first&.full_name&.length,
-        identity_date_of_birth_present: report.identities.first&.date_of_birth.present?,
-        identity_ssn_present: report.identities.first&.ssn.present?,
+        identity_date_of_birth_present: !!report.identities.first&.date_of_birth.present?,
+        identity_ssn_present: !!report.identities.first&.ssn.present?,
         identity_emails_count: report.identities.sum { |i| i.emails.length },
         identity_phone_numbers_count: report.identities.sum { |i| i.phone_numbers.length },
         identity_zip_code: report.identities.first&.zip_code,
@@ -226,9 +230,9 @@ class Webhooks::Argyle::EventsController < ApplicationController
         # Income fields (originally from "identities" endpoint)
         income_success: payroll_account.job_succeeded?("income"),
         income_supported: payroll_account.supported_jobs.include?("income"),
-        income_compensation_amount_present: report.incomes.first&.compensation_amount.present?,
-        income_compensation_unit_present: report.incomes.first&.compensation_unit.present?,
-        income_pay_frequency_present: report.incomes.first&.pay_frequency.present?,
+        income_compensation_amount_present: !!report.incomes.first&.compensation_amount.present?,
+        income_compensation_unit_present: !!report.incomes.first&.compensation_unit.present?,
+        income_pay_frequency_present: !!report.incomes.first&.pay_frequency.present?,
         income_pay_frequency: report.incomes.first&.pay_frequency,
 
         # Paystubs fields
@@ -241,7 +245,7 @@ class Webhooks::Argyle::EventsController < ApplicationController
         paystubs_hours_max: paystub_hours.max,
         paystubs_hours_median: paystub_hours.sort[paystub_hours.length / 2],
         paystubs_hours_min: paystub_hours.min,
-        paystubs_hours_present: report.paystubs.first&.hours.present?,
+        paystubs_hours_present: !!report.paystubs.first&.hours.present?,
         paystubs_earnings_count: report.paystubs.sum { |p| p.earnings.length },
         paystubs_earnings_with_hours_count: report.paystubs.sum { |p| p.earnings.count { |e| e.hours.present? } },
         paystubs_earnings_type_base_count: report.paystubs.sum { |p| p.earnings.count { |e| e.category == "base" } },
@@ -253,16 +257,18 @@ class Webhooks::Argyle::EventsController < ApplicationController
         paystubs_gross_pay_amounts_average: paystub_gross_pay_amounts.sum.to_f / paystub_gross_pay_amounts.length,
         paystubs_gross_pay_amounts_min: paystub_gross_pay_amounts.min,
         paystubs_days_since_last_pay_date: report.paystubs.map { |p| Date.parse(p.pay_date) }.compact.max&.then { |last_pay_date| (Date.current - last_pay_date).to_i },
+        paystubs_employment_id_unique_count: report.paystubs.map(&:employment_id).uniq.count,
 
         # Employment fields (originally from "identities" endpoint)
         employment_success: payroll_account.job_succeeded?("employment"),
         employment_supported: payroll_account.supported_jobs.include?("employment"),
+        employment_count: report.employments.length,
         employment_status: report.employments.first&.status,
         employment_employer_name: report.employments.first&.employer_name,
         employment_account_source: report.employments.first&.account_source,
         employment_employer_id: report.employments.first&.employer_id,
-        employment_employer_address_present: report.employments.first&.employer_address&.present?,
-        employment_employer_phone_number_present: report.employments.first&.employer_name&.present?,
+        employment_employer_address_present: !!report.employments.first&.employer_address&.present?,
+        employment_employer_phone_number_present: !!report.employments.first&.employer_name&.present?,
         employment_start_date: report.employments.first&.start_date,
         employment_termination_date: report.employments.first&.termination_date,
         employment_type: report.employments.first&.employment_type&.to_s,
@@ -303,6 +309,7 @@ class Webhooks::Argyle::EventsController < ApplicationController
         time: Time.now.to_i,
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,
         cbv_flow_id: @cbv_flow.id,
+        device_id: @cbv_flow.device_id,
         invitation_id: @cbv_flow.cbv_flow_invitation_id
       )
     else
@@ -310,6 +317,7 @@ class Webhooks::Argyle::EventsController < ApplicationController
         time: Time.now.to_i,
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,
         cbv_flow_id: @cbv_flow.id,
+        device_id: @cbv_flow.device_id,
         invitation_id: @cbv_flow.cbv_flow_invitation_id,
         errors: report.errors.full_messages.join(", ")
       })

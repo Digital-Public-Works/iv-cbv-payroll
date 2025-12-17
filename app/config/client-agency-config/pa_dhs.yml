@@ -1,5 +1,6 @@
 id: pa_dhs
 active: <%= ENV["AGENCY_PA_DHS_ACTIVE"] %>
+timezone: America/New_York
 agency_name: Department of Human Services
 agency_contact_website: https://www.compass.dhs.pa.gov/home/
 agency_domain: "pa"
@@ -30,8 +31,10 @@ pay_income_days:
   w2: 90
   gig: 90
 invitation_valid_days: 10
-allow_invitation_reuse: true
 logo_path: pa_compass_logo.svg
 weekly_report:
+  enabled: true
   recipient: <%= ENV['PA_DHS_WEEKLY_REPORT_RECIPIENTS'] %>
   report_variant: invitations
+report_customization_show_earnings_list: true
+require_applicant_information_on_invitation: false

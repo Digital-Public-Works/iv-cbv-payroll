@@ -28,7 +28,7 @@ RSpec.describe Report::W2MonthlySummaryTableComponent, type: :component do
         :pinwheel_fully_synced,
         with_errored_jobs: errored_jobs,
         cbv_flow: cbv_flow,
-        pinwheel_account_id: account_id,
+        aggregator_account_id: account_id,
         supported_jobs: supported_jobs,
         )
     end
@@ -98,7 +98,7 @@ RSpec.describe Report::W2MonthlySummaryTableComponent, type: :component do
         :payroll_account,
         :argyle_fully_synced,
         cbv_flow: cbv_flow,
-        pinwheel_account_id: account_id
+        aggregator_account_id: account_id
       )
     end
 
@@ -154,9 +154,9 @@ RSpec.describe Report::W2MonthlySummaryTableComponent, type: :component do
         subject = render_inline(described_class.new(argyle_report, payroll_account))
 
         expect(subject.css("thead tr.subheader-row th:nth-child(4)").to_html).to include "Total hours worked"
-        expect(subject.css("tbody tr:nth-child(1) td:nth-child(4)").to_html).to include "65.6"
-        expect(subject.css("tbody tr:nth-child(2) td:nth-child(4)").to_html).to include "117.7"
-        expect(subject.css("tbody tr:nth-child(3) td:nth-child(4)").to_html).to include "158.9"
+        expect(subject.css("tbody tr:nth-child(1) td:nth-child(4)").to_html).to include "65.59"
+        expect(subject.css("tbody tr:nth-child(2) td:nth-child(4)").to_html).to include "117.69"
+        expect(subject.css("tbody tr:nth-child(3) td:nth-child(4)").to_html).to include "158.89"
       end
 
       it "renders table caption" do

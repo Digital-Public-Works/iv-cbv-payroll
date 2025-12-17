@@ -17,7 +17,7 @@ class Cbv::PaymentDetailsController < Cbv::BaseController
 
   def show
     account_id = params[:user][:account_id]
-    @payroll_account = @cbv_flow.payroll_accounts.find_by(pinwheel_account_id: account_id)
+    @payroll_account = @cbv_flow.payroll_accounts.find_by(aggregator_account_id: account_id)
 
     # security check - make sure the account_id is associated with the current cbv_flow_id
     if @payroll_account.nil?
@@ -127,9 +127,10 @@ class Cbv::PaymentDetailsController < Cbv::BaseController
       cbv_applicant_id: @cbv_flow.cbv_applicant_id,
       cbv_flow_id: @cbv_flow.id,
       client_agency_id: current_agency&.id,
+      device_id: @cbv_flow.device_id,
       invitation_id: @cbv_flow.cbv_flow_invitation_id,
-      pinwheel_account_id: @payroll_account.id,
-      payments_length: @payroll_account_report.paystubs.length,
+      aggregator_account_id: @payroll_account.id,
+      payments_length: @payroll_account_report&.paystubs&.length,
       has_employment_data: has_employment_data?,
       has_paystubs_data: has_paystubs_data?,
       has_income_data: has_income_data?
@@ -144,6 +145,7 @@ class Cbv::PaymentDetailsController < Cbv::BaseController
       cbv_applicant_id: @cbv_flow.cbv_applicant_id,
       cbv_flow_id: @cbv_flow.id,
       client_agency_id: current_agency&.id,
+      device_id: @cbv_flow.device_id,
       invitation_id: @cbv_flow.cbv_flow_invitation_id,
       additional_information_length: comment_data ? comment_data["comment"].length : 0
     })

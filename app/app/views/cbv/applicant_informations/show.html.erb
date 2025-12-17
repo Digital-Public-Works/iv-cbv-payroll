@@ -8,4 +8,11 @@
   <%= render partial: "cbv/applicant_informations/#{@cbv_flow.client_agency_id}", locals: { f: f } %>
 
   <%= f.submit t(".continue") %>
+  <%= button_tag t("back"),
+      type: "button",
+      class: "usa-button usa-button--outline margin-y-1",
+      data: {
+          action: "click->back-button#back",
+          is_default_option: false
+      } %>
 <% end %>

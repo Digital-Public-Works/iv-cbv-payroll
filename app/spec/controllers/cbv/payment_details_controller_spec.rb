@@ -29,10 +29,11 @@ RSpec.describe Cbv::PaymentDetailsController do
         :pinwheel_fully_synced,
         with_errored_jobs: errored_jobs,
         cbv_flow: cbv_flow,
-        pinwheel_account_id: account_id,
+        aggregator_account_id: account_id,
         supported_jobs: supported_jobs,
       )
     end
+    let!(:paystubs_response) { pinwheel_stub_request_end_user_paystubs_response }
 
     before do
       session[:cbv_flow_id] = cbv_flow.id
@@ -40,7 +41,6 @@ RSpec.describe Cbv::PaymentDetailsController do
       pinwheel_stub_request_end_user_accounts_response
       pinwheel_stub_request_end_user_account_response
       pinwheel_stub_request_platform_response
-      pinwheel_stub_request_end_user_paystubs_response
       pinwheel_stub_request_income_metadata_response if supported_jobs.include?("income")
       pinwheel_stub_request_employment_info_response
       pinwheel_stub_request_shifts_response if supported_jobs.include?("shifts")
@@ -53,11 +53,12 @@ RSpec.describe Cbv::PaymentDetailsController do
       end
 
       it "tracks events" do
-        allow(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantViewedPaymentDetails", anything, hash_including(
+        allow(EventTrackingJob).to receive(:perform_later).with(TrackEvent::CbvPageView, anything, anything)
+        expect(EventTrackingJob).to receive(:perform_later).with(TrackEvent::ApplicantViewedPaymentDetails, anything, hash_including(
             cbv_flow_id: cbv_flow.id,
+            device_id: cbv_flow.device_id,
             invitation_id: cbv_flow.cbv_flow_invitation_id,
-            pinwheel_account_id: payroll_account.id,
+            aggregator_account_id: payroll_account.id,
             payments_length: 1,
             has_employment_data: true,
             has_paystubs_data: true,
@@ -132,6 +133,18 @@ RSpec.describe Cbv::PaymentDetailsController do
           get :show, params: { user: { account_id: account_id } }
           expect(response.body).not_to include(comment)
         end
+      end
+    end
+
+    context "when report paystubs aren't present" do
+      it "tracks payments_length as 0" do
+        WebMock.remove_request_stub(paystubs_response)
+        allow(EventTrackingJob).to receive(:perform_later).with(TrackEvent::CbvPageView, anything, anything)
+        expect(EventTrackingJob).to receive(:perform_later).with(TrackEvent::ApplicantViewedPaymentDetails, anything, hash_including(
+          payments_length: 0,
+        ))
+
+        get :show, params: { user: { account_id: account_id } }
       end
     end
 
@@ -228,6 +241,39 @@ RSpec.describe Cbv::PaymentDetailsController do
       end
     end
 
+    context "when client agency has report_customization_show_earnings_list enabled" do
+      before do
+        cbv_flow.update!(client_agency_id: "pa_dhs")
+        allow(ClientAgencyConfig.client_agencies["pa_dhs"]).to receive(:report_customization_show_earnings_list).and_return(true)
+      end
+
+      it "shows gross pay line items section in the rendered HTML" do
+        get :show, params: { user: { account_id: account_id } }
+        expect(response).to be_successful
+
+        doc = Nokogiri::HTML(response.body)
+        expect(doc.at_css('aside.paystub_earnings_items')).not_to be_nil
+        expect(response.body).to include("Gross pay line items")
+        expect(response.body).to include("The following items are categories listed on the paystub")
+      end
+    end
+
+    context "when client agency has report_customization_show_earnings_list disabled" do
+      before do
+        cbv_flow.update!(client_agency_id: "sandbox")
+        allow(ClientAgencyConfig.client_agencies["sandbox"]).to receive(:report_customization_show_earnings_list).and_return(false)
+      end
+
+      it "does not show gross pay line items section in the rendered HTML" do
+        get :show, params: { user: { account_id: account_id } }
+        expect(response).to be_successful
+
+        doc = Nokogiri::HTML(response.body)
+        expect(doc.at_css('aside.paystub_earnings_items')).to be_nil
+        expect(response.body).not_to include("Gross pay line items")
+      end
+    end
+
     context "when a user attempts to access pinwheel account information not in the current session" do
       it "redirects to the entry page when the resolved pinwheel_account is nil" do
         get :show, params: { user: { account_id: "1234" } }
@@ -238,7 +284,7 @@ RSpec.describe Cbv::PaymentDetailsController do
 
       it "redirects to the entry page when the resolved pinwheel_account is present, but does not match the current session" do
         existing_payroll_account = create(:payroll_account)
-        get :show, params: { user: { account_id: existing_payroll_account.pinwheel_account_id } }
+        get :show, params: { user: { account_id: existing_payroll_account.aggregator_account_id } }
         expect(response).to redirect_to(cbv_flow_entry_url)
         expect(flash[:slim_alert]).to be_present
         expect(flash[:slim_alert][:message]).to eq(I18n.t("cbv.error_no_access"))
@@ -265,7 +311,7 @@ RSpec.describe Cbv::PaymentDetailsController do
             :argyle_fully_synced,
             with_errored_jobs: errored_jobs,
             cbv_flow: cbv_flow,
-            pinwheel_account_id: account_id,
+            aggregator_account_id: account_id,
             supported_jobs: supported_jobs,
             )
         end
@@ -330,7 +376,7 @@ RSpec.describe Cbv::PaymentDetailsController do
             :argyle_fully_synced,
             with_errored_jobs: errored_jobs,
             cbv_flow: cbv_flow,
-            pinwheel_account_id: account_id,
+            aggregator_account_id: account_id,
             supported_jobs: supported_jobs,
             )
         end
