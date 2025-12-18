@@ -48,7 +48,7 @@ module Aggregators::Validators
     end
 
     def has_recent_start_date?(report)
-      report.employments.compact.map(&:start_date).any? { |start_date| start_date.present? && before_or_equal?(32.days.ago, safe_parse_date(start_date)) }
+      report.employments.compact.map(&:start_date).any? { |start_date| start_date.present? && before_or_equal?(46.days.ago, safe_parse_date(start_date)) }
     end
 
     # str_date will look something like: "2025-11-17"
