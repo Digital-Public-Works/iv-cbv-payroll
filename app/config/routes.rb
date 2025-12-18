@@ -90,6 +90,7 @@ Rails.application.routes.draw do
         get "synchronizations", to: "preview#synchronizations"
         get "payment_details", to: "preview#payment_details"
         get "summary", to: "preview#summary"
+        get "missing_results", to: "preview#missing_results"
         get "submit", to: "preview#submit", defaults: { format: :html }
         get "submit.pdf", to: "preview#submit", defaults: { format: :pdf }
         get "submit_pdf_as_html", to: "preview#submit_pdf_as_html"

@@ -8,8 +8,8 @@
     "@hotwired/turbo-rails": "^8.0.20",
     "@rails/actioncable": "^7.2.202",
     "@uswds/uswds": "^3.13.0",
-    "autoprefixer": "^10.4.22",
-    "esbuild": "^0.25.10",
+    "autoprefixer": "^10.4.23",
+    "esbuild": "^0.27.2",
     "load-script": "^2.0.0",
     "postcss": "^8.5.6",
     "postcss-cli": "^11.0.1",
@@ -17,8 +17,8 @@
     "postcss-minify": "^1.2.0",
     "postcss-nesting": "^13.0.2",
     "postcss-scss": "^4.0.9",
-    "sass": "^1.94.0",
-    "webpack": "^5.101.3",
+    "sass": "^1.97.0",
+    "webpack": "^5.104.0",
     "webpack-cli": "^5.1.4"
   },
   "scripts": {
@@ -32,9 +32,9 @@
   },
   "devDependencies": {
     "jsdom": "^24.0.0",
-    "prettier": "^3.6.2",
-    "vite": "^7.1.10",
-    "vitest": "^3.2.4"
+    "prettier": "^3.7.4",
+    "vite": "^7.3.0",
+    "vitest": "^4.0.16"
   },
   "resolutions": {
     "@csstools/postcss-sass/@csstools/sass-import-resolve": "https://github.com/rahearn/sass-import-resolve",
