@@ -85,7 +85,7 @@
 
         <div class="preview-bar__controls" data-preview-toggle-target="controls">
 
-            preview_routes = [
+          <% preview_routes = [
               [ "Employer Search", cbv_flow_preview_employer_search_path ],
               [ "Synchronizations", cbv_flow_preview_synchronizations_path ],
               [ "Sync Failures", cbv_flow_preview_synchronization_failures_path ],
@@ -95,8 +95,7 @@
               [ "Submit (HTML)", cbv_flow_preview_submit_path ],
               [ "Submit (PDF as HTML)", cbv_flow_preview_submit_pdf_as_html_path ]
             ]
-            current_route = preview_routes.find { |_, path| request.path == path }&.last || request.path
-          %>
+             current_route = preview_routes.find { |_, path| request.path == path }&.last || request.path %>
 
           <label for="preview_route" class="preview-bar__label margin-right-1">Page:</label>
           <%= select_tag :preview_route,
