@@ -89,6 +89,8 @@ Rails.application.routes.draw do
       scope "/preview", as: :preview do
         get "employer_search", to: "preview#employer_search"
         get "synchronizations", to: "preview#synchronizations"
+        get "synchronization_failures", to: "preview#synchronization_failures"
+        get "validation_failures", to: "preview#validation_failures"
         get "payment_details", to: "preview#payment_details"
         get "summary", to: "preview#summary"
         get "submit", to: "preview#submit", defaults: { format: :html }
