@@ -87,6 +87,7 @@ Rails.application.routes.draw do
 
       # Preview routes (non-production only)
       scope "/preview", as: :preview do
+        root to: "preview#employer_search"
         get "employer_search", to: "preview#employer_search"
         get "synchronizations", to: "preview#synchronizations"
         get "synchronization_failures", to: "preview#synchronization_failures"
