@@ -21,6 +21,12 @@
         z-index: 1000;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       }
+      .preview-bar--collapsed {
+        padding: 0.25rem 1rem;
+      }
+      .preview-bar--collapsed .preview-bar__controls {
+        display: none;
+      }
       .preview-bar__container {
         max-width: 1200px;
         margin: 0 auto;
@@ -28,6 +34,26 @@
         align-items: center;
         gap: 1rem;
         flex-wrap: wrap;
+      }
+      .preview-bar__header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .preview-bar__toggle {
+        background: none;
+        border: 1px solid #71767a;
+        border-radius: 4px;
+        padding: 0.25rem 0.5rem;
+        cursor: pointer;
+        font-size: 0.75rem;
+        color: #1b1b1b;
+      }
+      .preview-bar__toggle:hover {
+        background: rgba(0,0,0,0.05);
+      }
+      .preview-bar__controls {
+        display: contents;
       }
       .preview-bar__label {
         font-weight: bold;
@@ -50,11 +76,35 @@
 
   <body>
     <!-- Preview Mode Top Bar -->
-    <div class="preview-bar">
+    <div class="preview-bar" data-controller="preview-toggle">
       <div class="preview-bar__container">
-        <span class="preview-bar__label">🔧 PREVIEW MODE</span>
+        <div class="preview-bar__header">
+          <span class="preview-bar__label">🔧 PREVIEW MODE</span>
+          <button type="button" class="preview-bar__toggle" data-action="click->preview-toggle#toggle" data-preview-toggle-target="toggleButton">Hide</button>
+        </div>
 
-        <%= form_with url: request.path, method: :get, class: "display-flex", data: { controller: "preview-form" } do |f| %>
+        <div class="preview-bar__controls" data-preview-toggle-target="controls">
+
+            preview_routes = [
+              [ "Employer Search", cbv_flow_preview_employer_search_path ],
+              [ "Synchronizations", cbv_flow_preview_synchronizations_path ],
+              [ "Sync Failures", cbv_flow_preview_synchronization_failures_path ],
+              [ "Validation Failures", cbv_flow_preview_validation_failures_path ],
+              [ "Payment Details", cbv_flow_preview_payment_details_path ],
+              [ "Summary", cbv_flow_preview_summary_path ],
+              [ "Submit (HTML)", cbv_flow_preview_submit_path ],
+              [ "Submit (PDF as HTML)", cbv_flow_preview_submit_pdf_as_html_path ]
+            ]
+            current_route = preview_routes.find { |_, path| request.path == path }&.last || request.path
+          %>
+
+          <label for="preview_route" class="preview-bar__label margin-right-1">Page:</label>
+          <%= select_tag :preview_route,
+              options_for_select(preview_routes, current_route),
+              class: "preview-bar__select",
+              data: { controller: "preview-form", action: "change->preview-form#navigateToRoute" } %>
+
+          <%= form_with url: request.path, method: :get, class: "display-flex", data: { controller: "preview-form" } do |f| %>
           <label for="fixture_user" class="preview-bar__label margin-right-1">Mock User:</label>
           <%= select_tag :fixture_user,
               options_for_select(
@@ -115,12 +165,13 @@
                          ),
                          class: "preview-bar__select",
                          data: { action: "change->preview-form#submit" } %>
-        <% end %>
+          <% end %>
 
-        <span class="preview-bar__info">
-          Agency: <%= params[:client_agency_id] || "sandbox" %> |
-          Flow ID: <%= @cbv_flow&.id || "N/A" %>
-        </span>
+          <span class="preview-bar__info">
+            Agency: <%= params[:client_agency_id] || "sandbox" %> |
+            Flow ID: <%= @cbv_flow&.id || "N/A" %>
+          </span>
+        </div>
       </div>
     </div>
 
@@ -142,10 +193,10 @@
             <% end %>
           <% end %>
 
-          <% if flash[:slim_alert].present? %>
+          <% if flash[:slim_alert].present? && flash[:slim_alert][:message_html].present? %>
             <%= render Uswds::Alert.new(
               heading: flash[:slim_alert][:heading],
-              type: flash[:slim_alert][:type]&.to_sym,
+              type: (flash[:slim_alert][:type] || :info).to_sym,
               class: "margin-bottom-4"
             ) do %>
               <%= flash[:slim_alert][:message_html].html_safe %>
