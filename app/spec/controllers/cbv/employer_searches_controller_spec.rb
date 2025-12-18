@@ -65,12 +65,24 @@ RSpec.describe Cbv::EmployerSearchesController do
 
       render_views
 
-      it "renders the help section with a link to missing results page" do
-        get :show, params: { query: "no_results" }
-        expect(response).to be_successful
-        expect(response.body).to include("Trouble finding your employer or payroll provider?")
-        expect(response.body).to include("Explore your options")
-        expect(response.body).to include(cbv_flow_missing_results_path)
+      context "when the user at least one payroll_account associated with their cbv_flow" do
+        it "renders the view with a link to the summary page" do
+          create(:payroll_account, cbv_flow_id: cbv_flow.id)
+          get :show, params: { query: "no_results" }
+          expect(response).to be_successful
+          expect(response.body).to include("If you have no other jobs to add here, continue")
+          expect(response.body).to include("Continue")
+          expect(response.body).to include(cbv_flow_applicant_information_path)
+        end
+      end
+
+      context "when the user has does not have a payroll_account associated with their cbv_flow" do
+        it "renders the view with a link to exit income verification" do
+          get :show, params: { query: "no_results" }
+          expect(response).to be_successful
+          expect(response.body).to include("you can exit this site")
+          expect(response.body).to include("Exit and go to the VMI website")
+        end
       end
     end
 
