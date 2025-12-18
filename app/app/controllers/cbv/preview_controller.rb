@@ -8,7 +8,7 @@ class Cbv::PreviewController < ApplicationController
   before_action :setup_preview_flow
   before_action :override_has_account_with_required_data
   before_action :set_aggregator_report, only: %i[payment_details summary submit submit_pdf_as_html validation_failures]
-  before_action :relax_csp_for_html_preview, only: %i[submit_pdf_as_html]
+  before_action :relax_csp_for_html_preview
 
   helper_method :current_agency, :employer_name, :gross_pay, :employment_start_date,
     :employment_end_date, :employment_status, :pay_frequency, :compensation_unit,
