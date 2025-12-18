@@ -6,7 +6,7 @@
 
 <h3><%= t(".step_1") %></h3>
 <% if count_of_valid_accounts > 1 %>
-  <p><%= t(".step_1_text_single_job_multiple_jobs", job_count: count_of_valid_accounts) %></p>
+  <p><%= t(".step_1_text_multiple_jobs", job_count: count_of_valid_accounts) %></p>
 <% else %>
   <p><%= t(".step_1_text_single_job", job_count: count_of_valid_accounts) %></p>
 <% end %>

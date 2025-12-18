@@ -153,14 +153,15 @@
                          class: "preview-bar__select",
                          data: { action: "change->preview-form#submit" } %>
 
-          <label for="has_required_data" class="preview-bar__label margin-left-2 margin-right-1">Previously linked account?</label>
-          <%= select_tag :has_required_data,
+          <label for="count_of_valid_accounts" class="preview-bar__label margin-left-2 margin-right-1">Valid accounts:</label>
+          <%= select_tag :count_of_valid_accounts,
                          options_for_select(
                            [
-                             [ "True (default)", "true" ],
-                             [ "False", "false" ]
+                             [ "0", "0" ],
+                             [ "1 (default)", "1" ],
+                             [ "2", "2" ]
                            ],
-                           params[:has_required_data] || "true"
+                           params[:count_of_valid_accounts] || "1"
                          ),
                          class: "preview-bar__select",
                          data: { action: "change->preview-form#submit" } %>

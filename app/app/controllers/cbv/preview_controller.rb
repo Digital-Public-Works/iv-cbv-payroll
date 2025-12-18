@@ -116,10 +116,10 @@ class Cbv::PreviewController < ApplicationController
   end
 
   def override_has_account_with_required_data
-    has_required_data = params[:has_required_data] != "false"
+    valid_count = count_of_valid_accounts
 
     @cbv_flow.define_singleton_method(:has_account_with_required_data?) do
-      has_required_data
+      valid_count > 0
     end
   end
 
@@ -294,6 +294,6 @@ class Cbv::PreviewController < ApplicationController
   end
 
   def count_of_valid_accounts
-    @cbv_flow.accounts_with_required_data&.size || 0
+    (params[:count_of_valid_accounts] || 1).to_i
   end
 end
