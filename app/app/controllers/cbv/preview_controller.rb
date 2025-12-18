@@ -13,7 +13,7 @@ class Cbv::PreviewController < ApplicationController
   helper_method :current_agency, :employer_name, :gross_pay, :employment_start_date,
     :employment_end_date, :employment_status, :pay_frequency, :compensation_unit,
     :compensation_amount, :account_comment, :has_income_data?, :has_consent,
-    :agency_url, :next_path, :get_comment_by_account_id
+    :agency_url, :next_path, :get_comment_by_account_id, :count_of_valid_accounts
 
   def employer_search
     @query = params[:query] || ""
@@ -291,5 +291,9 @@ class Cbv::PreviewController < ApplicationController
 
   def get_comment_by_account_id(account_id)
     { "comment" => nil, "updated_at" => nil }
+  end
+
+  def count_of_valid_accounts
+    @cbv_flow.accounts_with_required_data&.size || 0
   end
 end

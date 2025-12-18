@@ -1,11 +1,15 @@
-<% if @aggregator_report&.employments&.size > 1 %>>
-<p><%= t(".other_ways_description_multiple_jobs", job_count: @aggregator_report&.employments&.size) %></p>
+<% if count_of_valid_accounts > 1 %>
+<p><%= t(".other_ways_description_multiple_jobs", job_count: count_of_valid_accounts) %></p>
 <% else %>
-<p><%= t(".other_ways_description_single_job", job_count: @aggregator_report&.employments&.size) %></p>
+<p><%= t(".other_ways_description_single_job", job_count: count_of_valid_accounts) %></p>
 <% end %>
 
 <h3><%= t(".step_1") %></h3>
-<p><%= t(".step_1_text", job_count: @aggregator_report&.employments&.size) %></p>
+<% if count_of_valid_accounts > 1 %>
+  <p><%= t(".step_1_text_single_job_multiple_jobs", job_count: count_of_valid_accounts) %></p>
+<% else %>
+  <p><%= t(".step_1_text_single_job", job_count: count_of_valid_accounts) %></p>
+<% end %>
 
 <h3><%= t(".step_2") %></h3>
 <p><%= t(".step_2_text") %></p>
@@ -25,12 +29,5 @@
   </li>
   <li class="usa-button-group__item">
     <%= link_to t(".continue_to_income_summary"), cbv_flow_summary_path, class: "usa-button usa-button--outline" %>
-  </li>
-  <li class="usa-button-group__item">
-    <% if @cbv_flow.has_account_with_required_data? %>
-      <%= link_to t(".continue_to_report"), cbv_flow_applicant_information_path, class: "usa-button" %>
-    <% else %>
-      <%= agency_translation("cbv.expired_invitations.show.cta_button_html", agency_url: agency_url) %>
-    <% end %>
   </li>
 </ul>
