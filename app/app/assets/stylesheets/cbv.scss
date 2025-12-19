@@ -23,6 +23,12 @@ html {
   flex-grow: 1;
 }
 
+// Fix USWDS button-group height inconsistency where the last button is 4px
+// taller due to missing margin-bottom on the last li item.
+.usa-button-group__item:last-child {
+  margin-bottom: units(0.5);
+}
+
 .usa-button--outline-email {
   // Because css rendering in email is fraught, we must replace the default
   // USWDS strategy of using a box-shadow (it doesn't appear at all in gmail).
