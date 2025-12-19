@@ -140,7 +140,7 @@ RSpec.describe Cbv::PaymentDetailsController do
       it "redirects when no paystubs are present" do
         WebMock.remove_request_stub(paystubs_response)
         get :show, params: { user: { account_id: account_id } }
-        expect(response).to redirect_to(cbv_flow_synchronization_failures_path)
+        expect(response).to redirect_to(cbv_flow_validation_failures_path(user: { account_id: account_id }))
       end
     end
 
@@ -187,7 +187,7 @@ RSpec.describe Cbv::PaymentDetailsController do
 
       it "redirects without the paystubs data" do
         get :show, params: { user: { account_id: account_id } }
-        expect(response).to redirect_to(cbv_flow_synchronization_failures_path)
+        expect(response).to redirect_to(cbv_flow_validation_failures_path(user: { account_id: account_id }))
       end
     end
 

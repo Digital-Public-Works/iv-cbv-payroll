@@ -25,7 +25,9 @@ class Cbv::PaymentDetailsController < Cbv::BaseController
     end
 
     set_aggregator_report_for_account(@payroll_account)
-    unless @aggregator_report.valid?(:useful_report)
+
+    @payroll_account_report = @aggregator_report.find_account_report(account_id)
+    unless @payroll_account_report.valid?(:useful_report)
       return redirect_to cbv_flow_validation_failures_path(user: { account_id: @payroll_account.aggregator_account_id })
     end
 
