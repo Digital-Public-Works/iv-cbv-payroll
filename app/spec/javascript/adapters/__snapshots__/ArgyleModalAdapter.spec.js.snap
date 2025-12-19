@@ -1,126 +1,183 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`ArgyleModalAdapter > event:other > logs ApplicantAccessedArgyleModalMFAScreen Event 1`] = `
+exports[`ArgyleModalAdapter > event:other > logs ApplicantAccessedArgyleModalMFAScreen Event 1`] = `{}`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantAttemptedArgyleLogin Event 1`] = `{}`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantClickedArgyleLoginHelp for login help clicked event 1`] = `
 {
-  "name": "mfa - opened",
+  "argyle.userId": "test-user-id",
 }
 `;
 
-exports[`ArgyleModalAdapter > event:other > logs ApplicantAttemptedArgyleLogin Event 1`] = `
+exports[`ArgyleModalAdapter > event:other > logs ApplicantClosedArgyleLinkFromErrorScreen for link closed event 1`] = `
 {
-  "name": "login - form submitted",
+  "argyle.userId": "test-user-id",
 }
 `;
 
-exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleAuthRequiredLoginError Event 1`] = `
+exports[`ArgyleModalAdapter > event:other > logs ApplicantDisconnectedArgyleAccount for account status disconnected event 1`] = `
 {
-  "name": "login - opened",
-  "properties": {
-    "errorCode": "auth_required",
-  },
+  "argyle.userId": "test-user-id",
 }
 `;
 
-exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleConnectionUnavailableLoginError Event 1`] = `
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleAccountStateError for account error with account issue code 1`] = `
 {
-  "name": "login - opened",
-  "properties": {
-    "errorCode": "connection_unavailable",
-  },
+  "argyle.connectionErrorCode": "account_not_found",
+  "argyle.connectionStatus": "error",
+  "argyle.userId": "test-user-id",
 }
 `;
 
-exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleExpiredCredentialsLoginError Event 1`] = `
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleAuthenticationError for account error with auth error code 1`] = `
 {
-  "name": "login - opened",
-  "properties": {
-    "errorCode": "expired_credentials",
-  },
+  "argyle.connectionErrorCode": "invalid_credentials",
+  "argyle.connectionStatus": "error",
+  "argyle.userId": "test-user-id",
 }
 `;
 
-exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleInvalidAuthLoginError Event 1`] = `
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleAuthenticationError for login with auth_required error 1`] = `
 {
-  "name": "login - opened",
-  "properties": {
-    "errorCode": "invalid_auth",
-  },
+  "argyle.errorCode": "auth_required",
 }
 `;
 
-exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleInvalidCredentialsLoginError Event 1`] = `
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleAuthenticationError for login with expired_credentials error 1`] = `
 {
-  "name": "login - opened",
-  "properties": {
-    "errorCode": "invalid_credentials",
-  },
+  "argyle.errorCode": "expired_credentials",
 }
 `;
 
-exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleMfaCanceledLoginError Event 1`] = `
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleAuthenticationError for login with invalid_auth error 1`] = `
 {
-  "name": "login - opened",
-  "properties": {
-    "errorCode": "mfa_cancelled_by_the_user",
-  },
+  "argyle.errorCode": "invalid_auth",
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleAuthenticationError for login with invalid_credentials error 1`] = `
+{
+  "argyle.errorCode": "invalid_credentials",
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleCredentialError for account error with credential error code 1`] = `
+{
+  "argyle.connectionErrorCode": "invalid_employer_identifier",
+  "argyle.connectionStatus": "error",
+  "argyle.userId": "test-user-id",
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleLimitError for account error with limit error code 1`] = `
+{
+  "argyle.connectionErrorCode": "login_attempts_exceeded",
+  "argyle.connectionStatus": "error",
+  "argyle.userId": "test-user-id",
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleLinkOpenError for error opened event 1`] = `
+{
+  "argyle.errorType": "invalid_user_token",
+  "argyle.userId": "test-user-id",
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleMfaError for account error with MFA error code 1`] = `
+{
+  "argyle.connectionErrorCode": "mfa_timeout",
+  "argyle.connectionStatus": "error",
+  "argyle.userId": "test-user-id",
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleMfaError for login with mfa_cancelled error 1`] = `
+{
+  "argyle.errorCode": "mfa_cancelled_by_the_user",
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgylePlatformError for account error with platform error code 1`] = `
+{
+  "argyle.connectionErrorCode": "platform_unavailable",
+  "argyle.connectionStatus": "error",
+  "argyle.userId": "test-user-id",
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgylePlatformError for login with connection_unavailable error 1`] = `
+{
+  "argyle.errorCode": "connection_unavailable",
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleUndefinedAccountError for account error with no error code 1`] = `
+{
+  "argyle.connectionStatus": "error",
+  "argyle.userId": "test-user-id",
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleUnknownError for account error with system error code 1`] = `
+{
+  "argyle.connectionErrorCode": "system_error",
+  "argyle.connectionStatus": "error",
+  "argyle.userId": "test-user-id",
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredUnknownArgyleEvent for unknown events 1`] = `
+{
+  "argyle.someNewProperty": "value",
+  "argyle.userId": "test-user-id",
 }
 `;
 
 exports[`ArgyleModalAdapter > event:other > logs ApplicantUpdatedArgyleSearchTerm Event 1`] = `
 {
-  "payload": {
-    "name": "search - term updated",
-    "properties": {
-      "tab": "tab",
-      "term": "search term",
-    },
-    "tab": "tab",
-    "term": "search term",
-  },
-  "tab": "tab",
-  "term": "search term",
+  "argyle.tab": "tab",
+  "argyle.term": "search term",
 }
 `;
 
-exports[`ArgyleModalAdapter > event:other > logs ApplicantViewedArgyleDefaultProviderSearch Event 1`] = `
+exports[`ArgyleModalAdapter > event:other > logs ApplicantViewedArgyleAccountStatus for account status opened event 1`] = `
 {
-  "name": "search - opened",
+  "argyle.userId": "test-user-id",
 }
 `;
 
-exports[`ArgyleModalAdapter > event:other > logs ApplicantViewedArgyleLoginPage Event 1`] = `
-{
-  "name": "login - opened",
-  "properties": {
-    "errorCode": "other",
-  },
-}
-`;
+exports[`ArgyleModalAdapter > event:other > logs ApplicantViewedArgyleDefaultProviderSearch Event 1`] = `{}`;
 
-exports[`ArgyleModalAdapter > event:other > logs ApplicantViewedArgyleProviderConfirmation Event 1`] = `
+exports[`ArgyleModalAdapter > event:other > logs ApplicantViewedArgyleLoginPage Event 1`] = `{}`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantViewedArgyleProviderConfirmation Event 1`] = `{}`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantViewedArgyleSuccessScreen for success opened event 1`] = `
 {
-  "name": "search - link item selected",
+  "argyle.userId": "test-user-id",
 }
 `;
 
 exports[`ArgyleModalAdapter > event:other > logs onAccountCreated Event 1`] = `
 {
-  "accountId": "account-id",
-  "platformId": "platform-id",
+  "argyle.accountId": "account-id",
+  "argyle.platformId": "platform-id",
 }
 `;
 
 exports[`ArgyleModalAdapter > event:other > logs onAccountError Event 1`] = `
 {
-  "accountId": "account-id",
-  "platformId": "platform-id",
+  "argyle.accountId": "account-id",
+  "argyle.platformId": "platform-id",
 }
 `;
 
 exports[`ArgyleModalAdapter > event:other > logs onAccountRemoved Event 1`] = `
 {
-  "accountId": "account-id",
-  "platformId": "platform-id",
+  "argyle.accountId": "account-id",
+  "argyle.platformId": "platform-id",
 }
 `;
 
