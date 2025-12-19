@@ -25,11 +25,12 @@ class Cbv::PaymentDetailsController < Cbv::BaseController
     end
 
     set_aggregator_report_for_account(@payroll_account)
-    unless @aggregator_report.valid?(:useful_report)
+
+    @payroll_account_report = @aggregator_report.find_account_report(account_id)
+    unless @payroll_account_report.valid?(:useful_report)
       return redirect_to cbv_flow_synchronization_failures_path
     end
 
-    @payroll_account_report = @aggregator_report.find_account_report(account_id)
     @is_w2_worker = @payroll_account_report.employment.employment_type == :w2
     @account_comment = account_comment
   end

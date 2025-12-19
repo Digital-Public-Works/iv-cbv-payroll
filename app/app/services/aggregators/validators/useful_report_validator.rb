@@ -8,35 +8,28 @@ module Aggregators::Validators
 
       report.errors.add(:employments, "No employments present") unless report.employments.present?
       report.employments.each { |e| validate_employment(report, e) }
-      # If not actively employed we don't want to run paystub level validations.
-      # Its important that we share any confirmation of loss of employment with the state agency
-      unless is_unemployed(report)
-        is_w2_worker = report.employments.none? { |e| e.employment_type == :gig }
-        if report.paystubs.any?
-          validate_paystubs(report, is_w2_worker)
-        end
+
+
+      return false if report.errors.present?
+
+      # Being extra-explicit about these definitions to enhance readability
+      is_gig_worker = report.employments.any? { |e| e.employment_type == :gig }
+      return true if is_gig_worker
+
+      # This is a report for a W-2 employee.
+      return true if has_valid_paystub?(report)
+
+      if !has_paystubs?(report) || !has_valid_paystub?(report)
+        return true if has_recent_termination_date?(report)
+
+        return true if has_recent_start_date?(report)
       end
+
+      report.errors.add(:base, "Report did not meet minimum criteria for useful reports.")
+      false
     end
 
     private
-
-    # We're working with incomplete and bad data. There are a few ways to determine if an account is no longer actively employed
-    # Not actively employed means status is not 'employed' OR
-    # termination_date is not empty OR
-    # The acccount has empty employment status, no termination date, no gross pay and no hours
-    def is_unemployed(report)
-      report.employments.each do |employment|
-        employment_paystubs = paystubs_for_account(report, employment.account_id)
-        # TODO turn employment status into a constant or a symbol
-        return true if employment.status.present? && employment.status != "employed"
-        return true if employment.termination_date.present?
-        hours_total = employment_paystubs.filter { | p| p.hours.present? }.sum { |p| p.hours.to_f }
-        gross_pay_total = employment_paystubs.sum { |paystub| paystub.gross_pay_amount.to_f }
-        return true if hours_total == 0 && gross_pay_total == 0
-      end
-      # We know the person is employed if we hit this point
-      false
-    end
 
     def paystubs_for_account(report, account_id)
       report.paystubs.select { |paystub| paystub.account_id == account_id }
@@ -50,10 +43,63 @@ module Aggregators::Validators
       report.errors.add(:employments, "Employment has no employer_name") unless employment.employer_name.present?
     end
 
-    def validate_paystubs(report, is_w2_worker)
+    def has_recent_termination_date?(report)
+      report.employments.compact.map(&:termination_date).any? { |termination_date| before_or_equal?(18.months.ago, safe_parse_date(termination_date)) }
+    end
+
+    def has_recent_start_date?(report)
+      report.employments.compact.map(&:start_date).any? { |start_date| start_date.present? && before_or_equal?(46.days.ago, safe_parse_date(start_date)) }
+    end
+
+    # str_date will look something like: "2025-11-17"
+    def safe_parse_date(str_date)
+      Date.parse(str_date).to_date rescue nil
+    end
+
+    # returns true iff the date represented by check_date is before (in time) reference_date
+    def before_or_equal?(check_date, reference_date)
+      return false if check_date.blank? || reference_date.blank?
+
+      check_date <= reference_date
+    end
+
+    def validate_paystubs(report)
       report.errors.add(:paystubs, "No paystub has pay_date") unless report.paystubs.any? { |paystub| paystub.pay_date.present? }
       report.errors.add(:paystubs, "No paystub has gross_pay_amount") unless report.paystubs.any? { |paystub| paystub.gross_pay_amount.present? }
       report.errors.add(:paystubs, "No paystub has valid gross_pay_amount") unless report.paystubs.any? { |paystub| paystub.gross_pay_amount.to_f > 0 }
+    end
+
+    def has_paystubs?(report)
+      !report&.paystubs&.compact&.empty?
+    end
+
+    def has_valid_paystub?(report)
+      report&.paystubs&.any? { |paystub| valid_paystub?(paystub) }
+    end
+
+    def valid_paystub?(paystub)
+      has_pay_date?(paystub) && (has_gross_pay?(paystub) || has_nonzero_hours?(paystub))
+    end
+
+    def has_pay_date?(paystub)
+      paystub.pay_date.present?
+    end
+
+    def has_gross_pay?(paystub)
+      paystub.gross_pay_amount.present? && paystub.gross_pay_amount.to_f > 0
+    end
+
+    def has_nonzero_hours?(paystub)
+      paystub.hours&.to_f > 0
+    end
+
+    def valid_paystubs(report)
+      report&.paystubs&.compact&.select do |pay|
+        pay.pay_date.present? &&
+        pay.gross_pay_amount&.present? &&
+        pay.gross_pay_amount&.to_f > 0 &&
+        pay.hours&.to_f > 0
+      end
     end
   end
 end
