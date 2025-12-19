@@ -64,6 +64,7 @@ Rails.application.routes.draw do
       resource :employer_search, only: %i[show]
       resource :synchronizations, only: %i[show update]
       resource :synchronization_failures, only: %i[show]
+      resource :validation_failures, only: %i[show]
       resource :summary, only: %i[show update]
       resource :submit, only: %i[show update], format: %i[html pdf]
       resource :missing_results, only: %i[show]
@@ -86,8 +87,11 @@ Rails.application.routes.draw do
 
       # Preview routes (non-production only)
       scope "/preview", as: :preview do
+        root to: "preview#employer_search"
         get "employer_search", to: "preview#employer_search"
         get "synchronizations", to: "preview#synchronizations"
+        get "synchronization_failures", to: "preview#synchronization_failures"
+        get "validation_failures", to: "preview#validation_failures"
         get "payment_details", to: "preview#payment_details"
         get "summary", to: "preview#summary"
         get "missing_results", to: "preview#missing_results"

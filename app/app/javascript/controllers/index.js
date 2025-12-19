@@ -12,6 +12,7 @@ import LanguageController from "./language_controller.js"
 import CopyLinkController from "./copy_link_controller.js"
 import CbvEntryPageController from "./cbv/entry_page_controller.js"
 import PreviewFormController from "./preview_form_controller.js"
+import PreviewToggleController from "./preview_toggle_controller.js"
 import ClickTrackerController from "./click_tracker_controller.js"
 
 application.register("anchor-scroll", AnchorScrollController)
@@ -26,6 +27,7 @@ application.register("language", LanguageController)
 application.register("copy-link", CopyLinkController)
 application.register("cbv-entry-page", CbvEntryPageController)
 application.register("preview-form", PreviewFormController)
+application.register("preview-toggle", PreviewToggleController)
 application.register("session-timeout", SessionTimeoutPageController)
 
 Turbo.StreamActions.redirect = function () {
