@@ -137,14 +137,10 @@ RSpec.describe Cbv::PaymentDetailsController do
     end
 
     context "when report paystubs aren't present" do
-      it "tracks payments_length as 0" do
+      it "redirects when no paystubs are present" do
         WebMock.remove_request_stub(paystubs_response)
-        allow(EventTrackingJob).to receive(:perform_later).with(TrackEvent::CbvPageView, anything, anything)
-        expect(EventTrackingJob).to receive(:perform_later).with(TrackEvent::ApplicantViewedPaymentDetails, anything, hash_including(
-          payments_length: 0,
-        ))
-
         get :show, params: { user: { account_id: account_id } }
+        expect(response).to redirect_to(cbv_flow_synchronization_failures_path)
       end
     end
 
@@ -189,10 +185,9 @@ RSpec.describe Cbv::PaymentDetailsController do
         pinwheel_stub_request_end_user_no_paystubs_response
       end
 
-      it "renders properly without the paystubs data" do
+      it "redirects without the paystubs data" do
         get :show, params: { user: { account_id: account_id } }
-        expect(response).to be_successful
-        expect(response.body).to include("find any payments from this employer in the past 90 days.")
+        expect(response).to redirect_to(cbv_flow_synchronization_failures_path)
       end
     end
 
