@@ -510,14 +510,14 @@ en:
       other_ways_no_employer:
         go_to_agency_portal: Go to %{agency_portal_name}
         other_ways_description: 'If there is not another account to log into, you will need to submit income for this job outside of Verify My Income. You can submit the last 30 days of income to %{agency_name} by:'
-        other_ways_option_1: Using the document uploader in %{agency_portal_name}
+        other_ways_option_1_html: Using the document uploader in <a href="%{agency_website}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
         other_ways_option_2: Mailing or faxing printed income documents
         other_ways_option_3: Taking income documents to a %{agency_acronym} office
         try_searching_again: Try searching again
       other_ways_with_employer:
         continue_to_income_summary: Continue to Income Summary
         more_options: More options
-        more_options_1: Using the document uploader in %{agency_portal_name}
+        more_options_1_html: Using the document uploader in <a href="%{agency_website}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
         more_options_2: Mailing or faxing printed income documents
         more_options_3: Taking income documents to a %{agency_acronym} office
         more_options_text: 'You can submit the last 30 days of income to %{agency_name} by:'
