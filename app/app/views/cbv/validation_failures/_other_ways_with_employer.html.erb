@@ -1,0 +1,33 @@
+<% if count_of_valid_accounts > 1 %>
+<p><%= t(".other_ways_description_multiple_jobs", job_count: count_of_valid_accounts) %></p>
+<% else %>
+<p><%= t(".other_ways_description_single_job", job_count: count_of_valid_accounts) %></p>
+<% end %>
+
+<h3><%= t(".step_1") %></h3>
+<% if count_of_valid_accounts > 1 %>
+  <p><%= t(".step_1_text_multiple_jobs", job_count: count_of_valid_accounts) %></p>
+<% else %>
+  <p><%= t(".step_1_text_single_job", job_count: count_of_valid_accounts) %></p>
+<% end %>
+
+<h3><%= t(".step_2") %></h3>
+<p><%= t(".step_2_text") %></p>
+
+<h3><%= t(".more_options") %></h3>
+<p><%= t(".more_options_text", agency_name: agency_translation("shared.agency_full_name")) %></p>
+
+<ul>
+  <li><%= t(".more_options_1", agency_portal_name: agency_translation("shared.agency_portal_name")) %></li>
+  <li><%= t(".more_options_2") %></li>
+  <li><%= t(".more_options_3", agency_acronym: agency_translation("shared.agency_acronym")) %></li>
+</ul>
+
+<ul class="usa-button-group margin-top-5">
+  <li class="usa-button-group__item">
+    <%= link_to t(".try_searching_again"), cbv_flow_employer_search_path, class: "usa-button usa-button" %>
+  </li>
+  <li class="usa-button-group__item">
+    <%= link_to t(".continue_to_income_summary"), cbv_flow_summary_path, class: "usa-button usa-button--outline" %>
+  </li>
+</ul>

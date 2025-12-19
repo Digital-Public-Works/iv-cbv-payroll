@@ -46,7 +46,24 @@ module Aggregators::AggregatorReports
       @has_fetched = all_successful
     end
 
-    AccountReportStruct = Struct.new(:identity, :income, :employment, :paystubs, :gigs)
+    AccountReportStruct = Struct.new(:identity, :income, :employment, :paystubs, :gigs) do
+      include ActiveModel::Validations
+
+      validates_with Aggregators::Validators::UsefulReportValidator, on: :useful_report
+
+      def identities
+        identity ? [ identity ] : []
+      end
+
+      def incomes
+        income ? [ income ] : []
+      end
+
+      def employments
+        employment ? [ employment ] : []
+      end
+    end
+
     def find_account_report(account_id)
       account_employment = pick_employment(@employments, @paystubs, account_id)
       employment_filter = employment_filter_for(account_id, account_employment&.employment_matching_id)

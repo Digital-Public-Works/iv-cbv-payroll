@@ -251,28 +251,15 @@ en:
           heading: Need help connecting to your payroll provider?
           help_options: Get help here.
         app_based_providers: App-based employers
-        can_not_find_employer: I can’t find my employer or payroll provider
-        employer_not_listed: Employer not listed?
-        exit_button_text: Exit and go to the %{agency_portal_name} website
+        can_not_find_employer: Explore your options
+        employer_not_listed: Trouble finding your employer or payroll provider?
         header: Search for your employer or payroll provider
-        no_results_steps1: Check if your employer uses another business name or search for their payroll provider.
-        no_results_steps2: Make sure you have spelled names correctly, then search again.
-        no_results_steps3: Choose from popular payroll providers or apps.
-        no_results_steps_title: 'Try these steps first:'
-        no_results_title: We couldn’t find your employer or payroll provider.
         payroll_providers: Payroll providers
         popular_providers: Or choose from popular payroll providers or apps
         results: Results
-        review_button_text: Continue
         search: Search
         search_label: 'Enter the name of your current or recent employer or payroll provider:'
         select: Select
-        to_continue: 'If you still don’t see your employer or payroll provider listed:'
-        to_continue_li_1: You’ll need to submit that income information separately.
-        to_continue_li_1_html: <a href="%{agency_contact_website}" target="_blank" rel="noopener noreferrer">Go to the %{agency_portal_name} website</a> to learn about other ways to verify your income.
-        to_continue_li_2: If you have other jobs to add, search for them.
-        to_continue_li_3: If you have no other jobs to add here, you can exit this site.
-        to_continue_li_3_continue: If you have no other jobs to add here, continue to review your income report.
     entries:
       create:
         error: You must check the agreement checkbox to proceed.
@@ -310,17 +297,57 @@ en:
         title: Your invitation to verify income has expired
     missing_results:
       show:
-        back_button: Go back to employer search
-        continue_button: Continue to review my report
+        check_search_term_example: 'For example: If you initially searched "DHS" the best search term would be "Department of Human Services".'
+        check_search_term_heading: Check your search term
+        check_search_term_text: Use the full or official name of your employer or payroll provider. Avoid abbreviations.
         continue_to_review: Continue to review the income information you were able to find before you submit it to %{agency_acronym}.
-        exit_button_html: <a href="%{agency_contact_website}" class="usa-button" target="_blank" rel="noopener noreferrer">Exit and go to %{agency_portal_name}</a>
-        header: How to verify income if your employer or payroll provider isn’t listed
-        more_jobs: If you have more jobs to verify
-        no_more_jobs: If you don't have more jobs to verify
-        not_listed_p1: If your employer or payroll provider isn’t listed on this site, you’ll need to share your income information for this job directly with %{agency_acronym}.
-        not_listed_p2: Visit the %{agency_portal_name} website for more information on how to submit documents.
-        not_listed_p2_link_html: Visit the <a href="%{agency_url}" target="_blank" rel="noopener noreferrer">%{agency_portal_name} website</a> for more information on how to submit documents.
-        you_can_search: You can search for another employer or payroll provider. This site supports employers with online payroll providers or app-based services. Examples include Amazon, Walmart, McDonald’s, Uber, DoorDash, Lyft, and Instacart.
+        find_payroll_fallback: If you were unable to find your payroll provider, searching for your employer is the next best option.
+        find_payroll_heading: How to find your payroll provider if you receive direct deposit or paystubs
+        find_payroll_place_1: Your pay statement
+        find_payroll_place_2: A pay statement email notification
+        find_payroll_place_3: Your employer's HR system
+        find_payroll_places: 'Look for the name of the payroll provider in these places:'
+        find_payroll_text: Many jobs use a payroll provider. A payroll provider has a website where you log in to view paystubs online.
+        go_to_agency_portal: Go to %{agency_portal_name}
+        go_to_income_summary: Continue to Income Summary
+        header: Options to verify your income
+        in_person_heading: Go in-person to a %{agency_acronym} office
+        in_person_text: Bring your income documents into a local %{agency_acronym} office.
+        intro: Use the quick links below to find the best way to submit income information for this job.
+        local_help: Local libraries and community organizations may be able to help you.
+        mail_heading: Mail or fax documents to %{agency_acronym}
+        mail_text: Check a recent notice from %{agency_acronym} to find the best fax number or office. Fax or mail in your income documents.
+        other_ways_heading: Other ways to verify job income
+        other_ways_intro: It's ok if you can't find a job, or have trouble logging into a job with Verify My Income. You may be able to upload documents, mail in income information, or visit your agency in person.
+        other_ways_intro_with_jobs:
+          one: It's ok if you can't find a job, or have trouble logging into a job with Verify My Income. Since you have already logged into %{count} job, here are your next steps.
+          other: It's ok if you can't find a job, or have trouble logging into a job with Verify My Income. Since you have already logged into %{count} jobs, here are your next steps.
+        other_ways_link: Other ways to submit income
+        other_ways_step_1:
+          one: Continue in Verify My Income to submit income information for the %{count} job you've already logged into.
+          other: Continue in Verify My Income to submit income information for the %{count} jobs you've already logged into.
+        other_ways_step_2: After submitting your income report, send income for jobs you could not find or log into another way.
+        parent_company_google_heading: Try a Google search.
+        parent_company_google_text: Google your employer's name along with "parent company".
+        parent_company_heading: How to find your employer's parent company
+        parent_company_manager_heading: Ask your manager or supervisor.
+        parent_company_manager_text: Your manager or supervisor will be able to tell you who the parent company is.
+        parent_company_website_heading: Check the company's website.
+        parent_company_website_text: Look in the About Us section for the name of a parent company. Annual Reports may also have this information.
+        quick_link_nav_label: Page sections
+        quick_link_other_ways: Other ways to verify job income
+        quick_link_search_tips: Search tips
+        right_company_heading: Make sure you're searching for the right company
+        right_company_link: How to find your employer's parent company
+        right_company_text: Sounds silly, but sometimes one company is owned by another one. You might be receiving payments from a 'parent company' that has a different name.
+        search_payroll_heading: Search for your payroll provider
+        search_payroll_link: How to find your payroll provider
+        search_payroll_text: Many jobs use a payroll provider. A payroll provider has a website where you log in to view your paystubs, tax documents, and work hours online.
+        search_tips_heading: Search tips
+        submit_income_heading: Other ways to submit income
+        try_searching_again: Try searching again
+        upload_heading: Upload documents in %{agency_portal_name}.
+        upload_text: Use the document uploader provided in the online portal. Have your income documents ready to upload and show all of your pay and employer information.
     other_jobs:
       show:
         bullet_1: Pays you via PayPal, Venmo, Cash App, etc
@@ -479,6 +506,36 @@ en:
       status:
         fetching_payroll_description: This may take a few minutes. Please keep this window open while we work on this.
         header: We’re gathering your payment details from your employer
+    validation_failures:
+      other_ways_no_employer:
+        go_to_agency_portal: Go to %{agency_portal_name}
+        other_ways_description: 'If there is not another account to log into, you will need to submit income for this job outside of Verify My Income. You can submit the last 30 days of income to %{agency_name} by:'
+        other_ways_option_1: Using the document uploader in %{agency_portal_name}
+        other_ways_option_2: Mailing or faxing printed income documents
+        other_ways_option_3: Taking income documents to a %{agency_acronym} office
+        try_searching_again: Try searching again
+      other_ways_with_employer:
+        continue_to_income_summary: Continue to Income Summary
+        more_options: More options
+        more_options_1: Using the document uploader in %{agency_portal_name}
+        more_options_2: Mailing or faxing printed income documents
+        more_options_3: Taking income documents to a %{agency_acronym} office
+        more_options_text: 'You can submit the last 30 days of income to %{agency_name} by:'
+        other_ways_description_multiple_jobs: 'Since you have already logged into %{job_count} jobs, here are your next steps:'
+        other_ways_description_single_job: 'Since you have already logged into %{job_count} job, here are your next steps:'
+        step_1: Step 1
+        step_1_text_multiple_jobs: Continue in Verify My Income to submit income information for the %{job_count} jobs you’ve already logged into.
+        step_1_text_single_job: Continue in Verify My Income to submit income information for the %{job_count} job you’ve already logged into.
+        step_2: Step 2
+        step_2_text: After submitting your income report, send income for jobs you could not find or log into another way.
+        try_searching_again: Try searching again
+      show:
+        not_enough_information: This account did not have enough information
+        not_enough_information_description: We were able to connect to your payroll account, but there was not enough information to verify your income. This happens when the account is unable to provide your name, employer’s name, or income from the last 90 days.
+        options_next_steps: Your options and next steps
+        other_ways: Other ways to verify income for this job
+        try_different_credentials: Try logging in with a different account or credentials
+        try_different_credentials_description: Sometimes an error occurs if you have logged into an administrator account, not an employee account. If you think this has happened, go back to search and log in with a different account.
   components:
     report:
       employment_details_table:
