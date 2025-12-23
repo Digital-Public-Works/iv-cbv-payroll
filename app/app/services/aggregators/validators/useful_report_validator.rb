@@ -92,14 +92,5 @@ module Aggregators::Validators
     def has_nonzero_hours?(paystub)
       paystub.hours&.to_f > 0
     end
-
-    def valid_paystubs(report)
-      report&.paystubs&.compact&.select do |pay|
-        pay.pay_date.present? &&
-        pay.gross_pay_amount&.present? &&
-        pay.gross_pay_amount&.to_f > 0 &&
-        pay.hours&.to_f > 0
-      end
-    end
   end
 end
