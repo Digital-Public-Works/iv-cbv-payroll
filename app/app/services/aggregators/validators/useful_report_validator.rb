@@ -90,7 +90,7 @@ module Aggregators::Validators
     end
 
     def has_nonzero_hours?(paystub)
-      paystub.hours&.to_f > 0
+      paystub.hours.to_f > 0
     end
   end
 end
