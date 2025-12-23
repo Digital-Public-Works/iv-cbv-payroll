@@ -1,16 +1,16 @@
 <p><%= t(".other_ways_description", agency_name: agency_translation("shared.agency_full_name")) %></p>
 
 <ul>
-  <li><%= t(".other_ways_option_1", agency_portal_name: agency_translation("shared.agency_portal_name")) %></li>
+  <li><%= t(".other_ways_option_1_html", agency_portal_name: agency_translation("shared.agency_portal_name"), agency_website: agency_url) %></li>
   <li><%= t(".other_ways_option_2") %></li>
   <li><%= t(".other_ways_option_3", agency_acronym: agency_translation("shared.agency_acronym")) %></li>
 </ul>
 
 <ul class="usa-button-group margin-top-5">
   <li class="usa-button-group__item">
-    <%= link_to t(".try_searching_again"), cbv_flow_employer_search_path, class: "usa-button usa-button" %>
+    <%= link_to t(".try_searching_again"), cbv_flow_employer_search_path, class: "usa-button" %>
   </li>
-  <li class="usa-button-group__item margin-bottom-1">
-    <%= link_to t(".go_to_agency_portal", agency_portal_name: agency_translation("shared.agency_portal_name")), agency_url, class: "usa-button usa-button--outline" %>
+  <li class="usa-button-group__item">
+    <%= link_to t(".go_to_agency_portal", agency_portal_name: agency_translation("shared.agency_portal_name")), agency_url, class: "usa-button usa-button--outline", target: "_blank", rel: "noopener noreferrer" %>
   </li>
 </ul>

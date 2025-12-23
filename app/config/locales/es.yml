@@ -391,14 +391,14 @@ es:
       other_ways_no_employer:
         go_to_agency_portal: Ir a %{agency_portal_name}
         other_ways_description: 'Si no hay otra cuenta en la que pueda iniciar sesión, es necesario entregar información de ingresos para este trabajo fuera de Verify My Income. Puede entregar los últimos 30 días de ingresos a %{agency_name}:'
-        other_ways_option_1: Usando el cargador de documentos en %{agency_portal_name}
+        other_ways_option_1_html: Usando el cargador de documentos en <a href="%{agency_website}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
         other_ways_option_2: Enviando por correo o por fax documentos de ingresos impresos
         other_ways_option_3: Llevando documentos de ingresos a una oficina de %{agency_acronym}
         try_searching_again: Intente buscar de nuevo
       other_ways_with_employer:
         continue_to_income_summary: Continuar al Resumen de Ingresos
         more_options: Más opciones
-        more_options_1: Usando el cargador de documentos en %{agency_portal_name}
+        more_options_1_html: Usando el cargador de documentos en <a href="%{agency_website}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
         more_options_2: Enviando por correo o por fax documentos de ingresos impresos
         more_options_3: Llevando documentos de ingresos a una oficina de %{agency_acronym}
         more_options_text: 'Puede entregar los últimos 30 días de ingresos a %{agency_name}:'

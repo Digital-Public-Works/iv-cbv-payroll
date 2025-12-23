@@ -105,32 +105,34 @@
     <p><%= t(".other_ways_intro") %></p>
   <% end %>
 
-  <%= render ExpandableHelpComponent.new(
-    id: "submit-income",
-    trigger_label: t(".other_ways_link"),
-    heading: t(".submit_income_heading"),
-    element_name: "other_ways_to_submit_help",
-    track_event: TrackEvent::ApplicantClickedOtherWaysToVerifyAccordion,
-    margin_class: "margin-top-3"
-  ) do %>
-    <ul class="usa-list usa-list--unstyled">
-      <li class="margin-bottom-2">
-        <strong><%= t(".upload_heading", agency_portal_name: agency_translation("shared.agency_portal_name")) %></strong>
-        <p class="margin-top-05 margin-bottom-0"><%= t(".upload_text") %></p>
-      </li>
-      <li class="margin-bottom-2">
-        <strong><%= t(".mail_heading", agency_acronym: agency_translation("shared.agency_acronym")) %></strong>
-        <p class="margin-top-05 margin-bottom-0"><%= t(".mail_text", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
-      </li>
-      <li class="margin-bottom-2">
-        <p class="margin-y-0"><%= t(".local_help") %></p>
-      </li>
-      <li class="margin-bottom-0">
-        <strong><%= t(".in_person_heading", agency_acronym: agency_translation("shared.agency_acronym")) %></strong>
-        <p class="margin-top-05 margin-bottom-0"><%= t(".in_person_text", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
-      </li>
-    </ul>
-  <% end %>
+  <div class="maxw-tablet">
+    <%= render ExpandableHelpComponent.new(
+      id: "submit-income",
+      trigger_label: t(".other_ways_link"),
+      heading: t(".submit_income_heading"),
+      element_name: "other_ways_to_submit_help",
+      track_event: TrackEvent::ApplicantClickedOtherWaysToVerifyAccordion,
+      margin_class: "margin-top-3"
+    ) do %>
+      <ul class="usa-list usa-list--unstyled">
+        <li class="margin-bottom-2">
+          <strong><%= t(".upload_heading", agency_portal_name: agency_translation("shared.agency_portal_name")) %></strong>
+          <p class="margin-top-05 margin-bottom-0"><%= t(".upload_text") %></p>
+        </li>
+        <li class="margin-bottom-2">
+          <strong><%= t(".mail_heading", agency_acronym: agency_translation("shared.agency_acronym")) %></strong>
+          <p class="margin-top-05 margin-bottom-0"><%= t(".mail_text", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
+        </li>
+        <li class="margin-bottom-2">
+          <p class="margin-y-0"><%= t(".local_help") %></p>
+        </li>
+        <li class="margin-bottom-0">
+          <strong><%= t(".in_person_heading", agency_acronym: agency_translation("shared.agency_acronym")) %></strong>
+          <p class="margin-top-05 margin-bottom-0"><%= t(".in_person_text", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
+        </li>
+      </ul>
+    <% end %>
+  </div>
 
   <% if @cbv_flow.has_account_with_required_data? %>
     <%= link_to t(".go_to_income_summary"), next_path, class: "usa-button margin-top-4", data: { action: "click->click-tracker#track", element_type: ClickTracker::ElementType::InternalLink, element_name: "go_to_income_summary", track_event: TrackEvent::ApplicantAccessedIncomeSummary } %>
