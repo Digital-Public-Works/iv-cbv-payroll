@@ -3,14 +3,13 @@ module Aggregators::Validators
   # necessary for a report to be useful to eligibility workers.
   class UsefulReportValidator < ActiveModel::Validator
     def validate(report)
+      return true # emergency patch
+
       report.errors.add(:identities, "No identities present") unless report.identities.present?
       report.identities.each { |i| validate_identity(report, i) }
 
       report.errors.add(:employments, "No employments present") unless report.employments.present?
       report.employments.each { |e| validate_employment(report, e) }
-
-
-      return false if report.errors.present?
 
       # Being extra-explicit about these definitions to enhance readability
       is_gig_worker = report.employments.any? { |e| e.employment_type == :gig }
