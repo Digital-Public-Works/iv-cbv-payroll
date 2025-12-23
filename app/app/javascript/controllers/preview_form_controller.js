@@ -9,4 +9,11 @@ export default class extends Controller {
     console.log("PreviewFormController submit called")
     this.element.requestSubmit()
   }
+
+  navigateToRoute(event) {
+    const selectedPath = event.target.value
+    const currentParams = new URLSearchParams(window.location.search)
+    const newUrl = selectedPath + (currentParams.toString() ? "?" + currentParams.toString() : "")
+    window.location.href = newUrl
+  }
 }

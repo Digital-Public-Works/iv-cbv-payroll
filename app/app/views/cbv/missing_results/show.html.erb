@@ -1,27 +1,149 @@
 <% content_for :title, t(".header") %>
+<% job_count = @cbv_flow.payroll_accounts.select(&:sync_succeeded?).count %>
+
+<div data-controller="scroll-reset click-tracker" data-click-tracker-page-value="missing_results" data-context-jobs-already-added="<%= job_count %>">
 
 <h1><%= t(".header") %></h1>
-<p><%= t(".not_listed_p1", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
-<% if @has_payroll_account %>
-  <p><%= t(".not_listed_p2_link_html", agency_url: agency_url, agency_portal_name: agency_translation("shared.agency_portal_name")) %></p>
-<% else %>
-  <p><%= t(".not_listed_p2", agency_portal_name: agency_translation("shared.agency_portal_name")) %></p>
-  <%= t(".exit_button_html",
-    agency_contact_website: current_agency.agency_contact_website,
-    agency_portal_name: agency_translation("shared.agency_portal_name")
-  ) %>
-<% end %>
+<p><%= t(".intro") %></p>
 
-<% if @cbv_flow.has_account_with_required_data? %>
-  <hr class="margin-top-5 margin-bottom-5 border-base-light border-top-0">
-  <h2><%= t(".no_more_jobs") %></h2>
-  <p><%= t(".continue_to_review", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
-  <%= link_to t(".continue_button"), next_path, class: "usa-button" %>
-<% end %>
+<nav class="margin-y-2" aria-label="<%= t(".quick_link_nav_label") %>" data-controller="anchor-scroll">
+  <ul class="usa-list">
+    <li><a href="#search-tips" class="usa-link" data-action="click->anchor-scroll#scroll click->click-tracker#track" data-element-type="<%= ClickTracker::ElementType::AnchorLink %>" data-element-name="search_tips_anchor" data-track-event="<%= TrackEvent::ApplicantClickedSearchTipsAnchor %>"><%= t(".quick_link_search_tips") %></a></li>
+    <li><a href="#other-ways" class="usa-link" data-action="click->anchor-scroll#scroll click->click-tracker#track" data-element-type="<%= ClickTracker::ElementType::AnchorLink %>" data-element-name="other_ways_anchor" data-track-event="<%= TrackEvent::ApplicantClickedOtherWaysToSubmitHelpAnchor %>"><%= t(".quick_link_other_ways") %></a></li>
+  </ul>
+</nav>
 
-<hr class="margin-top-5 margin-bottom-5 border-base-light border-top-0">
-<h2><%= t(".more_jobs") %></h2>
-<p><%= t(".you_can_search") %></p>
-<%= link_to cbv_flow_employer_search_path, class: "usa-button usa-button--outline" do %>
-  <%= t(".back_button") %>
-<% end %>
+<%# Search Tips Section %>
+<section id="search-tips">
+  <h2><%= t(".search_tips_heading") %></h2>
+
+  <ul class="usa-list usa-list--unstyled">
+    <%# Check your search term %>
+    <li class="margin-bottom-3 margin-top-2">
+      <div class="display-flex flex-align-start">
+        <svg class="usa-icon usa-icon--size-3 margin-right-105 text-primary flex-shrink-0 minw-3" aria-hidden="true" focusable="false" role="img">
+          <use href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#keyboard") %>"></use>
+        </svg>
+        <div class="maxw-tablet">
+          <h3 class="margin-top-0 margin-bottom-05"><%= t(".check_search_term_heading") %></h3>
+          <p class="margin-top-0 margin-bottom-1"><%= t(".check_search_term_text") %></p>
+          <p class="margin-top-0 margin-bottom-0"><%= t(".check_search_term_example") %></p>
+        </div>
+      </div>
+    </li>
+
+    <%# Search for your payroll provider %>
+    <li class="margin-bottom-3">
+      <div class="display-flex flex-align-start">
+        <svg class="usa-icon usa-icon--size-3 margin-right-105 text-primary flex-shrink-0 minw-3" aria-hidden="true" focusable="false" role="img">
+          <use href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#search") %>"></use>
+        </svg>
+        <div class="overflow-hidden minw-0 flex-1 maxw-tablet padding-05 margin-neg-05">
+          <h3 class="margin-top-0 margin-bottom-05"><%= t(".search_payroll_heading") %></h3>
+          <p class="margin-top-0 margin-bottom-0"><%= t(".search_payroll_text") %></p>
+
+          <%= render ExpandableHelpComponent.new(
+            id: "find-payroll",
+            trigger_label: t(".search_payroll_link"),
+            heading: t(".find_payroll_heading"),
+            element_name: "payroll_provider_help",
+            track_event: TrackEvent::ApplicantClickedPayrollProviderHelpAccordion
+          ) do %>
+            <p><%= t(".find_payroll_text") %></p>
+            <p><%= t(".find_payroll_places") %></p>
+            <ol class="usa-list">
+              <li><%= t(".find_payroll_place_1") %></li>
+              <li><%= t(".find_payroll_place_2") %></li>
+              <li><%= t(".find_payroll_place_3") %></li>
+            </ol>
+            <p><%= t(".find_payroll_fallback") %></p>
+          <% end %>
+        </div>
+      </div>
+    </li>
+
+    <%# Make sure you're searching for the right company %>
+    <li class="margin-bottom-0">
+      <div class="display-flex flex-align-start">
+        <svg class="usa-icon usa-icon--size-3 margin-right-105 text-primary flex-shrink-0 minw-3" aria-hidden="true" focusable="false" role="img">
+          <use href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#store") %>"></use>
+        </svg>
+        <div class="overflow-hidden minw-0 flex-1 maxw-tablet padding-05 margin-neg-05">
+          <h3 class="margin-top-0 margin-bottom-05"><%= t(".right_company_heading") %></h3>
+          <p class="margin-top-0 margin-bottom-0"><%= t(".right_company_text") %></p>
+
+          <%= render ExpandableHelpComponent.new(
+            id: "parent-company",
+            trigger_label: t(".right_company_link"),
+            heading: t(".parent_company_heading"),
+            element_name: "parent_company_help",
+            track_event: TrackEvent::ApplicantClickedParentCompanyHelpAccordion
+          ) do %>
+            <p><strong><%= t(".parent_company_website_heading") %></strong> <%= t(".parent_company_website_text") %></p>
+            <p><strong><%= t(".parent_company_google_heading") %></strong> <%= t(".parent_company_google_text") %></p>
+            <p><strong><%= t(".parent_company_manager_heading") %></strong> <%= t(".parent_company_manager_text") %></p>
+          <% end %>
+        </div>
+      </div>
+    </li>
+  </ul>
+
+  <%= link_to t(".try_searching_again"), cbv_flow_employer_search_path, class: "usa-button margin-top-4", data: { action: "click->click-tracker#track", element_type: ClickTracker::ElementType::InternalLink, element_name: "try_searching_again", track_event: TrackEvent::ApplicantAccessedSearchPage, context_version: "v2", context_from_page: "missing_results" } %>
+</section>
+
+<%# Other ways to verify job income %>
+<section id="other-ways" class="margin-top-5">
+  <h2><%= t(".other_ways_heading") %></h2>
+  <% if @cbv_flow.has_account_with_required_data? %>
+    <p><%= t(".other_ways_intro_with_jobs", count: job_count) %></p>
+
+    <ol class="usa-list">
+      <li><%= t(".other_ways_step_1", count: job_count) %></li>
+      <li><%= t(".other_ways_step_2") %></li>
+    </ol>
+  <% else %>
+    <p><%= t(".other_ways_intro") %></p>
+  <% end %>
+
+  <div class="maxw-tablet">
+    <%= render ExpandableHelpComponent.new(
+      id: "submit-income",
+      trigger_label: t(".other_ways_link"),
+      heading: t(".submit_income_heading"),
+      element_name: "other_ways_to_submit_help",
+      track_event: TrackEvent::ApplicantClickedOtherWaysToVerifyAccordion,
+      margin_class: "margin-top-3"
+    ) do %>
+      <ul class="usa-list usa-list--unstyled">
+        <li class="margin-bottom-2">
+          <strong><%= t(".upload_heading", agency_portal_name: agency_translation("shared.agency_portal_name")) %></strong>
+          <p class="margin-top-05 margin-bottom-0"><%= t(".upload_text") %></p>
+        </li>
+        <li class="margin-bottom-2">
+          <strong><%= t(".mail_heading", agency_acronym: agency_translation("shared.agency_acronym")) %></strong>
+          <p class="margin-top-05 margin-bottom-0"><%= t(".mail_text", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
+        </li>
+        <li class="margin-bottom-2">
+          <p class="margin-y-0"><%= t(".local_help") %></p>
+        </li>
+        <li class="margin-bottom-0">
+          <strong><%= t(".in_person_heading", agency_acronym: agency_translation("shared.agency_acronym")) %></strong>
+          <p class="margin-top-05 margin-bottom-0"><%= t(".in_person_text", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
+        </li>
+      </ul>
+    <% end %>
+  </div>
+
+  <% if @cbv_flow.has_account_with_required_data? %>
+    <%= link_to t(".go_to_income_summary"), next_path, class: "usa-button margin-top-4", data: { action: "click->click-tracker#track", element_type: ClickTracker::ElementType::InternalLink, element_name: "go_to_income_summary", track_event: TrackEvent::ApplicantAccessedIncomeSummary } %>
+  <% else %>
+    <%= link_to t(".go_to_agency_portal", agency_portal_name: agency_translation("shared.agency_portal_name")),
+        current_agency.agency_contact_website,
+        class: "usa-button margin-top-4",
+        target: "_blank",
+        rel: "noopener noreferrer",
+        data: { action: "click->click-tracker#track", element_type: ClickTracker::ElementType::ExternalLink, element_name: "go_to_agency_portal", track_event: TrackEvent::ApplicantAccessedAgencyPortal, context_version: "v2" } %>
+  <% end %>
+</section>
+
+</div>

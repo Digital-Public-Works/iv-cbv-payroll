@@ -144,28 +144,15 @@ es:
           heading: "¿Necesita ayuda para conectarse a su proveedor de nómina?"
           help_options: Obtenga ayuda aquí.
         app_based_providers: Empleadores basados
-        can_not_find_employer: No puedo encontrar a mi empleador o proveedor de nómina
-        employer_not_listed: "¿Su empleador no está en la lista?"
-        exit_button_text: Salir y acceder al sitio web de %{agency_portal_name}
+        can_not_find_employer: Explore sus opciones
+        employer_not_listed: "¿Tiene problemas para encontrar a su empleador o proveedor de nómina?"
         header: Busque su empleador o proveedor de nómina
-        no_results_steps1: Verifique si su empleador usa otro nombre empresarial o busque a su proveedor de nómina.
-        no_results_steps2: Asegúrese de haber escrito correctamente los nombres, y busque de nuevo.
-        no_results_steps3: Elija entre proveedores o aplicaciones populares de nómina.
-        no_results_steps_title: 'Intente estos pasos primero:'
-        no_results_title: No pudimos encontrar su empleador ni su proveedor de nómina.
         payroll_providers: Proveedores de nómina
         popular_providers: O elija entre los proveedores o aplicaciones de nómina más populares
         results: Resultados
-        review_button_text: Continuar
         search: Buscar
         search_label: 'Ingrese el nombre de su empleador actual o reciente o su proveedor de nómina:'
         select: Seleccione
-        to_continue: 'Si aún no ve enumerado a su empleador ni a su proveedor de nómina:'
-        to_continue_li_1: Deberá enviar esa información de ingresos por separado.
-        to_continue_li_1_html: <a href="%{agency_contact_website}" target="_blank" rel="noopener noreferrer">Visite el sitio web del %{agency_portal_name}</a> para informarse de otras formas de verificar sus ingresos.
-        to_continue_li_2: Si tiene otros trabajos que añadir, búsquelos.
-        to_continue_li_3: Si no tiene otros trabajos que añadir aquí, puede salir de este sitio.
-        to_continue_li_3_continue: Si no tiene otros trabajos que agregar aquí, continúe para revisar su reporte de ingresos.
     entries:
       create:
         error: Debe marcar la casilla de «acuerdo» para proceder.
@@ -203,17 +190,57 @@ es:
         title: Su invitación para verificar ingresos ha expirado
     missing_results:
       show:
-        back_button: Regrese a la búsqueda del empleador
-        continue_button: Continúe a «Revisar mi reporte»
+        check_search_term_example: 'Por ejemplo: Si buscó primero "DHS", el mejor término de búsqueda sería "Department of Human Services".'
+        check_search_term_heading: Verifique su término de búsqueda
+        check_search_term_text: Use el nombre completo u oficial de su empleador o proveedor de nómina. Evite las abreviaturas.
         continue_to_review: Continúe a revisar la información de ingresos que pudo encontrar antes de enviarla a %{agency_acronym}.
-        exit_button_html: <a href="%{agency_contact_website}" class="usa-button" target="_blank" rel="noopener noreferrer">Salir y acceder a %{agency_portal_name}</a>
-        header: Cómo verificar ingresos si su empleador o proveedor de nómina no figura en la lista
-        more_jobs: Si tiene más trabajos que verificar
-        no_more_jobs: Si no tiene más trabajos que verificar
-        not_listed_p1: Si su empleador o proveedor de nómina no están listados en este sitio, tendrá que compartir su información de ingresos por este trabajo directamente con %{agency_acronym}.
-        not_listed_p2: Para obtener más información sobre cómo enviar los documentos requeridos, visite el sitio web de %{agency_portal_name}.
-        not_listed_p2_link_html: Visite <a href="%{agency_url}" target="_blank" rel="noopener noreferrer">el sitio web del %{agency_portal_name}</a> para obtener más información sobre cómo enviar documentos.
-        you_can_search: Puede buscar otro empleador o proveedor de nómina. Este sitio apoya a los empleadores con proveedores de nómina en línea o servicios basados en aplicaciones. Algunos ejemplos son Amazon, Walmart, McDonald’s, Uber, DoorDash, Lyft e Instacart.
+        find_payroll_fallback: Si no pudo encontrar su proveedor de nómina, buscando su empleador es la siguiente mejor opción.
+        find_payroll_heading: Cómo encontrar su proveedor de nómina si recibe depósito directo o talones de pago
+        find_payroll_place_1: Su talón de pago
+        find_payroll_place_2: Una notificación por correo electrónico de su talón de pago
+        find_payroll_place_3: El sistema de recursos humanos de su empleador
+        find_payroll_places: 'Busque el nombre del proveedor de nómina en estos lugares:'
+        find_payroll_text: Muchos trabajos usan un proveedor de nómina. Un proveedor de nómina tiene un sitio web donde usted puede iniciar sesión para ver sus talones de pago en línea.
+        go_to_agency_portal: Ir a %{agency_portal_name}
+        go_to_income_summary: Continuar al Resumen de Ingresos
+        header: Opciones para verificar sus ingresos
+        in_person_heading: Vaya en persona a una oficina de %{agency_acronym}
+        in_person_text: Lleve sus documentos de ingresos a una oficina local de %{agency_acronym}.
+        intro: Use los siguientes enlaces rápidos para encontrar la mejor manera de enviar información de ingresos para este trabajo.
+        local_help: Puede buscar ayuda en bibliotecas locales y organizaciones comunitarias.
+        mail_heading: Envíe documentos por correo o fax a %{agency_acronym}
+        mail_text: Consulte un aviso reciente de %{agency_acronym} para encontrar el mejor número de fax u oficina. Envíe sus documentos de ingresos por fax o correo.
+        other_ways_heading: Otras formas de verificar ingresos del trabajo
+        other_ways_intro: Está bien si no puede encontrar un trabajo o tiene problemas para iniciar sesión en un trabajo con Verificar Mis Ingresos. Puede cargar documentos, enviar información de ingresos por correo o visitar su agencia en persona.
+        other_ways_intro_with_jobs:
+          one: Está bien si no puede encontrar un trabajo o tiene problemas para iniciar sesión en un trabajo con Verificar Mis Ingresos. Como ya ha iniciado sesión en %{count} trabajo, estos son sus próximos pasos.
+          other: Está bien si no puede encontrar un trabajo o tiene problemas para iniciar sesión en un trabajo con Verificar Mis Ingresos. Como ya ha iniciado sesión en %{count} trabajos, estos son sus próximos pasos.
+        other_ways_link: Otras formas de enviar ingresos
+        other_ways_step_1:
+          one: Continúe en Verificar Mis Ingresos para enviar información de ingresos del %{count} trabajo en el que ya ha iniciado sesión.
+          other: Continúe en Verificar Mis Ingresos para enviar información de ingresos de los %{count} trabajos en los que ya ha iniciado sesión.
+        other_ways_step_2: Después de enviar su reporte de ingresos, envíe la información de ingresos de los trabajos que no pudo encontrar o en los que no pudo iniciar sesión usando otro método.
+        parent_company_google_heading: Intente una búsqueda en Google.
+        parent_company_google_text: Busque en Google el nombre de su empleador junto con "empresa matriz".
+        parent_company_heading: Cómo encontrar la empresa matriz de su empleador
+        parent_company_manager_heading: Pregunte a su gerente o supervisor.
+        parent_company_manager_text: Su gerente o supervisor podrá decirle quién es la empresa matriz.
+        parent_company_website_heading: Consulte el sitio web de la empresa.
+        parent_company_website_text: Busque en la sección "Acerca de nosotros" el nombre de la empresa matriz. Los informes anuales también pueden tener esta información.
+        quick_link_nav_label: Secciones de la página
+        quick_link_other_ways: Otras formas de verificar ingresos del trabajo
+        quick_link_search_tips: Consejos de búsqueda
+        right_company_heading: Asegúrese de que está buscando la empresa correcta
+        right_company_link: Cómo encontrar la empresa matriz de su empleador
+        right_company_text: Esto puede parecer obvio, pero a veces una empresa es propiedad de otra. Es posible que esté recibiendo pagos de una "empresa matriz" que tiene un nombre diferente.
+        search_payroll_heading: Busque su proveedor de nómina
+        search_payroll_link: Cómo encontrar su proveedor de nómina
+        search_payroll_text: Muchos trabajos usan un proveedor de nómina. Un proveedor de nómina tiene un sitio web donde puede iniciar sesión para ver sus talones de pago, documentos de impuestos y horas de trabajo en línea.
+        search_tips_heading: Consejos de búsqueda
+        submit_income_heading: Otras formas de enviar ingresos
+        try_searching_again: Intente buscar de nuevo
+        upload_heading: Cargue documentos en %{agency_portal_name}.
+        upload_text: Use la herramienta para cargar documentos en el portal en línea. Tenga listos sus documentos de ingresos para cargar. Asegúrese de que muestren toda su información de pago y de su empleador.
     other_jobs:
       show:
         bullet_1: Le paga a través de PayPal, Venmo, Cash App, etc.
@@ -360,6 +387,36 @@ es:
       status:
         fetching_payroll_description: Esto puede tardar algunos minutos. Mantenga abierta esta ventana mientras trabajamos en esto.
         header: Estamos recopilando los detalles de pago de su empleador.
+    validation_failures:
+      other_ways_no_employer:
+        go_to_agency_portal: Ir a %{agency_portal_name}
+        other_ways_description: 'Si no hay otra cuenta en la que pueda iniciar sesión, es necesario entregar información de ingresos para este trabajo fuera de Verify My Income. Puede entregar los últimos 30 días de ingresos a %{agency_name}:'
+        other_ways_option_1_html: Usando el cargador de documentos en <a href="%{agency_website}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
+        other_ways_option_2: Enviando por correo o por fax documentos de ingresos impresos
+        other_ways_option_3: Llevando documentos de ingresos a una oficina de %{agency_acronym}
+        try_searching_again: Intente buscar de nuevo
+      other_ways_with_employer:
+        continue_to_income_summary: Continuar al Resumen de Ingresos
+        more_options: Más opciones
+        more_options_1_html: Usando el cargador de documentos en <a href="%{agency_website}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
+        more_options_2: Enviando por correo o por fax documentos de ingresos impresos
+        more_options_3: Llevando documentos de ingresos a una oficina de %{agency_acronym}
+        more_options_text: 'Puede entregar los últimos 30 días de ingresos a %{agency_name}:'
+        other_ways_description_multiple_jobs: 'Como ya inició sesión en %{job_count} trabajos, estos son sus siguientes pasos:'
+        other_ways_description_single_job: 'Como ya inició sesión en %{job_count} trabajo, estos son sus siguientes pasos:'
+        step_1: Paso 1
+        step_1_text_multiple_jobs: Continúe en Verify My Income para entregar información de ingresos para %{job_count} trabajos en los que ya ha iniciado sesión.
+        step_1_text_single_job: Continúe en Verify My Income para entregar información de ingresos para %{job_count} trabajo en el que ya ha iniciado sesión.
+        step_2: Paso 2
+        step_2_text: Después de entregar su informe de ingresos, entregue información de ingresos para trabajos que no pudo encontrar o donde no pudo iniciar sesión de otra manera
+        try_searching_again: Intente buscar de nuevo
+      show:
+        not_enough_information: Esta cuenta no tenía suficiente información
+        not_enough_information_description: Pudimos conectarnos a su cuenta de nómina, pero no había suficiente información para verificar sus ingresos. Esto sucede cuando la cuenta no puede mostrar su nombre, el nombre de su empleador o ingresos de los últimos 90 días.
+        options_next_steps: Sus opciones y próximos pasos
+        other_ways: Otras maneras de verificar ingresos para este trabajo
+        try_different_credentials: Intente iniciar sesión con una cuenta o credenciales diferentes
+        try_different_credentials_description: A veces ocurre un error si ha iniciado sesión en una cuenta de administrador, no en una cuenta de empleado. Si cree que esto sucedió, regrese a la búsqueda e inicie sesión con una cuenta diferente.
   components:
     report:
       employment_details_table:

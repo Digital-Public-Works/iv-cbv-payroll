@@ -6,13 +6,14 @@ class Cbv::PreviewController < ApplicationController
 
   before_action :ensure_non_production_environment
   before_action :setup_preview_flow
-  before_action :set_aggregator_report, only: %i[payment_details summary submit submit_pdf_as_html]
-  before_action :relax_csp_for_html_preview, only: %i[submit_pdf_as_html]
+  before_action :override_has_account_with_required_data
+  before_action :set_aggregator_report, only: %i[payment_details summary submit submit_pdf_as_html validation_failures]
+  before_action :relax_csp_for_html_preview
 
   helper_method :current_agency, :employer_name, :gross_pay, :employment_start_date,
     :employment_end_date, :employment_status, :pay_frequency, :compensation_unit,
     :compensation_amount, :account_comment, :has_income_data?, :has_consent,
-    :agency_url, :next_path, :get_comment_by_account_id
+    :agency_url, :next_path, :get_comment_by_account_id, :count_of_valid_accounts
 
   def employer_search
     @query = params[:query] || ""
@@ -31,6 +32,18 @@ class Cbv::PreviewController < ApplicationController
     render_as("synchronizations")
   end
 
+  def synchronization_failures
+    render_as("synchronization_failures")
+  end
+
+  def validation_failures
+    @payroll_account = @cbv_flow.payroll_accounts.first
+    # Set params that the view expects
+    params[:user] = { account_id: @payroll_account.aggregator_account_id }
+
+    render_as("validation_failures")
+  end
+
   def payment_details
     @payroll_account = @cbv_flow.payroll_accounts.first
     # Set params that the view expects
@@ -45,6 +58,10 @@ class Cbv::PreviewController < ApplicationController
 
   def summary
     render_as("summaries")
+  end
+
+  def missing_results
+    render_as("missing_results")
   end
 
   def submit
@@ -100,6 +117,14 @@ class Cbv::PreviewController < ApplicationController
   def relax_csp_for_html_preview
     # Allow inline styles for the HTML preview (development CSS is inlined)
     request.content_security_policy.style_src :self, :unsafe_inline
+  end
+
+  def override_has_account_with_required_data
+    valid_count = count_of_valid_accounts
+
+    @cbv_flow.define_singleton_method(:has_account_with_required_data?) do
+      valid_count > 0
+    end
   end
 
   def render_as(controller_name)
@@ -270,5 +295,9 @@ class Cbv::PreviewController < ApplicationController
 
   def get_comment_by_account_id(account_id)
     { "comment" => nil, "updated_at" => nil }
+  end
+
+  def count_of_valid_accounts
+    (params[:count_of_valid_accounts] || 1).to_i
   end
 end

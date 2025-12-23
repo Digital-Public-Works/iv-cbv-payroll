@@ -37,7 +37,11 @@ class CbvFlow < ApplicationRecord
   end
 
   def has_account_with_required_data?
-    payroll_accounts.any?(&:sync_succeeded?)
+    accounts_with_required_data.any?
+  end
+
+  def accounts_with_required_data
+    payroll_accounts.select(&:sync_succeeded?)
   end
 
   def fully_synced_payroll_accounts
