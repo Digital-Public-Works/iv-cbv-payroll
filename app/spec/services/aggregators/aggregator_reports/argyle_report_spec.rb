@@ -353,7 +353,7 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
     end
   end
 
-  describe 'useful report validation with valid fixture' do
+  describe 'valid fixture: valid identity, valid employer, gig worker, no paystubs' do
     let(:argyle_service) { instance_double(Aggregators::Sdk::ArgyleService) }
     let(:payroll_account) { create(:payroll_account, :argyle_fully_synced) }
     let(:argyle_report) do
