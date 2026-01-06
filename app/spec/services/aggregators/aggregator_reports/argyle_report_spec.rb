@@ -353,7 +353,7 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
     end
   end
 
-  describe 'useful report validation with invalid fixture' do
+  describe 'useful report validation with valid fixture' do
     let(:argyle_service) { instance_double(Aggregators::Sdk::ArgyleService) }
     let(:payroll_account) { create(:payroll_account, :argyle_fully_synced) }
     let(:argyle_report) do
@@ -365,7 +365,7 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
       )
     end
 
-    it 'is not considered useful' do
+    it 'is considered useful' do
       identities_json = argyle_load_relative_json_file('masked_prod_gig_validation_pass', 'request_identity.json')
       empty_response = { "results" => [] }
 
