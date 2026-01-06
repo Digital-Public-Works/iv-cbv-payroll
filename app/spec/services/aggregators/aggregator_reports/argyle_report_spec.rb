@@ -358,7 +358,7 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
     let(:payroll_account) { create(:payroll_account, :argyle_fully_synced) }
     let(:argyle_report) do
       described_class.new(
-        payroll_accounts: [payroll_account],
+        payroll_accounts: [ payroll_account ],
         argyle_service: argyle_service,
         days_to_fetch_for_w2: days_ago_to_fetch,
         days_to_fetch_for_gig: days_ago_to_fetch
@@ -377,7 +377,7 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
       argyle_report.fetch
 
       expect(argyle_report.valid?(:useful_report)).to be true
-      
+
       expect(argyle_report.errors.full_messages).to be_empty
     end
   end
