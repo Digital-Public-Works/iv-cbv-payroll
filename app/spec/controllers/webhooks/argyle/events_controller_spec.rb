@@ -399,6 +399,49 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
     end
 
 
+    context "when no identity records are returned from Argyle" do
+      before do
+        # Use empty fixtures for all API calls to simulate no data returned
+        allow_any_instance_of(Aggregators::Sdk::ArgyleService)
+          .to receive(:fetch_identities_api)
+                .and_return(argyle_load_relative_json_file("empty", "request_identity.json"))
+        allow_any_instance_of(Aggregators::Sdk::ArgyleService)
+          .to receive(:fetch_paystubs_api)
+                .and_return(argyle_load_relative_json_file("empty", "request_paystubs.json"))
+        allow_any_instance_of(Aggregators::Sdk::ArgyleService)
+          .to receive(:fetch_gigs_api)
+                .and_return(argyle_load_relative_json_file("empty", "request_gigs.json"))
+        allow_any_instance_of(Aggregators::Sdk::ArgyleService)
+          .to receive(:fetch_account_api)
+                .and_return(argyle_load_relative_json_file("empty", "request_account.json"))
+      end
+
+      it 'tracks an ApplicantReportFailedUsefulRequirements event and marks sync as failed' do
+        process_webhook("accounts.connected")
+        process_webhook("identities.added")
+        process_webhook("users.fully_synced")
+        process_webhook("gigs.partially_synced")
+
+        expect(fake_event_logger).to receive(:track).with("ApplicantReceivedArgyleData", anything, anything)
+        expect(fake_event_logger).to receive(:track).with("ApplicantFinishedArgyleSync", anything, anything)
+        expect(fake_event_logger).to receive(:track).with(
+          "ApplicantReportFailedUsefulRequirements",
+          anything,
+          hash_including(
+            cbv_flow_id: cbv_flow.id,
+            cbv_applicant_id: cbv_flow.cbv_applicant_id,
+            invitation_id: cbv_flow.cbv_flow_invitation_id,
+            errors: include("No employments present")
+          )
+        )
+
+        process_webhook("paystubs.partially_synced")
+
+        payroll_account = PayrollAccount.last
+        expect(payroll_account.reload.sync_failed?).to eq(true)
+      end
+    end
+
     context "when paystubs API returns an empty dataset" do
       before do
         # Override only the paystubs fixture to use the 'empty' variant
