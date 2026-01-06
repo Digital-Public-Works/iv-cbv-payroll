@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe Aggregators::ReportValidationService do
+RSpec.describe Aggregators::AccountReportService do
   include ArgyleApiHelper
 
   let(:cbv_flow) { create(:cbv_flow, :invited) }
@@ -141,7 +141,7 @@ RSpec.describe Aggregators::ReportValidationService do
     end
   end
 
-  describe Aggregators::ReportValidationService::Result do
+  describe Aggregators::AccountReportService::ValidationResult do
     let(:mock_errors) { double("errors", full_messages: [ "Error 1", "Error 2" ], empty?: false) }
     let(:mock_account_report) { double("account_report") }
 

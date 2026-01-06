@@ -1,7 +1,6 @@
 module Aggregators
-  class ReportValidationService
-    # Result object returned by validate_account
-    class Result
+  class AccountReportService
+    class ValidationResult
       attr_reader :account_report, :errors
 
       def initialize(account_report:, valid:, errors:)
@@ -24,14 +23,11 @@ module Aggregators
       @payroll_account = payroll_account
     end
 
-    # Validates the account report for a specific payroll account
-    # Returns a Result object with the account_report, validity status, and errors
     def validate
-      account_id = @payroll_account.aggregator_account_id
-      account_report = @report.find_account_report(account_id)
+      account_report = @report.find_account_report(@payroll_account.aggregator_account_id)
       valid = account_report.valid?(:useful_report)
 
-      Result.new(
+      ValidationResult.new(
         account_report: account_report,
         valid: valid,
         errors: account_report.errors

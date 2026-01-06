@@ -26,11 +26,11 @@ class Cbv::PaymentDetailsController < Cbv::BaseController
 
     set_aggregator_report_for_account(@payroll_account)
 
-    validation_result = Aggregators::ReportValidationService.new(@aggregator_report, @payroll_account).validate
-    unless validation_result.valid?
+    result = Aggregators::AccountReportService.new(@aggregator_report, @payroll_account).validate
+    unless result.valid?
       return redirect_to cbv_flow_validation_failures_path(user: { account_id: @payroll_account.aggregator_account_id })
     end
-    @payroll_account_report = validation_result.account_report
+    @payroll_account_report = result.account_report
 
     @is_w2_worker = @payroll_account_report.employment.employment_type == :w2
     @account_comment = account_comment
