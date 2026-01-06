@@ -365,7 +365,7 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
       )
     end
 
-    it 'is considered useful' do
+    it 'A gig with valid identity and employer is valid even with no paystubs' do
       identities_json = argyle_load_relative_json_file('masked_prod_gig_validation_pass', 'request_identity.json')
       empty_response = { "results" => [] }
 
