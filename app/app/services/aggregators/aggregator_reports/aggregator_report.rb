@@ -230,7 +230,7 @@ module Aggregators::AggregatorReports
       relevant_employments = employments.select { |e| e[:account_id] == account_id }
       if relevant_employments.empty?
         Rails.logger.error("No employments found that match account_id #{account_id}")
-        raise "No employments found that match account_id #{account_id}"
+        return nil
       end
 
       # Pick the employment with the latest update when considering the start_date,

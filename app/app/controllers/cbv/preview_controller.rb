@@ -50,7 +50,7 @@ class Cbv::PreviewController < ApplicationController
     params[:user] = { account_id: @payroll_account.aggregator_account_id }
 
     @payroll_account_report = @aggregator_report.find_account_report(@payroll_account.aggregator_account_id)
-    @is_w2_worker = @payroll_account_report.employment.employment_type == :w2
+    @is_w2_worker = @payroll_account_report.employment&.employment_type == :w2
     @account_comment = account_comment
 
     render_as("payment_details")
