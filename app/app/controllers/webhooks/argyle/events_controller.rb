@@ -303,10 +303,9 @@ class Webhooks::Argyle::EventsController < ApplicationController
   end
 
   def validate_useful_report_requirements(report, payroll_account)
-    # Use find_account_report to get AccountReportStruct, matching payment_details_controller behavior
-    account_report = report.find_account_report(payroll_account.aggregator_account_id)
-    report_is_valid = account_report.valid?(:useful_report)
-    if report_is_valid
+    validation_result = Aggregators::ReportValidationService.new(report, payroll_account).validate
+
+    if validation_result.valid?
       event_logger.track(TrackEvent::ApplicantReportMetUsefulRequirements, request,
         time: Time.now.to_i,
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,
@@ -321,10 +320,11 @@ class Webhooks::Argyle::EventsController < ApplicationController
         cbv_flow_id: @cbv_flow.id,
         device_id: @cbv_flow.device_id,
         invitation_id: @cbv_flow.cbv_flow_invitation_id,
-        errors: account_report.errors.full_messages.join(", ")
+        errors: validation_result.error_messages
       })
     end
-    report_is_valid
+
+    validation_result.valid?
   end
 
   def update_synchronization_page(payroll_account)
