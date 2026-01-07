@@ -353,6 +353,43 @@ RSpec.describe Cbv::PaymentDetailsController do
         end
       end
 
+      context "for Empty (a user with no identity records)" do
+        let(:account_id) { "empty-account-id" }
+        let(:cbv_flow) do
+          create(:cbv_flow,
+                 :invited,
+                 :with_argyle_account,
+                 with_errored_jobs: errored_jobs,
+                 created_at: current_time,
+                 supported_jobs: supported_jobs,
+                 cbv_applicant: cbv_applicant
+          )
+        end
+        let!(:payroll_account) do
+          create(
+            :payroll_account,
+            :argyle_fully_synced,
+            with_errored_jobs: errored_jobs,
+            cbv_flow: cbv_flow,
+            aggregator_account_id: account_id,
+            supported_jobs: supported_jobs,
+            )
+        end
+
+        before do
+          session[:cbv_flow_id] = cbv_flow.id
+          argyle_stub_request_identities_response("empty")
+          argyle_stub_request_paystubs_response("empty")
+          argyle_stub_request_gigs_response("empty")
+          argyle_stub_request_account_response("empty")
+        end
+
+        it "redirects to validation failures when no identity records are returned" do
+          get :show, params: { user: { account_id: account_id } }
+          expect(response).to redirect_to(cbv_flow_validation_failures_path(user: { account_id: account_id }))
+        end
+      end
+
       context "for Sarah (a w2 worker)" do
         let(:account_id) { "01956d5f-cb8d-af2f-9232-38bce8531f58" }
         let(:cbv_flow) do

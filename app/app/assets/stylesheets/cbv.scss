@@ -344,6 +344,16 @@ input#invitation_link {
   vertical-align: top;
 }
 
+.yellow-highlight-label {
+  background-color: #FEE685;
+  padding: .5rem;
+  border-radius: 2px;
+}
+
+.font-size-pdf-header-tag {
+  font-size: font-size('sans', 7);
+}
+
 /*
  * Employer search result cards
  */

@@ -1,0 +1,49 @@
+{
+  "results": [
+    {
+        "id": "53728022-28a0-3f55-a809-4a39bdc186cd",
+        "account": "019b6ec8-1e28-e657-0774-4a97d858bca7",
+        "address": {
+          "city": null,
+          "line1": null,
+          "line2": null,
+          "state": null,
+          "country": "US",
+          "postal_code": null
+        },
+        "first_name": "Tom",
+        "last_name": "Smith Jr",
+        "full_name": "Tom Smith Jr",
+        "birth_date": null,
+        "email": "tsj_fake@fake.com",
+        "phone_number": "+12672261111",
+        "picture_url": null,
+        "employment_status": "active",
+        "employment_type": "contractor",
+        "job_title": "Wonolo Worker",
+        "ssn": null,
+        "marital_status": null,
+        "gender": null,
+        "hire_date": null,
+        "original_hire_date": null,
+        "termination_date": null,
+        "termination_reason": null,
+        "employer": "Wonolo",
+        "base_pay": {
+          "amount": null,
+          "period": null,
+          "currency": null
+        },
+        "pay_cycle": null,
+        "platform_ids": {
+          "employee_id": null,
+          "position_id": null,
+          "platform_user_id": null
+        },
+        "created_at": "2025-12-30T10:23:10.696Z",
+        "updated_at": "2025-12-30T10:23:10.696Z",
+        "metadata": {},
+        "employment": "be758e85-7138-3b71-90f2-ba984d8ef7eb"
+      }
+  ]
+}
