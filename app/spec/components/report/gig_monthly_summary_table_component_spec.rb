@@ -171,8 +171,8 @@ RSpec.describe Report::GigMonthlySummaryTableComponent, type: :component do
 
       it "renders table caption" do
         subject = render_inline(described_class.new(argyle_report, payroll_account))
-        expect(subject.to_html).to include('"Accrued gross earnings" sums the payments')
-        expect(subject.to_html).to include '"Total hours worked" sums the time'
+        expect(subject.to_html).to include('"Accrued gross earnings" is the sum of all gross payments made in that month.')
+        expect(subject.to_html).to include '"Total hours worked" is a sum of the time it took to complete each gig. The monthly total shows when a payout happened, not when the work was done.'
       end
 
       it "renders the client-facing payments from text" do
@@ -317,8 +317,8 @@ RSpec.describe Report::GigMonthlySummaryTableComponent, type: :component do
 
       it "renders table caption" do
         subject = render_inline(described_class.new(argyle_report, payroll_account))
-        expect(subject.to_html).to include('"Accrued gross earnings" sums the payments')
-        expect(subject.to_html).to include '"Total hours worked" sums the time'
+        expect(subject.to_html).to include('"Accrued gross earnings" is the sum of all gross payments made in that month.')
+        expect(subject.to_html).to include '"Total hours worked" is a sum of the time it took to complete each gig. The monthly total shows when a payout happened, not when the work was done.'
       end
     end
 
@@ -373,8 +373,8 @@ RSpec.describe Report::GigMonthlySummaryTableComponent, type: :component do
 
       it "renders table caption" do
         subject = render_inline(described_class.new(argyle_report, payroll_account))
-        expect(subject.to_html).to include('"Accrued gross earnings" sums the payments')
-        expect(subject.to_html).to include '"Total hours worked" sums the time'
+        expect(subject.to_html).to include('"Accrued gross earnings" is the sum of all gross payments made in that month.')
+        expect(subject.to_html).to include '"Total hours worked" is a sum of the time it took to complete each gig. The monthly total shows when a payout happened, not when the work was done.'
       end
     end
 

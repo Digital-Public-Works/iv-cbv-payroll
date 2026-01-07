@@ -434,8 +434,7 @@ es:
             definition_total_hours_worked_html: "<strong>“Total de horas trabajadas”</strong> es la suma del tiempo que tomó completar cada trabajo. El total del mes muestra cuándo ocurrió un pago, no cuándo se realizó el trabajo."
             definition_verified_mileage_expenses: Los gastos de millaje verificados son los gastos relacionados con el vehículo basados en las millas conducidas y registradas en la plataforma/aplicación. Las millas conducidas se multiplican por la tarifa de gasto de millaje definida por el IRS ($0.70 por milla en 2025). Esta tarifa incluye gasolina, pagos por el vehículo (compra o renta), seguro del vehículo, reparaciones y mantenimiento.
             definition_verified_mileage_expenses_html: "<strong>“Gastos de millaje verificados”</strong> son los gastos relacionados con el vehículo basados en las millas conducidas y registradas en la plataforma/aplicación. Las millas conducidas se multiplican por la tarifa de gasto de millaje definida por el IRS ($0.70 por milla en 2025). Esta tarifa incluye gasolina, pagos por el vehículo (compra o renta), seguro del vehículo, reparaciones y mantenimiento."
-            what_does_this_mean: "¿Qué significa esta información?"
-            what_does_this_mean_report_view: ¿Qué significa la información en la tabla "Resumen mensual"?
+            what_does_this_mean: ¿Qué significa la información en la tabla "Resumen mensual"?
         dollars_times_miles: "(%{dollar_amount} x %{number_of_miles} millas)"
         month: Mes
         monthly_summary: Resumen mensual
