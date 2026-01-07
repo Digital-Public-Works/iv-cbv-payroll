@@ -352,4 +352,33 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
       end
     end
   end
+
+  describe 'valid fixture: valid identity, valid employer, gig worker, no paystubs' do
+    let(:argyle_service) { instance_double(Aggregators::Sdk::ArgyleService) }
+    let(:payroll_account) { create(:payroll_account, :argyle_fully_synced) }
+    let(:argyle_report) do
+      described_class.new(
+        payroll_accounts: [ payroll_account ],
+        argyle_service: argyle_service,
+        days_to_fetch_for_w2: days_ago_to_fetch,
+        days_to_fetch_for_gig: days_ago_to_fetch
+      )
+    end
+
+    it 'A gig with valid identity and employer is valid even with no paystubs' do
+      identities_json = argyle_load_relative_json_file('masked_prod_gig_validation_pass', 'request_identity.json')
+      empty_response = { "results" => [] }
+
+      allow(argyle_service).to receive(:fetch_identities_api).and_return(identities_json)
+      allow(argyle_service).to receive(:fetch_paystubs_api).and_return(empty_response)
+      allow(argyle_service).to receive(:fetch_account_api).and_return(empty_response)
+      allow(argyle_service).to receive(:fetch_gigs_api).and_return(empty_response)
+
+      argyle_report.fetch
+
+      expect(argyle_report.valid?(:useful_report)).to be true
+
+      expect(argyle_report.errors.full_messages).to be_empty
+    end
+  end
 end
