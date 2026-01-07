@@ -8,8 +8,10 @@ module ReportViewHelper
     case year
     when 2024
       67
-    else
+    when 2025
       70
+    else
+      72.5
     end
   end
 
