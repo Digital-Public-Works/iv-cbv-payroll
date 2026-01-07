@@ -346,9 +346,12 @@ input#invitation_link {
 
 .yellow-highlight-label {
   background-color: #FEE685;
-  padding-left: 12px;;
-  padding-right: 1rem;
+  padding: .5rem;
   border-radius: 2px;
+}
+
+.font-size-pdf-header-tag {
+  font-size: font-size('sans', 7);
 }
 
 /*
