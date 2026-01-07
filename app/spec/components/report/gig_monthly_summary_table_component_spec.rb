@@ -159,14 +159,14 @@ RSpec.describe Report::GigMonthlySummaryTableComponent, type: :component do
         expect(subject.css("tbody tr:nth-child(3) td:nth-child(3)").to_html).to include "$91.70"
         expect(subject.css("tbody tr:nth-child(3) td:nth-child(3)").to_html).to include "($0.70 x 131 miles)"
       end
-      
+
       it "emphasizes 'Definition names' in the explanation" do
         subject = render_inline(described_class.new(argyle_report, payroll_account))
         expect(subject.css('ul.usa-list li strong').text).to include('Accrued gross earnings')
         expect(subject.css('ul.usa-list li strong').text).to include('Verified mileage expenses')
         expect(subject.css('ul.usa-list li strong').text).to include('Total hours worked')
       end
-  
+
 
       it "renders the Total hours worked column with correct summation" do
         subject = render_inline(described_class.new(argyle_report, payroll_account))
