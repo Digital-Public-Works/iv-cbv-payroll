@@ -46,36 +46,18 @@ module Aggregators::AggregatorReports
       @has_fetched = all_successful
     end
 
-    AccountReportStruct = Struct.new(:identity, :income, :employment, :paystubs, :gigs) do
-      include ActiveModel::Validations
-
-      validates_with Aggregators::Validators::UsefulReportValidator, on: :useful_report
-
-      def identities
-        identity ? [ identity ] : []
-      end
-
-      def incomes
-        income ? [ income ] : []
-      end
-
-      def employments
-        employment ? [ employment ] : []
-      end
-    end
-
     def find_account_report(account_id)
       account_employment = pick_employment(@employments, @paystubs, account_id)
       employment_filter = employment_filter_for(account_id, account_employment&.employment_matching_id)
 
       # Note that, once we filter by employment match, we do not yet have a good solution for displaying multiple
       # incomes or identities at this time. We just take the first.
-      AccountReportStruct.new(
-        @identities.filter(&employment_filter).first,
-        @incomes.filter(&employment_filter).first,
-        account_employment,
-        @paystubs.filter(&employment_filter),
-        @gigs.find_all { |gig| gig.account_id == account_id }
+      AccountReport.new(
+        identity: @identities.filter(&employment_filter).first,
+        income: @incomes.filter(&employment_filter).first,
+        employment: account_employment,
+        paystubs: @paystubs.filter(&employment_filter),
+        gigs: @gigs.find_all { |gig| gig.account_id == account_id }
       )
     end
 
