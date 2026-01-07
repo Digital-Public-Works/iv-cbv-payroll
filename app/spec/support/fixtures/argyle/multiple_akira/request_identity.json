@@ -1,0 +1,54 @@
+{
+  "results": [
+    {
+      "id": "bba44052-3385-3820-8c4d-c03e7caf4792",
+      "account": "019b452d-2aaa-661f-ba79-6903bffe6079",
+      "address": {
+        "city": "Lakewood",
+        "line1": "123 Main St",
+        "line2": "Apt 200",
+        "state": "CO",
+        "country": "US",
+        "postal_code": "80226-3180"
+      },
+      "first_name": "Akira",
+      "last_name": "Kaneda",
+      "full_name": "Akira Kaneda",
+      "birth_date": "07-16-1988",
+      "email": "akira@neotokyo.com",
+      "phone_number": "+13334445555",
+      "picture_url": null,
+      "employment_status": "terminated",
+      "employment_type": "full-time",
+      "job_title": "OPS1 - Driver",
+      "ssn": "111-22-3333",
+      "marital_status": null,
+      "gender": "Female",
+      "hire_date": "2022-07-18",
+      "original_hire_date": "2022-07-18",
+      "termination_date": "2022-08-12",
+      "termination_reason": "Resignation- Forfeit",
+      "employer": "Old ADP Employer, LLC",
+      "base_pay": {
+        "amount": "17.50",
+        "period": "hourly",
+        "currency": "USD"
+      },
+      "pay_cycle": "biweekly",
+      "platform_ids": {
+        "employee_id": "11336",
+        "position_id": "2UP590195",
+        "platform_user_id": "G3C2N1PC7DDJEUCB"
+      },
+      "created_at": "2025-12-22T08:30:11.560Z",
+      "updated_at": "2025-12-22T08:30:11.560Z",
+      "metadata": {
+        "raw_full_name": "Akira Kaneda",
+        "raw_ssn": "111-22-3333",
+        "raw_employment_pay_cycle": "Biweekly",
+        "raw_employment_type": "Full-Time Regular"
+      },
+      "employment": "0d263318-b983-3a0b-baa8-73e9c6922f3a"
+    }
+  ]
+}

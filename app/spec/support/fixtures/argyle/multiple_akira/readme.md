@@ -1,0 +1,1 @@
+This is an example where we have an employee who has multiple ADP employments, one of which is terminated. This is a use case where we should be pulling the employer name from the first valid paystub instead of the identities object, and is a redacted version of a real situation that happened and produced an incorrect report.
