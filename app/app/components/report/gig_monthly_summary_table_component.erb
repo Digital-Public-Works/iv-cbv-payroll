@@ -54,11 +54,11 @@
 
         <ul class="usa-list">
         <% if request.format.pdf? %><li><%= t("components.report.monthly_summary_table.compact.footnote.definition_self_employment_html") %></li><% end %>
-        <li><%= request.format.pdf? ? t("components.report.monthly_summary_table.compact.footnote.definition_accrued_gross_earnings_html") : t("components.report.monthly_summary_table.compact.footnote.definition_accrued_gross_earnings") %></li>
+        <li><%= t("components.report.monthly_summary_table.compact.footnote.definition_accrued_gross_earnings_html") %></li>
           <% if has_mileage_data? %>
-            <li><%= request.format.pdf? ? t("components.report.monthly_summary_table.compact.footnote.definition_verified_mileage_expenses_html") : t("components.report.monthly_summary_table.compact.footnote.definition_verified_mileage_expenses") %></li>
+            <li><%= t("components.report.monthly_summary_table.compact.footnote.definition_verified_mileage_expenses_html") %></li>
           <% end %>
-        <li><%= request.format.pdf? ? t("components.report.monthly_summary_table.compact.footnote.definition_total_hours_worked_html") : t("components.report.monthly_summary_table.compact.footnote.definition_total_hours_worked") %></li>
+        <li><%= t("components.report.monthly_summary_table.compact.footnote.definition_total_hours_worked_html") %></li>
         </ul>
       </div>
     <% end %>
