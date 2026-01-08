@@ -49,16 +49,16 @@
 
     <% if has_monthly_summary_results? && show_footnote? %>
       <div>
-        <h3><%= request.format.pdf? ? I18n.t("components.report.monthly_summary_table.compact.footnote.what_does_this_mean_report_view") : I18n.t("components.report.monthly_summary_table.compact.footnote.what_does_this_mean") %></h3>
+        <h3><%= request.format.pdf? ? I18n.t("components.report.monthly_summary_table.compact.footnote.what_does_this_mean") : I18n.t("components.report.monthly_summary_table.compact.footnote.what_does_this_mean") %></h3>
         <% if request.format.pdf? %><h4><span class="yellow-highlight-label"><%= t("cbv.submits.show.pdf.client.self_employment") %></span></h4><% end %>
-        
+
         <ul class="usa-list">
         <% if request.format.pdf? %><li><%= t("components.report.monthly_summary_table.compact.footnote.definition_self_employment_html") %></li><% end %>
-        <li><%= request.format.pdf? ? t("components.report.monthly_summary_table.compact.footnote.definition_accrued_gross_earnings_html") : t("components.report.monthly_summary_table.compact.footnote.definition_accrued_gross_earnings") %></li>
+        <li><%= t("components.report.monthly_summary_table.compact.footnote.definition_accrued_gross_earnings_html") %></li>
           <% if has_mileage_data? %>
-            <li><%= request.format.pdf? ? t("components.report.monthly_summary_table.compact.footnote.definition_verified_mileage_expenses_html") : t("components.report.monthly_summary_table.compact.footnote.definition_verified_mileage_expenses")%></li>
+            <li><%= t("components.report.monthly_summary_table.compact.footnote.definition_verified_mileage_expenses_html") %></li>
           <% end %>
-        <li><%= request.format.pdf? ? t("components.report.monthly_summary_table.compact.footnote.definition_total_hours_worked_html") : t("components.report.monthly_summary_table.compact.footnote.definition_total_hours_worked") %></li>
+        <li><%= t("components.report.monthly_summary_table.compact.footnote.definition_total_hours_worked_html") %></li>
         </ul>
       </div>
     <% end %>

@@ -546,15 +546,11 @@ en:
         accrued_gross_earnings: Accrued gross earnings
         compact:
           footnote:
-            definition_accrued_gross_earnings: '"Accrued gross earnings" sums the payments made in that month.'
             definition_accrued_gross_earnings_html: "<strong>“Accrued gross earnings”</strong> is the sum of all gross payments made in that month."
             definition_self_employment_html: "<strong>“Self-employment”</strong> is a label for a self-employed or 1099 contractor job from an online app (like Uber or Doordash). All business expenses should be factored into the total gross income for this job."
-            definition_total_hours_worked: '"Total hours worked" sums the time it took to complete every gig worked in that month. There may be gigs worked in a month that were paid in the following month.'
             definition_total_hours_worked_html: "<strong>“Total hours worked”</strong> is a sum of the time it took to complete each gig. The monthly total shows when a payout happened, not when the work was done."
-            definition_verified_mileage_expenses: '"Verified mileage expenses" uses mileage from the Platform/App. We multiply this by the federal mileage rate ($.70 for 2025), which covers all costs related to a car. These can be costs like gas, car payments or leasing fees, car insurance, repairs, and maintenance.'
             definition_verified_mileage_expenses_html: "<strong>“Verified mileage expenses”</strong> are car-related expenses based on the miles driven and recorded in the Platform/App. This tool multiplies the miles driven by the IRS-defined mileage expense rate ($.70 per mile in 2025). This rate includes gas, car payments or leaseing fees, car insurance, repairs, and maintenance."
-            what_does_this_mean: What does this information mean?
-            what_does_this_mean_report_view: What does the information in the ‘Monthly Summary’ table mean?
+            what_does_this_mean: What does the information in the ‘Monthly Summary’ table mean?
         dollars_times_miles: "(%{dollar_amount} x %{number_of_miles} miles)"
         month: Month
         monthly_summary: Monthly summary

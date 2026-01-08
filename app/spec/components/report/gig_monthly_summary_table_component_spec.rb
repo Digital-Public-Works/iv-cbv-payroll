@@ -160,6 +160,14 @@ RSpec.describe Report::GigMonthlySummaryTableComponent, type: :component do
         expect(subject.css("tbody tr:nth-child(3) td:nth-child(3)").to_html).to include "($0.70 x 131 miles)"
       end
 
+      it "emphasizes 'Definition names' in the explanation" do
+        subject = render_inline(described_class.new(argyle_report, payroll_account))
+        expect(subject.css('ul.usa-list li strong').text).to include('Accrued gross earnings')
+        expect(subject.css('ul.usa-list li strong').text).to include('Verified mileage expenses')
+        expect(subject.css('ul.usa-list li strong').text).to include('Total hours worked')
+      end
+
+
       it "renders the Total hours worked column with correct summation" do
         subject = render_inline(described_class.new(argyle_report, payroll_account))
 
@@ -171,8 +179,8 @@ RSpec.describe Report::GigMonthlySummaryTableComponent, type: :component do
 
       it "renders table caption" do
         subject = render_inline(described_class.new(argyle_report, payroll_account))
-        expect(subject.to_html).to include('"Accrued gross earnings" sums the payments')
-        expect(subject.to_html).to include '"Total hours worked" sums the time'
+        expect(subject.to_html).to include('<strong>“Accrued gross earnings”</strong> is the sum of all gross payments made in that month.')
+        expect(subject.to_html).to include '<strong>“Total hours worked”</strong> is a sum of the time it took to complete each gig. The monthly total shows when a payout happened, not when the work was done.'
       end
 
       it "renders the client-facing payments from text" do
@@ -317,8 +325,8 @@ RSpec.describe Report::GigMonthlySummaryTableComponent, type: :component do
 
       it "renders table caption" do
         subject = render_inline(described_class.new(argyle_report, payroll_account))
-        expect(subject.to_html).to include('"Accrued gross earnings" sums the payments')
-        expect(subject.to_html).to include '"Total hours worked" sums the time'
+        expect(subject.to_html).to include('<strong>“Accrued gross earnings”</strong> is the sum of all gross payments made in that month.')
+        expect(subject.to_html).to include '<strong>“Total hours worked”</strong> is a sum of the time it took to complete each gig. The monthly total shows when a payout happened, not when the work was done.'
       end
     end
 
@@ -373,8 +381,8 @@ RSpec.describe Report::GigMonthlySummaryTableComponent, type: :component do
 
       it "renders table caption" do
         subject = render_inline(described_class.new(argyle_report, payroll_account))
-        expect(subject.to_html).to include('"Accrued gross earnings" sums the payments')
-        expect(subject.to_html).to include '"Total hours worked" sums the time'
+        expect(subject.to_html).to include('<strong>“Accrued gross earnings”</strong> is the sum of all gross payments made in that month.')
+        expect(subject.to_html).to include '<strong>“Total hours worked”</strong> is a sum of the time it took to complete each gig. The monthly total shows when a payout happened, not when the work was done.'
       end
     end
 

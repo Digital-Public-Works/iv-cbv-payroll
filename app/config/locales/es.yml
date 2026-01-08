@@ -427,15 +427,11 @@ es:
         accrued_gross_earnings: Ganancias brutas acumuladas
         compact:
           footnote:
-            definition_accrued_gross_earnings: Las ganancias brutas acumuladas se calculan sumando todos los pagos efectuados en ese mes.
             definition_accrued_gross_earnings_html: "<strong>“Ganancias brutas acumuladas”</strong> es la suma de todos los pagos brutos realizados en ese mes."
             definition_self_employment_html: "<strong>“Empleo independiente”</strong> es una etiqueta para un trabajo por cuenta propia o como contratista 1099 de una aplicación en línea (como Uber o Doordash). La ganancia del empleo independiente se usa al determinar la elegibilidad. La ganancia se calcula así: ganancias brutas menos los costos permitidos del empleo independiente."
-            definition_total_hours_worked: El total de horas trabajadas se calculan sumando el tiempo que demoró en finalizar cada trabajo completado durante ese mes. Es posible que algunos trabajos realizados en un mes que se le hayan pagado en el mes siguiente.
             definition_total_hours_worked_html: "<strong>“Total de horas trabajadas”</strong> es la suma del tiempo que tomó completar cada trabajo. El total del mes muestra cuándo ocurrió un pago, no cuándo se realizó el trabajo."
-            definition_verified_mileage_expenses: Los gastos de millaje verificados se calculan utilizando el millaje de la plataforma o aplicación. Multiplicamos el millaje total por la tarifa federal de millaje ($0.70 para 2025), que cubre todos los costos relacionados con un automóvil. Estos pueden ser costos como gasolina, pagos de automóvil o tarifas de arrendamiento, seguro de automóvil, reparaciones y mantenimiento.
             definition_verified_mileage_expenses_html: "<strong>“Gastos de millaje verificados”</strong> son los gastos relacionados con el vehículo basados en las millas conducidas y registradas en la plataforma/aplicación. Las millas conducidas se multiplican por la tarifa de gasto de millaje definida por el IRS ($0.70 por milla en 2025). Esta tarifa incluye gasolina, pagos por el vehículo (compra o renta), seguro del vehículo, reparaciones y mantenimiento."
-            what_does_this_mean: "¿Qué significa esta información?"
-            what_does_this_mean_report_view: ¿Qué significa la información en la tabla "Resumen mensual"?
+            what_does_this_mean: ¿Qué significa la información en la tabla "Resumen mensual"?
         dollars_times_miles: "(%{dollar_amount} x %{number_of_miles} millas)"
         month: Mes
         monthly_summary: Resumen mensual
