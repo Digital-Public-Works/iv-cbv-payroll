@@ -49,8 +49,13 @@ class Cbv::PreviewController < ApplicationController
     # Set params that the view expects
     params[:user] = { account_id: @payroll_account.aggregator_account_id }
 
-    @payroll_account_report = @aggregator_report.find_account_report(@payroll_account.aggregator_account_id)
-    @is_w2_worker = @payroll_account_report.employment.employment_type == :w2
+    result = Aggregators::AccountReportService.new(@aggregator_report, @payroll_account).validate
+    unless result.valid?
+      return render_as("validation_failures")
+    end
+    @payroll_account_report = result.account_report
+
+    @is_w2_worker = @payroll_account_report.employment&.employment_type == :w2
     @account_comment = account_comment
 
     render_as("payment_details")

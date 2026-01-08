@@ -46,7 +46,7 @@
   <% if @query.present? %>
     <div class="margin-top-5" data-controller="click-tracker" data-click-tracker-page-value="employer_search">
       <h2 class="margin-bottom-2"><%= t("cbv.employer_searches.show.employer_not_listed") %></h2>
-      <%= link_to cbv_flow_missing_results_path, class: "usa-button usa-button--outline width-full", data: { turbo_frame: "_top", action: "click->click-tracker#track", element_type: ClickTracker::ElementType::InternalLink, element_name: "cannot_find_employer", track_event: TrackEvent::ApplicantClickedCannotFindEmployer } do %>
+      <%= link_to cbv_flow_missing_results_path, class: "usa-button usa-button--outline", data: { turbo_frame: "_top", action: "click->click-tracker#track", element_type: ClickTracker::ElementType::InternalLink, element_name: "cannot_find_employer", track_event: TrackEvent::ApplicantClickedCannotFindEmployer } do %>
           <%= t("cbv.employer_searches.show.can_not_find_employer") %>
       <% end %>
     </div>

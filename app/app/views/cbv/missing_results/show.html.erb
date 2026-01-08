@@ -135,11 +135,11 @@
   </div>
 
   <% if @cbv_flow.has_account_with_required_data? %>
-    <%= link_to t(".go_to_income_summary"), next_path, class: "usa-button margin-top-4", data: { action: "click->click-tracker#track", element_type: ClickTracker::ElementType::InternalLink, element_name: "go_to_income_summary", track_event: TrackEvent::ApplicantAccessedIncomeSummary } %>
+    <%= link_to t(".go_to_income_summary"), next_path, class: "usa-button usa-button--outline margin-top-4", data: { action: "click->click-tracker#track", element_type: ClickTracker::ElementType::InternalLink, element_name: "go_to_income_summary", track_event: TrackEvent::ApplicantAccessedIncomeSummary } %>
   <% else %>
     <%= link_to t(".go_to_agency_portal", agency_portal_name: agency_translation("shared.agency_portal_name")),
         current_agency.agency_contact_website,
-        class: "usa-button margin-top-4",
+        class: "usa-button usa-button--outline margin-top-4",
         target: "_blank",
         rel: "noopener noreferrer",
         data: { action: "click->click-tracker#track", element_type: ClickTracker::ElementType::ExternalLink, element_name: "go_to_agency_portal", track_event: TrackEvent::ApplicantAccessedAgencyPortal, context_version: "v2" } %>
