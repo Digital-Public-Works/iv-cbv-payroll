@@ -24,4 +24,14 @@ export default class extends Controller {
   disableSubmit() {
     this.submitButtonTarget.setAttribute("aria-disabled", "true")
   }
+
+  submit(event) {
+    if (this.attestationCheckboxTarget.checked === false) {
+      event.preventDefault()
+
+      this.attestationCheckboxTarget.focus()
+
+      console.log("Form submission blocked: Consent required.")
+    }
+  }
 }
