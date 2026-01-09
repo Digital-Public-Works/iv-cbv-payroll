@@ -20,10 +20,15 @@
     </li>
   </ol>
 
-  <%= form_with(url: cbv_flow_entry_path, builder: UswdsFormBuilder) do |f| %>
-    <%= f.check_box(:agreement, { label: agency_translation(".checkbox", agency_full_name: agency_translation("shared.agency_full_name")), "data-action": "cbv-entry-page#consent", "data-cbv-entry-page-target": "consentCheckbox" }) %>
-    <%= f.submit t(".continue") %>
-  <% end %>
+  <div data-controller="cbv--attestation-check">
+    <%= form_with(url: cbv_flow_entry_path, builder: UswdsFormBuilder) do |f| %>
+      <%= f.check_box(:agreement, { label: agency_translation(".checkbox", agency_full_name: agency_translation("shared.agency_full_name")),
+                                    "data-action": "cbv-entry-page#consent change->cbv--attestation-check#setButton",
+                                    "data-cbv-entry-page-target": "consentCheckbox",
+                                    "data-cbv--attestation-check-target": "attestationCheckbox" }) %>
+      <%= f.submit t(".continue"), { "data-cbv--attestation-check-target": "submitButton" } %>
+    <% end %>
+  </div>
 
   <div class="divider margin-bottom-5"></div>
 
