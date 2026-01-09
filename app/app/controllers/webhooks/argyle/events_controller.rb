@@ -146,7 +146,7 @@ class Webhooks::Argyle::EventsController < ApplicationController
 
       log_sync_finish(payroll_account, report)
 
-      if payroll_account.necessary_jobs_succeeded? && validate_useful_report_requirements(report)
+      if payroll_account.necessary_jobs_succeeded? && validate_useful_report_requirements(report, payroll_account)
         payroll_account.update(synchronization_status: :succeeded)
       else
         payroll_account.update(synchronization_status: :failed)
@@ -302,9 +302,10 @@ class Webhooks::Argyle::EventsController < ApplicationController
     end
   end
 
-  def validate_useful_report_requirements(report)
-    report_is_valid = report.valid?(:useful_report)
-    if report_is_valid
+  def validate_useful_report_requirements(report, payroll_account)
+    result = Aggregators::AccountReportService.new(report, payroll_account).validate
+
+    if result.valid?
       event_logger.track(TrackEvent::ApplicantReportMetUsefulRequirements, request,
         time: Time.now.to_i,
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,
@@ -319,10 +320,11 @@ class Webhooks::Argyle::EventsController < ApplicationController
         cbv_flow_id: @cbv_flow.id,
         device_id: @cbv_flow.device_id,
         invitation_id: @cbv_flow.cbv_flow_invitation_id,
-        errors: report.errors.full_messages.join(", ")
+        errors: result.error_messages
       })
     end
-    report_is_valid
+
+    result.valid?
   end
 
   def update_synchronization_page(payroll_account)

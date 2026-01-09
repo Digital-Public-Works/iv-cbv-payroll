@@ -181,10 +181,10 @@ RSpec.describe Report::PaymentsDeductionsMonthlySummaryComponent, type: :compone
 
       subject { render_inline(described_class.new(argyle_report, payroll_account, is_responsive: true, is_w2_worker: false, income: income)) }
 
-      it "raises an error without the paystubs data" do
-        expect {
-          render_inline(described_class.new(argyle_report, payroll_account, is_responsive: true, is_w2_worker: false, income: income))
-        }.to raise_error(RuntimeError, "No employments found that match account_id 019571bc-2f60-3955-d972-dbadfe0913a8")
+      it "renders without error when no employments match (returns nil employment)" do
+        # When no employments match, pick_employment returns nil instead of raising
+        # The component should still render (gracefully handling nil employment)
+        expect(subject).to be_present
       end
     end
   end
