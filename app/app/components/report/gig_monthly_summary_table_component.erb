@@ -56,8 +56,8 @@
         <% if request.format.pdf? %><li><%= t("components.report.monthly_summary_table.compact.footnote.definition_self_employment_html") %></li><% end %>
         <li><%= t("components.report.monthly_summary_table.compact.footnote.definition_accrued_gross_earnings_html") %></li>
           <% if has_mileage_data? %>
-            <li><%= t("components.report.monthly_summary_table.compact.footnote.definition_verified_mileage_expenses_html") %></li>
-            <em><%= I18n.t("components.report.monthly_summary_table.compact.footnote.mileage_rate_note") %></em>
+            <li><%= t("components.report.monthly_summary_table.compact.footnote.definition_verified_mileage_expenses_html") %>
+              <p><em><%= I18n.t("components.report.monthly_summary_table.compact.footnote.mileage_rate_note") %></em></p></li>
           <% end %>
         <li><%= t("components.report.monthly_summary_table.compact.footnote.definition_total_hours_worked_html") %></li>
         </ul>
