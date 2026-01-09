@@ -122,18 +122,7 @@ All tests output performance metrics including:
     bin/rails 'load_test:cleanup_sessions[sandbox]'
     ```
 
-2. Delete all jobs enqueued within the "default" job queue:
-    ```bash
-    # in top-level of repo
-    bin/ecs-console
-
-    # in the Rails console that opens:
-    > SolidQueue::Queue.new("default").clear
-    ```
-
-3. Resume the "default" queue execution.
-    * https://demo.divt.app/jobs      (un/pw in 1Password)
-
+2. All queues will be cleared by restarting the Moto server that manages our dev SQS queues
 
 ## Developing Locally with K6
 
