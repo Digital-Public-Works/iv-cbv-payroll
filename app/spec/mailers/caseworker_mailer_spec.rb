@@ -71,5 +71,29 @@ RSpec.describe CaseworkerMailer, type: :mailer do
       expect(mail.attachments.any? { |attachment| attachment.filename =~ /\A#{cbv_flow.cbv_applicant.case_number}_\d{14}_income_verification\.pdf\z/ }).to be true
       expect(mail.attachments.first.content_type).to start_with('application/pdf')
     end
+
+    context 'with gig employment' do
+      let(:pinwheel_report) do
+        report = build(:pinwheel_report, :with_pinwheel_account)
+        # Replace the default W2 employment with gig employment
+        report.instance_variable_set(:@employments, [
+          Aggregators::ResponseObjects::Employment.new(
+            account_id: "account1",
+            employer_name: "Uber",
+            start_date: "2020-01-01",
+            termination_date: nil,
+            status: "employed",
+            employment_type: :gig,
+            account_source: "pinwheel_payroll_provider"
+          )
+        ])
+        report
+      end
+
+      it 'attaches a PDF without error' do
+        expect { mail.attachments }.not_to raise_error
+        expect(mail.attachments.first.content_type).to start_with('application/pdf')
+      end
+    end
   end
 end
