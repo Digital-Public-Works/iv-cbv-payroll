@@ -11,6 +11,9 @@ module ReportViewHelper
     when 2025
       70
     else
+      # The 2026 rate introduces a half-cent.  This results in a float value instead of an integer.
+      # If you plan to use this value for more extensive calculations, you will need to consider
+      # how it might be rounded via aggregations.
       72.5
     end
   end
