@@ -69,7 +69,6 @@ export function argyleErrorToTrackingName(errorCode: string): string {
     case "invalid_credentials":
     case "expired_credentials":
     case "full_auth_required":
-    case "passkey_limit_reached":
     case "tos_required":
     case "unsupported_auth_type":
       return "ApplicantEncounteredArgyleAuthenticationError"
@@ -87,11 +86,9 @@ export function argyleErrorToTrackingName(errorCode: string): string {
 
     // Platform Errors - Payroll system unavailable
     case "connection_unavailable":
-    case "ongoing_refresh_disabled":
     case "platform_temporarily_unavailable":
     case "platform_unavailable":
     case "service_unavailable":
-    case "system_error":
     case "auth_method_temporarily_unavailable":
       return "ApplicantEncounteredArgylePlatformError"
 

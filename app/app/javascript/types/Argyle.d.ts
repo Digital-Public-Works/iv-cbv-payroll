@@ -91,7 +91,6 @@ type ArgyleConnectionErrorCode =
   // Limit Errors (6)
   | "all_employers_connected"
   | "login_attempts_exceeded"
-  | "passkey_limit_reached"
   | "session_limit_reached"
   | "trial_connections_exhausted"
   | "trial_period_expired"
