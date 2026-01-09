@@ -98,7 +98,7 @@ RUN set -eux; \
     apt-get install -y --no-install-recommends \
       build-essential \
       git \
-      npm \
+      curl \
       pkg-config \
       libc-dev-bin \
       linux-libc-dev \
@@ -113,6 +113,16 @@ RUN set -eux; \
       perl-modules-5.40 \
     ; \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+
+ENV NODENV_ROOT /opt/nodenv
+ENV PATH "$NODENV_ROOT/bin:$PATH"
+COPY .node-version .
+RUN git clone https://github.com/nodenv/nodenv.git "${NODENV_ROOT}" && \
+    mkdir -p "${NODENV_ROOT}/plugins" && \
+    git clone https://github.com/nodenv/node-build.git "${NODENV_ROOT}/plugins/node-build" && \
+    nodenv install "$(cat .node-version)" -v && \
+    nodenv global "$(cat .node-version)"
+ENV PATH "$NODENV_ROOT/shims:$PATH"
 
 # Copy application code
 COPY . .
