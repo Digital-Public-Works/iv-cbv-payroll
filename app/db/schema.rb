@@ -38,7 +38,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_01_09_203734) do
     t.string "client_agency_id"
     t.jsonb "income_changes"
     t.date "date_of_birth"
-    t.uuid "case_guid"
     t.string "doc_id"
   end
 
