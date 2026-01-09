@@ -120,8 +120,8 @@ COPY .node-version .
 RUN git clone https://github.com/nodenv/nodenv.git "${NODENV_ROOT}" && \
     mkdir -p "${NODENV_ROOT}/plugins" && \
     git clone https://github.com/nodenv/node-build.git "${NODENV_ROOT}/plugins/node-build" && \
-    nodenv install $(cat .node-version) -v && \
-    nodenv global $(cat .node-version)
+    nodenv install "$(cat .node-version)" -v && \
+    nodenv global "$(cat .node-version)"
 ENV PATH "$NODENV_ROOT/shims:$PATH"
 
 # Copy application code
