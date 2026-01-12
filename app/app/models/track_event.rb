@@ -39,6 +39,7 @@ module TrackEvent
   ApplicantDownloadedIncomePDF = "ApplicantDownloadedIncomePDF"
   ApplicantEncounteredArgyleAccountCallbackError = "ApplicantEncounteredArgyleAccountCallbackError"
   ApplicantEncounteredArgyleAccountError = "ApplicantEncounteredArgyleAccountError"
+  ApplicantEncounteredArgyleSystemError = "ApplicantEncounteredArgyleSystemError"
   ApplicantEncounteredArgyleAccountStateError = "ApplicantEncounteredArgyleAccountStateError"
   ApplicantEncounteredArgyleAccountSystemError = "ApplicantEncounteredArgyleAccountSystemError"
   ApplicantEncounteredArgyleAuthenticationError = "ApplicantEncounteredArgyleAuthenticationError"
