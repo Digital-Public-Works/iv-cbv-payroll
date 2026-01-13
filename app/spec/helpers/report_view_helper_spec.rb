@@ -22,6 +22,28 @@ RSpec.describe ReportViewHelper, type: :helper do
     end
   end
 
+  describe '#format_money_with_subcents' do
+    it "formats full cent values with 2 decimal precision" do
+      expect(helper.format_money_with_subcents(70)).to eq("$0.70")
+    end
+
+    it "formats half-cent values with 3 decimal precision" do
+      expect(helper.format_money_with_subcents(72.5)).to eq("$0.725")
+    end
+
+    it "formats whole dollar amounts with 2 decimal precision" do
+      expect(helper.format_money_with_subcents(100)).to eq("$1.00")
+    end
+
+    it "formats zero with 2 decimal precision" do
+      expect(helper.format_money_with_subcents(0)).to eq("$0.00")
+    end
+
+    it "formats quarter-cent values with 3 decimal precision" do
+      expect(helper.format_money_with_subcents(67.5)).to eq("$0.675")
+    end
+  end
+
 
   describe '#translate_aggregator_value' do
     around do |ex|
