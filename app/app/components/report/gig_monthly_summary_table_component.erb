@@ -52,11 +52,12 @@
         <h3><%= request.format.pdf? ? I18n.t("components.report.monthly_summary_table.compact.footnote.what_does_this_mean") : I18n.t("components.report.monthly_summary_table.compact.footnote.what_does_this_mean") %></h3>
         <% if request.format.pdf? %><h4><span class="yellow-highlight-label"><%= t("cbv.submits.show.pdf.client.self_employment") %></span></h4><% end %>
 
-        <ul class="usa-list">
+        <ul class="usa-list usa-list--explainer">
         <% if request.format.pdf? %><li><%= t("components.report.monthly_summary_table.compact.footnote.definition_self_employment_html") %></li><% end %>
         <li><%= t("components.report.monthly_summary_table.compact.footnote.definition_accrued_gross_earnings_html") %></li>
           <% if has_mileage_data? %>
-            <li><%= t("components.report.monthly_summary_table.compact.footnote.definition_verified_mileage_expenses_html") %></li>
+            <li><%= t("components.report.monthly_summary_table.compact.footnote.definition_verified_mileage_expenses_html") %>
+              <p><em><%= I18n.t("components.report.monthly_summary_table.compact.footnote.mileage_rate_note") %></em></p></li>
           <% end %>
         <li><%= t("components.report.monthly_summary_table.compact.footnote.definition_total_hours_worked_html") %></li>
         </ul>
