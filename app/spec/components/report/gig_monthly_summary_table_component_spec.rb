@@ -448,7 +448,7 @@ end
       it "renders the 2026 mileage rate ($0.725/mile) for January 2026" do
         # January 2026: 50 + 30 + 20 = 100 miles at $0.725/mile = $72.50
         expect(subject.css("tbody tr:nth-child(1) td:nth-child(3)").to_html).to include "$72.50"
-        expect(subject.css("tbody tr:nth-child(1) td:nth-child(3)").to_html).to include "($0.73 x 100 miles)"
+        expect(subject.css("tbody tr:nth-child(1) td:nth-child(3)").to_html).to include "($0.725 x 100 miles)"
       end
 
       it "renders the 2025 mileage rate ($0.70/mile) for December 2025" do
