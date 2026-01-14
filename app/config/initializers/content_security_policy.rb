@@ -27,7 +27,12 @@ Rails.application.configure do
     # styles is acceptable as style injection is lower risk than script injection.
     policy.style_src :self, :unsafe_inline
 
-    # Report CSP violations to New Relic
+    # Report CSP violations to New Relic via csp_reports_controller
+    #
+    # NOTE: report-uri is deprecated in favor of report-to, but report-to
+    # requires a separate Reporting-Endpoints HTTP header and has limited
+    # browser support.
+    # See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/report-uri
     policy.report_uri "/csp-reports"
   end
 
