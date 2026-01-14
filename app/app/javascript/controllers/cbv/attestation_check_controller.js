@@ -30,11 +30,4 @@ export default class extends Controller {
     this.submitButtonTarget.setAttribute("aria-disabled", "true")
     this.submitButtonTarget.disabled = true
   }
-
-  submit(event) {
-    if (this.attestationCheckboxTarget.checked === false) {
-      event.preventDefault()
-      this.attestationCheckboxTarget.focus()
-    }
-  }
 }

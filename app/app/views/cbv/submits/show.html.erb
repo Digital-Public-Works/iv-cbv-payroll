@@ -22,7 +22,7 @@
                                                   }
     } %>
     <%= f.submit t(".share_report_button", agency_acronym: agency_translation("shared.agency_acronym")),
-         data: { cbv_attestation_check_target: "submitButton", action: "click->cbv-attestation-check#submit" },
+         data: { cbv_attestation_check_target: "submitButton" },
          class: "btn btn-primary usa-button margin-top-5 margin-bottom-2" %>
     <%= button_tag t("back"),
         type: "button",

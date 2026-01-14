@@ -60,13 +60,6 @@ describe("AttestationCheckController", () => {
       expect(submitButton.disabled).toBe(false)
       expect(submitButton.getAttribute("aria-disabled")).toBe("false")
     })
-
-    it("does not prevent the default action of the button", () => {
-      const clickEvent = createClickEvent()
-      submitButton.dispatchEvent(clickEvent)
-
-      expect(clickEvent.preventDefault).not.toHaveBeenCalled()
-    })
   })
 
   describe("when checkbox is unchecked", () => {
@@ -81,14 +74,6 @@ describe("AttestationCheckController", () => {
     it("disables the submit button", () => {
       expect(submitButton.disabled).toBe(true)
       expect(submitButton.getAttribute("aria-disabled")).toBe("true")
-    })
-
-    it("prevents the default action of the button and focuses on the checkbox", () => {
-      const clickEvent = createClickEvent()
-      submitButton.dispatchEvent(clickEvent)
-
-      expect(clickEvent.preventDefault).toHaveBeenCalled()
-      expect(document.activeElement).toBe(checkBox)
     })
   })
 })
