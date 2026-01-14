@@ -74,3 +74,5 @@ translation_update.csv
 /app/analytics/.ipynb_checkpoints
 /app/analytics/__pycache__/
 /app/analytics/*.json
+
+*/Procfile*.local
