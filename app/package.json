@@ -42,9 +42,6 @@
     "nanoid": "^5.0.9"
   },
   "overrides": {
-    "semver": ">= 7.5.2",
-    "@csstools/postcss-sass": {
-      "@csstools/sass-import-resolve": "github:rahearn/sass-import-resolve"
-    }
+    "semver": ">= 7.5.2"
   }
 }
