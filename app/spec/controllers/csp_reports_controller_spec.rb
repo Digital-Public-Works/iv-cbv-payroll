@@ -37,7 +37,7 @@ RSpec.describe CspReportsController, type: :controller do
       end
 
       it 'logs the violation to Rails logger' do
-        expect(Rails.logger).to receive(:fatal).with(
+        expect(Rails.logger).to receive(:warn).with(
           "[CSP Violation] style-src 'self' - blocked: inline"
         )
 

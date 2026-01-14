@@ -21,7 +21,7 @@ class CspReportsController < ApplicationController
     })
 
     # Also log to Rails logger for visibility
-    Rails.logger.fatal("[CSP Violation] #{report['violated-directive']} - blocked: #{report['blocked-uri']}")
+    Rails.logger.warn("[CSP Violation] #{report['violated-directive']} - blocked: #{report['blocked-uri']}")
 
     head :no_content
   end
