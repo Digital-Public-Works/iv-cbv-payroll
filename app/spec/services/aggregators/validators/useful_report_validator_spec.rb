@@ -428,6 +428,68 @@ RSpec.describe Aggregators::Validators::UsefulReportValidator do
       end
     end
 
+    context 'with paystub that has nil hours and no gross pay' do
+      let(:paystub_nil_hours_no_gross_pay) do
+        Aggregators::ResponseObjects::Paystub.new(
+          account_id: "123",
+          gross_pay_amount: 0.0,
+          net_pay_amount: 0.0,
+          gross_pay_ytd: 0.0,
+          pay_period_start: "2022-12-01",
+          pay_period_end: "2022-12-31",
+          pay_date: "2023-01-01",
+          deductions: [],
+          hours_by_earning_category: {},
+          hours: nil
+        )
+      end
+
+      let(:identities) { [ valid_identity ] }
+      let(:employments) { [ valid_employment ] }
+      let(:paystubs) { [ paystub_nil_hours_no_gross_pay ] }
+
+      it 'does not raise an error when hours is nil' do
+        expect { report.valid?(:useful_report) }.not_to raise_error
+      end
+
+      it 'is invalid when paystub has nil hours and no gross pay' do
+        expect(report).not_to be_valid(:useful_report)
+        expect(report.errors[:base]).to include(
+          /Report did not meet minimum criteria for useful reports/
+        )
+      end
+    end
+
+    context 'with paystub that has nil hours but has gross pay' do
+      let(:paystub_nil_hours_with_gross_pay) do
+        Aggregators::ResponseObjects::Paystub.new(
+          account_id: "123",
+          gross_pay_amount: 1000.0,
+          net_pay_amount: 800.0,
+          gross_pay_ytd: 12000.0,
+          pay_period_start: "2022-12-01",
+          pay_period_end: "2022-12-31",
+          pay_date: "2023-01-01",
+          deductions: [],
+          hours_by_earning_category: {},
+          hours: nil
+        )
+      end
+
+      let(:identities) { [ valid_identity ] }
+      let(:employments) { [ valid_employment ] }
+      let(:paystubs) { [ paystub_nil_hours_with_gross_pay ] }
+
+      it 'does not raise an error when hours is nil' do
+        expect { report.valid?(:useful_report) }.not_to raise_error
+      end
+
+      it 'is valid when paystub has gross pay even with nil hours' do
+        expect(report).to be_valid(:useful_report)
+        expect(report.errors).to be_empty
+      end
+    end
+
     context 'furloughed with fully terminated employment' do
       let(:identities) { [ valid_identity ] }
       let(:employments) { [ fully_terminated_employment ] }
