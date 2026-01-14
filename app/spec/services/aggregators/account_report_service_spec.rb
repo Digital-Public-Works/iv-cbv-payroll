@@ -103,6 +103,64 @@ RSpec.describe Aggregators::AccountReportService do
       end
     end
 
+    context 'with an invalid report' do
+      let(:account_id) { 'empty-account-id' }
+      let!(:payroll_account) do
+        create(
+          :payroll_account,
+          :argyle_fully_synced,
+          cbv_flow: cbv_flow,
+          aggregator_account_id: account_id
+        )
+      end
+      let(:report) do
+        Aggregators::AggregatorReports::ArgyleReport.new(
+          payroll_accounts: [ payroll_account ],
+          argyle_service: argyle_service,
+          days_to_fetch_for_w2: 90,
+          days_to_fetch_for_gig: 90
+        )
+      end
+
+      before do
+        argyle_stub_request_identities_response("empty")
+        argyle_stub_request_paystubs_response("empty")
+        argyle_stub_request_gigs_response("empty")
+        argyle_stub_request_account_response("empty")
+        report.fetch
+      end
+
+      it 'sends an event to New Relic' do
+        expect(NewRelic::Agent).to receive(:record_custom_event).with(
+          TrackEvent::ApplicantReportAttemptedUsefulRequirements,
+          {
+            time: anything,
+            cbv_applicant_id: cbv_flow.cbv_applicant_id,
+            cbv_flow_id: payroll_account.cbv_flow_id,
+            device_id: cbv_flow.device_id,
+            invitation_id: cbv_flow.cbv_flow_invitation_id
+          }
+        )
+
+        expect(NewRelic::Agent).to receive(:record_custom_event).with(
+          TrackEvent::ApplicantReportFailedUsefulRequirements,
+          {
+            time: anything,
+            cbv_applicant_id: cbv_flow.cbv_applicant_id,
+            cbv_flow_id: payroll_account.cbv_flow_id,
+            device_id: cbv_flow.device_id,
+            invitation_id: cbv_flow.cbv_flow_invitation_id,
+            errors: "Identities No identities present, Employments No employments present"
+          }
+        )
+
+        service = described_class.new(report, payroll_account)
+        result = service.validate
+
+        expect(result.errors).not_to be_empty
+      end
+    end
+
     context 'with mismatched account_id' do
       let(:account_id) { 'wrong-account-id' }
       let!(:payroll_account) do
