@@ -1,5 +1,5 @@
 class CspReportsController < ApplicationController
-  skip_before_action :verify_authenticity_token
+  protect_from_forgery with: :null_session
   skip_before_action :redirect_if_maintenance_mode
 
   def create

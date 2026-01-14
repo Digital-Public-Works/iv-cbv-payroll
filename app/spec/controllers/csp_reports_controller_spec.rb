@@ -96,10 +96,10 @@ RSpec.describe CspReportsController, type: :controller do
       end
     end
 
-    it 'does not require CSRF token' do
+    it 'handles missing CSRF token gracefully via null_session' do
       # Browsers send CSP reports without CSRF tokens
-      allow(controller).to receive(:verify_authenticity_token).and_call_original
-
+      # Using protect_from_forgery with: :null_session allows the request
+      # to proceed with a nullified session instead of raising an exception
       post :create, body: valid_csp_report.to_json
 
       expect(response).to have_http_status(:no_content)
