@@ -36,12 +36,10 @@
     "vite": "^7.3.0",
     "vitest": "^4.0.16"
   },
-  "resolutions": {
-    "@csstools/postcss-sass/@csstools/sass-import-resolve": "https://github.com/rahearn/sass-import-resolve",
-    "semver": ">= 7.5.2",
-    "nanoid": "^5.0.9"
-  },
   "overrides": {
-    "semver": ">= 7.5.2"
+    "semver": ">= 7.5.2",
+    "@csstools/postcss-sass": {
+      "@csstools/sass-import-resolve": "github:rahearn/sass-import-resolve"
+    }
   }
 }
