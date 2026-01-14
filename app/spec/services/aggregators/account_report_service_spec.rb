@@ -130,7 +130,7 @@ RSpec.describe Aggregators::AccountReportService do
         report.fetch
       end
 
-      it 'sends an event to New Relic' do
+      it 'sends events to New Relic' do
         expect(NewRelic::Agent).to receive(:record_custom_event).with(
           TrackEvent::ApplicantReportAttemptedUsefulRequirements,
           {
