@@ -7,6 +7,10 @@ export default class extends Controller {
     this.setButton()
   }
 
+  disconnect() {
+    this.disableSubmit()
+  }
+
   setButton() {
     const isChecked = this.attestationCheckboxTarget.checked
 
