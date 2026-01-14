@@ -28,7 +28,8 @@
                                     data: {
                                       action: "cbv-entry-page#consent change->cbv-attestation-check#setButton",
                                       cbv_entry_page_target: "consentCheckbox",
-                                      cbv_attestation_check_target: "attestationCheckbox"
+                                      cbv_attestation_check_target: "attestationCheckbox",
+                                      testid: "attestation-checkbox"
                                     }
       }) %>
       <%= f.submit t(".continue"), { "data-cbv-attestation-check-target": "submitButton" } %>

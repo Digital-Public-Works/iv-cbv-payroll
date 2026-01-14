@@ -20,7 +20,7 @@ RSpec.describe "Help Features", type: :feature, js: true do
     before do
       visit URI(cbv_flow_invitation.to_url).request_uri
       verify_page(page, title: I18n.t("cbv.entries.show.header", agency_full_name: I18n.t("shared.agency_full_name.sandbox")))
-      find("label", class: "usa-checkbox__label").click
+      find("[data-testid='attestation-checkbox']").click
       click_button I18n.t("cbv.entries.show.continue")
     end
 
