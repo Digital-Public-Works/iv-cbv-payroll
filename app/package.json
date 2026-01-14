@@ -19,10 +19,10 @@
   },
   "scripts": {
     "build": "esbuild app/javascript/*.* --bundle --sourcemap --outdir=app/assets/builds --public-path=assets",
-    "build:sass": "sass ./app/assets/stylesheets/application.scss:./app/assets/builds/application.compiled.css --load-path=node_modules/@uswds/uswds/packages --quiet-deps",
-    "build:postcss": "postcss ./app/assets/builds/application.compiled.css -o ./app/assets/builds/application.css",
+    "build:sass": "sass ./app/assets/stylesheets/application.scss:./app/assets/builds/application.css --load-path=node_modules/@uswds/uswds/packages --quiet-deps",
+    "build:postcss": "postcss ./app/assets/builds/application.css -o ./app/assets/builds/application.css",
     "build:css": "npm run build:sass && npm run build:postcss",
-    "build:css:watch": "sass ./app/assets/stylesheets/application.scss:./app/assets/builds/application.css --load-path=node_modules/@uswds/uswds/packages --quiet-deps --watch",
+    "build:css:watch": "npm run build:sass -- --watch",
     "test": "vitest",
     "format": "prettier --write \"app/javascript/**/*.{js,jsx,ts,tsx}\" \"spec/javascript/**/*.{js,jsx,ts,tsx}\"",
     "format:precommit": "prettier --write",
