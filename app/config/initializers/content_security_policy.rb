@@ -22,18 +22,18 @@ Rails.application.configure do
     policy.worker_src :self, "blob:"
     policy.frame_src :self, "https://cdn.getpinwheel.com"
 
-    # Allow <style> tags used by Aggregator SDKs by explicitly allowing their
-    # hashes.
+    # Argyle and Pinwheel SDKs inject dynamic inline styles that change across
+    # versions, making hash-based CSP impractical. Using 'unsafe-inline' for
+    # styles is acceptable as style injection is lower risk than script injection.
+    policy.style_src :self, :unsafe_inline
+
+    # Report CSP violations to New Relic via csp_reports_controller
     #
-    # When upgrading Pinwheel or Argyle JS SDKs, update these hashes by
-    # attempting to open each modal. If the <style> tag has changed, and we
-    # need to update the hash, then the JS console will show you the new hashes
-    # when it blocks adding the <style> tag to the page.
-    #
-    # The error will say "Refused ... Either ... a hash ('sha256-[blahblah]') ...
-    # is required." Replace the hash value(s) here from that message.
-    policy.style_src :self,
-      "'unsafe-inline'"
+    # NOTE: report-uri is deprecated in favor of report-to, but report-to
+    # requires a separate Reporting-Endpoints HTTP header and has limited
+    # browser support.
+    # See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/report-uri
+    policy.report_uri "/csp-reports"
   end
 
   #
