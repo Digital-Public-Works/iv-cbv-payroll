@@ -1,0 +1,208 @@
+{
+  "results": [
+    {
+      "id": "9d900f74-f90c-3208-9e0b-f19b5fb84e12",
+      "account": "019b452d-2aaa-661f-ba79-6903bffe6079",
+      "payroll_document": "019b452e-2877-f38b-6d53-a8a7e8b527eb",
+      "deduction_list": [],
+      "filing_status": [
+        {
+          "type": "federal",
+          "location": null,
+          "status": "single"
+        }
+      ],
+      "tax_list": [
+        {
+          "amount": "31.23",
+          "name": "Social Security Tax",
+          "type": "fica",
+          "amount_ytd": "362.23"
+        },
+        {
+          "amount": "7.23",
+          "name": "Medicare Tax",
+          "type": "fica",
+          "amount_ytd": "84.23"
+        },
+        {
+          "amount": "15.23",
+          "name": "PA State Income Tax",
+          "type": "state",
+          "amount_ytd": "179.23"
+        },
+        {
+          "amount": "2.23",
+          "name": "Lower Macung Local Svc Tax",
+          "type": "other",
+          "amount_ytd": "22.23"
+        },
+        {
+          "amount": "0.23",
+          "name": "PA SUI Tax",
+          "type": "state",
+          "amount_ytd": "4.23"
+        },
+        {
+          "amount": null,
+          "name": "Federal Income Tax",
+          "type": "federal",
+          "amount_ytd": "59.12"
+        }
+      ],
+      "status": "completed",
+      "paystub_date": "2025-12-18T00:00:00Z",
+      "paystub_period": {
+        "start_date": "2025-11-30T00:00:00Z",
+        "end_date": "2025-12-13T00:00:00Z"
+      },
+      "currency": "USD",
+      "gross_pay": "512.32",
+      "deductions": null,
+      "taxes": "63.85",
+      "net_pay": "448.47",
+      "reimbursements": null,
+      "hours": "32.02",
+      "fees": null,
+      "net_pay_ytd": null,
+      "gross_pay_ytd": "5844.64",
+      "metadata": {
+        "raw_type": "checking1",
+        "raw_filing_status_list": [
+          {
+            "type": "federal",
+            "location": null,
+            "status": "Single/Married filing separately"
+          }
+        ],
+        "raw_tax_list": [
+          {
+            "amount": 20.77,
+            "amount_ytd": 362.43,
+            "name": "Social Security Tax",
+            "type": null
+          },
+          {
+            "amount": 7.23,
+            "amount_ytd": 84.23,
+            "name": "Medicare Tax",
+            "type": null
+          },
+          {
+            "amount": 15.23,
+            "amount_ytd": 179.23,
+            "name": "PA State Income Tax",
+            "type": null
+          },
+          {
+            "amount": 2,
+            "amount_ytd": 22,
+            "name": "Lower Macung Local Svc Tax",
+            "type": null
+          },
+          {
+            "amount": 0.23,
+            "amount_ytd": 4.23,
+            "name": "PA SUI Tax",
+            "type": null
+          },
+          {
+            "amount": null,
+            "amount_ytd": 59.23,
+            "name": "Federal Income Tax",
+            "type": null
+          }
+        ],
+        "raw_employer_address_city": "BARRYTOWN",
+        "raw_employer_address_line1": "4325 HAMBO ST.",
+        "raw_employer_address_country": null,
+        "raw_employee_address_city": "BARRYTOWN",
+        "raw_employee_address_line1": "123 NORTH WAY BLVD",
+        "raw_employee_address_country": null,
+        "raw_gross_pay_list": [
+          {
+            "name": "Regular",
+            "type": null,
+            "start_date": null,
+            "end_date": null,
+            "rate": 16,
+            "hours": 32.23,
+            "hours_ytd": null,
+            "amount": 512.23,
+            "amount_ytd": 5844.23,
+            "excl_from_total": false
+          }
+        ],
+        "raw_status": null
+      },
+      "employer": "HUMBUG HOTEL LLC",
+      "employer_address": {
+        "city": "Barrytown",
+        "state": "PA",
+        "country": "US",
+        "postal_code": "18103",
+        "line1": "4325 Hambo St.",
+        "line2": null
+      },
+      "created_at": "2025-12-22T08:30:11.742Z",
+      "updated_at": "2025-12-22T08:30:24.942Z",
+      "destinations": [
+        {
+          "reference": "Checking1",
+          "amount": "358.23",
+          "ach_deposit_account": {
+            "routing_number": "xxxx xxxx",
+            "account_number": "xxxxxx1111",
+            "bank_name": null
+          },
+          "card": null,
+          "method": "Direct Deposit",
+          "metadata": {}
+        },
+        {
+          "reference": "Savings1",
+          "amount": "78.23",
+          "ach_deposit_account": {
+            "routing_number": "xxxx xxxx",
+            "account_number": "xxxxxxxxxx1111",
+            "bank_name": null
+          },
+          "card": null,
+          "method": "Direct Deposit",
+          "metadata": {}
+        }
+      ],
+      "hours_ytd": null,
+      "deductions_ytd": null,
+      "taxes_ytd": "384.23",
+      "gross_pay_list": [
+        {
+          "name": "Regular",
+          "type": "base",
+          "start_date": null,
+          "end_date": null,
+          "rate": "16.0000",
+          "hours": "32.0200",
+          "amount": "512.23",
+          "hours_ytd": null,
+          "amount_ytd": "5844.23"
+        }
+      ],
+      "gross_pay_list_totals": {
+        "base": {
+          "amount": "512.23",
+          "amount_ytd": "5844.23",
+          "hours": "32.0200",
+          "hours_ytd": null,
+          "rate_implied": "16.0000",
+          "rate_implied_ytd": null
+        },
+        "overtime": null,
+        "commission": null,
+        "bonus": null,
+        "other": null
+      },
+      "employment": null
+    }
+  ]
+}
