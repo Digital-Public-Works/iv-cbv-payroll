@@ -145,4 +145,7 @@ Rails.application.routes.draw do
 
   match "/404", to: "pages#error_404", via: :all
   match "/500", to: "pages#error_500", via: :all
+
+  # CSP violation reporting endpoint
+  post "/csp-reports", to: "csp_reports#create"
 end
