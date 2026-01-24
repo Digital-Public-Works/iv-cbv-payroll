@@ -6,7 +6,7 @@ class Cbv::EmployerSearchesController < Cbv::BaseController
   def show
     @query = search_params[:query]
     @employers = @query.blank? ? [] : provider_search(@query)
-    @has_payroll_account = @cbv_flow.payroll_accounts.any?
+    @has_payroll_account = @cbv_flow.payroll_accounts.kept.any?
     @selected_tab = search_params[:type] || "payroll"
 
     session[:additional_jobs] = nil

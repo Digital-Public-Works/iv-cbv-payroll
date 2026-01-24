@@ -1,5 +1,5 @@
 <% content_for :title, t(".header") %>
-<% job_count = @cbv_flow.payroll_accounts.select(&:sync_succeeded?).count %>
+<% job_count = @cbv_flow.payroll_accounts.kept.select(&:sync_succeeded?).count %>
 
 <div data-controller="scroll-reset click-tracker" data-click-tracker-page-value="missing_results" data-context-jobs-already-added="<%= job_count %>">
 

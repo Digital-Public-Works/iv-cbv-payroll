@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_01_09_203734) do
+ActiveRecord::Schema[7.2].define(version: 2026_01_22_155857) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -88,7 +88,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_01_09_203734) do
     t.string "type", default: "pinwheel", null: false
     t.string "synchronization_status", default: "unknown"
     t.datetime "redacted_at"
+    t.datetime "discarded_at"
     t.index ["cbv_flow_id"], name: "index_payroll_accounts_on_cbv_flow_id"
+    t.index ["discarded_at"], name: "index_payroll_accounts_on_discarded_at"
   end
 
   create_table "solid_queue_recurring_tasks", force: :cascade do |t|

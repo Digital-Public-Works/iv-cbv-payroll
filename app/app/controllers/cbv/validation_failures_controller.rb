@@ -4,7 +4,7 @@ class Cbv::ValidationFailuresController < Cbv::BaseController
 
   def show
     account_id = params[:user][:account_id]
-    @payroll_account = @cbv_flow.payroll_accounts.find_by(aggregator_account_id: account_id)
+    @payroll_account = @cbv_flow.payroll_accounts.kept.find_by(aggregator_account_id: account_id)
 
     # security check - make sure the account_id is associated with the current cbv_flow_id
     if @payroll_account.nil?

@@ -15,11 +15,17 @@ class Webhooks::Argyle::EventsController < ApplicationController
       handle_users_fully_synced.each do |webhook_event|
         process_webhook_event(webhook_event)
       end
+    when "accounts.removed"
+      account_id = params.dig("data", "account")
+      payroll_account = @cbv_flow.payroll_accounts.kept.find_by(type: :argyle, aggregator_account_id: account_id)
+      payroll_account.discard! if payroll_account.present?
+
+      log_data_sync_events(payroll_account, params)
     else
       # All other webhooks have a params["data"]["account"], which we can use
       # to find the account.
       account_id = params.dig("data", "account")
-      payroll_account = @cbv_flow.payroll_accounts.find_or_create_by(type: :argyle, aggregator_account_id: account_id) do |new_payroll_account|
+      payroll_account = @cbv_flow.payroll_accounts.kept.find_or_create_by(type: :argyle, aggregator_account_id: account_id) do |new_payroll_account|
         new_payroll_account.synchronization_status = :in_progress
         new_payroll_account.supported_jobs = Aggregators::Webhooks::Argyle.get_supported_jobs
       end
@@ -45,6 +51,7 @@ class Webhooks::Argyle::EventsController < ApplicationController
     # In the event that a user adds multiple payroll accounts we do not want to
     # record duplicate webhook events
     syncing_payroll_accounts = PayrollAccount::Argyle
+                                 .kept
                                  .awaiting_fully_synced_webhook
                                  .where(cbv_flow: @cbv_flow)
 
@@ -184,6 +191,18 @@ class Webhooks::Argyle::EventsController < ApplicationController
         invitation_id: @cbv_flow.cbv_flow_invitation_id,
         sync_data: "fully_synced",
         sync_duration_seconds: Time.now - payroll_account.sync_started_at,
+        sync_event: params["event"]
+      })
+    elsif params["event"] == "accounts.removed"
+      event_logger.track(TrackEvent::ApplicantRemovedArgyleAccount, request, {
+        time: Time.now.to_i,
+        cbv_applicant_id: @cbv_flow.cbv_applicant_id,
+        cbv_flow_id: @cbv_flow.id,
+        client_agency_id: @cbv_flow.client_agency_id,
+        device_id: @cbv_flow.device_id,
+        invitation_id: @cbv_flow.cbv_flow_invitation_id,
+        sync_data: "n/a",
+        sync_duration_seconds: -1,
         sync_event: params["event"]
       })
     end

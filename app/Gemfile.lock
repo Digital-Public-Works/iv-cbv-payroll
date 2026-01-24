@@ -197,6 +197,8 @@ GEM
       responders
       warden (~> 1.2.3)
     diff-lcs (1.5.1)
+    discard (1.4.0)
+      activerecord (>= 4.2, < 9.0)
     dotenv (2.8.1)
     dotenv-rails (2.8.1)
       dotenv (= 2.8.1)
@@ -609,6 +611,7 @@ DEPENDENCIES
   debug
   device_detector
   devise (~> 4.9)
+  discard (~> 1.4)
   dotenv-rails (~> 2.7)
   erb_lint
   factory_bot (~> 6.5)

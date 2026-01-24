@@ -108,6 +108,15 @@ FactoryBot.define do
                 "available_count" => 2503
               }
             }
+          when "accounts.removed"
+            {
+              "event" => "accounts.removed",
+              "name" => evaluator.user,
+              "data" => {
+                "account" => evaluator.argyle_account_id,
+                "user" => evaluator.argyle_user_id,
+              }
+            }
           when "accounts.updated"
             build_accounts_updated_payload(evaluator)
           else

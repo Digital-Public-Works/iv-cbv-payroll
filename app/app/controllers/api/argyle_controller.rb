@@ -58,7 +58,7 @@ class Api::ArgyleController < ApplicationController
 
     # Find the PayrollAccount object (if we have received an accounts.connected webhook)
     argyle_account = connected_argyle_accounts.first
-    payroll_account = @cbv_flow.payroll_accounts.find_by(aggregator_account_id: argyle_account["id"])
+    payroll_account = @cbv_flow.payroll_accounts.kept.find_by(aggregator_account_id: argyle_account["id"])
     return unless payroll_account.present?
 
     # If we've made it here, there is a previous connection to that item.

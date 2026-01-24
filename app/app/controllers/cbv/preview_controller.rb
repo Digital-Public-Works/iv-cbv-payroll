@@ -18,7 +18,7 @@ class Cbv::PreviewController < ApplicationController
   def employer_search
     @query = params[:query] || ""
     @employers = []
-    @has_payroll_account = @cbv_flow.payroll_accounts.any?
+    @has_payroll_account = @cbv_flow.payroll_accounts.kept.any?
     @selected_tab = params[:type] || "payroll"
 
     render_as("employer_searches")
@@ -37,7 +37,7 @@ class Cbv::PreviewController < ApplicationController
   end
 
   def validation_failures
-    @payroll_account = @cbv_flow.payroll_accounts.first
+    @payroll_account = @cbv_flow.payroll_accounts.kept.first
     # Set params that the view expects
     params[:user] = { account_id: @payroll_account.aggregator_account_id }
 
@@ -45,7 +45,7 @@ class Cbv::PreviewController < ApplicationController
   end
 
   def payment_details
-    @payroll_account = @cbv_flow.payroll_accounts.first
+    @payroll_account = @cbv_flow.payroll_accounts.kept.first
     # Set params that the view expects
     params[:user] = { account_id: @payroll_account.aggregator_account_id }
 
