@@ -114,7 +114,7 @@ FactoryBot.define do
               "name" => evaluator.user,
               "data" => {
                 "account" => evaluator.argyle_account_id,
-                "user" => evaluator.argyle_user_id,
+                "user" => evaluator.argyle_user_id
               }
             }
           when "accounts.updated"

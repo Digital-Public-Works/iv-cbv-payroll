@@ -1,6 +1,6 @@
 class PayrollAccount < ApplicationRecord
   include Discard::Model
-  
+
   def self.sti_name
     # "PayrollAccount::Pinwheel" => "pinwheel"
     name.demodulize.underscore

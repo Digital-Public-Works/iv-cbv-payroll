@@ -559,7 +559,7 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
       end
     end
   end
-  
+
   describe 'when receiving webhooks to remove an Argyle Account' do
     let(:cbv_flow) { create(:cbv_flow, argyle_user_id: "abc-def-ghi") }
     # Use the account ID from the "sarah" fixture so pick_employment can find matching employments
@@ -610,7 +610,7 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
 
       expect(payroll_account.discarded?).to equal(true)
     end
-    
+
     it 'tracks an ApplicantRemovedArgyleAccount event' do
       expect(fake_event_logger).to receive(:track).with(
         TrackEvent::ApplicantRemovedArgyleAccount,

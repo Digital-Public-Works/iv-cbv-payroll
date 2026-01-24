@@ -41,7 +41,7 @@ module Aggregators::Webhooks
         type: :non_partial,
         job: %w[]
       },
-      
+
       "accounts.removed" => {
         status: :success,
         type: :non_partial,

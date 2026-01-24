@@ -146,4 +146,4 @@ gem "aws-sdk-sqs"
 gem "shoryuken"
 
 # Discard for soft deletes
-gem 'discard', '~> 1.4'
+gem "discard", "~> 1.4"
