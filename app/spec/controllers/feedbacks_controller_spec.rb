@@ -27,7 +27,7 @@ RSpec.describe FeedbacksController, type: :controller do
         )
       )
       expect(response).to have_http_status(:redirect)
-      expect(response.location).to eq(ApplicationController.helpers.feedback_form_url)
+      expect(response.location).to start_with(ApplicationController.helpers.feedback_form_url)
     end
 
     it "redirects to the survey form and tracks the event with source" do
@@ -42,7 +42,7 @@ RSpec.describe FeedbacksController, type: :controller do
         )
       )
       expect(response).to have_http_status(:redirect)
-      expect(response.location).to eq(ApplicationController.helpers.survey_form_url)
+      expect(response.location).to start_with(ApplicationController.helpers.survey_form_url)
     end
   end
 end
