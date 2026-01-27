@@ -586,7 +586,7 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
       post :create, params: webhook_request
 
       return unless verify_webhook_event
-      
+
       payroll_account = PayrollAccount.last
       webhook_event = payroll_account.webhook_events.last
 
@@ -625,7 +625,7 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
           sync_event: "accounts.removed"
         )
       )
-      
+
       process_webhook("accounts.updated", variant: :connecting)
       process_webhook("accounts.connected")
       process_webhook("accounts.removed", expected_last_event_type: "accounts.connected", verify_webhook_event: false)
