@@ -34,7 +34,7 @@ namespace :load_test do
 
       # Delete in proper order to avoid foreign key constraint violations
       test_flows.each do |flow|
-        flow.payroll_accounts.kept.each do |account|
+        flow.payroll_accounts.each do |account|
           # Use destroy_all to properly delete webhook events
           account.webhook_events.destroy_all
         end

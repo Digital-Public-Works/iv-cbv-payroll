@@ -108,19 +108,19 @@ RSpec.describe Api::ArgyleController do
 
         before do
           # Update the aggregator_account_id to match the one returned by fetch_accounts_api
-          cbv_flow.payroll_accounts.kept.first.update(aggregator_account_id: argyle_account_id)
+          cbv_flow.payroll_accounts.first.update(aggregator_account_id: argyle_account_id)
         end
 
         it "redirects to the payment_details page" do
           post :create, params: valid_params
 
-          expect(response).to redirect_to(cbv_flow_payment_details_path(user: { account_id: cbv_flow.payroll_accounts.kept.first.aggregator_account_id }))
+          expect(response).to redirect_to(cbv_flow_payment_details_path(user: { account_id: cbv_flow.payroll_accounts.first.aggregator_account_id }))
         end
       end
 
       context "if the payroll sync is in progress" do
         let(:cbv_flow) { create(:cbv_flow, :with_argyle_account, argyle_user_id: argyle_user_id, sync_in_progress: true) }
-        let(:payroll_account) { cbv_flow.payroll_accounts.kept.first }
+        let(:payroll_account) { cbv_flow.payroll_accounts.first }
 
         before do
           # Update the aggregator_account_id to match the one returned by fetch_accounts_api
@@ -156,7 +156,7 @@ RSpec.describe Api::ArgyleController do
           create(:payroll_account, :argyle, cbv_flow: cbv_flow, aggregator_account_id: other_argyle_account_id)
 
           # Make sure the first account ID matches what's returned by the API
-          cbv_flow.payroll_accounts.kept.first.update(aggregator_account_id: argyle_account_id)
+          cbv_flow.payroll_accounts.first.update(aggregator_account_id: argyle_account_id)
         end
 
         it "finds the correct payroll account for the item and redirects accordingly" do

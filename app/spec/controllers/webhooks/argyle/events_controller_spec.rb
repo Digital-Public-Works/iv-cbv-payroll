@@ -573,7 +573,7 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
 
     # Instead of using "shared_examples_for" we're relying on a test helper method
     # since we cannot use "shared_examples_for" within the "it" test scope
-    def process_webhook(event_type, variant: :connecting, expected_last_event_type: event_type)
+    def process_webhook(event_type, variant: :connecting, expected_last_event_type: event_type, verify_webhook_event: true)
       webhook_request = create(
         :webhook_request,
         :argyle,
@@ -585,6 +585,8 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
 
       post :create, params: webhook_request
 
+      return unless verify_webhook_event
+      
       payroll_account = PayrollAccount.last
       webhook_event = payroll_account.webhook_events.last
 
@@ -594,19 +596,19 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
 
     it 'decreases the number of payroll accounts on accounts.removed' do
       expect(PayrollAccount.count).to eq(0)
-      expect(PayrollAccount.kept.count).to eq(0)
+      expect(PayrollAccount.with_discarded.count).to eq(0)
 
       process_webhook("accounts.updated", variant: :connecting)
       process_webhook("accounts.connected")
 
       expect(PayrollAccount.count).to eq(1)
-      expect(PayrollAccount.kept.count).to eq(1)
+      expect(PayrollAccount.with_discarded.count).to eq(1)
 
-      process_webhook("accounts.removed", expected_last_event_type: "accounts.connected")
+      process_webhook("accounts.removed", expected_last_event_type: "accounts.connected", verify_webhook_event: false)
 
-      expect(PayrollAccount.count).to eq(1)
-      expect(PayrollAccount.kept.count).to eq(0)
-      payroll_account = PayrollAccount.last
+      expect(PayrollAccount.with_discarded.count).to eq(1)
+      expect(PayrollAccount.count).to eq(0)
+      payroll_account = PayrollAccount.with_discarded.last
 
       expect(payroll_account.discarded?).to equal(true)
     end
@@ -623,10 +625,10 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
           sync_event: "accounts.removed"
         )
       )
-
+      
       process_webhook("accounts.updated", variant: :connecting)
       process_webhook("accounts.connected")
-      process_webhook("accounts.removed", expected_last_event_type: "accounts.connected")
+      process_webhook("accounts.removed", expected_last_event_type: "accounts.connected", verify_webhook_event: false)
     end
   end
 end

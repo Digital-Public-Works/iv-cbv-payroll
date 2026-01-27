@@ -49,7 +49,7 @@ class DataRetentionService
           cbv_flow.redact!
           cbv_flow.cbv_flow_invitation.redact!
           cbv_flow.cbv_applicant&.redact!
-          cbv_flow.payroll_accounts.each(&:redact!) # Do not scope to kept records, all accounts should be redacted
+          cbv_flow.payroll_accounts.with_discarded.each(&:redact!) # Do not scope to kept records, all accounts should be redacted
         else
           # Redact standalone CbvFlow records some period after their last
           # update.
@@ -62,7 +62,7 @@ class DataRetentionService
 
           cbv_flow.redact!
           cbv_flow.cbv_applicant&.redact!
-          cbv_flow.payroll_accounts.each(&:redact!) # Do not scope to kept records, all accounts should be redacted
+          cbv_flow.payroll_accounts.with_discarded.each(&:redact!) # Do not scope to kept records, all accounts should be redacted
         end
       end
   end
@@ -77,7 +77,7 @@ class DataRetentionService
         cbv_flow.redact!
         cbv_flow.cbv_flow_invitation.redact! if cbv_flow.cbv_flow_invitation.present?
         cbv_flow.cbv_applicant&.redact!
-        cbv_flow.payroll_accounts.each(&:redact!) # Do not scope to kept records, all accounts should be redacted
+        cbv_flow.payroll_accounts.with_discarded.each(&:redact!) # Do not scope to kept records, all accounts should be redacted
       end
   end
 
@@ -91,7 +91,7 @@ class DataRetentionService
       cbv_flow.redact!
       cbv_flow.cbv_flow_invitation.redact! if cbv_flow.cbv_flow_invitation.present?
       cbv_flow.cbv_applicant&.redact!
-      cbv_flow.payroll_accounts.each(&:redact!) # Do not scope to kept records, all accounts should be redacted
+      cbv_flow.payroll_accounts.with_discarded.each(&:redact!) # Do not scope to kept records, all accounts should be redacted
     end
   end
 
@@ -102,7 +102,7 @@ class DataRetentionService
     applicant.redact!
     applicant.cbv_flow_invitations.map(&:redact!)
     applicant.cbv_flows.map(&:redact!)
-    applicant.cbv_flows.each { |cbv_flow| cbv_flow.payroll_accounts.each(&:redact!) } # Do not scope to kept records, all accounts should be redacted
+    applicant.cbv_flows.each { |cbv_flow| cbv_flow.payroll_accounts.with_discarded.each(&:redact!) } # Do not scope to kept records, all accounts should be redacted
   end
 
   # retroactive redaction for case numbers by agency

@@ -25,7 +25,7 @@ class Cbv::SummariesController < Cbv::BaseController
       cbv_applicant_id: cbv_flow.cbv_applicant_id,
       device_id: cbv_flow.device_id,
       invitation_id: cbv_flow.cbv_flow_invitation_id,
-      account_count: cbv_flow.payroll_accounts.kept.count,
+      account_count: cbv_flow.payroll_accounts.count,
       paystub_count: @aggregator_report.paystubs.count,
       account_count_with_additional_information:
         cbv_flow.additional_information.values.count { |info| info["comment"].present? },

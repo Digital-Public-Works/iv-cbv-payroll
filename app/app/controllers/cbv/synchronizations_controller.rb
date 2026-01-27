@@ -32,6 +32,6 @@ class Cbv::SynchronizationsController < Cbv::BaseController
   def set_payroll_account
     account_id = params[:user][:account_id]
 
-    @payroll_account = @cbv_flow.payroll_accounts.kept.find_by(aggregator_account_id: account_id)
+    @payroll_account = @cbv_flow.payroll_accounts.find_by(aggregator_account_id: account_id)
   end
 end

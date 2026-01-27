@@ -41,11 +41,11 @@ class CbvFlow < ApplicationRecord
   end
 
   def accounts_with_required_data
-    payroll_accounts.kept.select(&:sync_succeeded?)
+    payroll_accounts.select(&:sync_succeeded?)
   end
 
   def fully_synced_payroll_accounts
-    payroll_accounts.kept.select { |account| account.has_fully_synced? }
+    payroll_accounts.select { |account| account.has_fully_synced? }
   end
 
   def to_generic_url(origin: nil)

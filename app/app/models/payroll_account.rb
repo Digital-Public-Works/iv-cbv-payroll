@@ -1,5 +1,6 @@
 class PayrollAccount < ApplicationRecord
   include Discard::Model
+  default_scope -> { kept }
 
   def self.sti_name
     # "PayrollAccount::Pinwheel" => "pinwheel"
