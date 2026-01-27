@@ -41,10 +41,10 @@ class FeedbacksController < ApplicationController
         I18n.locale == :es ? es_state_question_field : en_state_question_field => state_value
       }
 
-    query_string = additional_params.map { |k, v | "#{k}=#{ERB::Util.url_encode(v)}" }
+    query_string = additional_params.map { |k, v| "#{k}=#{ERB::Util.url_encode(v)}" }
                                     .join("&")
 
-    "?"+ query_string
+    "?" + query_string
   end
 
   def language_value
@@ -56,7 +56,7 @@ class FeedbacksController < ApplicationController
   end
 
   def state_value
-    case @cbv_flow.client_agency_id
+    case @cbv_flow&.client_agency_id
     when "az_des" then "Arizona"
     when "pa_dhs" then "Pennsylvania"
     else nil
