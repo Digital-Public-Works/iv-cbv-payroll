@@ -559,4 +559,76 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
       end
     end
   end
+
+  describe 'when receiving webhooks to remove an Argyle Account' do
+    let(:cbv_flow) { create(:cbv_flow, argyle_user_id: "abc-def-ghi") }
+    # Use the account ID from the "sarah" fixture so pick_employment can find matching employments
+    let(:argyle_account_id) { '01956d5f-cb8d-af2f-9232-38bce8531f58' }
+    let(:fake_event_logger) { instance_double(GenericEventTracker) }
+
+    before do
+      allow(controller).to receive(:event_logger).and_return(fake_event_logger)
+      allow(fake_event_logger).to receive(:track)
+    end
+
+    # Instead of using "shared_examples_for" we're relying on a test helper method
+    # since we cannot use "shared_examples_for" within the "it" test scope
+    def process_webhook(event_type, variant: :connecting, expected_last_event_type: event_type, verify_webhook_event: true)
+      webhook_request = create(
+        :webhook_request,
+        :argyle,
+        argyle_user_id: cbv_flow.argyle_user_id,
+        argyle_account_id: argyle_account_id,
+        event_type: event_type,
+        variant: variant
+      ).payload
+
+      post :create, params: webhook_request
+
+      return unless verify_webhook_event
+
+      payroll_account = PayrollAccount.last
+      webhook_event = payroll_account.webhook_events.last
+
+      expect(webhook_event.event_name).to eq(expected_last_event_type)
+      expect(webhook_event.payroll_account.aggregator_account_id).to eq(payroll_account.aggregator_account_id)
+    end
+
+    it 'decreases the number of payroll accounts on accounts.removed' do
+      expect(PayrollAccount.count).to eq(0)
+      expect(PayrollAccount.with_discarded.count).to eq(0)
+
+      process_webhook("accounts.updated", variant: :connecting)
+      process_webhook("accounts.connected")
+
+      expect(PayrollAccount.count).to eq(1)
+      expect(PayrollAccount.with_discarded.count).to eq(1)
+
+      process_webhook("accounts.removed", expected_last_event_type: "accounts.connected", verify_webhook_event: false)
+
+      expect(PayrollAccount.with_discarded.count).to eq(1)
+      expect(PayrollAccount.count).to eq(0)
+      payroll_account = PayrollAccount.with_discarded.last
+
+      expect(payroll_account.discarded?).to equal(true)
+    end
+
+    it 'tracks an ApplicantRemovedArgyleAccount event' do
+      expect(fake_event_logger).to receive(:track).with(
+        TrackEvent::ApplicantRemovedArgyleAccount,
+        anything,
+        hash_including(
+          cbv_flow_id: cbv_flow.id,
+          cbv_applicant_id: cbv_flow.cbv_applicant_id,
+          client_agency_id: cbv_flow.client_agency_id,
+          invitation_id: cbv_flow.cbv_flow_invitation_id,
+          sync_event: "accounts.removed"
+        )
+      )
+
+      process_webhook("accounts.updated", variant: :connecting)
+      process_webhook("accounts.connected")
+      process_webhook("accounts.removed", expected_last_event_type: "accounts.connected", verify_webhook_event: false)
+    end
+  end
 end

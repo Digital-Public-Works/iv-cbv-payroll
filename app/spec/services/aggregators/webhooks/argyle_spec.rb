@@ -17,6 +17,7 @@ RSpec.describe Aggregators::Webhooks::Argyle, type: :service do
       %w[
         identities.added
         accounts.connected
+        accounts.removed
         users.fully_synced
         paystubs.fully_synced
         gigs.fully_synced

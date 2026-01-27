@@ -144,3 +144,6 @@ gem "sinatra", "~> 4.2"
 gem "aws-sdk-sqs"
 # Shoryuken for SQS
 gem "shoryuken"
+
+# Discard for soft deletes
+gem "discard", "~> 1.4"
