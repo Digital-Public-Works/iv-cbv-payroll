@@ -33,7 +33,7 @@
     "jsdom": "^24.0.0",
     "prettier": "^3.7.4",
     "vite": "^7.3.0",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.18"
   },
   "overrides": {
     "semver": ">= 7.5.2"
