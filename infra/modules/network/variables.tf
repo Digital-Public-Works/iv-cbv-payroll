@@ -46,6 +46,12 @@ variable "single_nat_gateway" {
   default     = false
 }
 
+variable "enable_vpc_endpoint_interfaces" {
+  type        = bool
+  description = "Whether to create VPC Interface endpoints for accessing AWS services. Set to false to save costs in non-production environments."
+  default     = true
+}
+
 variable "name" {
   type        = string
   description = "Name to give the VPC. Will be added to the VPC under the 'network_name' tag."
