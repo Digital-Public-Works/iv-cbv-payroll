@@ -137,18 +137,18 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgylePlatf
 }
 `;
 
-exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleUndefinedAccountError for account error with no error code 1`] = `
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleSystemError for account error with system error code 1`] = `
 {
   "argyle.connectionStatus": "error",
+  "argyle.errorCode": "system_error",
   "argyle.eventName": "account error - opened",
   "argyle.userId": "test-user-id",
 }
 `;
 
-exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleUnknownError for account error with system error code 1`] = `
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleUndefinedAccountError for account error with no error code 1`] = `
 {
   "argyle.connectionStatus": "error",
-  "argyle.errorCode": "system_error",
   "argyle.eventName": "account error - opened",
   "argyle.userId": "test-user-id",
 }

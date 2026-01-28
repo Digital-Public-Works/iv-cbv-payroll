@@ -263,10 +263,10 @@ describe("ArgyleModalAdapter", () => {
       expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBe("login_attempts_exceeded")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
-    it("logs ApplicantEncounteredArgyleUnknownError for account error with system error code", async () => {
+    it("logs ApplicantEncounteredArgyleSystemError for account error with system error code", async () => {
       await triggers.triggerUIEvent(mockAccountErrorSystemError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
-      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleUnknownError")
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleSystemError")
       expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBe("system_error")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
