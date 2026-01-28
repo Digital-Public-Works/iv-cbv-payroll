@@ -376,7 +376,6 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
     it 'results in a sync failure after receiving "system_error" on accounts.updated' do
       expect(PayrollAccount.count).to eq(0)
 
-      process_webhook("accounts.updated", variant: :invalid_mfa)
       process_webhook("accounts.updated", variant: :connecting)
       process_webhook("accounts.connected")
       process_webhook("accounts.updated", variant: :connected)
@@ -393,10 +392,31 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
       process_webhook("accounts.updated", variant: :system_error)
       payroll_account.reload.webhook_events.reload
 
-      expect(payroll_account.webhook_events.count).to eq(5)
+      expect(payroll_account.webhook_events.count).to eq(4)
       expect(payroll_account.job_status("accounts")).to eq(:failed)
       expect(payroll_account.sync_failed?).to equal(true)
       expect(payroll_account.has_fully_synced?).to be_falsey
+    end
+
+    it 'tracks ApplicantEncounteredArgyleMFAInvalid on accounts.updated with invalid_mfa without failing the account' do
+      process_webhook("accounts.updated", variant: :connecting)
+      process_webhook("accounts.connected")
+      process_webhook("accounts.updated", variant: :connected)
+
+      payroll_account = PayrollAccount.last
+
+      expect(fake_event_logger)
+        .to receive(:track)
+        .with("ApplicantEncounteredArgyleMFAInvalid", anything, hash_including(
+          cbv_flow_id: cbv_flow.id,
+          cbv_applicant_id: cbv_flow.cbv_applicant_id,
+          "argyle.errorCode": "invalid_mfa"
+        ))
+
+      process_webhook("accounts.updated", variant: :invalid_mfa)
+      payroll_account.reload
+
+      expect(payroll_account.sync_failed?).to eq(false)
     end
 
 

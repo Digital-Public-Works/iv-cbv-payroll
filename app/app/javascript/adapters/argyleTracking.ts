@@ -6,7 +6,11 @@ export function namespaceTrackingProperties(
     return {}
   }
   return Object.fromEntries(
-    Object.entries(properties).map(([key, value]) => [`argyle.${key}`, value])
+    Object.entries(properties).map(([key, value]) => {
+      // Normalize connectionErrorCode to errorCode for consistent error tracking
+      const normalizedKey = key === "connectionErrorCode" ? "errorCode" : key
+      return [`argyle.${normalizedKey}`, value]
+    })
   )
 }
 
@@ -71,6 +75,7 @@ export function argyleErrorToTrackingName(errorCode: string): string {
     case "full_auth_required":
     case "tos_required":
     case "unsupported_auth_type":
+    case "passkey_limit_reached":
       return "ApplicantEncounteredArgyleAuthenticationError"
 
     // MFA Errors - Multi-factor authentication issues
@@ -90,6 +95,7 @@ export function argyleErrorToTrackingName(errorCode: string): string {
     case "platform_unavailable":
     case "service_unavailable":
     case "auth_method_temporarily_unavailable":
+    case "ongoing_refresh_disabled":
       return "ApplicantEncounteredArgylePlatformError"
 
     // Account Errors - Account state/configuration issues
@@ -127,6 +133,10 @@ export function argyleErrorToTrackingName(errorCode: string): string {
     case "trial_period_expired":
     case "user_action_timeout":
       return "ApplicantEncounteredArgyleLimitError"
+
+    // System Error - Argyle Encountered an unexpected system error.
+    case "system_error":
+      return "ApplicantEncounteredArgyleSystemError"
 
     // Default to system error for unknown codes
     default:

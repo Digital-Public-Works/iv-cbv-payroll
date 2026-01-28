@@ -96,27 +96,38 @@ class Webhooks::Argyle::EventsController < ApplicationController
     end
   end
 
+  ACCOUNTS_UPDATED_ERROR_EVENTS = {
+    "system_error" => TrackEvent::ApplicantEncounteredArgyleAccountSystemError,
+    "invalid_mfa" => TrackEvent::ApplicantEncounteredArgyleMFAInvalid
+  }.freeze
+
   def process_accounts_updated_event(webhook_event)
     payroll_account = webhook_event.payroll_account
     connection_status = params.dig("data", "resource", "connection", "status")
     error_code = params.dig("data", "resource", "connection", "error_code")
-    return unless connection_status == "error" && error_code == "system_error"
+    track_event = ACCOUNTS_UPDATED_ERROR_EVENTS[error_code]
 
-    event_logger.track(TrackEvent::ApplicantEncounteredArgyleAccountSystemError, request, {
-      time: Time.now.to_i,
-      cbv_applicant_id: @cbv_flow.cbv_applicant_id,
-      cbv_flow_id: @cbv_flow.id,
-      device_id: @cbv_flow.device_id,
-      invitation_id: @cbv_flow.cbv_flow_invitation_id,
-      connection_status: connection_status,
-      argyle_error_code: error_code,
-      argyle_error_message: params.dig("data", "resource", "connection", "error_message"),
-      argyle_error_updated_at: params.dig("data", "resource", "connection", "updated_at")
-    })
+    return unless connection_status == "error"
 
-    webhook_event.update(event_outcome: "error")
-    payroll_account.update(synchronization_status: :failed)
-    update_synchronization_page(payroll_account)
+    if track_event.present?
+      event_logger.track(track_event, request, {
+        time: Time.now.to_i,
+        cbv_applicant_id: @cbv_flow.cbv_applicant_id,
+        cbv_flow_id: @cbv_flow.id,
+        device_id: @cbv_flow.device_id,
+        invitation_id: @cbv_flow.cbv_flow_invitation_id,
+        "argyle.connectionStatus": connection_status,
+        "argyle.errorCode": error_code,
+        "argyle.errorMessage": params.dig("data", "resource", "connection", "error_message"),
+        "argyle.errorUpdatedAt": params.dig("data", "resource", "connection", "updated_at")
+      })
+    end
+
+    if error_code == "system_error"
+      webhook_event.update(event_outcome: "error")
+      payroll_account.update(synchronization_status: :failed)
+      update_synchronization_page(payroll_account)
+    end
   end
 
   def process_partially_synced_event(webhook_event)

@@ -54,6 +54,7 @@ type ArgyleConnectionErrorCode =
   | "full_auth_required"
   | "tos_required"
   | "unsupported_auth_type"
+  | "passkey_limit_reached"
   // MFA Errors (8)
   | "invalid_mfa"
   | "mfa_cancelled_by_the_user"
