@@ -136,28 +136,9 @@ class Webhooks::Argyle::EventsController < ApplicationController
     end
   end
 
-  def process_accounts_failed_event(webhook_event)
-    print("FAILED EVENT:")
-    print(params.inspect)
-    error_code = params.dig("data", "error_code")
-    error_message = params.dig("data", "error_message")
-
-    event_logger.track(TrackEvent::ApplicantEncounteredArgyleAccountsFailure, request, {
-      time: Time.now.to_i,
-      cbv_applicant_id: @cbv_flow.cbv_applicant_id,
-      cbv_flow_id: @cbv_flow.id,
-      device_id: @cbv_flow.device_id,
-      invitation_id: @cbv_flow.cbv_flow_invitation_id,
-      "argyle.errorCode": error_code,
-      "argyle.errorMessage": error_message
-    })
-  end
-
   def process_webhook_event(webhook_event)
     if webhook_event.event_name == "accounts.updated"
       process_accounts_updated_event(webhook_event)
-    elsif webhook_event.event_name == "accounts.failed"
-      process_accounts_failed_event(webhook_event)
     elsif webhook_event.event_name == "gigs.partially_synced" || webhook_event.event_name == "paystubs.partially_synced"
       process_partially_synced_event(webhook_event)
     end
