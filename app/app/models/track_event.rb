@@ -54,6 +54,7 @@ module TrackEvent
   ApplicantEncounteredArgyleLimitError = "ApplicantEncounteredArgyleLimitError"
   ApplicantEncounteredArgyleLinkOpenError = "ApplicantEncounteredArgyleLinkOpenError"
   ApplicantEncounteredArgyleMfaCanceledLoginError = "ApplicantEncounteredArgyleMfaCanceledLoginError"
+  ApplicantEncounteredArgyleMFAInvalid = "ApplicantEncounteredArgyleMFAInvalid"
   ApplicantEncounteredArgyleMfaError = "ApplicantEncounteredArgyleMfaError"
   ApplicantEncounteredArgylePlatformError = "ApplicantEncounteredArgylePlatformError"
   ApplicantEncounteredArgyleTokenExpired = "ApplicantEncounteredArgyleTokenExpired"
