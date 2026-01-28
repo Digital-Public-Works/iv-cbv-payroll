@@ -33,7 +33,11 @@ Rails.application.configure do
     # The error will say "Refused ... Either ... a hash ('sha256-[blahblah]') ...
     # is required." Replace the hash value(s) here from that message.
     policy.style_src :self,
-      "'unsafe-inline'"
+      "'sha256-WAyOw4V+FqDc35lQPyRADLBWbuNK8ahvYEaQIYF1+Ps='", # Pinwheel
+      "'sha256-8Fd8AAaNByYvS/HuItVFketOItMHf2YiH+wvh8OVQOA='", # Pinwheel
+      "'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU='"  # Argyle
+
+    policy.report_uri "/csp-reports"
   end
 
   #

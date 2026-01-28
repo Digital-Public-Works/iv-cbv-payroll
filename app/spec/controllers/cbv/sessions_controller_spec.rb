@@ -62,5 +62,24 @@ RSpec.describe Cbv::SessionsController, type: :controller do
         expect(session[:cbv_flow_id]).to be_nil
       end
     end
+
+    context 'with a valid client_agency_id' do
+      it 'renders the timeout page' do
+        get :timeout, params: { client_agency_id: 'sandbox' }
+        expect(response).to have_http_status(:ok)
+      end
+    end
+
+    context 'without a valid client_agency_id' do
+      it 'redirects to root with cbv_flow_timeout flag' do
+        get :timeout, params: { client_agency_id: 'invalid_agency' }
+        expect(response).to redirect_to(root_url(cbv_flow_timeout: true))
+      end
+
+      it 'redirects to root when client_agency_id is missing' do
+        get :timeout
+        expect(response).to redirect_to(root_url(cbv_flow_timeout: true))
+      end
+    end
   end
 end

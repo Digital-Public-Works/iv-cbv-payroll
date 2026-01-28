@@ -15,6 +15,12 @@ class Webhooks::Argyle::EventsController < ApplicationController
       handle_users_fully_synced.each do |webhook_event|
         process_webhook_event(webhook_event)
       end
+    when "accounts.removed"
+      account_id = params.dig("data", "account")
+      payroll_account = @cbv_flow.payroll_accounts.find_by(type: :argyle, aggregator_account_id: account_id)
+      payroll_account.discard! if payroll_account.present?
+
+      log_data_sync_events(payroll_account, params)
     else
       # All other webhooks have a params["data"]["account"], which we can use
       # to find the account.
@@ -184,6 +190,18 @@ class Webhooks::Argyle::EventsController < ApplicationController
         invitation_id: @cbv_flow.cbv_flow_invitation_id,
         sync_data: "fully_synced",
         sync_duration_seconds: Time.now - payroll_account.sync_started_at,
+        sync_event: params["event"]
+      })
+    elsif params["event"] == "accounts.removed"
+      event_logger.track(TrackEvent::ApplicantRemovedArgyleAccount, request, {
+        time: Time.now.to_i,
+        cbv_applicant_id: @cbv_flow.cbv_applicant_id,
+        cbv_flow_id: @cbv_flow.id,
+        client_agency_id: @cbv_flow.client_agency_id,
+        device_id: @cbv_flow.device_id,
+        invitation_id: @cbv_flow.cbv_flow_invitation_id,
+        sync_data: "n/a",
+        sync_duration_seconds: -1,
         sync_event: params["event"]
       })
     end
