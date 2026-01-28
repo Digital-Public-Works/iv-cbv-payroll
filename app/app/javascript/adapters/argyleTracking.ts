@@ -6,7 +6,11 @@ export function namespaceTrackingProperties(
     return {}
   }
   return Object.fromEntries(
-    Object.entries(properties).map(([key, value]) => [`argyle.${key}`, value])
+    Object.entries(properties).map(([key, value]) => {
+      // Normalize connectionErrorCode to errorCode for consistent error tracking
+      const normalizedKey = key === "connectionErrorCode" ? "errorCode" : key
+      return [`argyle.${normalizedKey}`, value]
+    })
   )
 }
 

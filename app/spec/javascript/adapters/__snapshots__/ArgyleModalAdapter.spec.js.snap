@@ -35,8 +35,8 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantDisconnectedArgyleAcco
 
 exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleAccountStateError for account error with account issue code 1`] = `
 {
-  "argyle.connectionErrorCode": "account_not_found",
   "argyle.connectionStatus": "error",
+  "argyle.errorCode": "account_not_found",
   "argyle.eventName": "account error - opened",
   "argyle.userId": "test-user-id",
 }
@@ -44,8 +44,8 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleAccou
 
 exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleAuthenticationError for account error with auth error code 1`] = `
 {
-  "argyle.connectionErrorCode": "invalid_credentials",
   "argyle.connectionStatus": "error",
+  "argyle.errorCode": "invalid_credentials",
   "argyle.eventName": "account error - opened",
   "argyle.userId": "test-user-id",
 }
@@ -81,8 +81,8 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleAuthe
 
 exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleCredentialError for account error with credential error code 1`] = `
 {
-  "argyle.connectionErrorCode": "invalid_employer_identifier",
   "argyle.connectionStatus": "error",
+  "argyle.errorCode": "invalid_employer_identifier",
   "argyle.eventName": "account error - opened",
   "argyle.userId": "test-user-id",
 }
@@ -90,8 +90,8 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleCrede
 
 exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleLimitError for account error with limit error code 1`] = `
 {
-  "argyle.connectionErrorCode": "login_attempts_exceeded",
   "argyle.connectionStatus": "error",
+  "argyle.errorCode": "login_attempts_exceeded",
   "argyle.eventName": "account error - opened",
   "argyle.userId": "test-user-id",
 }
@@ -107,8 +107,8 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleLinkO
 
 exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleMfaError for account error with MFA error code 1`] = `
 {
-  "argyle.connectionErrorCode": "mfa_timeout",
   "argyle.connectionStatus": "error",
+  "argyle.errorCode": "mfa_timeout",
   "argyle.eventName": "account error - opened",
   "argyle.userId": "test-user-id",
 }
@@ -123,8 +123,8 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleMfaEr
 
 exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgylePlatformError for account error with platform error code 1`] = `
 {
-  "argyle.connectionErrorCode": "platform_unavailable",
   "argyle.connectionStatus": "error",
+  "argyle.errorCode": "platform_unavailable",
   "argyle.eventName": "account error - opened",
   "argyle.userId": "test-user-id",
 }
@@ -147,8 +147,8 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleUndef
 
 exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleUnknownError for account error with system error code 1`] = `
 {
-  "argyle.connectionErrorCode": "system_error",
   "argyle.connectionStatus": "error",
+  "argyle.errorCode": "system_error",
   "argyle.eventName": "account error - opened",
   "argyle.userId": "test-user-id",
 }
