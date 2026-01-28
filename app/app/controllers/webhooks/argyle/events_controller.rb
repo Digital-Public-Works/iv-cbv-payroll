@@ -110,7 +110,7 @@ class Webhooks::Argyle::EventsController < ApplicationController
         cbv_flow_id: @cbv_flow.id,
         device_id: @cbv_flow.device_id,
         invitation_id: @cbv_flow.cbv_flow_invitation_id,
-        connection_status: connection_status,
+        "argyle.connectionStatus": connection_status,
         "argyle.errorCode": error_code,
         "argyle.errorMessage": params.dig("data", "resource", "connection", "error_message"),
         "argyle.errorUpdatedAt": params.dig("data", "resource", "connection", "updated_at")
