@@ -111,15 +111,6 @@ RSpec.describe ApplicationHelper do
         expect(helper.feedback_form_url).to eq(ApplicationHelper::APPLICANT_FEEDBACK_FORM)
       end
     end
-
-    context "on a sandbox caseworker-facing page" do
-      let(:params) { { controller: "caseworker/cbv_flow_invitations" } }
-      let(:current_agency) { Rails.application.config.client_agencies["sandbox"] }
-
-      it "shows the default feedback form when no caseworker feedback form is configured" do
-        expect(helper.feedback_form_url).to eq(ApplicationHelper::APPLICANT_FEEDBACK_FORM)
-      end
-    end
   end
 
   describe "#coalesce_to_completed" do

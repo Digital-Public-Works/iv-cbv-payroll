@@ -241,6 +241,9 @@ RSpec.describe Webhooks::Pinwheel::EventsController do
             expect(event_logger).to receive(:track).with("ApplicantFinishedPinwheelSync", anything, anything)
             expect(event_logger).to receive(:track).with("ApplicantReportFailedUsefulRequirements", anything, anything)
 
+            expect(NewRelic::Agent).to receive(:record_custom_event).with(TrackEvent::ApplicantReportAttemptedUsefulRequirements, anything)
+            expect(NewRelic::Agent).to receive(:record_custom_event).with(TrackEvent::ApplicantReportFailedUsefulRequirements, anything)
+
             post :create, params: valid_params
           end
         end
