@@ -99,6 +99,7 @@ module TrackEvent
   ApplicantViewedPinwheelLoginPage = "ApplicantViewedPinwheelLoginPage"
   ApplicantViewedPinwheelProviderConfirmation = "ApplicantViewedPinwheelProviderConfirmation"
   ApplicantWarnedAboutTimeout = "ApplicantWarnedAboutTimeout"
+  ArgyleDataUnexpectedHours = "ArgyleDataUnexpectedHours"
   CaseworkerInvitedApplicantToFlow = "CaseworkerInvitedApplicantToFlow"
   CaseworkerLoggedIn = "CaseworkerLoggedIn"
   CbvPageView = "CbvPageView"
