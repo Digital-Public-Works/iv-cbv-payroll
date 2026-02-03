@@ -136,7 +136,9 @@ type ArgyleUIEvent =
       name: "account error - opened"
       properties: ArgyleUIEventBase & {
         connectionStatus: string
-        connectionErrorCode: ArgyleConnectionErrorCode
+        // connectionErrorCode is only present when connectionStatus is "error"
+        // When connectionStatus is "connecting", this is a connection pending/timeout scenario
+        connectionErrorCode?: ArgyleConnectionErrorCode
         ddsStatus?: string
         ddsErrorCode?: string
       }

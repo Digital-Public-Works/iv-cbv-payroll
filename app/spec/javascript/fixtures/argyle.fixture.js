@@ -108,6 +108,16 @@ export const mockAccountErrorNoCode = {
   },
 }
 
+// Connection pending event - user sees "Connection Pending" screen
+// Per Argyle docs: connectionStatus "connecting" indicates timeout/pending, not a real error
+export const mockAccountErrorConnectionPending = {
+  name: "account error - opened",
+  properties: {
+    connectionStatus: "connecting",
+    userId: "test-user-id",
+  },
+}
+
 // New "error - opened" event mock
 // Per Argyle docs: error - opened uses errorType, not errorCode
 export const mockErrorOpenedEvent = {

@@ -14,8 +14,13 @@ export function namespaceTrackingProperties(
   )
 }
 
-// Convert account error events to tracking name based on connection error code
+// Convert account error events to tracking name based on connection status and error code
+// When connectionStatus is "connecting", the user sees the "Connection Pending" screen (timeout scenario)
+// When connectionStatus is "error", it's a real failure with connectionErrorCode present
 function accountErrorToTrackingName(properties: ArgyleUIEvent["properties"]): string {
+  if ("connectionStatus" in properties && properties.connectionStatus === "connecting") {
+    return "ApplicantEncounteredArgyleConnectionPendingEvent"
+  }
   if ("connectionErrorCode" in properties && typeof properties.connectionErrorCode === "string") {
     return argyleErrorToTrackingName(properties.connectionErrorCode)
   }
