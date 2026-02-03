@@ -158,6 +158,49 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
       end
     end
 
+
+    describe "Hours validations" do
+      {
+        "empty_hours_paystubs.json" => "empty hours",
+        "negative_hours_paystubs.json" => "negative values",
+        "high_hours_paystubs.json" => "hours outside expected range",
+        "empty_hours_gross_pay_list_paystubs.json" => "empty hours in gross pay list",
+        "negative_hours_gross_pay_list_paystubs.json" => "negative values in gross pay list",
+        "high_hours_gross_pay_list_paystubs.json" => "hours outside expected range in gross pay list"
+      }.each do |fixture, reason|
+        context "with #{reason} (#{fixture})" do
+          before do
+            allow(argyle_service).to receive(:fetch_paystubs_api)
+              .and_return(argyle_load_relative_json_file("invalid_hours", fixture))
+
+            allow(NewRelic::Agent).to receive(:record_custom_event)
+            argyle_report.send(:fetch_report_data)
+          end
+
+          it "generates a warning" do
+            expect(argyle_report.warnings).not_to be_empty
+          end
+
+          it "includes the correct warning message" do
+            expect(argyle_report.warnings[:hours].size).to eq(1)
+            expect(argyle_report.warnings[:hours]).to include(match(/Invalid value received for hours/i))
+          end
+
+          it "sends a warning to New Relic" do
+            expect(NewRelic::Agent).to have_received(:record_custom_event).with(
+              TrackEvent::ArgyleDataUnexpectedHours,
+              hash_including(
+                time: anything,
+                cbv_flow_id: kind_of(Integer),
+                warnings: a_string_matching(/Invalid value received for hours/i)
+              )
+            )
+          end
+        end
+      end
+    end
+
+
     describe '#fetch_gigs' do
       context "for Bob, a Uber driver" do
         before do
