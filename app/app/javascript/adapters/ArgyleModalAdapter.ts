@@ -71,10 +71,10 @@ export default class ArgyleModalAdapter extends ModalAdapter {
   }
 
   async onUIEvent(payload: ArgyleUIEvent) {
-    await trackUserAction(
-      argyleUIEventToTrackingName(payload),
-      namespaceTrackingProperties(payload.properties)
-    )
+    await trackUserAction(argyleUIEventToTrackingName(payload), {
+      "argyle.eventName": payload.name,
+      ...namespaceTrackingProperties(payload.properties),
+    })
   }
 
   async onSuccess(eventPayload: ArgyleAccountData) {
