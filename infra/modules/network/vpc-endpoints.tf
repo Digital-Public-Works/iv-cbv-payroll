@@ -18,7 +18,7 @@ locals {
   )
 
   # S3 and DynamoDB use Gateway VPC endpoints. All other services use Interface VPC endpoints
-  interface_vpc_endpoints = toset([for aws_service in local.aws_service_integrations : aws_service if !contains(["s3", "dynamodb"], aws_service)])
+  interface_vpc_endpoints = var.enable_vpc_endpoint_interfaces ? toset([for aws_service in local.aws_service_integrations : aws_service if !contains(["s3", "dynamodb"], aws_service)]) : toset([])
   gateway_vpc_endpoints   = toset([for aws_service in local.aws_service_integrations : aws_service if contains(["s3", "dynamodb"], aws_service)])
 }
 
@@ -37,7 +37,7 @@ data "aws_region" "current" {}
 # See https://docs.aws.amazon.com/vpc/latest/privatelink/create-interface-endpoint.html#create-interface-endpoint
 
 data "aws_subnet" "private" {
-  count = length(module.aws_vpc.private_subnets)
+  count = var.enable_vpc_endpoint_interfaces ? length(module.aws_vpc.private_subnets) : 0
   id    = module.aws_vpc.private_subnets[count.index]
 }
 
