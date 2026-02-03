@@ -25,6 +25,7 @@ import {
   mockAccountErrorLimitError,
   mockAccountErrorSystemError,
   mockAccountErrorNoCode,
+  mockAccountErrorConnectionPending,
   mockErrorOpenedEvent,
   mockLinkClosedEvent,
   mockUnknownArgyleEvent,
@@ -276,6 +277,16 @@ describe("ArgyleModalAdapter", () => {
       expect(trackUserAction.mock.calls[1][0]).toBe(
         "ApplicantEncounteredArgyleUndefinedAccountError"
       )
+      expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBeUndefined()
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
+    it("logs ApplicantEncounteredArgyleConnectionPendingEvent for connection pending (timeout) scenario", async () => {
+      await triggers.triggerUIEvent(mockAccountErrorConnectionPending)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe(
+        "ApplicantEncounteredArgyleConnectionPendingEvent"
+      )
+      expect(trackUserAction.mock.calls[1][1]["argyle.connectionStatus"]).toBe("connecting")
       expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBeUndefined()
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
