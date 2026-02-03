@@ -3,7 +3,7 @@
 <% if show_table %>
   <div class="margin-top-5">
     <h2 class="margin-0">
-      <%= I18n.t("components.report.monthly_summary_table.monthly_summary") %> <% if request.format.pdf? %><span class="yellow-highlight-label font-size-pdf-header-tag"><%= t("cbv.submits.show.pdf.client.self_employment") %></span><% end %>
+      <%= I18n.t("components.report.monthly_summary_table.monthly_summary") %> <% if @is_pdf %><span class="yellow-highlight-label font-size-pdf-header-tag"><%= t("cbv.submits.show.pdf.client.self_employment") %></span><% end %>
     </h2>
     <%= render(TableComponent.new(is_responsive: @is_responsive)) do |table| %>
       <%= table.with_subheader_row(class_names: "subheader-row base-lightest") do |row| %>
@@ -49,14 +49,15 @@
 
     <% if has_monthly_summary_results? && show_footnote? %>
       <div>
-        <h3><%= request.format.pdf? ? I18n.t("components.report.monthly_summary_table.compact.footnote.what_does_this_mean") : I18n.t("components.report.monthly_summary_table.compact.footnote.what_does_this_mean") %></h3>
-        <% if request.format.pdf? %><h4><span class="yellow-highlight-label"><%= t("cbv.submits.show.pdf.client.self_employment") %></span></h4><% end %>
+        <h3><%= I18n.t("components.report.monthly_summary_table.compact.footnote.what_does_this_mean") %></h3>
+        <% if @is_pdf %><h4><span class="yellow-highlight-label"><%= t("cbv.submits.show.pdf.client.self_employment") %></span></h4><% end %>
 
-        <ul class="usa-list">
-        <% if request.format.pdf? %><li><%= t("components.report.monthly_summary_table.compact.footnote.definition_self_employment_html") %></li><% end %>
+        <ul class="usa-list usa-list--explainer">
+        <% if @is_pdf %><li><%= t("components.report.monthly_summary_table.compact.footnote.definition_self_employment_html") %></li><% end %>
         <li><%= t("components.report.monthly_summary_table.compact.footnote.definition_accrued_gross_earnings_html") %></li>
           <% if has_mileage_data? %>
-            <li><%= t("components.report.monthly_summary_table.compact.footnote.definition_verified_mileage_expenses_html") %></li>
+            <li><%= t("components.report.monthly_summary_table.compact.footnote.definition_verified_mileage_expenses_html") %>
+              <p><em><%= I18n.t("components.report.monthly_summary_table.compact.footnote.mileage_rate_note") %></em></p></li>
           <% end %>
         <li><%= t("components.report.monthly_summary_table.compact.footnote.definition_total_hours_worked_html") %></li>
         </ul>
@@ -65,7 +66,7 @@
 
     <% if has_monthly_summary_results? && show_payments? %>
       <div class="margin-top-5">
-        <h3><%= I18n.t("components.report.monthly_summary_table.payments_from_header", employer_name: @employer_name) %> <% if request.format.pdf? %><span class="yellow-highlight-label font-size-pdf-header-tag"><%= t("cbv.submits.show.pdf.client.self_employment") %></span><% end %></h3>
+        <h3><%= I18n.t("components.report.monthly_summary_table.payments_from_header", employer_name: @employer_name) %> <% if @is_pdf %><span class="yellow-highlight-label font-size-pdf-header-tag"><%= t("cbv.submits.show.pdf.client.self_employment") %></span><% end %></h3>
         <p><%= payments_from_text %></p>
         <% if @is_pdf %>
           <ul class="usa-list">

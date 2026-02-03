@@ -55,8 +55,8 @@ module ApplicationHelper
     end
   end
 
-  APPLICANT_FEEDBACK_FORM = "https://forms.gle/Qb7D12kHZymur5jKA"
-  APPLICANT_SURVEY_FORM = "https://forms.gle/Qb7D12kHZymur5jKA"
+  APPLICANT_FEEDBACK_FORM = "https://docs.google.com/forms/d/e/1FAIpQLSedCtd9Jnyr41dAAQf3jSyhxqcqRrpaDIUI9DcH300Tg53ygA/viewform"
+  APPLICANT_SURVEY_FORM = "https://docs.google.com/forms/d/e/1FAIpQLSedCtd9Jnyr41dAAQf3jSyhxqcqRrpaDIUI9DcH300Tg53ygA/viewform"
 
   def feedback_form_url
     case params[:controller]

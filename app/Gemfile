@@ -58,11 +58,6 @@ gem "device_detector"
 gem "mixpanel-ruby"
 gem "newrelic_rpm"
 
-gem "solid_queue", ">= 0.3.0"
-# dashboard to manage solid queue
-gem "mission_control-jobs"
-
-
 gem "faraday", "~> 2.13.4"
 
 gem "wicked_pdf"
@@ -149,3 +144,6 @@ gem "sinatra", "~> 4.2"
 gem "aws-sdk-sqs"
 # Shoryuken for SQS
 gem "shoryuken"
+
+# Discard for soft deletes
+gem "discard", "~> 1.4"

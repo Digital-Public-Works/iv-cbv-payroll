@@ -4,6 +4,7 @@ class Cbv::ExpiredInvitationsController < Cbv::BaseController
   helper_method :current_agency
 
   def show
+    redirect_to root_url unless current_agency
   end
 
   private

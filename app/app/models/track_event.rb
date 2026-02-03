@@ -75,6 +75,7 @@ module TrackEvent
   ApplicantClickedPayrollProviderHelpAccordion = "ApplicantClickedPayrollProviderHelpAccordion"
   ApplicantReceivedArgyleData = "ApplicantReceivedArgyleData"
   ApplicantRemovedArgyleAccount = "ApplicantRemovedArgyleAccount"
+  ApplicantReportAttemptedUsefulRequirements = "ApplicantReportAttemptedUsefulRequirements"
   ApplicantReportFailedUsefulRequirements = "ApplicantReportFailedUsefulRequirements"
   ApplicantReportMetUsefulRequirements = "ApplicantReportMetUsefulRequirements"
   ApplicantRestartedWithGenericLinkOnTimeout = "ApplicantRestartedWithGenericLinkOnTimeout"

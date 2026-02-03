@@ -23,6 +23,10 @@ class Cbv::SessionsController < Cbv::BaseController
   def timeout
     reset_cbv_session!
     @current_agency = agency_config[params[:client_agency_id]]
+
+    unless @current_agency
+      redirect_to root_url(cbv_flow_timeout: true)
+    end
   end
 
   def current_agency

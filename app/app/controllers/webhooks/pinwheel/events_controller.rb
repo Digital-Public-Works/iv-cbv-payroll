@@ -178,6 +178,19 @@ class Webhooks::Pinwheel::EventsController < ApplicationController
   end
 
   def validate_useful_report_requirements(report)
+    begin
+      # Track all the attempts so that we can alert on % that fail
+      NewRelic::Agent.record_custom_event(TrackEvent::ApplicantReportAttemptedUsefulRequirements, {
+        time: Time.now.to_i,
+        cbv_applicant_id: @cbv_flow&.cbv_applicant_id,
+        cbv_flow_id: @cbv_flow&.id,
+        device_id: @cbv_flow&.device_id,
+        invitation_id: @cbv_flow&.cbv_flow_invitation_id
+      })
+    rescue => e
+      log.error "Failed to send New Relic notification: #{e}"
+    end
+
     report_is_valid = report.valid?(:useful_report)
     if report_is_valid
       event_logger.track(TrackEvent::ApplicantReportMetUsefulRequirements, request,
@@ -196,6 +209,15 @@ class Webhooks::Pinwheel::EventsController < ApplicationController
         invitation_id: @cbv_flow.cbv_flow_invitation_id,
         errors: report.errors.full_messages.join(", ")
       )
+
+      NewRelic::Agent.record_custom_event(TrackEvent::ApplicantReportFailedUsefulRequirements, {
+        time: Time.now.to_i,
+        cbv_applicant_id: @cbv_flow.cbv_applicant_id,
+        cbv_flow_id: @cbv_flow.id,
+        device_id: @cbv_flow.device_id,
+        invitation_id: @cbv_flow.cbv_flow_invitation_id,
+        errors: report.errors.full_messages.join(", ")
+      })
     end
     report_is_valid
   end

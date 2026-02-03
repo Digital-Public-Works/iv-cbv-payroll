@@ -36,6 +36,8 @@ Rails.application.configure do
       "'sha256-WAyOw4V+FqDc35lQPyRADLBWbuNK8ahvYEaQIYF1+Ps='", # Pinwheel
       "'sha256-8Fd8AAaNByYvS/HuItVFketOItMHf2YiH+wvh8OVQOA='", # Pinwheel
       "'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU='"  # Argyle
+
+    policy.report_uri "/csp-reports"
   end
 
   #
