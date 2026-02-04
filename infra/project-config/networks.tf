@@ -1,8 +1,9 @@
 locals {
   network_configs = {
     demo = {
-      account_name               = "demo"
-      database_subnet_group_name = "dev"
+      account_name                   = "demo"
+      database_subnet_group_name     = "dev"
+      enable_vpc_endpoint_interfaces = false
 
       domain_config = {
         manage_dns  = false
@@ -25,7 +26,7 @@ locals {
     prod = {
       account_name                   = "prod"
       database_subnet_group_name     = "prod"
-      enable_vpc_endpoint_interfaces = true
+      enable_vpc_endpoint_interfaces = false
 
       domain_config = {
         manage_dns  = false
