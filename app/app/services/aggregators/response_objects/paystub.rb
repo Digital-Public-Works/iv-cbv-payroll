@@ -1,6 +1,7 @@
 module Aggregators::ResponseObjects
   PAYSTUB_FIELDS = %i[
     account_id
+    id
     gross_pay_amount
     net_pay_amount
     gross_pay_ytd
@@ -40,6 +41,7 @@ module Aggregators::ResponseObjects
 
     def self.from_argyle(response_body)
       new(
+        id: response_body["id"],
         account_id: response_body["account"],
         gross_pay_amount: Aggregators::FormatMethods::Argyle.format_currency(response_body["gross_pay"]),
         net_pay_amount: Aggregators::FormatMethods::Argyle.format_currency(response_body["net_pay"]),

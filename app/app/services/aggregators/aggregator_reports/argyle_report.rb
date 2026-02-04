@@ -2,6 +2,8 @@ module Aggregators::AggregatorReports
   class ArgyleReport < AggregatorReport
     include Aggregators::ResponseObjects
     include ActiveModel::Validations
+    include ActiveModel::Validations::Callbacks
+    include Warnable
 
     validates_with Aggregators::Validators::UsefulReportValidator, on: :useful_report
 
@@ -46,6 +48,16 @@ module Aggregators::AggregatorReports
       @incomes.append(*transform_incomes(identities_json))
       @paystubs.append(*transform_paystubs(paystubs_json))
       @gigs.append(*transform_gigs(gigs_json))
+
+      check_hours(paystubs_json)
+
+      if self.has_warnings?
+        NewRelic::Agent.record_custom_event(TrackEvent::ArgyleDataUnexpectedHours, {
+          time: Time.now.to_i,
+          cbv_flow_id: payroll_account&.cbv_flow_id,
+          warnings: self.warnings.full_messages.join(", ")
+        })
+      end
     end
 
     def transform_identities(identities_json)
@@ -70,6 +82,20 @@ module Aggregators::AggregatorReports
       paystubs_json["results"].map do |paystub_json|
         Paystub.from_argyle(paystub_json)
       end
+    end
+
+    def check_hours(paystubs_json)
+      paystubs_json["results"].each do |ps|
+        raw_hours_valid = valid_hours_value?(ps["hours"])
+        all_gross_hours_valid = ps["gross_pay_list"]&.all? { |gp| valid_hours_value?(gp["hours"]) }
+        if !raw_hours_valid || !all_gross_hours_valid
+          self.warnings.add(:hours, "Invalid value received for hours.")
+        end
+      end
+    end
+
+    def valid_hours_value?(hours)
+      (0..10_000).cover?(Float(hours, exception: false))
     end
 
     def transform_gigs(gigs_json)

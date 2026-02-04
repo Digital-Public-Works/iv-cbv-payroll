@@ -102,6 +102,7 @@ FactoryBot.define do
       pay_period_end = Date.new(2014, 1, 2)
       pay = 12345
       hours_paid = 12.0
+      employment = "a96c42ce-8a10-443a-ad6e-563ac8788ea5"
       identities { [
         Aggregators::ResponseObjects::Identity.new(
           account_id: account_name,
