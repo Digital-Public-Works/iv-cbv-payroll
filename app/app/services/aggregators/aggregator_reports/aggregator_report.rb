@@ -217,7 +217,6 @@ module Aggregators::AggregatorReports
 
     def employment_filter_for(account_id, employment_matching_id)
       # Create a filter that filters any entities that don't match the account id and the employment id.
-      # If the entity doesn't have an employment id, allow it (eg for Pinwheel)
       lambda do |item|
         item.account_id == account_id && item.employment_id == employment_matching_id
       end
