@@ -52,13 +52,32 @@ module Aggregators::AggregatorReports
 
       # Note that, once we filter by employment match, we do not yet have a good solution for displaying multiple
       # incomes or identities at this time. We just take the first.
+      filtered_paystubs = @paystubs.filter(&employment_filter)
+      if filtered_paystubs&.size < @paystubs&.size
+        notify_filtered_paystubs(account_id, Array(@paystubs) - Array(filtered_paystubs))
+      end
+
       AccountReport.new(
         identity: @identities.filter(&employment_filter).first,
         income: @incomes.filter(&employment_filter).first,
         employment: account_employment,
-        paystubs: @paystubs.filter(&employment_filter),
+        paystubs: filtered_paystubs,
         gigs: @gigs.find_all { |gig| gig.account_id == account_id }
       )
+    end
+
+    def notify_filtered_paystubs(account_id, paystubs_to_report)
+      paystubs_to_report.each do |paystub|
+        event_logger.track(TrackEvent::ApplicantPaystubHasNullEmploymentID, nil,
+          time: Time.now.to_i,
+          aggregator_account_id: account_id,
+          paystub_id: paystub&.id
+        )
+      end
+    end
+
+    def event_logger
+      @event_logger ||= GenericEventTracker.new
     end
 
     def income_report
@@ -198,10 +217,8 @@ module Aggregators::AggregatorReports
 
     def employment_filter_for(account_id, employment_matching_id)
       # Create a filter that filters any entities that don't match the account id and the employment id.
-      # If the entity doesn't have an employment id, allow it (eg for Pinwheel)
       lambda do |item|
-        item.account_id == account_id &&
-          (item.employment_id.nil? || item.employment_id == employment_matching_id)
+        item.account_id == account_id && item.employment_id == employment_matching_id
       end
     end
 
