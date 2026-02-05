@@ -1,0 +1,378 @@
+{
+  "results": [
+    {
+      "id": "6b87c9f7-900a-48c5-96e4-6778e26426c5",
+      "account": "019bba14-44b2-3c28-8d2d-cd377b0354f9",
+      "payroll_document": "069c78d1-32fd-4455-874d-1079566b6573",
+      "deduction_list": [
+        {
+          "amount": "1.23",
+          "name": "Self Srvc Fee",
+          "tax_classification": "post_tax",
+          "amount_ytd": "3.23"
+        }
+      ],
+      "filing_status": [
+        {
+          "type": "federal",
+          "location": null,
+          "status": "single"
+        }
+      ],
+      "tax_list": [
+        {
+          "amount": "7.23",
+          "name": "Social Security Tax",
+          "type": "fica",
+          "amount_ytd": "16.23"
+        },
+        {
+          "amount": "1.23",
+          "name": "Medicare Tax",
+          "type": "fica",
+          "amount_ytd": "3.23"
+        },
+        {
+          "amount": "3.23",
+          "name": "PA State Income Tax",
+          "type": "state",
+          "amount_ytd": "8.23"
+        },
+        {
+          "amount": "4.23",
+          "name": "Philadelphia Income Tax",
+          "type": "local",
+          "amount_ytd": "9.23"
+        },
+        {
+          "amount": "0.23",
+          "name": "PA SUI Tax",
+          "type": "state",
+          "amount_ytd": "0.23"
+        }
+      ],
+      "status": "completed",
+      "paystub_date": "2026-01-09T00:00:00Z",
+      "paystub_period": {
+        "start_date": "2025-12-28T00:00:00Z",
+        "end_date": "2026-01-03T00:00:00Z"
+      },
+      "currency": "USD",
+      "gross_pay": "120.23",
+      "deductions": "1.23",
+      "taxes": "17.23",
+      "net_pay": "100.23",
+      "reimbursements": null,
+      "hours": "10.23",
+      "fees": null,
+      "net_pay_ytd": null,
+      "gross_pay_ytd": "261.23",
+      "metadata": {
+        "raw_type": "checking 1",
+        "raw_filing_status_list": [
+          {
+            "type": "federal",
+            "location": null,
+            "status": "Single/Married filing separately"
+          }
+        ],
+        "raw_tax_list": [
+          {
+            "amount": 7.23,
+            "amount_ytd": 16.23,
+            "name": "Social Security Tax",
+            "type": null
+          },
+          {
+            "amount": 1.23,
+            "amount_ytd": 3.23,
+            "name": "Medicare Tax",
+            "type": null
+          },
+          {
+            "amount": 3.23,
+            "amount_ytd": 8.23,
+            "name": "PA State Income Tax",
+            "type": null
+          },
+          {
+            "amount": 4.23,
+            "amount_ytd": 9.23,
+            "name": "Philadelphia Income Tax",
+            "type": null
+          },
+          {
+            "amount": 0.23,
+            "amount_ytd": 0.23,
+            "name": "PA SUI Tax",
+            "type": null
+          }
+        ],
+        "raw_employer_address_line1": "POBOX .23",
+        "raw_employer_address_state": "",
+        "raw_employee_address_city": "PHILADELPHIA",
+        "raw_employee_address_line1": "14 E Snyder Ave",
+        "raw_employee_address_country": null,
+        "raw_gross_pay_list": [
+          {
+            "name": "Regular",
+            "type": null,
+            "start_date": null,
+            "end_date": null,
+            "rate": 12,
+            "hours": 10,
+            "hours_ytd": null,
+            "amount": 120,
+            "amount_ytd": 261,
+            "excl_from_total": false
+          }
+        ],
+        "raw_status": null
+      },
+      "employer": "ABC Services Inc.",
+      "employer_address": {
+        "city": null,
+        "state": null,
+        "country": null,
+        "postal_code": null,
+        "line1": "Pobox .23",
+        "line2": null
+      },
+      "created_at": "2026-01-14T01:18:59.365Z",
+      "updated_at": "2026-01-14T01:19:23.672Z",
+      "destinations": [
+        {
+          "reference": "Checking 1",
+          "amount": "100.23",
+          "ach_deposit_account": {
+            "routing_number": "xxxx xxxx",
+            "account_number": "xx6.23",
+            "bank_name": null
+          },
+          "card": null,
+          "method": "Direct Deposit",
+          "metadata": {}
+        }
+      ],
+      "hours_ytd": null,
+      "deductions_ytd": "3.23",
+      "taxes_ytd": "37.23",
+      "gross_pay_list": [
+        {
+          "name": "Regular",
+          "type": "base",
+          "start_date": null,
+          "end_date": null,
+          "rate": "12.0.23",
+          "hours": "10.23",
+          "amount": "120.23",
+          "hours_ytd": null,
+          "amount_ytd": "261.23"
+        }
+      ],
+      "gross_pay_list_totals": {
+        "base": {
+          "amount": "120.23",
+          "amount_ytd": "261.23",
+          "hours": "10.23",
+          "hours_ytd": null,
+          "rate_implied": "12.23",
+          "rate_implied_ytd": null
+        },
+        "overtime": null,
+        "commission": null,
+        "bonus": null,
+        "other": null
+      },
+      "employment": null
+    },
+    {
+      "id": "b969fdc8-2fad-4e4b-9acf-00b56f5403fa",
+      "account": "d35343e6-ac06-4600-8df5-60deb2711718",
+      "payroll_document": "0aa876f6-5fb6-4432-afc2-ee645ad94c70",
+      "deduction_list": [
+        {
+          "amount": "1.23",
+          "name": "Self Srvc Fee",
+          "tax_classification": "post_tax",
+          "amount_ytd": "1.23"
+        }
+      ],
+      "filing_status": [
+        {
+          "type": "federal",
+          "location": null,
+          "status": "single"
+        }
+      ],
+      "tax_list": [
+        {
+          "amount": "8.23",
+          "name": "Social Security Tax",
+          "type": "fica",
+          "amount_ytd": "8.23"
+        },
+        {
+          "amount": "2.23",
+          "name": "Medicare Tax",
+          "type": "fica",
+          "amount_ytd": "2.23"
+        },
+        {
+          "amount": "4.23",
+          "name": "PA State Income Tax",
+          "type": "state",
+          "amount_ytd": "4.23"
+        },
+        {
+          "amount": "5.23",
+          "name": "Philadelphia Income Tax",
+          "type": "local",
+          "amount_ytd": "5.23"
+        },
+        {
+          "amount": "0.23",
+          "name": "PA SUI Tax",
+          "type": "state",
+          "amount_ytd": "0.23"
+        }
+      ],
+      "status": "completed",
+      "paystub_date": "2026-01-02T00:00:00Z",
+      "paystub_period": {
+        "start_date": "2025-12-21T00:00:00Z",
+        "end_date": "2025-12-27T00:00:00Z"
+      },
+      "currency": "USD",
+      "gross_pay": "141.23",
+      "deductions": "1.23",
+      "taxes": "20.23",
+      "net_pay": "118.23",
+      "reimbursements": null,
+      "hours": "11.23",
+      "fees": null,
+      "net_pay_ytd": null,
+      "gross_pay_ytd": "141.23",
+      "metadata": {
+        "raw_type": "checking 1",
+        "raw_filing_status_list": [
+          {
+            "type": "federal",
+            "location": null,
+            "status": "Single/Married filing separately"
+          }
+        ],
+        "raw_tax_list": [
+          {
+            "amount": 8.23,
+            "amount_ytd": 8.23,
+            "name": "Social Security Tax",
+            "type": null
+          },
+          {
+            "amount": 2.23,
+            "amount_ytd": 2.23,
+            "name": "Medicare Tax",
+            "type": null
+          },
+          {
+            "amount": 4.23,
+            "amount_ytd": 4.23,
+            "name": "PA State Income Tax",
+            "type": null
+          },
+          {
+            "amount": 5.23,
+            "amount_ytd": 5.23,
+            "name": "Philadelphia Income Tax",
+            "type": null
+          },
+          {
+            "amount": 0.1,
+            "amount_ytd": 0.1,
+            "name": "PA SUI Tax",
+            "type": null
+          }
+        ],
+        "raw_employer_address_line1": "POBOX 123",
+        "raw_employer_address_state": "",
+        "raw_employee_address_city": "PHILADELPHIA",
+        "raw_employee_address_line1": "14 E Snyder Ave",
+        "raw_employee_address_country": null,
+        "raw_gross_pay_list": [
+          {
+            "name": "Regular",
+            "type": null,
+            "start_date": null,
+            "end_date": null,
+            "rate": 12,
+            "hours": 11.23,
+            "hours_ytd": null,
+            "amount": 141,
+            "amount_ytd": 141,
+            "excl_from_total": false
+          }
+        ],
+        "raw_status": null
+      },
+      "employer": "Acme Industrial Inc.",
+      "employer_address": {
+        "city": null,
+        "state": null,
+        "country": null,
+        "postal_code": null,
+        "line1": "Pobox 456",
+        "line2": null
+      },
+      "created_at": "2026-01-14T01:19:24.284Z",
+      "updated_at": "2026-01-14T01:19:24.284Z",
+      "destinations": [
+        {
+          "reference": "Checking 1",
+          "amount": "118.23",
+          "ach_deposit_account": {
+            "routing_number": "xxxx xxxx",
+            "account_number": "xx6.23",
+            "bank_name": null
+          },
+          "card": null,
+          "method": "Direct Deposit",
+          "metadata": {}
+        }
+      ],
+      "hours_ytd": null,
+      "deductions_ytd": "1.23",
+      "taxes_ytd": "20.23",
+      "gross_pay_list": [
+        {
+          "name": "Regular",
+          "type": "base",
+          "start_date": null,
+          "end_date": null,
+          "rate": "12.0.23",
+          "hours": "11.7.23",
+          "amount": "141.23",
+          "hours_ytd": null,
+          "amount_ytd": "141.23"
+        }
+      ],
+      "gross_pay_list_totals": {
+        "base": {
+          "amount": "141.23",
+          "amount_ytd": "141.23",
+          "hours": "11.23",
+          "hours_ytd": null,
+          "rate_implied": "12.23",
+          "rate_implied_ytd": null
+        },
+        "overtime": null,
+        "commission": null,
+        "bonus": null,
+        "other": null
+      },
+      "employment": null
+    }
+  ],
+  "next": "",
+  "previous": null
+}
