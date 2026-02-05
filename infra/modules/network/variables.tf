@@ -49,7 +49,7 @@ variable "single_nat_gateway" {
 variable "enable_vpc_endpoint_interfaces" {
   type        = bool
   description = "Whether to create VPC Interface endpoints for accessing AWS services. Set to false to save costs in non-production environments."
-  default     = true
+  default     = false
 }
 
 variable "name" {

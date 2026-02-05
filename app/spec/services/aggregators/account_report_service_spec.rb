@@ -52,6 +52,58 @@ RSpec.describe Aggregators::AccountReportService do
       end
     end
 
+    context 'with missing employment IDs' do
+      let(:account_id) { '01956d5f-cb8d-af2f-9232-38bce8531f58' }
+      let!(:payroll_account) do
+        create(
+          :payroll_account,
+          :argyle_fully_synced,
+          cbv_flow: cbv_flow,
+          aggregator_account_id: account_id
+        )
+      end
+      let(:report) do
+        Aggregators::AggregatorReports::ArgyleReport.new(
+          payroll_accounts: [ payroll_account ],
+          argyle_service: argyle_service,
+          days_to_fetch_for_w2: 90,
+          days_to_fetch_for_gig: 90
+        )
+      end
+
+      before do
+        argyle_stub_request_identities_response("missing_employment_ids")
+        argyle_stub_request_paystubs_response("missing_employment_ids")
+        argyle_stub_request_gigs_response("missing_employment_ids")
+        argyle_stub_request_account_response("missing_employment_ids")
+        report.fetch
+      end
+
+      it 'returns an invalid result' do
+        service = described_class.new(report, payroll_account)
+
+        expect(EventTrackingJob).to receive(:perform_later)
+          .with("ApplicantPaystubHasNullEmploymentID", anything, hash_including(
+            time: be_a(Integer),
+            aggregator_account_id: payroll_account&.aggregator_account_id,
+            paystub_id: anything
+          )).exactly(10).times
+
+        result = service.validate
+
+        expect(result).not_to be_valid
+        expect(result.account_report).to be_present
+      end
+
+      it 'returns the account_report with employment data' do
+        service = described_class.new(report, payroll_account)
+        result = service.validate
+
+        expect(result.account_report.employment).to be_present
+        expect(result.account_report.employment.employer_name).to eq("Whole Foods")
+      end
+    end
+
     context 'with empty report data (no identity records)' do
       let(:account_id) { 'empty-account-id' }
       let!(:payroll_account) do

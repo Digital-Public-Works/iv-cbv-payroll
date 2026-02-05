@@ -26,7 +26,7 @@ locals {
     prod = {
       account_name                   = "prod"
       database_subnet_group_name     = "prod"
-      enable_vpc_endpoint_interfaces = true
+      enable_vpc_endpoint_interfaces = false
 
       domain_config = {
         manage_dns  = false

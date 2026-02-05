@@ -73,6 +73,7 @@ module TrackEvent
   ApplicantClickedOtherWaysToSubmitHelpAnchor = "ApplicantClickedOtherWaysToSubmitHelpAnchor"
   ApplicantClickedParentCompanyHelpAccordion = "ApplicantClickedParentCompanyHelpAccordion"
   ApplicantClickedPayrollProviderHelpAccordion = "ApplicantClickedPayrollProviderHelpAccordion"
+  ApplicantPaystubHasNullEmploymentID = "ApplicantPaystubHasNullEmploymentID"
   ApplicantReceivedArgyleData = "ApplicantReceivedArgyleData"
   ApplicantRemovedArgyleAccount = "ApplicantRemovedArgyleAccount"
   ApplicantReportAttemptedUsefulRequirements = "ApplicantReportAttemptedUsefulRequirements"
