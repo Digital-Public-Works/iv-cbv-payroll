@@ -198,7 +198,7 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
         end
       end
     end
-    
+
     describe "Hours validations that do not trigger warnings" do
       {
         "null_hours_in_gross_pay_list_paystubs.json" => "null hours in gross pay list",
