@@ -87,7 +87,7 @@ module Aggregators::AggregatorReports
     def check_hours(paystubs_json)
       paystubs_json["results"].each do |ps|
         raw_hours_valid = valid_hours_value?(ps["hours"])
-        all_gross_hours_valid = ps["gross_pay_list"]&.all? { |gp| valid_hours_value?(gp["hours"]) }
+        all_gross_hours_valid = ps["gross_pay_list"]&.all? { |gp| gp["hours"].blank? || valid_hours_value?(gp["hours"]) }
         if !raw_hours_valid || !all_gross_hours_valid
           self.warnings.add(:hours, "Invalid value received for hours.")
         end
