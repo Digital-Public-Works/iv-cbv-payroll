@@ -161,7 +161,6 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
 
     describe "Hours validations that trigger warnings" do
       {
-        "empty_hours_paystubs.json" => "empty hours",
         "negative_hours_paystubs.json" => "negative values",
         "high_hours_paystubs.json" => "hours outside expected range",
         "negative_hours_gross_pay_list_paystubs.json" => "negative values in gross pay list",
@@ -201,6 +200,7 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
 
     describe "Hours validations that do not trigger warnings" do
       {
+        "empty_hours_paystubs.json" => "empty hours",
         "null_hours_in_gross_pay_list_paystubs.json" => "null hours in gross pay list",
         "empty_hours_gross_pay_list_paystubs.json" => "empty hours in gross pay list"
       }.each do |fixture, reason|
