@@ -1,0 +1,318 @@
+{
+    "results": [
+      {
+        "id": "037490b4-f3ad-467d-ab60-adca300c6399",
+        "account": "b03e4961-e121-43db-9f86-8517ab4e3702",
+        "payroll_document": "d5c9e7be-429e-405b-87b9-f42f39491d64",
+        "deduction_list": [
+          {
+            "amount": "210.22",
+            "name": "MEDICAL",
+            "tax_classification": "pre_tax",
+            "amount_ytd": "912.33"
+          },
+          {
+            "amount": "91.10",
+            "name": "401K LOAN 2",
+            "tax_classification": "post_tax",
+            "amount_ytd": "840.00"
+          },
+          {
+            "amount": "1.10",
+            "name": "SHORT TERM DIS",
+            "tax_classification": "post_tax",
+            "amount_ytd": "7.70"
+          }
+        ],
+        "filing_status": [
+          {
+            "type": "federal",
+            "location": null,
+            "status": "married"
+          },
+          {
+            "type": "state",
+            "location": "TN",
+            "status": "other"
+          }
+        ],
+        "tax_list": [
+          {
+            "amount": "113.22",
+            "name": "FICA EE",
+            "type": "fica",
+            "amount_ytd": "231.82"
+          },
+          {
+            "amount": "23.45",
+            "name": "Fed MWT EE",
+            "type": "fica",
+            "amount_ytd": "48.77"
+          },
+          {
+            "amount": "52.06",
+            "name": "TN W/H",
+            "type": "state",
+            "amount_ytd": "26.03"
+          }
+        ],
+        "status": "completed",
+        "paystub_date": "2026-01-21T00:00:00Z",
+        "paystub_period": {
+          "start_date": "2026-01-02T00:00:00Z",
+          "end_date": "2026-01-16T23:59:00Z"
+        },
+        "currency": "USD",
+        "gross_pay": "2121.21",
+        "deductions": "300.03",
+        "taxes": "200.02",
+        "net_pay": "1750.50",
+        "reimbursements": null,
+        "hours": "72.04",
+        "fees": null,
+        "net_pay_ytd": "4102.02",
+        "gross_pay_ytd": "3875.75",
+        "metadata": {
+          "is_generated_pdf": "True",
+          "raw_filing_status_list": [
+            {
+              "type": "federal",
+              "location": null,
+              "status": "Married"
+            },
+            {
+              "type": "state",
+              "location": "TN",
+              "status": "Alt Code 2.50%"
+            }
+          ],
+          
+          "raw_tax_list": [
+            {
+              "amount": 110.10,
+              "amount_ytd": 245.32,
+              "name": "FICA EE",
+              "type": null
+            },
+            {
+              "amount": 46.2,
+              "amount_ytd": 57.27,
+              "name": "Fed MWT EE",
+              "type": null
+            },
+            {
+              "amount": 51.11,
+              "amount_ytd": 90.11,
+              "name": "TN W/H",
+              "type": null
+            }
+          ],
+          "raw_employer_address_country": "USA",
+          "raw_gross_pay_list": [
+            {
+              "name": "REGULAR PAY",
+              "type": null,
+              "start_date": null,
+              "end_date": null,
+              "rate": 9,
+              "hours": 7.42,
+              "hours_ytd": 223.81,
+              "amount": 55.19,
+              "amount_ytd": 1782.13,
+              "excl_from_total": false
+            },
+            {
+              "name": "REGULAR PAY",
+              "type": null,
+              "start_date": null,
+              "end_date": null,
+              "rate": 14.75,
+              "hours": 52.11,
+              "hours_ytd": null,
+              "amount": 607.18,
+              "amount_ytd": 0,
+              "excl_from_total": false
+            },
+            {
+              "name": "VACATION",
+              "type": null,
+              "start_date": null,
+              "end_date": null,
+              "rate": 16.12,
+              "hours": 8,
+              "hours_ytd": 16,
+              "amount": 114.70,
+              "amount_ytd": 114.70,
+              "excl_from_total": false
+            },
+            {
+              "name": "BQT GRTY PAID",
+              "type": null,
+              "start_date": null,
+              "end_date": null,
+              "rate": null,
+              "hours": null,
+              "hours_ytd": null,
+              "amount": 409.12,
+              "amount_ytd": 409.12,
+              "excl_from_total": false
+            },
+            {
+              "name": "HOLIDAY",
+              "type": null,
+              "start_date": null,
+              "end_date": null,
+              "rate": null,
+              "hours": null,
+              "hours_ytd": 16,
+              "amount": 0,
+              "amount_ytd": 315.75,
+              "excl_from_total": false
+            },      
+            {
+              "name": "TIPS PAID",
+              "type": null,
+              "start_date": null,
+              "end_date": null,
+              "rate": null,
+              "hours": null,
+              "hours_ytd": null,
+              "amount": 902.81,
+              "amount_ytd": 2109.47,
+              "excl_from_total": false
+            }
+          ]
+        },
+        "employer": "Arch Industrials, Inc.",
+        "employer_address": {
+          "city": "Nashville",
+          "state": "TN",
+          "country": "US",
+          "postal_code": "37211",
+          "line1": "100 Second Street",
+          "line2": "Ste 4"
+        },
+        "created_at": "2026-02-02T21:49:13.570Z",
+        "updated_at": "2026-02-02T21:49:13.570Z",
+        "destinations": [
+          {
+            "reference": null,
+            "amount": "22.00",
+            "ach_deposit_account": {
+              "routing_number": "454545454",
+              "account_number": "********1212",
+              "bank_name": null
+            },
+            "card": null,
+            "method": "Direct Deposit",
+            "metadata": {}
+          },
+          {
+            "reference": null,
+            "amount": "1100.12",
+            "ach_deposit_account": {
+              "routing_number": "454545454",
+              "account_number": "********1212",
+              "bank_name": null
+            },
+            "card": null,
+            "method": "Direct Deposit",
+            "metadata": {}
+          }
+        ],
+        "hours_ytd": "145.17",
+        "deductions_ytd": "601.12",
+        "taxes_ytd": "312.19",
+        "gross_pay_list": [
+          {
+            "name": "REGULAR PAY",
+            "type": "base",
+            "start_date": null,
+            "end_date": null,
+            "rate": "11.0000",
+            "hours": "8.1000",
+            "amount": "89.14",
+            "hours_ytd": "100.1200",
+            "amount_ytd": "1475.11"
+          },
+          {
+            "name": "REGULAR PAY",
+            "type": "base",
+            "start_date": null,
+            "end_date": null,
+            "rate": "11.0000",
+            "hours": "51.0000",
+            "amount": "612.13",
+            "hours_ytd": null,
+            "amount_ytd": "0.00"
+          },
+          {
+            "name": "VACATION",
+            "type": "pto",
+            "start_date": null,
+            "end_date": null,
+            "rate": "15.4500",
+            "hours": "8.0000",
+            "amount": "141.25",
+            "hours_ytd": "8.0000",
+            "amount_ytd": "212.10"
+          },
+          {
+            "name": "BQT GRTY PAID",
+            "type": "pto",
+            "start_date": null,
+            "end_date": null,
+            "rate": null,
+            "hours": null,
+            "amount": "414.00",
+            "hours_ytd": null,
+            "amount_ytd": "414.00"
+          },
+          {
+            "name": "HOLIDAY",
+            "type": "pto",
+            "start_date": null,
+            "end_date": null,
+            "rate": null,
+            "hours": null,
+            "amount": "0.00",
+            "hours_ytd": "24.0000",
+            "amount_ytd": "317.93"
+          },
+          {
+            "name": "TIPS PAID",
+            "type": "tips",
+            "start_date": null,
+            "end_date": null,
+            "rate": null,
+            "hours": null,
+            "amount": "918.99",
+            "hours_ytd": null,
+            "amount_ytd": "2200.11"
+          }
+        ],
+        "gross_pay_list_totals": {
+          "base": {
+            "amount": "1214.18",
+            "amount_ytd": "2650.50",
+            "hours": "82.0000",
+            "hours_ytd": "165.0000",
+            "rate_implied": "19.0000",
+            "rate_implied_ytd": "19.0000"
+          },
+          "overtime": null,
+          "commission": null,
+          "bonus": null,
+          "other": {
+            "amount": "717.00",
+            "amount_ytd": "2415.15",
+            "hours": null,
+            "hours_ytd": null,
+            "rate_implied": null,
+            "rate_implied_ytd": null
+          }
+        },
+        "employment": "25a4d65a-9781-4c25-88a9-0a1814f0282a"
+      }
+    ]
+}
