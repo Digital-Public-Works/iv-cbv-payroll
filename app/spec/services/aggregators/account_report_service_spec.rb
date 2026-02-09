@@ -102,7 +102,7 @@ RSpec.describe Aggregators::AccountReportService do
         expect(result.account_report.employment.employer_name).to eq("Whole Foods")
       end
     end
-    
+
     context 'with paystubs from multiple employments' do
       let(:account_id) { '01956d5f-cb8d-af2f-9232-38bce8531f58' }
       let!(:payroll_account) do
@@ -140,7 +140,7 @@ RSpec.describe Aggregators::AccountReportService do
 
         expect(result).to be_valid
         expect(result.account_report).to be_present
-      end 
+      end
     end
 
     context 'with empty report data (no identity records)' do

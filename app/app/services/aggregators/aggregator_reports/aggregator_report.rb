@@ -53,9 +53,9 @@ module Aggregators::AggregatorReports
       # Note that, once we filter by employment match, we do not yet have a good solution for displaying multiple
       # incomes or identities at this time. We just take the first.
       filtered_paystubs = @paystubs.filter(&employment_filter)
-      if filtered_paystubs&.size < @paystubs&.size
-        notify_filtered_paystubs(account_id, Array(@paystubs) - Array(filtered_paystubs))
-      end
+
+      null_employment_paystubs = @paystubs.select(&null_employment_filter)
+      notify_flagged_paystubs(null_employment_paystubs)
 
       AccountReport.new(
         identity: @identities.filter(&employment_filter).first,
@@ -66,11 +66,10 @@ module Aggregators::AggregatorReports
       )
     end
 
-    def notify_filtered_paystubs(account_id, paystubs_to_report)
+    def notify_flagged_paystubs(paystubs_to_report)
       paystubs_to_report.each do |paystub|
         event_logger.track(TrackEvent::ApplicantPaystubHasNullEmploymentID, nil,
           time: Time.now.to_i,
-          aggregator_account_id: account_id,
           paystub_id: paystub&.id
         )
       end
@@ -219,6 +218,14 @@ module Aggregators::AggregatorReports
       # Create a filter that filters any entities that don't match the account id and the employment id.
       lambda do |item|
         item.account_id == account_id && item.employment_id == employment_matching_id
+      end
+    end
+
+    # TODO: Tech Debt - this should migrate to the forthcoming Data Quality Service.
+    def null_employment_filter
+      # Create a filter that selects any entities that have null employment_id.
+      lambda do |item|
+        item.employment_id.blank?
       end
     end
 
