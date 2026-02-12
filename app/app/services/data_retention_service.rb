@@ -84,35 +84,42 @@ class DataRetentionService
     end
   end
 
-  # do all redaction necessary on a cbv_flow
-  def redact_cbv_flow(cbv_flow)
-    cbv_flow.redact!
-    cbv_flow.cbv_flow_invitation.redact! if cbv_flow.cbv_flow_invitation.present?
-    cbv_flow.cbv_applicant&.redact!
-    cbv_flow.payroll_accounts.with_discarded.each(&:redact!) # Do not scope to kept records, all accounts should be redacted
-
-    # delete the user from Argyle if present. This will also delete any associated data.
-    delete_argyle_user(cbv_flow.client_agency_id, cbv_flow.argyle_user_id) if cbv_flow.argyle_user_id.present?
-  end
-
-  # use Argyle api to delete the user and all associated data
-  def delete_argyle_user(client_agency_id, argyle_user_id)
-    argyle_environment = Rails.application.config.client_agencies[client_agency_id].argyle_environment
-    argyle = Aggregators::Sdk::ArgyleService.new(argyle_environment)
-    argyle.delete_user(argyle_user_id: argyle_user_id)
-  rescue => ex
-    raise ex unless Rails.env.production?
-
-    Rails.logger.error "Unable to delete Argyle User #{argyle_user_id} - #{ex.message}"
-    GenericEventTracker.new.track("DataRedactionFailure", nil, { argyle_user_id: argyle_user_id })
-  end
-
   # Use after conducting a user test or other time we want to manually redact a
   # specific person's data in the system. Class level method for calling from terminal.
   def self.manually_redact_by_case_number!(case_number)
     service = new
     applicant = CbvApplicant.find_by!(case_number: case_number)
     applicant.cbv_flows.each { |cbv_flow| service.send(:redact_cbv_flow, cbv_flow) }
+  end
+
+  private
+
+  # do all redaction necessary on a cbv_flow
+  def redact_cbv_flow(cbv_flow)
+    # delete the user from Argyle first, before marking local records as redacted.
+    # This ensures that if the API call fails, the flow remains unredacted and will
+    # be retried on the next run.
+    delete_argyle_user(cbv_flow.client_agency_id, cbv_flow.argyle_user_id) if cbv_flow.argyle_user_id.present?
+
+    cbv_flow.redact!
+    cbv_flow.cbv_flow_invitation.redact! if cbv_flow.cbv_flow_invitation.present?
+    cbv_flow.cbv_applicant&.redact!
+    cbv_flow.payroll_accounts.with_discarded.each(&:redact!) # Do not scope to kept records, all accounts should be redacted
+  end
+
+  # use Argyle api to delete the user and all associated data.
+  # A 404 is expected if the user was already deleted by a previous run.
+  def delete_argyle_user(client_agency_id, argyle_user_id)
+    argyle_environment = Rails.application.config.client_agencies[client_agency_id].argyle_environment
+    argyle = Aggregators::Sdk::ArgyleService.new(argyle_environment)
+    argyle.delete_user(argyle_user_id: argyle_user_id)
+  rescue Faraday::ResourceNotFound
+    Rails.logger.info "Argyle User #{argyle_user_id} already deleted"
+  rescue => ex
+    raise ex unless Rails.env.production?
+
+    Rails.logger.error "Unable to delete Argyle User #{argyle_user_id} - #{ex.message}"
+    GenericEventTracker.new.track("DataRedactionFailure", nil, { argyle_user_id: argyle_user_id })
   end
 
   # retroactive redaction for case numbers by agency
