@@ -55,7 +55,7 @@ class DataRetentionService
           # after 30 minutes, so it would be extremely unlikely for a valid
           # session to still be in progress after 7 days.
           flow_redact_at = cbv_flow.updated_at + REDACT_UNUSED_INVITATIONS_AFTER
-          next unless Time.now.after?(flow_redact_at)
+          next unless Time.current.after?(flow_redact_at)
 
           redact_cbv_flow(cbv_flow)
         end
@@ -108,13 +108,11 @@ class DataRetentionService
   end
 
   # Use after conducting a user test or other time we want to manually redact a
-  # specific person's data in the system.
+  # specific person's data in the system. Class level method for calling from terminal.
   def self.manually_redact_by_case_number!(case_number)
+    service = new
     applicant = CbvApplicant.find_by!(case_number: case_number)
-    applicant.redact!
-    applicant.cbv_flow_invitations.map(&:redact!)
-    applicant.cbv_flows.map(&:redact!)
-    applicant.cbv_flows.each { |cbv_flow| cbv_flow.payroll_accounts.with_discarded.each(&:redact!) } # Do not scope to kept records, all accounts should be redacted
+    applicant.cbv_flows.each { |cbv_flow| service.send(:redact_cbv_flow, cbv_flow) }
   end
 
   # retroactive redaction for case numbers by agency

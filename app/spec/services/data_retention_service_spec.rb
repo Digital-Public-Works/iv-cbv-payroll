@@ -547,6 +547,17 @@ RSpec.describe DataRetentionService do
         redacted_at: within(1.second).of(Time.now)
       )
     end
+
+    context "when a flow has an argyle_user_id" do
+      before do
+        second_cbv_flow.update!(argyle_user_id: "argyle_manual_123", client_agency_id: "sandbox")
+      end
+
+      it "deletes the argyle user" do
+        expect_any_instance_of(DataRetentionService).to receive(:delete_argyle_user).with("sandbox", "argyle_manual_123")
+        DataRetentionService.manually_redact_by_case_number!("DELETEME001")
+      end
+    end
   end
 
   describe "#redact_cbv_flow" do
