@@ -3,7 +3,8 @@
 <div data-controller="cbv-entry-page">
   <h1><%= title %></h1>
 
-  <p><%= t(".subheader_html", agency_full_name: agency_translation("shared.agency_full_name")) %></p>
+  <p><%= t(".subheader_html", agency_full_name: agency_translation("shared.agency_full_name"),
+           agency_acronym: agency_translation("shared.agency_acronym")) %></p>
 
   <ol class="usa-process-list">
     <li class="usa-process-list__item">

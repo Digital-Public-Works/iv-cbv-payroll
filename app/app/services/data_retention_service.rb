@@ -46,10 +46,7 @@ class DataRetentionService
           invitation_redact_at = cbv_flow.cbv_flow_invitation.expires_at + REDACT_UNUSED_INVITATIONS_AFTER
           next unless Time.current.after?(invitation_redact_at)
 
-          cbv_flow.redact!
-          cbv_flow.cbv_flow_invitation.redact!
-          cbv_flow.cbv_applicant&.redact!
-          cbv_flow.payroll_accounts.with_discarded.each(&:redact!) # Do not scope to kept records, all accounts should be redacted
+          redact_cbv_flow(cbv_flow)
         else
           # Redact standalone CbvFlow records some period after their last
           # update.
@@ -60,9 +57,7 @@ class DataRetentionService
           flow_redact_at = cbv_flow.updated_at + REDACT_UNUSED_INVITATIONS_AFTER
           next unless Time.now.after?(flow_redact_at)
 
-          cbv_flow.redact!
-          cbv_flow.cbv_applicant&.redact!
-          cbv_flow.payroll_accounts.with_discarded.each(&:redact!) # Do not scope to kept records, all accounts should be redacted
+          redact_cbv_flow(cbv_flow)
         end
       end
   end
@@ -74,10 +69,7 @@ class DataRetentionService
       .where("transmitted_at < ?", REDACT_TRANSMITTED_CBV_FLOWS_AFTER.ago)
       .includes(:cbv_flow_invitation, :payroll_accounts)
       .find_each do |cbv_flow|
-        cbv_flow.redact!
-        cbv_flow.cbv_flow_invitation.redact! if cbv_flow.cbv_flow_invitation.present?
-        cbv_flow.cbv_applicant&.redact!
-        cbv_flow.payroll_accounts.with_discarded.each(&:redact!) # Do not scope to kept records, all accounts should be redacted
+        redact_cbv_flow(cbv_flow)
       end
   end
 
@@ -88,11 +80,31 @@ class DataRetentionService
       .where("created_at < ?", REDACT_OLD_RECORD_BACKSTOP.ago)
       .includes(:cbv_flow_invitation, :payroll_accounts)
       .find_each do |cbv_flow|
-      cbv_flow.redact!
-      cbv_flow.cbv_flow_invitation.redact! if cbv_flow.cbv_flow_invitation.present?
-      cbv_flow.cbv_applicant&.redact!
-      cbv_flow.payroll_accounts.with_discarded.each(&:redact!) # Do not scope to kept records, all accounts should be redacted
+      redact_cbv_flow(cbv_flow)
     end
+  end
+
+  # do all redaction necessary on a cbv_flow
+  def redact_cbv_flow(cbv_flow)
+    cbv_flow.redact!
+    cbv_flow.cbv_flow_invitation.redact! if cbv_flow.cbv_flow_invitation.present?
+    cbv_flow.cbv_applicant&.redact!
+    cbv_flow.payroll_accounts.with_discarded.each(&:redact!) # Do not scope to kept records, all accounts should be redacted
+
+    # delete the user from Argyle if present. This will also delete any associated data.
+    delete_argyle_user(cbv_flow.client_agency_id, cbv_flow.argyle_user_id) if cbv_flow.argyle_user_id.present?
+  end
+
+  # use Argyle api to delete the user and all associated data
+  def delete_argyle_user(client_agency_id, argyle_user_id)
+    argyle_environment = Rails.application.config.client_agencies[client_agency_id].argyle_environment
+    argyle = Aggregators::Sdk::ArgyleService.new(argyle_environment)
+    argyle.delete_user(argyle_user_id: argyle_user_id)
+  rescue => ex
+    raise ex unless Rails.env.production?
+
+    Rails.logger.error "Unable to delete Argyle User #{argyle_user_id} - #{ex.message}"
+    GenericEventTracker.new.track("DataRedactionFailure", nil, { argyle_user_id: argyle_user_id })
   end
 
   # Use after conducting a user test or other time we want to manually redact a

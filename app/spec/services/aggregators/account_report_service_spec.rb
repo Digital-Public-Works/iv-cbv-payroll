@@ -85,7 +85,6 @@ RSpec.describe Aggregators::AccountReportService do
         expect(EventTrackingJob).to receive(:perform_later)
           .with("ApplicantPaystubHasNullEmploymentID", anything, hash_including(
             time: be_a(Integer),
-            aggregator_account_id: payroll_account&.aggregator_account_id,
             paystub_id: anything
           )).exactly(10).times
 
@@ -101,6 +100,46 @@ RSpec.describe Aggregators::AccountReportService do
 
         expect(result.account_report.employment).to be_present
         expect(result.account_report.employment.employer_name).to eq("Whole Foods")
+      end
+    end
+
+    context 'with paystubs from multiple employments' do
+      let(:account_id) { '01956d5f-cb8d-af2f-9232-38bce8531f58' }
+      let!(:payroll_account) do
+        create(
+          :payroll_account,
+          :argyle_fully_synced,
+          cbv_flow: cbv_flow,
+          aggregator_account_id: account_id
+        )
+      end
+      let(:report) do
+        Aggregators::AggregatorReports::ArgyleReport.new(
+          payroll_accounts: [ payroll_account ],
+          argyle_service: argyle_service,
+          days_to_fetch_for_w2: 90,
+          days_to_fetch_for_gig: 90
+        )
+      end
+
+      before do
+        argyle_stub_request_identities_response("paystubs_multiple_employers")
+        argyle_stub_request_paystubs_response("paystubs_multiple_employers")
+        argyle_stub_request_gigs_response("paystubs_multiple_employers")
+        argyle_stub_request_account_response("paystubs_multiple_employers")
+        report.fetch
+      end
+
+      it 'returns an invalid result' do
+        service = described_class.new(report, payroll_account)
+
+        expect(EventTrackingJob).not_to receive(:perform_later)
+          .with("ApplicantPaystubHasNullEmploymentID", anything, anything)
+
+        result = service.validate
+
+        expect(result).to be_valid
+        expect(result.account_report).to be_present
       end
     end
 
