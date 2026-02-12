@@ -34,6 +34,7 @@ class Api::UserEventsController < ApplicationController
   rescue => ex
     raise ex unless Rails.env.production?
 
+    NewRelic::Agent.notice_error(ex)
     Rails.logger.error "Unable to process user action: #{ex}"
     render json: { status: :error }, status: :unprocessable_entity
   end
