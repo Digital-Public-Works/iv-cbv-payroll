@@ -59,7 +59,7 @@ module Aggregators::Sdk
       nil # 204 No Content
     end
 
-    def delete_account_api(account:)
+    def delete_user(argyle_user_id:)
       nil # 204 No Content
     end
 
