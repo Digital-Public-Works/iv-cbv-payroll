@@ -74,16 +74,11 @@ RSpec.describe CbvFlow, type: :model do
   end
 
   describe "#fully_synced_payroll_accounts" do
-    let(:payroll_accounts) do
-      [
-        build(:payroll_account),
-        build(:payroll_account, :pinwheel_fully_synced),
-        build(:payroll_account, :argyle_sync_in_progress),
-        build(:payroll_account, :argyle_fully_synced)
-      ]
-    end
     it "returns only those payroll accounts that have fully synced" do
-      allow(cbv_flow).to receive(:payroll_accounts).and_return(payroll_accounts)
+      create(:payroll_account, cbv_flow: cbv_flow)
+      create(:payroll_account, :pinwheel_fully_synced, cbv_flow: cbv_flow)
+      create(:payroll_account, :argyle_sync_in_progress, cbv_flow: cbv_flow)
+      create(:payroll_account, :argyle_fully_synced, cbv_flow: cbv_flow)
 
       result = cbv_flow.fully_synced_payroll_accounts
 

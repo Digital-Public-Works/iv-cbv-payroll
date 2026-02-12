@@ -479,6 +479,21 @@ RSpec.describe DataRetentionService do
       service.send(:delete_argyle_user, client_agency_id, argyle_user_id)
     end
 
+    context "when the user has already been deleted (404)" do
+      before do
+        allow(argyle_service).to receive(:delete_user).and_raise(Faraday::ResourceNotFound.new(nil, nil))
+      end
+
+      it "does not raise an error" do
+        expect { service.send(:delete_argyle_user, client_agency_id, argyle_user_id) }.not_to raise_error
+      end
+
+      it "logs an info message" do
+        expect(Rails.logger).to receive(:info).with("Argyle User #{argyle_user_id} already deleted")
+        service.send(:delete_argyle_user, client_agency_id, argyle_user_id)
+      end
+    end
+
     context "when deletion fails" do
       let(:error) { StandardError.new("API Error") }
 
@@ -547,6 +562,17 @@ RSpec.describe DataRetentionService do
         redacted_at: within(1.second).of(Time.now)
       )
     end
+
+    context "when a flow has an argyle_user_id" do
+      before do
+        second_cbv_flow.update!(argyle_user_id: "argyle_manual_123", client_agency_id: "sandbox")
+      end
+
+      it "deletes the argyle user" do
+        expect_any_instance_of(DataRetentionService).to receive(:delete_argyle_user).with("sandbox", "argyle_manual_123")
+        DataRetentionService.manually_redact_by_case_number!("DELETEME001")
+      end
+    end
   end
 
   describe "#redact_cbv_flow" do
@@ -562,6 +588,23 @@ RSpec.describe DataRetentionService do
       cbv_flow.update(argyle_user_id: nil)
       expect(service).not_to receive(:delete_argyle_user)
       service.send(:redact_cbv_flow, cbv_flow)
+    end
+
+    it "calls delete_argyle_user before redacting local records" do
+      expect(service).to receive(:delete_argyle_user).ordered
+      expect(cbv_flow).to receive(:redact!).ordered
+      service.send(:redact_cbv_flow, cbv_flow)
+    end
+
+    context "when delete_argyle_user raises an error" do
+      before do
+        allow(service).to receive(:delete_argyle_user).and_raise(StandardError.new("API Error"))
+      end
+
+      it "does not redact local records" do
+        expect { service.send(:redact_cbv_flow, cbv_flow) }.to raise_error(StandardError)
+        expect(cbv_flow.reload.redacted_at).to be_nil
+      end
     end
   end
 
