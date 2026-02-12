@@ -95,7 +95,7 @@ module Aggregators::AggregatorReports
     end
 
     def valid_hours_value?(hours)
-      hours.blank? || (0..10_000).cover?(Float(hours, exception: false))
+      hours.blank? || (-10_000..10_000).cover?(Float(hours, exception: false))
     end
 
     def transform_gigs(gigs_json)
