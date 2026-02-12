@@ -153,9 +153,9 @@ module Aggregators::Sdk
       @http.get(build_url("#{ACCOUNTS_ENDPOINT}/#{account}")).body
     end
 
-    # https://docs.argyle.com/api-reference/accounts#delete
-    def delete_account_api(account:)
-      @http.delete(build_url("#{ACCOUNTS_ENDPOINT}/#{account}")).body
+    # https://docs.argyle.com/api-reference/users#delete
+    def delete_user(argyle_user_id:)
+      @http.delete(build_url("#{USERS_ENDPOINT}/#{argyle_user_id}")).body
     end
 
     # https://docs.argyle.com/api-reference/paystubs#list
