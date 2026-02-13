@@ -6,7 +6,7 @@ class Api::InvitationsController < ApplicationController
 
   def create
     @cbv_flow_invitation = CbvInvitationService.new(event_logger)
-      .invite(cbv_flow_invitation_params, @current_user, delivery_method: nil)
+      .invite(cbv_flow_invitation_params, @current_user, delivery_method: nil, expiration_params: expiration_params)
 
     errors = @cbv_flow_invitation.errors
     if errors.any?
@@ -46,6 +46,10 @@ class Api::InvitationsController < ApplicationController
     ActionController::Parameters.new(
       CbvApplicant.build_agency_partner_metadata(@current_user.client_agency_id) { |attr| params[:agency_partner_metadata][attr] }
     )
+  end
+
+  def expiration_params
+    params.permit(:expiration_date, :expiration_days)
   end
 
   def authenticate
