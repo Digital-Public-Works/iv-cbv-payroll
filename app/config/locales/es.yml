@@ -153,7 +153,6 @@ es:
         popular_providers: O elija entre los proveedores o aplicaciones de nómina más populares
         results: Resultados
         search: Buscar
-        search_label: 'Ingrese el nombre de su empleador actual o reciente o su proveedor de nómina:'
         select: Seleccione
         type_the_full_name_tooltip: Escribe el nombre completo usando letras o números
     entries:
