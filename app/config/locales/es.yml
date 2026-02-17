@@ -149,6 +149,7 @@ es:
         header: Busque su empleador o empresa de nómina
         company_name: Nombre de la empresa
         company_examples: "Ejemplos: Uber, McDonald's, ADP"
+        type_the_full_name_tooltip: Escribe el nombre completo usando letras o números
         payroll_providers: Proveedores de nómina
         popular_providers: O elija entre los proveedores o aplicaciones de nómina más populares
         results: Resultados

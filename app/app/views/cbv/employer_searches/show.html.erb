@@ -16,7 +16,9 @@
             class="usa-button usa-button--unstyled text-ink usa-tooltip margin-left-05" 
             data-position="right" 
             title="<%= t('.type_the_full_name_tooltip') %>"
-            aria-label="More information">
+            aria-label="More information"
+            data-controller="tooltip-tracker"
+            data-action="mouseenter->tooltip-tracker#track focus->tooltip-tracker#track">
       <svg class="usa-icon" style="pointer-events: none;" aria-hidden="true" focusable="false" role="img">
         <use href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#info_outline") %>"></use>
       </svg>
