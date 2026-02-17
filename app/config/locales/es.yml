@@ -145,17 +145,17 @@ es:
           help_options: Obtenga ayuda aquí.
         app_based_providers: Empleadores basados
         can_not_find_employer: Explore sus opciones
+        company_examples: 'Ejemplos: Uber, McDonald''s, ADP'
+        company_name: Nombre de la empresa
         employer_not_listed: "¿Tiene problemas para encontrar a su empleador o proveedor de nómina?"
         header: Busque su empleador o empresa de nómina
-        company_name: Nombre de la empresa
-        company_examples: "Ejemplos: Uber, McDonald's, ADP"
-        type_the_full_name_tooltip: Escribe el nombre completo usando letras o números
         payroll_providers: Proveedores de nómina
         popular_providers: O elija entre los proveedores o aplicaciones de nómina más populares
         results: Resultados
         search: Buscar
         search_label: 'Ingrese el nombre de su empleador actual o reciente o su proveedor de nómina:'
         select: Seleccione
+        type_the_full_name_tooltip: Escribe el nombre completo usando letras o números
     entries:
       create:
         error: Debe marcar la casilla de «acuerdo» para proceder.
