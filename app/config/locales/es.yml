@@ -146,7 +146,9 @@ es:
         app_based_providers: Empleadores basados
         can_not_find_employer: Explore sus opciones
         employer_not_listed: "¿Tiene problemas para encontrar a su empleador o proveedor de nómina?"
-        header: Busque su empleador o proveedor de nómina
+        header: Busque su empleador o empresa de nómina
+        company_name: Nombre de la empresa
+        company_examples: "Ejemplos: Uber, McDonald's, ADP"
         payroll_providers: Proveedores de nómina
         popular_providers: O elija entre los proveedores o aplicaciones de nómina más populares
         results: Resultados

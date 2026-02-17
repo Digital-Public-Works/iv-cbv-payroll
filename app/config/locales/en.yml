@@ -253,7 +253,10 @@ en:
         app_based_providers: App-based employers
         can_not_find_employer: Explore your options
         employer_not_listed: Trouble finding your employer or payroll provider?
-        header: Search for your employer or payroll provider
+        header: Find your employer or payroll company
+        company_name: Company Name
+        company_examples: "Examples: Uber, McDonald's, ADP"
+        type_the_full_name_tooltip: Type the full name using letters or numbers
         payroll_providers: Payroll providers
         popular_providers: Or choose from popular payroll providers or apps
         results: Results
