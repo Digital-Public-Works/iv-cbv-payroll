@@ -6,7 +6,7 @@ class CbvInvitationService
   def invite(cbv_flow_invitation_params, current_user, delivery_method: :email, expiration_params: {})
     cbv_flow_invitation_params[:user] = current_user
     @cbv_flow_invitation = CbvFlowInvitation.new(cbv_flow_invitation_params)
-    @agency_config = agency_config(current_user)
+    @agency_config = Rails.application.config.client_agencies[current_user.client_agency_id]
     validate_expiration_params(expiration_params)
 
     if @cbv_flow_invitation.errors.empty?
@@ -56,18 +56,21 @@ class CbvInvitationService
 
   def validate_expiration_params(expiration_params)
     if expiration_params[:expiration_days].present? && expiration_params[:expiration_date].present?
-      @cbv_flow_invitation.errors.add(:expiration, "Provide either expiration_days or expiration_date, but not both")
+      @cbv_flow_invitation.errors.add(:expiration, "Provide either expiration_days or expiration_date, but not both.")
     end
 
     if expiration_params[:expiration_date].present?
-      parsed_date = Time.use_zone(agency_time_zone) { Time.zone.parse(expiration_params[:expiration_date].to_s) }
+      begin
+        parsed_date = Time.iso8601(expiration_params[:expiration_date].to_s)
 
-      if parsed_date.nil?
-        @cbv_flow_invitation.errors.add(:expiration_date, "is not a valid date format")
-      elsif parsed_date < Time.use_zone(agency_time_zone) { Time.current }
-        @cbv_flow_invitation.errors.add(:expiration_date, "cannot be in the past")
-      elsif parsed_date > Time.use_zone(agency_time_zone) { Time.zone.today } + 366.days
-        @cbv_flow_invitation.errors.add(:expiration_date, "cannot be more than 1 year in the future")
+        if parsed_date < Time.now
+          @cbv_flow_invitation.errors.add(:expiration_date, "cannot be in the past")
+        elsif parsed_date > Time.zone.today + 366.days
+          @cbv_flow_invitation.errors.add(:expiration_date, "cannot be more than 1 year in the future")
+        end
+
+      rescue ArgumentError
+        @cbv_flow_invitation.errors.add(:expiration_date, "must be a full ISO8601 datetime with a timezone")
       end
     end
 
@@ -79,17 +82,18 @@ class CbvInvitationService
   end
 
   def calculate_expires_at(exp_params)
-    end_of_day_created = Time.use_zone(agency_time_zone) { Time.current }.end_of_day
-    days_valid_for  = exp_params[:expiration_days] || @agency_config.invitation_valid_days
-
-    exp_params[:expiration_date]&.end_of_day || end_of_day_created + days_valid_for.days
-  end
-
-  def agency_config(current_user)
-    Rails.application.config.client_agencies[current_user.client_agency_id] || {}
+    Time.use_zone(agency_time_zone) do
+      if exp_params[:expiration_date].present?
+        exp_params[:expiration_date]
+      elsif exp_params[:expiration_days].present?
+        Time.current.end_of_day + exp_params[:expiration_days].to_i.days
+      else
+        Time.current.end_of_day + @agency_config.invitation_valid_days.days
+      end
+    end
   end
 
   def agency_time_zone
-    @agency_config.timezone || Rails.configuration.time_zone
+    @agency_config.timezone
   end
 end
