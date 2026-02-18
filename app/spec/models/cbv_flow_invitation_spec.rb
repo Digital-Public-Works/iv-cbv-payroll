@@ -7,30 +7,6 @@ RSpec.describe CbvFlowInvitation, type: :model do
   let(:invalid_email_no_tld) { "johndoe@gmail" }
   let(:valid_email) { "johndoe@gmail.com" }
 
-  describe "callbacks" do
-    context "before_create" do
-      let(:current_time) { Time.utc(2025, 6, 17, 1, 0, 0) }
-
-      around do |ex|
-        Timecop.freeze(current_time, &ex)
-      end
-
-      it "sets expires_at based on created_at" do
-        invitation = CbvFlowInvitation.new(valid_attributes)
-        invitation.save!
-        expect(invitation.created_at).to eq(current_time)
-        # Saved in the database as UTC, so this will show as 4 hours later than we expect
-        expect(invitation.expires_at).to have_attributes(
-          hour: 3,
-          min: 59,
-          sec: 59,
-          month: 7,
-          day: 1,
-        )
-      end
-    end
-  end
-
   describe "validations" do
     context "for all invitations" do
       context "validates email addresses" do
@@ -78,20 +54,17 @@ RSpec.describe CbvFlowInvitation, type: :model do
 
   describe "#expired?" do
     let(:client_agency_id) { "sandbox" }
+    let(:agency_time_zone) { "America/New_York" }
     let(:invitation_valid_days) { 14 }
     let(:invitation) do
       create(:cbv_flow_invitation, valid_attributes.merge(
         client_agency_id: client_agency_id,
-        created_at: invitation_sent_at
+        created_at: invitation_sent_at,
+        days_to_expire: invitation_valid_days,
+        time_zone: agency_time_zone
       ))
     end
     let(:now) { Time.now }
-
-    before do
-      allow(Rails.application.config.client_agencies[client_agency_id])
-        .to receive(:invitation_valid_days)
-        .and_return(invitation_valid_days)
-    end
 
     around do |ex|
       Timecop.freeze(now, &ex)
@@ -100,9 +73,9 @@ RSpec.describe CbvFlowInvitation, type: :model do
     subject { invitation.expired? }
 
     context "within the validity window" do
-      let(:invitation_sent_at)    { Time.new(2024, 8,  1, 12, 0, 0, "-04:00") }
-      let(:snap_application_date) { Time.new(2024, 8,  1, 12, 0, 0, "-04:00") }
-      let(:now)                   { Time.new(2024, 8, 14, 12, 0, 0, "-04:00") }
+      let(:invitation_sent_at)    { Time.use_zone(agency_time_zone) { Time.new(2024, 8,  1, 12, 0, 0) } }
+      let(:snap_application_date) { Time.use_zone(agency_time_zone) { Time.new(2024, 8,  1, 12, 0, 0) } }
+      let(:now)                   { Time.use_zone(agency_time_zone) { Time.new(2024, 8, 14, 12, 0, 0) } }
 
       it { is_expected.to eq(false) }
 
@@ -119,15 +92,15 @@ RSpec.describe CbvFlowInvitation, type: :model do
     end
 
     context "before 11:59pm ET on the 14th day after the invitation was sent" do
-      let(:invitation_sent_at) { Time.new(2024, 8,  1, 12, 0, 0, "-04:00") }
-      let(:now)                { Time.new(2024, 8, 15, 23, 0, 0, "-04:00") }
+      let(:invitation_sent_at)    { Time.use_zone(agency_time_zone) { Time.new(2024, 8,  1, 12, 0, 0) } }
+      let(:now)                   { Time.use_zone(agency_time_zone) { Time.new(2024, 8,  15, 23, 0, 0) } }
 
       it { is_expected.to eq(false) }
     end
 
     context "after 11:59pm ET on the day of the validity window" do
-      let(:invitation_sent_at) { Time.new(2024, 8,  1, 12, 0, 0, "-04:00") }
-      let(:now)                { Time.new(2024, 8, 16,  0, 1, 0, "-04:00") }
+      let(:invitation_sent_at) { Time.use_zone(agency_time_zone) { Time.new(2024, 8,  1, 12, 0, 0) } }
+      let(:now)                { Time.use_zone(agency_time_zone) { Time.new(2024, 8, 16, 0, 1, 0) } }
 
       it { is_expected.to eq(true) }
     end
@@ -135,19 +108,17 @@ RSpec.describe CbvFlowInvitation, type: :model do
 
   describe "#expires_at_local" do
     let(:client_agency_id) { "sandbox" }
+    let(:agency_time_zone) { "America/New_York" }
     let(:invitation_valid_days) { 14 }
     let(:invitation) do
       create(:cbv_flow_invitation, valid_attributes.merge(
         client_agency_id: client_agency_id,
-        created_at: invitation_sent_at
+        created_at: invitation_sent_at,
+        days_to_expire: invitation_valid_days,
+        time_zone: agency_time_zone
       ))
     end
-    let(:invitation_sent_at) { Time.new(2024, 8,  1, 12, 0, 0, "-04:00") }
-
-    before do
-      allow(Rails.application.config.client_agencies[client_agency_id])
-        .to receive(:invitation_valid_days).and_return(invitation_valid_days)
-    end
+    let(:invitation_sent_at) { Time.use_zone(agency_time_zone) { Time.new(2024, 8,  1, 12, 0, 0) } }
 
     it "returns the end of the day the 14th day after the invitation was sent" do
       expect(invitation.expires_at_local).to have_attributes(
