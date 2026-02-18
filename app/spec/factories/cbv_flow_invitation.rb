@@ -40,5 +40,13 @@ FactoryBot.define do
         cbv_flow_invitation.cbv_applicant.update(evaluator.cbv_applicant_attributes)
       end
     end
+
+    after(:create) do |invitation|
+      if invitation.cbv_applicant
+        invitation.update(expires_at: invitation.created_at + 14.days)
+      end
+
+      invitation.update(expires_at: invitation.created_at + 10.days)
+    end
   end
 end
