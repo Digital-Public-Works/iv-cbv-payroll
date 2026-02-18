@@ -252,14 +252,16 @@ en:
           help_options: Get help here.
         app_based_providers: App-based employers
         can_not_find_employer: Explore your options
+        company_examples: 'Examples: Uber, McDonald''s, ADP'
+        company_name: Company Name
         employer_not_listed: Trouble finding your employer or payroll provider?
-        header: Search for your employer or payroll provider
+        header: Find your employer or payroll company
         payroll_providers: Payroll providers
         popular_providers: Or choose from popular payroll providers or apps
         results: Results
         search: Search
-        search_label: 'Enter the name of your current or recent employer or payroll provider:'
         select: Select
+        type_the_full_name_tooltip: Type the full name using letters or numbers
     entries:
       create:
         error: You must check the agreement checkbox to proceed.
