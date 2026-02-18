@@ -368,7 +368,7 @@ GEM
     puma (6.6.0)
       nio4r (~> 2.0)
     racc (1.8.1)
-    rack (3.1.19)
+    rack (3.1.20)
     rack-mini-profiler (3.3.1)
       rack (>= 1.2.0)
     rack-protection (4.2.1)
@@ -635,7 +635,7 @@ DEPENDENCIES
   premailer-rails
   pry
   puma (~> 6.6.0)
-  rack (~> 3.1.18)
+  rack (~> 3.1.20)
   rack-mini-profiler
   rails (~> 7.2.2)
   rails-controller-testing
