@@ -98,9 +98,9 @@ variable "service_desired_instance_count" {
   default = 1
 }
 
-variable "solidqueue_desired_instance_count" {
+variable "shoryuken_desired_instance_count" {
   type        = number
-  description = "Number of SolidQueue worker instances to run"
+  description = "Number of Shoryuken worker instances to run"
   default     = 1
 }
 
@@ -118,6 +118,12 @@ variable "service_override_extra_environment_variables" {
   default     = {}
 }
 
+variable "database_snapshot_identifier" {
+  description = "Specifies whether or not to create this cluster from a snapshot. You can use either the name or ARN when specifying a DB cluster snapshot, or the ARN when specifying a DB snapshot."
+  default     = null
+  nullable    = true
+}
+
 variable "database_serverless_min_capacity" {
   description = "The minimum capacity for the Aurora Serverless cluster in ACUs (Aurora Capacity Units)"
   type        = number
@@ -128,4 +134,15 @@ variable "database_serverless_max_capacity" {
   description = "The maximum capacity for the Aurora Serverless cluster in ACUs (Aurora Capacity Units)"
   type        = number
   default     = 1.0
+}
+variable "backup_retention_period" {
+  description = "Number of days to retain automated backups (RDS minimum is 1)."
+  type        = number
+  default     = 1
+}
+
+variable "enable_aws_backup" {
+  description = "Whether to enable AWS Backup for the database."
+  type        = bool
+  default     = false
 }

@@ -10,6 +10,7 @@ module Aggregators::ResponseObjects
     employment_type
     account_source
     employer_id
+    employment_matching_id
   ]
 
   Employment = Struct.new(*EMPLOYMENT_FIELDS, keyword_init: true) do
@@ -24,11 +25,29 @@ module Aggregators::ResponseObjects
         employer_address: response_body.dig("employer_address", "raw"),
         employment_type: Aggregators::FormatMethods::Pinwheel.employment_type(response_body["employer_name"]),
         account_source: platform_body&.dig("name"),
-        employer_id: response_body["id"]
+        employer_id: response_body["id"],
+        employment_matching_id: response_body["id"]
       )
     end
 
-    def self.from_argyle(identity_response_body, a_paystub_response_body = nil, account_json = nil)
+    # mini helper method
+    # # this returns Date.new(0) if the date is invalid since it is being used in a max by
+    def self.safe_parse_date(s)
+      Date.parse(s)
+    rescue
+      Date.new(0)
+    end
+
+    def self.from_argyle(identity_response_body, paystubs_json = nil, account_json = nil)
+      # employment id for matching
+      employment_id = identity_response_body["employment"]
+      # find the most recent paystub for this employer that has an address
+      paystubs = Array(paystubs_json&.[]("results"))
+      a_paystub_response_body = paystubs
+                                  .select { |paystub_json| paystub_json["employment"] == employment_id && paystub_json.dig("employer_address", "line1").present? }
+                                  .max_by { |paystub_json| safe_parse_date(paystub_json["paystub_date"]) }
+
+      # create the employment
       new(
         account_id: identity_response_body["account"],
         employer_name: identity_response_body["employer"],
@@ -38,7 +57,8 @@ module Aggregators::ResponseObjects
         employer_address: Aggregators::FormatMethods::Argyle.format_employer_address(a_paystub_response_body),
         employment_type: Aggregators::FormatMethods::Argyle.employment_type(identity_response_body["employment_type"]),
         account_source: account_json&.dig("source"),
-        employer_id: account_json&.dig("item")
+        employer_id: account_json&.dig("item"),
+        employment_matching_id: employment_id
       )
     end
   end

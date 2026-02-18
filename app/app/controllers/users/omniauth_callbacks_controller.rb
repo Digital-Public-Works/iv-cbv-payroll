@@ -1,6 +1,14 @@
 class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
   after_action :track_event
 
+  def pa_dhs
+    response_params = request.env["omniauth.auth"]["info"]
+    Rails.logger.info "Login successful from #{response_params["email"]} (name: #{response_params["name"]}, nickname: #{response_params["nickname"]})"
+    email = response_params["email"]
+
+    login_with_oauth(email, "pa_dhs")
+  end
+
   def az_des
     response_params = request.env["omniauth.auth"]["info"]
     Rails.logger.info "Login successful from #{response_params["email"]} (name: #{response_params["name"]}, nickname: #{response_params["nickname"]})"
@@ -35,7 +43,7 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
   def track_event
     return unless @user&.persisted?
 
-    event_logger.track("CaseworkerLoggedIn", request, {
+    event_logger.track(TrackEvent::CaseworkerLoggedIn, request, {
       time: Time.now.to_i,
       client_agency_id: @user.client_agency_id,
       user_id: @user.id
@@ -48,6 +56,8 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
       new_user_session_path(client_agency_id: "sandbox")
     when "az_des"
       new_user_session_path(client_agency_id: "az_des")
+    when "pa_dhs"
+      new_user_session_path(client_agency_id: "pa_dhs")
     end
   end
 end

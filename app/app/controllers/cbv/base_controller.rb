@@ -17,24 +17,27 @@ class Cbv::BaseController < ApplicationController
   def set_cbv_flow
     if params[:token].present?
       invitation = CbvFlowInvitation.find_by(auth_token: params[:token])
-      if invitation.blank?
+
+      unless invitation
         return redirect_to(root_url, flash: { alert: t("cbv.error_invalid_token") })
       end
+
+      # if invitation has expired redirect to expired page
       if invitation.expired?
         track_expired_event(invitation)
         return redirect_to(cbv_flow_expired_invitation_path(client_agency_id: invitation.client_agency_id))
       end
-
-      # using invitation.client_agency_id directly instead of current_agency
-      # because cbv_flow isn't created yet at this point
-      client_agency = agency_config[invitation.client_agency_id]
-      unless client_agency.allow_invitation_reuse
-        if invitation.complete?
-          return redirect_to(cbv_flow_expired_invitation_path(client_agency_id: invitation.client_agency_id))
-        end
+      # check backstop of how many times an invitation can be used to prevent runaway costs from a bot or something
+      if invitation.at_flow_limit?
+        Rails.logger.warn("Invitation #{invitation.id} reached flow limit")
+        NewRelic::Agent.record_custom_event("InvitationLimitReached", {
+          invitation_id: invitation.id,
+          cbv_flow_count: invitation.cbv_flows.count
+        })
+        return redirect_to(root_url, flash: { alert: t("cbv.error_invitation_limit_reached") })
       end
 
-      @cbv_flow = CbvFlow.create_from_invitation(invitation)
+      @cbv_flow = CbvFlow.create_from_invitation(invitation, cookies.permanent.signed[:device_id])
       session[:cbv_flow_id] = @cbv_flow.id
       cookies.permanent.encrypted[:cbv_applicant_id] = @cbv_flow.cbv_applicant_id
       track_invitation_clicked_event(invitation, @cbv_flow)
@@ -43,11 +46,12 @@ class Cbv::BaseController < ApplicationController
       begin
         @cbv_flow = CbvFlow.find(session[:cbv_flow_id])
       rescue ActiveRecord::RecordNotFound
-        redirect_to root_url
+        reset_cbv_session!
+        redirect_to root_url(cbv_flow_timeout: true)
       end
     else
-      track_timeout_event
-      redirect_to root_url, flash: { slim_alert: { type: "info", message_html: t("cbv.error_missing_token_html") } }
+      track_deeplink_without_cookie_event
+      redirect_to root_url(cbv_flow_timeout: true), flash: { slim_alert: { type: "info", message_html: t("cbv.error_missing_token_html") } }
     end
   end
 
@@ -133,61 +137,63 @@ class Cbv::BaseController < ApplicationController
   end
 
   def capture_page_view
-    begin
-      event_logger.track("CbvPageView", request, {
-        time: Time.now.to_i,
-        cbv_flow_id: @cbv_flow.id,
-        invitation_id: @cbv_flow.cbv_flow_invitation_id,
-        cbv_applicant_id: @cbv_flow.cbv_applicant_id,
-        client_agency_id: @cbv_flow.client_agency_id,
-        path: request.path
-      })
-    rescue => ex
-      raise unless Rails.env.production?
-      Rails.logger.error "Unable to track event (CbvPageView): #{ex}"
-    end
+    event_logger.track(TrackEvent::CbvPageView, request, {
+      time: Time.now.to_i,
+      cbv_flow_id: @cbv_flow&.id,
+      invitation_id: @cbv_flow&.cbv_flow_invitation_id,
+      cbv_applicant_id: @cbv_flow&.cbv_applicant_id,
+      client_agency_id: @cbv_flow&.client_agency_id,
+      device_id: @cbv_flow&.device_id,
+      path: request.path
+    })
   end
 
   def track_timeout_event
-    event_logger.track("ApplicantTimedOut", request, {
+    event_logger.track(TrackEvent::ApplicantTimedOut, request, {
       time: Time.now.to_i,
       client_agency_id: current_agency&.id
     })
-  rescue => ex
-    Rails.logger.error "Unable to track event (ApplicantTimedOut): #{ex}"
+  end
+
+  def track_deeplink_without_cookie_event
+    event_logger.track(TrackEvent::ApplicantAccessedFlowWithoutCookie, request, {
+      time: Time.now.to_i,
+      client_agency_id: current_agency&.id
+    })
   end
 
   def track_expired_event(invitation)
-    event_logger.track("ApplicantAccessedExpiredLinkPage", request, {
+    event_logger.track(TrackEvent::ApplicantAccessedExpiredLinkPage, request, {
       invitation_id: invitation.id,
       cbv_applicant_id: invitation.cbv_applicant_id,
       client_agency_id: current_agency&.id,
       time: Time.now.to_i
     })
-  rescue => ex
-    Rails.logger.error "Unable to track event (ApplicantAccessedExpiredLinkPage): #{ex}"
   end
 
   def track_invitation_clicked_event(invitation, cbv_flow)
-    event_logger.track("ApplicantClickedCBVInvitationLink", request, {
+    event_logger.track(TrackEvent::ApplicantClickedCBVInvitationLink, request, {
       time: Time.now.to_i,
       invitation_id: invitation.id,
       cbv_flow_id: cbv_flow.id,
       cbv_applicant_id: cbv_flow.cbv_applicant_id,
       client_agency_id: current_agency&.id,
+      device_id: cbv_flow.device_id,
       seconds_since_invitation: (Time.now - invitation.created_at).to_i,
-      household_member_count:  count_unique_members(invitation),
+      household_member_count: count_unique_members(invitation),
       completed_reports_count: invitation.cbv_flows.completed.count,
       flows_started_count: invitation.cbv_flows.count,
       origin: session[:cbv_origin]
     })
-  rescue => ex
-    Rails.logger.error "Unable to track event (ApplicantClickedCBVInvitationLink): #{ex}"
   end
 
   def count_unique_members(invitation)
     return 1 if invitation.cbv_applicant.income_changes.blank?
 
     invitation.cbv_applicant.income_changes.map { |income_change| income_change.with_indifferent_access[:member_name] }.uniq.count
+  end
+
+  def reset_cbv_session!
+    session[:cbv_flow_id] = nil
   end
 end

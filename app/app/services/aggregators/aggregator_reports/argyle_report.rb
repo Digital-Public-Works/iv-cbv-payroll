@@ -2,6 +2,8 @@ module Aggregators::AggregatorReports
   class ArgyleReport < AggregatorReport
     include Aggregators::ResponseObjects
     include ActiveModel::Validations
+    include ActiveModel::Validations::Callbacks
+    include Warnable
 
     validates_with Aggregators::Validators::UsefulReportValidator, on: :useful_report
 
@@ -14,7 +16,7 @@ module Aggregators::AggregatorReports
 
     def fetch_report_data_for_account(payroll_account)
       identities_json = @argyle_service.fetch_identities_api(
-        account: payroll_account.pinwheel_account_id
+        account: payroll_account.aggregator_account_id
       )
 
       # Override the date range to fetch when fetching a gig job.
@@ -26,26 +28,36 @@ module Aggregators::AggregatorReports
       end
 
       account_json = @argyle_service.fetch_account_api(
-        account: payroll_account.pinwheel_account_id
+        account: payroll_account.aggregator_account_id
       )
       paystubs_json = @argyle_service.fetch_paystubs_api(
-        account: payroll_account.pinwheel_account_id,
+        account: payroll_account.aggregator_account_id,
         from_start_date: from_date,
         to_start_date: to_date
       )
       gigs_json = @argyle_service.fetch_gigs_api(
-        account: payroll_account.pinwheel_account_id,
+        account: payroll_account.aggregator_account_id,
         from_start_datetime: from_date,
         to_start_datetime: to_date
       )
 
       @identities.append(*transform_identities(identities_json))
       @employments.append(*transform_employments(identities_json,
-                                                 ArgyleReport.most_recent_paystub_with_address(paystubs_json),
+                                                 paystubs_json,
                                                  account_json))
       @incomes.append(*transform_incomes(identities_json))
       @paystubs.append(*transform_paystubs(paystubs_json))
       @gigs.append(*transform_gigs(gigs_json))
+
+      check_hours(paystubs_json)
+
+      if self.has_warnings?
+        NewRelic::Agent.record_custom_event(TrackEvent::ArgyleDataUnexpectedHours, {
+          time: Time.now.to_i,
+          cbv_flow_id: payroll_account&.cbv_flow_id,
+          warnings: self.warnings.full_messages.join(", ")
+        })
+      end
     end
 
     def transform_identities(identities_json)
@@ -54,9 +66,9 @@ module Aggregators::AggregatorReports
       end
     end
 
-    def transform_employments(identities_json, a_paystub_json, account_json)
+    def transform_employments(identities_json, paystubs_json, account_json)
       identities_json["results"].map do |identity_json|
-        Employment.from_argyle(identity_json, a_paystub_json, account_json)
+        Employment.from_argyle(identity_json, paystubs_json, account_json)
       end
     end
 
@@ -72,11 +84,18 @@ module Aggregators::AggregatorReports
       end
     end
 
-    def self.most_recent_paystub_with_address(paystubs_json)
-      # Filter and sort to find the most recent valid paystub
-      paystubs_json["results"]
-        .select { |paystub_json| paystub_json.dig("employer_address", "line1").present? }
-        .max_by { |paystub_json| Date.parse(paystub_json["paystub_date"]) rescue Date.new(0) }
+    def check_hours(paystubs_json)
+      paystubs_json["results"].each do |ps|
+        raw_hours_valid = valid_hours_value?(ps["hours"])
+        all_gross_hours_valid = ps["gross_pay_list"]&.all? { |gp| valid_hours_value?(gp["hours"]) }
+        if !raw_hours_valid || !all_gross_hours_valid
+          self.warnings.add(:hours, "Invalid value received for hours (paystub: #{ps['id']}")
+        end
+      end
+    end
+
+    def valid_hours_value?(hours)
+      hours.blank? || (-10_000..10_000).cover?(Float(hours, exception: false))
     end
 
     def transform_gigs(gigs_json)

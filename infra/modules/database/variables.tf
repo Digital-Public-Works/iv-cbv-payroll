@@ -28,6 +28,12 @@ variable "database_name" {
   }
 }
 
+variable "snapshot_identifier" {
+  description = "Specifies whether or not to create this cluster from a snapshot. You can use either the name or ARN when specifying a DB cluster snapshot, or the ARN when specifying a DB snapshot."
+  default     = null
+  nullable    = true
+}
+
 variable "database_subnet_group_name" {
   type        = string
   description = "Name of database subnet group"
@@ -81,11 +87,19 @@ variable "vpc_id" {
 variable "serverless_min_capacity" {
   description = "The minimum capacity for the Aurora Serverless cluster. Value should be in Aurora capacity units (ACU)"
   type        = number
-  default     = 0.5
 }
 
 variable "serverless_max_capacity" {
   description = "The maximum capacity for the Aurora Serverless cluster. Value should be in Aurora capacity units (ACU)"
   type        = number
-  default     = 1.0
+}
+
+variable "backup_retention_period" {
+  description = "Number of days to retain automated backups (RDS minimum is 1)."
+  type        = number
+}
+
+variable "enable_aws_backup" {
+  description = "Whether to enable AWS Backup for the database."
+  type        = bool
 }

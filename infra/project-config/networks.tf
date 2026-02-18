@@ -1,8 +1,9 @@
 locals {
   network_configs = {
     demo = {
-      account_name               = "demo"
-      database_subnet_group_name = "dev"
+      account_name                   = "demo"
+      database_subnet_group_name     = "dev"
+      enable_vpc_endpoint_interfaces = false
 
       domain_config = {
         manage_dns  = false
@@ -14,23 +15,18 @@ locals {
             source                    = "issued"
             subject_alternative_names = ["*.divt.app", "*.demo.divt.app"]
           }
-
-          # Example certificate configuration for a certificate that is issued elsewhere and imported into the project
-          # (currently not supported, will be supported via https://github.com/navapbc/template-infra/issues/559)
-          # "platform-test-dev.navateam.com" = {
-          #   source = "imported"
-          #   private_key_ssm_name = "/certificates/sub.domain.com/private-key"
-          #   certificate_body_ssm_name = "/certificates/sub.domain.com/certificate-body"
-          # }
         }
       }
 
-      num_availability_zones = 1
+      vpc_cidr               = "10.0.0.0/20"
+      num_availability_zones = 3
       single_nat_gateway     = true
     }
+
     prod = {
-      account_name               = "prod"
-      database_subnet_group_name = "prod"
+      account_name                   = "prod"
+      database_subnet_group_name     = "prod"
+      enable_vpc_endpoint_interfaces = false
 
       domain_config = {
         manage_dns  = false
@@ -44,6 +40,7 @@ locals {
         }
       }
 
+      vpc_cidr               = "10.0.0.0/20"
       num_availability_zones = 3
       single_nat_gateway     = true
     }

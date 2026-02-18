@@ -1,12 +1,14 @@
 class ApplicationController < ActionController::Base
+  include NonProductionAccessible
+
   helper :view
-  helper_method :current_agency, :show_translate_button?, :show_menu?, :pilot_ended?
+  helper_method :current_agency, :show_menu?, :pilot_ended?
   around_action :switch_locale
   before_action :add_newrelic_metadata
   before_action :redirect_if_maintenance_mode
   before_action :enable_mini_profiler_in_demo
-  before_action :check_help_param
   before_action :check_if_pilot_ended
+  before_action :set_device_id_cookie
 
   rescue_from ActionController::InvalidAuthenticityToken do
     redirect_to root_url, flash: { slim_alert: { type: "info", message_html:  t("cbv.error_missing_token_html") } }
@@ -32,8 +34,11 @@ class ApplicationController < ActionController::Base
 
   private
 
-  def show_translate_button?
-    false
+  def set_device_id_cookie
+    cookies.permanent.signed[:device_id] ||= {
+      value: SecureRandom.uuid,
+      httponly: true
+    }
   end
 
   def show_menu?
@@ -70,13 +75,9 @@ class ApplicationController < ActionController::Base
   end
 
   def enable_mini_profiler_in_demo
-    return unless demo_mode?
+    return unless is_not_production?
 
     Rack::MiniProfiler.authorize_request
-  end
-
-  def demo_mode?
-    ENV["DOMAIN_NAME"] == "demo.divt.app"
   end
 
   def detect_client_agency_from_domain
@@ -108,6 +109,7 @@ class ApplicationController < ActionController::Base
   def add_newrelic_metadata
     attributes = {
       cbv_flow_id: session[:cbv_flow_id],
+      device_id: cookies.permanent.signed[:device_id],
       session_id: session.id.to_s,
       client_agency_id: params[:client_agency_id],
       locale: params[:locale],
@@ -124,15 +126,6 @@ class ApplicationController < ActionController::Base
   def redirect_if_maintenance_mode
     if ENV["MAINTENANCE_MODE"] == "true"
       redirect_to maintenance_path
-    end
-  end
-
-  def check_help_param
-    if params[:help] == "true"
-      help_link = helpers.render(partial: "help/help_link", locals: { text: t("help.alert.help_options"), source: "banner" })
-      flash.now[:alert] = "#{help_link}"
-      flash.now[:alert_heading] = t("help.alert.heading")
-      flash.now[:alert_type] = "warning"
     end
   end
 end

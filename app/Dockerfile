@@ -1,7 +1,19 @@
 # syntax = docker/dockerfile:1
 
-# Make sure RUBY_VERSION matches the Ruby version in .ruby-version and Gemfile
-ARG RUBY_VERSION=3.4.4
+# Steps for upgrading Ruby version / base image:
+# 1. Update the version number in three places:
+#      1. Here
+#      2. .ruby-version
+#      3. Gemfile
+# 2. Run `bin/update` and commit changes.
+# 3. Update Dockerfile to address any upgrades from the base ruby image.
+#      * Update versions of pinned debian packages
+#      * Remove manual security upgrades (if any)
+# 4. Ensure that docker build pasess:
+#      > make release-build OPTS="--tag iv-cbv-payroll:latest"
+# 5. Ensure that `wkhtmltopdf` runs:
+#      > docker run iv-cbv-payroll:latest bundle exec wkhtmltopdf --version
+ARG RUBY_VERSION=3.4.5
 
 
 ##########################################################################################
@@ -9,28 +21,55 @@ ARG RUBY_VERSION=3.4.4
 ##########################################################################################
 FROM registry.docker.com/library/ruby:$RUBY_VERSION AS base
 
-# Upgrade packages in base image to address security issues.
-# We should be able to remove these after upgrading the base image to a version
-# that has the upgraded versions by default.
+# Install RUNTIME-ONLY system dependencies and security patches.
+# This layer changes rarely, providing excellent cache reuse in CI.
+#
+# IMPORTANT: Only runtime libraries here (no -dev packages).
+# Build dependencies go in the BUILD stage.
 # hadolint ignore=DL3008
-RUN apt-get update -qq && \
+RUN set -eux; \
+    apt-get update -qq; \
+    apt-get upgrade -y libcurl3t64-gnutls; \
     apt-get install -y --no-install-recommends \
+      # Required for wkhtmltopdf (PDF generation)
+      libjpeg62-turbo \
+      libpng16-16t64 \
+      libxrender1 \
+      libfontconfig1 \
+      libfreetype6 \
+      libx11-6 \
+      # End wkhtmltopdf dependencies
       libtasn1-6 \
       libgnutls30 \
-      # CVE-2025-0395 \
-      libc-dev-bin \
-      # CVE-2025-31115 \
       liblzma5 \
-      # CVE-2025-37990 \
+      libxml2 \
+      libxslt1.1 \
+      libicu76 \
+      libexpat1 \
+      libsqlite3-0 \
+      libpq5 \
+      libgpgme11t64 \
+      openssl \
+      postgresql-client-17 \
+    ; \
+    apt-get purge -y --auto-remove \
       linux-libc-dev \
-      # CVE-2025-32415 CVE-2025-5222 \
-      libxml2 libxml2-dev icu-devtools libicu-dev libicu72 \
-      # CVE-2025-53367 \
-      libdjvulibre21 \
-      # CVE-2025-7424 \
-      libxslt1-dev \
-      && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+      libc-dev-bin \
+      libpq-dev \
+      libevent-dev \
+      libmariadb-dev \
+      libopenexr-dev \
+      libwmf-dev \
+      libdb5.3-dev \
+      dpkg-dev \
+      x11proto-dev \
+      xtrans-dev \
+      imagemagick \
+      imagemagick-7.q16 \
+      libmagickcore-dev \
+      libmagickwand-dev \
+    ; \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 # Rails app lives here
 WORKDIR /rails
@@ -50,14 +89,40 @@ EXPOSE 3000
 ##########################################################################################
 FROM base AS build
 
-# Install packages needed to build gems
-RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y \
-      build-essential=12.9 \
-      git=1:2.39.5-0+deb12u2 \
-      libpq-dev=15.13-0+deb12u1 \
-      npm=9.2.0~ds1-1 \
-      pkg-config=1.8.1-1
+# Install BUILD-TIME dependencies needed to compile gems and assets.
+# This includes -dev packages with headers/build tools.
+# This layer also changes rarely, providing good cache reuse.
+# hadolint ignore=DL3008
+RUN set -eux; \
+    apt-get update -qq && \
+    apt-get install -y --no-install-recommends \
+      build-essential \
+      git \
+      curl \
+      pkg-config \
+      libc-dev-bin \
+      linux-libc-dev \
+      libxml2-dev \
+      libxslt1-dev \
+      libicu-dev \
+      icu-devtools \
+      libpq-dev \
+      libperl5.40 \
+      perl \
+      perl-base \
+      perl-modules-5.40 \
+    ; \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+
+ENV NODENV_ROOT /opt/nodenv
+ENV PATH "$NODENV_ROOT/bin:$PATH"
+COPY .node-version .
+RUN git clone https://github.com/nodenv/nodenv.git "${NODENV_ROOT}" && \
+    mkdir -p "${NODENV_ROOT}/plugins" && \
+    git clone https://github.com/nodenv/node-build.git "${NODENV_ROOT}/plugins/node-build" && \
+    nodenv install "$(cat .node-version)" -v && \
+    nodenv global "$(cat .node-version)"
+ENV PATH "$NODENV_ROOT/shims:$PATH"
 
 # Copy application code
 COPY . .
@@ -86,12 +151,14 @@ ENV RAILS_ENV="development"
 ENV TMPDIR="/rails/tmp"
 
 # Install packages needed for development
-RUN apt-get update -qq && \
+# hadolint ignore=DL3008
+RUN set -eux; \
+    apt-get update -qq && \
     apt-get install --no-install-recommends -y \
-      postgresql-client=15+248 \
-      graphviz=2.42.2-7+b3 \
-      && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+      postgresql-client-17 \
+      graphviz \
+    ; \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 RUN gem install bundler --no-document -v ${BUNDLER_VERSION} && \
     bundle config set --local without production && \
@@ -120,7 +187,6 @@ RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 ##########################################################################################
 FROM base AS release
 
-# Set the working directory so when we attach a shell we're in the project's root directory
 WORKDIR /rails
 
 # Copy the entrypoint script
@@ -133,37 +199,11 @@ ENV TMPDIR="/rails/tmp"
 ENV GNUPGHOME="/rails/tmp"
 ENV PIDFILE="/rails/tmp/pids/server.pid"
 
-# Install packages needed for deployment
-#
-# To debug a missing package version (i.e. if one of these versions gets
-# superceded in the upstream package repo), run:
-#
-#   docker run -ti registry.docker.com/library/ruby:3.3.5 bash
-#   apt-get install [package]
-#
-# and notice the version that was installed.
-RUN apt-get update -qq && \
-    apt-get install -y --no-install-recommends \
-        libgpgme11=1.18.0-3+b1 \
-        libvips42=8.14.1-3+deb12u2 \
-        openssl=3.0.16-1~deb12u1 \
-        postgresql-client=15+248 \
-        python-is-python3=3.11.2-1+deb12u1 \
-        python3-venv=3.11.2-1+b1 \
-        python3-pip=23.0.1+dfsg-1 \
-        && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives && \
-    python3 -m venv /opt/aws-cli-venv && \
-    /opt/aws-cli-venv/bin/pip install --no-cache-dir --upgrade pip && \
-    /opt/aws-cli-venv/bin/pip install --no-cache-dir "setuptools>=78.1.1" && \
-    /opt/aws-cli-venv/bin/pip install --no-cache-dir awscli && \
-    ln -s /opt/aws-cli-venv/bin/aws /usr/local/bin/aws
-
-# Remove base rexml for GHSA-4xqq-m2hx-25v8
-RUN gem uninstall -i /usr/local/lib/ruby/gems/3.3.0 debug && \
-    gem uninstall -i /usr/local/lib/ruby/gems/3.3.0 rss && \
-    gem uninstall -i /usr/local/lib/ruby/gems/3.3.0 rexml && \
-    gem uninstall -i /usr/local/lib/ruby/gems/3.3.0 net-imap || true
+# Remove unneeded stdlib gems if present. Uninstall executibles, all versions, ignore if not installed
+RUN gem uninstall -x -aIx debug || true && \
+    gem uninstall -x -aIx rss || true && \
+    gem uninstall -x -aIx rexml || true && \
+    gem uninstall -x -aIx net-imap || true
 
 # Install custom db migrate script
 COPY bin/db-migrate /usr/bin/
@@ -172,9 +212,8 @@ COPY bin/db-migrate /usr/bin/
 COPY --from=release-build /usr/local/bundle /usr/local/bundle
 COPY --from=release-build /rails /rails
 
-# Clean up any unused gems and ensure we have the correct versions
-RUN bundle clean --force && \
-    bundle install --no-cache
+# Clean up any unused gems (no need to reinstall, artifacts already copied)
+RUN bundle clean --force
 
 # Ensure all necessary directories exist
 RUN mkdir -p /rails/tmp/pids /rails/log /rails/db

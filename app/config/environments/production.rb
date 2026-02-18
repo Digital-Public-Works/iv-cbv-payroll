@@ -5,7 +5,6 @@ Rails.application.configure do
 
   # Code is not reloaded between requests.
   config.cache_classes = true
-  config.solid_queue.supervisor_pidfile = Rails.root.join("tmp", "solid_queue.pid")
 
   # Eager load code on boot. This eager loads most of Rails and
   # your application in memory, allowing both threaded web servers
@@ -39,9 +38,6 @@ Rails.application.configure do
   config.action_mailer.asset_host = "https://#{ENV["DOMAIN_NAME"]}"
 
   routes.default_url_options[:host] = ENV["DOMAIN_NAME"]
-
-  # Temporarily support deprecated domain snap-income-pilot.com
-  config.hosts << "snap-income-pilot.com"
 
   # Specifies the header that your server uses for sending files.
   # config.action_dispatch.x_sendfile_header = "X-Sendfile" # for Apache

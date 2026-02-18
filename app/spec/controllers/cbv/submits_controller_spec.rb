@@ -44,7 +44,7 @@ RSpec.describe Cbv::SubmitsController do
 
       before do
         cbv_applicant.update(snap_application_date: current_time)
-        cbv_flow.payroll_accounts.first.update(pinwheel_account_id: "03e29160-f7e7-4a28-b2d8-813640e030d3")
+        cbv_flow.payroll_accounts.first.update(aggregator_account_id: "03e29160-f7e7-4a28-b2d8-813640e030d3")
 
         session[:cbv_flow_id] = cbv_flow.id
         pinwheel_stub_request_end_user_accounts_response
@@ -110,7 +110,7 @@ RSpec.describe Cbv::SubmitsController do
           let(:errored_jobs) { [ "employment" ] }
 
           it "renders a pdf" do
-            create(:payroll_account, :pinwheel_fully_synced, cbv_flow: cbv_flow, pinwheel_account_id: "account1")
+            create(:payroll_account, :pinwheel_fully_synced, cbv_flow: cbv_flow, aggregator_account_id: "account1")
             expect(response).to be_successful
           end
         end
@@ -130,6 +130,21 @@ RSpec.describe Cbv::SubmitsController do
             expect(pdf_text).not_to include(I18n.t("cbv.submits.show.application_or_recertification_date"))
           end
         end
+
+        context "when rendering for a pa dhs caseworker" do
+          it "shows the right client information fields" do
+            cbv_flow.update!(client_agency_id: "pa_dhs")
+            cbv_flow.cbv_applicant.update!(case_number: "12345")
+            get :show, format: :pdf, params: {
+              is_caseworker: "true"
+            }
+
+            pdf_text = extract_pdf_text(response)
+
+            expect(pdf_text).not_to include(I18n.t("cbv.submits.show.application_or_recertification_date"))
+          end
+        end
+
 
         context "with sandbox client agency" do
           context "when rendering for a caseworker" do
@@ -248,16 +263,13 @@ RSpec.describe Cbv::SubmitsController do
       context "for Bob (a gig worker)" do
         let(:cbv_applicant) { create(:cbv_applicant, created_at: current_time, case_number: "ABC1234") }
         let(:account_id) { "019571bc-2f60-3955-d972-dbadfe0913a8" }
-        let(:supported_jobs) { %w[accounts identity paystubs] }
+        let(:supported_jobs) { %w[accounts identity paystubs employment] }
         let(:errored_jobs) { [] }
         let(:cbv_flow) do
           create(:cbv_flow,
                  :completed,
                  :invited,
-                 :with_argyle_account,
-                 with_errored_jobs: errored_jobs,
                  created_at: current_time,
-                 supported_jobs: supported_jobs,
                  cbv_applicant: cbv_applicant
           )
         end
@@ -267,7 +279,7 @@ RSpec.describe Cbv::SubmitsController do
             :argyle_fully_synced,
             with_errored_jobs: errored_jobs,
             cbv_flow: cbv_flow,
-            pinwheel_account_id: account_id,
+            aggregator_account_id: account_id,
             supported_jobs: supported_jobs,
             )
         end
@@ -299,17 +311,14 @@ RSpec.describe Cbv::SubmitsController do
       context "for Tim (a gig worker with two gigs)" do
         let(:cbv_applicant) { create(:cbv_applicant, created_at: current_time, case_number: "ABC1234") }
         let(:account_id) { "019571bc-2f60-3955-d972-dbadfe0913a8" }
-        let(:account_id_2) { "2" }
+        let(:account_id_2) { "22222222-2222-2222-2222-222222222222" }
         let(:supported_jobs) { %w[accounts identity paystubs employment] }
         let(:errored_jobs) { [] }
         let(:cbv_flow) do
           create(:cbv_flow,
                  :completed,
                  :invited,
-                 :with_argyle_account,
-                 with_errored_jobs: errored_jobs,
                  created_at: current_time,
-                 supported_jobs: supported_jobs,
                  cbv_applicant: cbv_applicant
           )
         end
@@ -319,7 +328,7 @@ RSpec.describe Cbv::SubmitsController do
             :argyle_fully_synced,
             with_errored_jobs: errored_jobs,
             cbv_flow: cbv_flow,
-            pinwheel_account_id: account_id,
+            aggregator_account_id: account_id,
             supported_jobs: supported_jobs,
             )
         end
@@ -329,7 +338,7 @@ RSpec.describe Cbv::SubmitsController do
             :argyle_fully_synced,
             with_errored_jobs: errored_jobs,
             cbv_flow: cbv_flow,
-            pinwheel_account_id: account_id_2,
+            aggregator_account_id: account_id_2,
             supported_jobs: supported_jobs,
             )
         end
@@ -350,7 +359,33 @@ RSpec.describe Cbv::SubmitsController do
           expect(response).to be_successful
           expect(pdf_text).to include("Employer 1")
           expect(pdf_text).to include("Employer 2")
-          expect(pdf_text.scan("What does this information mean?").size).to eq(1)
+
+          expect(pdf_text.scan("What does the information in the ‘Monthly Summary’ table mean? Self-employment").size).to eq(1)
+          expect(pdf_text.scan("“Self-employment” is a label for a self-employed or 1099 contractor job from an online app (like Uber or Doordash).").size).to eq(1)
+          expect(pdf_text.scan("“Accrued gross earnings” is the sum of all gross payments made in that month.").size).to eq(1)
+          expect(pdf_text.scan("“Verified mileage expenses” are car-related expenses based on the miles driven and recorded in the Platform/App.").size).to eq(1)
+
+          # This item renders fine in the browser and PDF. There is an environment test issue that causes the test to
+          # fail if we are doing a count of the entire string in GH actions but not locally, so we are verifying the
+          # parts instead.
+          expect(pdf_text).to include("Total hours worked")
+          expect(pdf_text).to include("is a sum of the time it took to complete each gig")
+          expect(pdf_text).to include("monthly total shows when a payout happened")
+        end
+
+        it "renders the self-employment tags" do
+          get :show, format: :pdf
+          pdf_text = extract_pdf_text(response)
+          expect(response).to be_successful
+
+          expect(pdf_text.scan("Employer 1: Lyft Driver Self-employment").size).to eq(1)
+          expect(pdf_text.scan("Payments from Lyft Driver Self-employment").size).to eq(1)
+          expect(pdf_text.scan("Employer 2: Nava Self-employment").size).to eq(1)
+          expect(pdf_text.scan("Payments from Nava Self-employment").size).to eq(1)
+
+          expect(pdf_text.scan("Monthly summary Self-employment").size).to eq(2)
+
+          expect(pdf_text.scan("What does the information in the ‘Monthly Summary’ table mean? Self-employment").size).to eq(1)
         end
       end
 
@@ -373,7 +408,7 @@ RSpec.describe Cbv::SubmitsController do
             :argyle_fully_synced,
             with_errored_jobs: errored_jobs,
             cbv_flow: cbv_flow,
-            pinwheel_account_id: account_id,
+            aggregator_account_id: account_id,
             supported_jobs: supported_jobs,
             )
         end
@@ -409,7 +444,7 @@ RSpec.describe Cbv::SubmitsController do
       context "for Kim (a w2 worker with two w2s)" do
         let(:cbv_applicant) { create(:cbv_applicant, created_at: current_time, case_number: "ABC1234") }
         let(:account_id) { "01956d5f-cb8d-af2f-9232-38bce8531f58" }
-        let(:account_id_2) { "2" }
+        let(:account_id_2) { "22222222-2222-2222-2222-222222222222" }
         let(:supported_jobs) { %w[accounts identity paystubs employment income] }
         let(:errored_jobs) { [] }
         let(:cbv_flow) do
@@ -426,7 +461,7 @@ RSpec.describe Cbv::SubmitsController do
             :argyle_fully_synced,
             with_errored_jobs: errored_jobs,
             cbv_flow: cbv_flow,
-            pinwheel_account_id: account_id,
+            aggregator_account_id: account_id,
             supported_jobs: supported_jobs,
             )
         end
@@ -436,7 +471,7 @@ RSpec.describe Cbv::SubmitsController do
             :argyle_fully_synced,
             with_errored_jobs: errored_jobs,
             cbv_flow: cbv_flow,
-            pinwheel_account_id: account_id_2,
+            aggregator_account_id: account_id_2,
             supported_jobs: supported_jobs,
             )
         end
@@ -458,7 +493,22 @@ RSpec.describe Cbv::SubmitsController do
           expect(response).to be_successful
           expect(pdf_text).to include("Employer 1")
           expect(pdf_text).to include("Employer 2")
-          expect(pdf_text.scan("What does this information mean?").size).to eq(1)
+          expect(pdf_text.scan("What does the information in the ‘Monthly Summary’ table me").size).to eq(1)
+        end
+
+        it "does not render self-employment tags for w-2 jobs" do
+          get :show, format: :pdf
+          pdf_text = extract_pdf_text(response)
+          expect(response).to be_successful
+
+          expect(pdf_text.scan("Employer 1: Whole Foods Self-employment").size).to eq(0)
+          expect(pdf_text.scan("Payments from Lyft Driver Self-employment").size).to eq(0)
+          expect(pdf_text.scan("Employer 2: Nava Self-employment").size).to eq(0)
+          expect(pdf_text.scan("Payments from Nava Self-employment").size).to eq(0)
+
+          expect(pdf_text.scan("Monthly summary Self-employment").size).to eq(0)
+
+          expect(pdf_text.scan("What does the information in the ‘Monthly Summary’ table mean? Self-employment").size).to eq(0)
         end
       end
     end
@@ -483,7 +533,7 @@ RSpec.describe Cbv::SubmitsController do
     end
     before do
       cbv_applicant.update(snap_application_date: current_time)
-      cbv_flow.payroll_accounts.first.update(pinwheel_account_id: "03e29160-f7e7-4a28-b2d8-813640e030d3")
+      cbv_flow.payroll_accounts.first.update(aggregator_account_id: "03e29160-f7e7-4a28-b2d8-813640e030d3")
 
       session[:cbv_flow_id] = cbv_flow.id
       sign_in sandbox_user
@@ -529,6 +579,16 @@ RSpec.describe Cbv::SubmitsController do
       patch :update, params: { cbv_flow: { consent_to_authorized_use: "1" } }
 
       expect(cbv_flow.reload.confirmation_code).to start_with("AZDES")
+    end
+
+
+    it "removes underscores from the agency name in the confirmation code" do
+      cbv_flow.update!(client_agency_id: "pa_dhs")
+      expect(cbv_flow.confirmation_code).to be_nil
+
+      patch :update, params: { cbv_flow: { consent_to_authorized_use: "1" } }
+
+      expect(cbv_flow.reload.confirmation_code).to start_with("PADHS")
     end
 
     it "does not overwrite an existing confirmation code" do

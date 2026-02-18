@@ -13,7 +13,17 @@
   <%= f.radio_button(:has_other_jobs, true, { label: t(".radio_yes") }) %>
   <%= f.radio_button(:has_other_jobs, false, { label: t(".radio_no") }) %>
 
-  <p><%= t(".note_html", agency_site: current_agency.agency_contact_website, agency_acronym: agency_translation("shared.agency_acronym")) %></p>
+  <%= f.hidden_field(:return_to_path, value: params[:return_to_path]) %>
 
-  <%= f.submit t("continue") %>
+  <p><%= t(".note_html", agency_site: current_agency.agency_contact_website, agency_portal_name: agency_translation("shared.agency_portal_name")) %></p>
+
+  <%= f.submit t("continue"),
+        class: "margin-top-4 margin-bottom-2" %>
+  <%= button_tag t("back"),
+      type: "button",
+      class: "usa-button usa-button--outline margin-y-1",
+      data: {
+          action: "click->back-button#back",
+          is_default_option: false
+      } %>
 <% end %>

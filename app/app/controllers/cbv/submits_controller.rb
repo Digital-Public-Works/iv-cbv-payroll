@@ -7,6 +7,7 @@ class Cbv::SubmitsController < Cbv::BaseController
   include GpgEncryptable
   include TarFileCreatable
   include CsvHelper
+  include NonProductionAccessible
 
   before_action :set_aggregator_report, only: %i[show update]
   before_action :check_aggregator_report, only: %i[show update]
@@ -20,11 +21,12 @@ class Cbv::SubmitsController < Cbv::BaseController
     respond_to do |format|
       format.html
       format.pdf do
-        event_logger.track("ApplicantDownloadedIncomePDF", request, {
+        event_logger.track(TrackEvent::ApplicantDownloadedIncomePDF, request, {
           time: Time.now.to_i,
           client_agency_id: current_agency&.id,
           cbv_applicant_id: @cbv_flow.cbv_applicant_id,
           cbv_flow_id: @cbv_flow.id,
+          device_id: @cbv_flow.device_id,
           invitation_id: @cbv_flow.cbv_flow_invitation_id,
           locale: I18n.locale
         })
@@ -32,15 +34,15 @@ class Cbv::SubmitsController < Cbv::BaseController
         render pdf: "#{@cbv_flow.id}",
           layout: "pdf",
           locals: {
-            is_caseworker: allow_caseworker_override_param? && params[:is_caseworker],
+            is_caseworker: is_not_production? && params[:is_caseworker],
             aggregator_report: @aggregator_report
           },
           footer: { right: t(".pdf.footer.page_footer"), font_size: 10 },
-          margin:  {
-            top:               10,
-            bottom:            10,
-            left:              10,
-            right:             10
+          margin: {
+            top: 10,
+            bottom: 10,
+            left: 10,
+            right: 10
           }
       end
     end
@@ -83,17 +85,16 @@ class Cbv::SubmitsController < Cbv::BaseController
   end
 
   def track_accessed_submit_event(cbv_flow)
-    event_logger.track("ApplicantAccessedSubmitPage", request, {
+    event_logger.track(TrackEvent::ApplicantAccessedSubmitPage, request, {
       time: Time.now.to_i,
       client_agency_id: current_agency&.id,
       cbv_flow_id: cbv_flow.id,
       cbv_applicant_id: cbv_flow.cbv_applicant_id,
+      device_id: @cbv_flow.device_id,
       invitation_id: cbv_flow.cbv_flow_invitation_id,
       flow_started_seconds_ago: (Time.now - cbv_flow.created_at).to_i,
       locale: I18n.locale
     })
-  rescue => ex
-    Rails.logger.error "Unable to track event (ApplicantAccessedIncomeSummary): #{ex}"
   end
 
   def generate_confirmation_code(cbv_flow)
@@ -103,9 +104,5 @@ class Cbv::SubmitsController < Cbv::BaseController
       (Time.now.to_i % 36 ** 3).to_s(36).tr("OISB", "0158").rjust(3, "0"),
       cbv_flow.id.to_s.rjust(4, "0")
     ].compact.join.upcase
-  end
-
-  def allow_caseworker_override_param?
-    Rails.env.development? || Rails.env.test? || demo_mode?
   end
 end

@@ -7,6 +7,7 @@ es:
       garnishment: Derecho de retención
       other: Otro
       roth: Cuenta Roth
+      tax: Impuesto
       vision: Plan de seguro de la vista
     earnings_category:
       base: Salario Base
@@ -43,16 +44,14 @@ es:
       terminated: Desactivado
     payment_frequencies:
       annual: Anual
-      annually: Anualmente
-      bi_weekly: Cada dos semanas
       biweekly: Cada dos semanas
       daily: Diario
       hourly: Por hora
       monthly: Mensual
       per_mile: Por milla
       quarterly: Trimestralmente
-      semi_monthly: Dos veces al mes
       semimonthly: Dos veces al mes
+      semiweekly: Dos veces a la semana
       variable: Variable
       weekly: Semanal
     tax_category:
@@ -66,7 +65,7 @@ es:
       body_2_html:
         default: Este proceso es solo para usted. Por favor, no comparta esta invitación con nadie más. <strong>Tiene hasta el %{deadline}, para realizar su verificación.</strong> De lo contrario, puede solicitar una nueva invitación.
       body_3:
-        default: Esta es una herramienta opcional. Si decide que no desea usarla, puede proveer los documentos de sus ingresos a través de la aplicación %{app_name}, fax, correo postal o en persona.
+        default: Esta es una herramienta opcional. Si decide que no desea usarla, puede proveer los documentos de sus ingresos a través de %{agency_portal}, fax, correo postal o en persona.
       button: Verifique sus ingresos
       button_caption: 'Para verificar sus ingresos con el SNAP Income Pilot, haga clic en el siguiente botón:'
       footer: Este es un mensaje generado automáticamente desde su agencia de SNAP. Por favor no conteste a este correo electrónico.
@@ -75,6 +74,7 @@ es:
         sandbox: La Agencia de pruebas CBV le ha enviado una invitación para verificar sus ingresos
       subject:
         default: Verifique sus ingresos para su solicitud o renovación de SNAP
+  back: Atrás
   caseworker:
     cbv_flow_invitations:
       create:
@@ -84,8 +84,8 @@ es:
   cbv:
     add_jobs:
       show:
-        header: "¿Tiene otro trabajo que declarar?"
-        header_2: "¿Tiene otro trabajo que reportar usando Reportar Mis Ingresos?"
+        header: "¿Tiene otro trabajo que verificar?"
+        header_2: "¿Tiene otro trabajo que reportar usando Verificar Mis Ingresos?"
         header_2_bullet_1: Tiene un proveedor de nómina en línea, o
         header_2_bullet_2: Le permite ver talones de pago en línea, o
         header_2_bullet_3: Está basado en aplicaciones (Uber, DoorDash, Lyft, Instacart, etc.)
@@ -140,35 +140,26 @@ es:
         error_updating_applicant: Se produjo un error al actualizar la información del solicitante. Vuelva a intentarlo.
     employer_searches:
       show:
+        alert:
+          heading: "¿Necesita ayuda para conectarse a su proveedor de nómina?"
+          help_options: Obtenga ayuda aquí.
         app_based_providers: Empleadores basados
-        can_not_find_employer: No puedo encontrar a mi empleador o proveedor de nómina
-        employer_not_listed: "¿Su empleador no está en la lista?"
-        exit_button_text: Salir y acceder al sitio web de %{agency_acronym}
+        can_not_find_employer: Explore sus opciones
+        employer_not_listed: "¿Tiene problemas para encontrar a su empleador o proveedor de nómina?"
         header: Busque su empleador o proveedor de nómina
-        no_results_steps1: Verifique si su empleador usa otro nombre empresarial o busque a su proveedor de nómina.
-        no_results_steps2: Asegúrese de haber escrito correctamente los nombres, y busque de nuevo.
-        no_results_steps3: Elija entre proveedores o aplicaciones populares de nómina.
-        no_results_steps_title: 'Intente estos pasos primero:'
-        no_results_title: No pudimos encontrar su empleador ni su proveedor de nómina.
         payroll_providers: Proveedores de nómina
         popular_providers: O elija entre los proveedores o aplicaciones de nómina más populares
         results: Resultados
-        review_button_text: Continuar
         search: Buscar
         search_label: 'Ingrese el nombre de su empleador actual o reciente o su proveedor de nómina:'
         select: Seleccione
-        to_continue: 'Si aún no ve enumerado a su empleador ni a su proveedor de nómina:'
-        to_continue_li_1: Deberá enviar esa información de ingresos por separado.
-        to_continue_li_1_html: <a href="%{agency_contact_website}" target="_blank" rel="noopener noreferrer">Visite el sitio web del %{agency_acronym}</a> para informarse de otras formas de notificar sus ingresos.
-        to_continue_li_2: Si tiene otros trabajos que añadir, búsquelos.
-        to_continue_li_3: Si no tiene otros trabajos que añadir aquí, puede salir de este sitio.
-        to_continue_li_3_continue: Si no tiene otros trabajos que agregar aquí, continúe para revisar su reporte de ingresos.
     entries:
       create:
         error: Debe marcar la casilla de «acuerdo» para proceder.
       show:
         checkbox:
           default: Marque esta casilla para permitirnos acceder a su información de pago y compartirla con %{agency_full_name}. No usaremos la información para ningún otro propósito ni la volveremos a divulgar a ninguna otra parte.
+          pa_dhs: Acepto que Verificar Mis Ingresos acceda a mis ingresos, incluido el W-2 y/o información sobre trabajos temporales. Después de revisar la información de mis ingresos, puedo elegir compartir mis ingresos con el Departamento de Servicios Humanos (DHS) de PA. Si la comparto, el DHS utilizará la información de mis ingresos para determinar mis beneficios. Entiendo que Verificar mis ingresos no tendrá acceso continuo a mi información de ingresos.
         continue: Comenzar
         header: Verifiquemos sus ingresos
         step1: Busque e inicie sesión en su empleador o proveedor de nómina en línea.
@@ -177,50 +168,91 @@ es:
         step2_description: Podrá hacer una vista previa y aprobar todo lo que se comparta con %{agency_acronym}.
         step3: Envíe su información de pago.
         step3_description: La enviaremos automáticamente a %{agency_acronym}. Esto lo ayudará a demostrar y comprobar sus ingresos y puede ayudar a %{agency_acronym} a tomar una decisión más rápida.
-        subheader_html: 'Enviaremos los registros de pago de su(s) empleador(es) a %{agency_acronym} para verificar sus ingresos.<strong> La mayoría de las personas completan este proceso en aproximadamente 5 minutos.</strong> Solo siga estos pasos:'
-        what_if_i_cant_use_this_body_1: Si necesita declarar sus ingresos y no puede usar esta herramienta, deberá compartir, de manera directa, la información de sus ingresos para este trabajo con %{agency_acronym}.
+        subheader_html: 'Enviaremos los registros de pago de su(s) empleador(es) a %{agency_full_name} (%{agency_acronym}) para verificar sus ingresos.<strong> La mayoría de las personas completan este proceso en aproximadamente 5 minutos.</strong> Solo siga estos pasos:'
+        what_if_i_cant_use_this_body_1: Si necesita verificar sus ingresos y no puede usar esta herramienta, deberá compartir, de manera directa, la información de sus ingresos para este trabajo con %{agency_portal_name}.
         what_if_i_cant_use_this_body_2_html:
-          default: Para obtener más información sobre cómo enviar documentos, visite el sitio web de <a href="%{agency_url}" target="_blank" rel="noopener noreferrer">%{agency_acronym}</a>.
+          default: Para obtener más información sobre cómo enviar documentos, visite el sitio web de <a href="%{agency_url}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
           la_ldh: 'Usted puede: <ul><li>Subir documentos a través del Portal de Autoservicio en línea en <a href="https://mymedicaid.la.gov/" target="_blank" rel="noopener noreferrer">https://mymedicaid.la.gov/</a></li><li>Enviar documentos por correo postal: Louisiana Medicaid/LaCHIP, P.O. Box 91283, Baton Rouge, LA 70821-9278</li><li>Enviar documentos por correo electrónico: <a href="mailto:MyMedicaid@la.gov">MyMedicaid@la.gov</a></li><li>Llevar sus documentos a la oficina de Medicaid de su elección.</li></ul>'
         what_if_i_cant_use_this_title: "¿Qué debo hacer si no puedo usar esta herramienta?"
         who_is_this_for_body: Puede usar esta herramienta si ha recibido ingresos en los últimos 90 días (incluso si ya no está trabajando). Además, le recordamos que puede acceder a sus recibos de pago en línea si brinda servicios a través de plataformas digitales, como Uber, Lyft o Amazon Flex.
         who_is_this_for_title: "¿Quién puede usar este herramienta?"
     error_invalid_link: Se utilizó un enlace no válido para iniciar CBV. Vuelva a hacer clic en el enlace, o bien directamente póngase en contacto con su asistente de caso para obtener ayuda.
     error_invalid_token: El enlace de invitación no es válido. Vuelva a comprobar el enlace e inténtelo de nuevo. Si sigue teniendo problemas, póngase en contacto con su trabajador social.
+    error_invitation_limit_reached: Se alcanzó el límite de uso de invitaciones. Comuníquese con su administrador(a) del caso para recibir ayuda.
     error_missing_token_html: "<strong>Su sesión a finalizado debido a inactividad.</strong> Para continuar donde la dejó, haga clic en el enlace que recibió de su agencia del SNAP por correo electrónico. Si encuentra algún problema, póngase en contacto con su agencia del SNAP para pedir ayuda."
     error_no_access: No logramos cargar los datos de nómina para esta cuenta. Haga clic en el enlace que recibió de su agencia del SNAP para intentarlo de nuevo.
     expired_invitations:
       show:
-        body_1: Si todavía no termina de verificar sus ingresos, envíe su información de ingresos desde el mismo sitio web de %{agency_acronym}.
+        body_1_html: Si todavía no termina de verificar sus ingresos, envíe su información de ingresos desde el mismo sitio web de <a href="%{agency_url}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
         cta_button_html:
           la_ldh: <a href="%{agency_url}" class="usa-button" target="_blank" rel="noopener noreferrer">Visite el sitio web del LDH</a>
           sandbox: <a href="https://www.mass.gov/guides/how-to-contact-dta" class="usa-button" target="_blank" rel="noopener noreferrer">Obtenga más información en la Agencia de pruebas CBV</a>
         title: Su invitación para verificar ingresos ha expirado
     missing_results:
       show:
-        back_button: Regrese a la búsqueda del empleador
-        continue_button: Continúe a «Revisar mi reporte»
+        check_search_term_example: 'Por ejemplo: Si buscó primero "DHS", el mejor término de búsqueda sería "Department of Human Services".'
+        check_search_term_heading: Verifique su término de búsqueda
+        check_search_term_text: Use el nombre completo u oficial de su empleador o proveedor de nómina. Evite las abreviaturas.
         continue_to_review: Continúe a revisar la información de ingresos que pudo encontrar antes de enviarla a %{agency_acronym}.
-        exit_button_html: <a href="%{agency_contact_website}" class="usa-button" target="_blank" rel="noopener noreferrer">Salir y acceder a %{agency_full_name}</a>
-        header: Cómo reportar ingresos si su empleador o proveedor de nómina no figura en la lista
-        more_jobs: Si tiene más trabajos que reportar
-        no_more_jobs: Si no tiene más trabajos que reportar
-        not_listed_p1: Si su empleador o proveedor de nómina no están listados en este sitio, tendrá que compartir su información de ingresos por este trabajo directamente con %{agency_acronym}.
-        not_listed_p2: Para obtener más información sobre cómo enviar los documentos requeridos, visite el sitio web de %{agency_acronym}.
-        not_listed_p2_link_html: Visite <a href="%{agency_url}" target="_blank" rel="noopener noreferrer">el sitio web del %{agency_acronym}</a> para obtener más información sobre cómo enviar documentos.
-        you_can_search: Puede buscar otro empleador o proveedor de nómina. Este sitio apoya a los empleadores con proveedores de nómina en línea o servicios basados en aplicaciones. Algunos ejemplos son Amazon, Walmart, McDonald’s, Uber, DoorDash, Lyft e Instacart.
+        find_payroll_fallback: Si no pudo encontrar su proveedor de nómina, buscando su empleador es la siguiente mejor opción.
+        find_payroll_heading: Cómo encontrar su proveedor de nómina si recibe depósito directo o talones de pago
+        find_payroll_place_1: Su talón de pago
+        find_payroll_place_2: Una notificación por correo electrónico de su talón de pago
+        find_payroll_place_3: El sistema de recursos humanos de su empleador
+        find_payroll_places: 'Busque el nombre del proveedor de nómina en estos lugares:'
+        find_payroll_text: Muchos trabajos usan un proveedor de nómina. Un proveedor de nómina tiene un sitio web donde usted puede iniciar sesión para ver sus talones de pago en línea.
+        go_to_agency_portal: Ir a %{agency_portal_name}
+        go_to_income_summary: Continuar al Resumen de Ingresos
+        header: Opciones para verificar sus ingresos
+        in_person_heading: Vaya en persona a una oficina de %{agency_acronym}
+        in_person_text: Lleve sus documentos de ingresos a una oficina local de %{agency_acronym}.
+        intro: Use los siguientes enlaces rápidos para encontrar la mejor manera de enviar información de ingresos para este trabajo.
+        local_help: Puede buscar ayuda en bibliotecas locales y organizaciones comunitarias.
+        mail_heading: Envíe documentos por correo o fax a %{agency_acronym}
+        mail_text: Consulte un aviso reciente de %{agency_acronym} para encontrar el mejor número de fax u oficina. Envíe sus documentos de ingresos por fax o correo.
+        other_ways_heading: Otras formas de verificar ingresos del trabajo
+        other_ways_intro: Está bien si no puede encontrar un trabajo o tiene problemas para iniciar sesión en un trabajo con Verificar Mis Ingresos. Puede cargar documentos, enviar información de ingresos por correo o visitar su agencia en persona.
+        other_ways_intro_with_jobs:
+          one: Está bien si no puede encontrar un trabajo o tiene problemas para iniciar sesión en un trabajo con Verificar Mis Ingresos. Como ya ha iniciado sesión en %{count} trabajo, estos son sus próximos pasos.
+          other: Está bien si no puede encontrar un trabajo o tiene problemas para iniciar sesión en un trabajo con Verificar Mis Ingresos. Como ya ha iniciado sesión en %{count} trabajos, estos son sus próximos pasos.
+        other_ways_link: Otras formas de enviar ingresos
+        other_ways_step_1:
+          one: Continúe en Verificar Mis Ingresos para enviar información de ingresos del %{count} trabajo en el que ya ha iniciado sesión.
+          other: Continúe en Verificar Mis Ingresos para enviar información de ingresos de los %{count} trabajos en los que ya ha iniciado sesión.
+        other_ways_step_2: Después de enviar su reporte de ingresos, envíe la información de ingresos de los trabajos que no pudo encontrar o en los que no pudo iniciar sesión usando otro método.
+        parent_company_google_heading: Intente una búsqueda en Google.
+        parent_company_google_text: Busque en Google el nombre de su empleador junto con "empresa matriz".
+        parent_company_heading: Cómo encontrar la empresa matriz de su empleador
+        parent_company_manager_heading: Pregunte a su gerente o supervisor.
+        parent_company_manager_text: Su gerente o supervisor podrá decirle quién es la empresa matriz.
+        parent_company_website_heading: Consulte el sitio web de la empresa.
+        parent_company_website_text: Busque en la sección "Acerca de nosotros" el nombre de la empresa matriz. Los informes anuales también pueden tener esta información.
+        quick_link_nav_label: Secciones de la página
+        quick_link_other_ways: Otras formas de verificar ingresos del trabajo
+        quick_link_search_tips: Consejos de búsqueda
+        right_company_heading: Asegúrese de que está buscando la empresa correcta
+        right_company_link: Cómo encontrar la empresa matriz de su empleador
+        right_company_text: Esto puede parecer obvio, pero a veces una empresa es propiedad de otra. Es posible que esté recibiendo pagos de una "empresa matriz" que tiene un nombre diferente.
+        search_payroll_heading: Busque su proveedor de nómina
+        search_payroll_link: Cómo encontrar su proveedor de nómina
+        search_payroll_text: Muchos trabajos usan un proveedor de nómina. Un proveedor de nómina tiene un sitio web donde puede iniciar sesión para ver sus talones de pago, documentos de impuestos y horas de trabajo en línea.
+        search_tips_heading: Consejos de búsqueda
+        submit_income_heading: Otras formas de enviar ingresos
+        try_searching_again: Intente buscar de nuevo
+        upload_heading: Cargue documentos en %{agency_portal_name}.
+        upload_text: Use la herramienta para cargar documentos en el portal en línea. Tenga listos sus documentos de ingresos para cargar. Asegúrese de que muestren toda su información de pago y de su empleador.
     other_jobs:
       show:
         bullet_1: Le paga a través de PayPal, Venmo, Cash App, etc.
         bullet_2: Le paga en efectivo
         bullet_3: Le paga con un cheque en papel y no puede ver su cheque de pago en línea
         bullet_4: Le emite un 1099
-        header: "¿Tiene que informar de algún trabajo sin usar la herramienta Reportar Mis Ingresos?"
-        header_html: "¿Tiene que informar de algún trabajo <em>sin usar</em> la herramienta Reportar Mis Ingresos?"
+        header: "¿Tiene que verificar de algún trabajo sin usar la herramienta Verificar Mis Ingresos?"
+        header_html: "¿Tiene que verificar de algún trabajo <em>sin usar</em> la herramienta Verificar Mis Ingresos?"
         header_sub_text: 'Cuéntenos sobre cualquier otro trabajo que haya tenido en los últimos 90 días, incluso si ya no está en ese trabajo. Al hacerlo, incluya cualquier trabajo, actual o reciente, que haya tenido en los últimos 90 días que reúna estos requisitos:'
-        note_html: 'Importante: Si tuvo otros trabajos en los últimos 90 días que no va a reportar usando la herramienta Report My Income, debe enviar esa información de ingresos por separado. <a href="%{agency_site}" target="_blank" rel="noopener noreferrer">Más información en %{agency_acronym}.</a>'
-        radio_no: No, no tengo otro trabajo que reportar por separado
-        radio_yes: Sí, tengo otro trabajo que reportaré por separado
+        note_html: 'Importante: Si tuvo otros trabajos en los últimos 90 días que no va a verificar usando la herramienta Verify My Income, debe enviar esa información de ingresos por separado. <a href="%{agency_site}" target="_blank" rel="noopener noreferrer">Más información en %{agency_portal_name}.</a>'
+        radio_no: No, no tengo ningún otro trabajo que verificar por separado.
+        radio_yes: Sí, tengo otro trabajo que verificar por separado
     payment_details:
       show:
         additional_information_header: Comentarios adicionales (Opcional)
@@ -232,8 +264,7 @@ es:
         employment_information_table_header: Información sobre el empleo
         employment_start_date: Fecha de inicio del empleo
         employment_status: Estatus del empleo
-        frequency_unknown: Frecuencia desconocida
-        header: Su información de pago de %{employer_name}
+        header: Revise la información de pago de %{employer_name}
         header_no_employer_name: Su información de pago de su empleador
         hourly_rate: Monto de compensación
         hours:
@@ -247,24 +278,21 @@ es:
         pay_frequency: Frecuencia de pago
         pay_gross: Pago antes de impuestos (bruto)
         pay_gross_ytd: Salario Bruto Acumulado del Año
-        pay_information: Información de pago
         pay_net: Pago después de impuestos y deducciones (neto)
         pay_period: Período de pago
         pay_period_value: "%{start_date} al %{end_date}"
         payment_hours: "%{amount} horas"
         payments_and_deductions_table_header: Pagos y deducciones
-        subheader: Hemos recopilado sus registros de ingresos de los últimos %{report_data_range}, conforme a la solicitud de %{agency_acronym}. Estos registros se extienden desde el %{start_date} hasta el %{end_date}. Si la información está incompleta o es incorrecta, agregue un comentario para %{agency_acronym}. Esto se incluirá en su reporte de ingresos y se vinculará a su %{benefit} %{reporting_purpose}.
-        total_gross_description: Este es el ingreso total de su trabajo antes de deducción de impuestos, beneficios, y otras deducciones de su cheque de pago.
-        total_gross_income: 'Ingresos totales de los últimos %{report_data_range}, antes de impuestos: %{amount}'
+        subheader_html: Hemos recopilado sus registros de pago del último %{report_data_range}, desde el %{start_date} hasta el %{end_date}.<br>Por favor, revise su información. Si falta información o si es incorrecta, deja un comentario para %{agency_acronym}. Su comentario se incluirá en su reporte de ingresos.
         unknown: Desconocido
-        your_details: Tus datos
     submits:
       show:
         additional_information_title: "¿Existe algún otro detalle que le gustaría que su asistente de caso conozca en relación con sus ingresos?"
         application_or_recertification_date: SNAP application or recertification interview date
         consent_checkbox_label_html:
           az_des: Marque esta casilla para confirmar, bajo pena de perjurio, que la información proporcionada es, a su leal saber y entender, verdadera y está completa.<ul class="margin-y-2"><li>Se compromete a informar %{agency_acronym} de cualquiera de lo siguiente:<ul><li>cualquier otro ingreso que no esté incluido en este informe;</li><li>o cualquier error que haya detectado en la información recopilada con esta herramienta.</li></ul></li><li>Comprende que usted es el único responsable de proporcionar información precisa y completa.</li><li>Por este motivo, cualquier información falsa o que no conste en el informe puede acarrear las siguientes consecuencias:<ul><li>un sobrepago, que debe reembolsar a %{agency_acronym};</li><li>o una inhabilitación para participar en el programa.</li></ul></li></ul>Al enviar este informe, autoriza su uso para fines de verificación de ingresos por parte de %{agency_acronym} y del personal autorizado de esta agencia.
-          default: 'Marque esta casilla para confirmar lo siguiente: <ul class="margin-y-2"><li>La información proporcionada es, a su leal saber y entender, verdadera y está completa.</li><li>Se compromete a informar a %{agency_full_name} de cualquier otro ingreso que no esté incluido en este informe o cualquier discrepancia que haya detectado en la información recopilada con esta herramienta.</li><li>Comprende que usted es el único responsable de proporcionar información precisa y completa. Por este motivo, cualquier información falsa o que no conste en el informe puede acarrear consecuencias legales.</li></ul> Al enviar este informe, autoriza su uso para fines de verificación de ingresos por parte del personal autorizado de %{agency_acronym}.'
+          default: 'Marque esta casilla para confirmar lo siguiente: <ul class="margin-y-2"><li>La información proporcionada es, a su leal saber y entender, verdadera y está completa.</li><li>Se compromete a informar a %{agency_full_name} (%{agency_acronym}) de cualquier otro ingreso que no esté incluido en este informe o cualquier discrepancia que haya detectado en la información recopilada con esta herramienta.</li><li>Comprende que usted es el único responsable de proporcionar información precisa y completa. Por este motivo, cualquier información falsa o que no conste en el informe puede acarrear consecuencias legales.</li></ul> Al enviar este informe, autoriza su uso para fines de verificación de ingresos por parte del personal autorizado de %{agency_acronym}.'
+          pa_dhs: "<strong>Acepto y confirmo que:</strong><br><strong>Compartiré información precisa.</strong> La información que proporcioné es verdadera y completa a mi leal saber y entender. No compartiré el informe si algo en el mismo es incorrecto.<p><strong>Compartiré cualquier información faltante.</strong> Acepto informarle al Departamento de Servicios Humanos de PA sobre los ingresos que no estén en este informe. <p><strong>No compartiré información falsa.</strong> Entiendo que debo compartir información honesta. Entiendo que podría tener problemas legales si omito información.<p><strong>Compartiré la información de mis ingresos.</strong> Autorizo que la información sobre ingresos que me ha mostrado esta página web se comparta con el Departamento de Servicios Humanos de PA."
         legal_header: Acuerdo Legal
         none_found: No encontramos ningún pago de este empleador.
         none_found_confirmed: Hemos confirmado que no hay pagos recientes de este empleador. Esto sucede cuando el cliente no ha recibido ingresos de este trabajo.
@@ -273,8 +301,10 @@ es:
           agency_header_name:
             az_des: Department of Economic Security
             la_ldh: Department of Health
+            pa_dhs: Department of Human Services
             sandbox: CBV Test Agency
           caseworker:
+            doc_id: Doc ID
             pay_period: Período de pago (%{pay_frequency})
           client:
             address: Dirección del empleador
@@ -285,16 +315,15 @@ es:
             description: Hemos recopilado información de sus ingresos con su consentimiento y la hemos enviado a %{agency_acronym}. Cualquier ingreso adicional que no pudo añadir a este informe debe compartirse por separado con %{agency_acronym}.
             employment_payment_details: Detalles de empleo y pago
             header: Informe de verificación de ingresos
+            self_employment: Empleo independiente
           footer:
             page_footer: Informe de verificación de ingresos | Página [page] de [topage]
           shared:
-            additional_jobs_to_report: "¿El cliente tiene trabajos adicionales que informará por separado?"
-            additional_jobs_to_report_html: "¿El cliente tiene trabajos adicionales que informará por separado? <sup>1</sup>"
+            additional_jobs_to_report: "¿El cliente tiene trabajos adicionales que verificará por separado?"
+            additional_jobs_to_report_html: "¿El cliente tiene trabajos adicionales que verificará por separado? <sup>1</sup>"
             client_information: Información del cliente
             confirmation_code: Código de confirmación
-            details: Datos
             employment_information: Información del empleo
-            pay_information: Información de pago
             payments_and_deductions_header: Pagos y deducciones de %{employer_name}
             report_details: Detalles del reporte
         share_report_button: Comparta mi reporte con %{agency_acronym}
@@ -311,13 +340,13 @@ es:
         download: Descargar mi informe
         header: Su informe de ingresos se envió correctamente a %{agency_acronym}.
         invitation_link_label: Enlace de invitación
-        share_invitation_link_content: Comparta este enlace con todos los miembros de su hogar que necesiten reportar sus ingresos.
-        share_invitation_link_title: Comparta el enlace si otras personas en su hogar necesitan reportar sus ingresos.
-        survey: Responda esta encuesta de 3 preguntas
+        share_invitation_link_content: Comparta este enlace con todos los miembros de su hogar que necesiten verificar sus ingresos.
+        share_invitation_link_title: Comparta el enlace si otras personas en su hogar necesitan verificar sus ingresos.
+        survey: Responda esta encuesta de 5 preguntas
         whats_next: "¿Qué sigue?"
-        whats_next_1_li_1: Si no pudo encontrar empleo o no dispone de talones de pago, reporte sus ingresos a %{agency_acronym} en línea, en persona o por correo.
-        whats_next_1_li_2_html: Visite el <a href="%{agency_website}" target="_blank" rel="noopener noreferrer">sitio web de %{agency_acronym}</a>
-        whats_next_1_title: Reporte otros ingresos, si es necesario.
+        whats_next_1_li_1: Si no pudo encontrar empleo o no tiene recibos de sueldo, verifique sus ingresos en %{agency_acronym} en línea, en persona o por correo.
+        whats_next_1_li_2_html: Visite el <a href="%{agency_website}" target="_blank" rel="noopener noreferrer">sitio web de %{agency_portal_name}</a>
+        whats_next_1_title: Verificar otros ingresos, si es necesario.
         whats_next_2_li_1_html: Nos gustaría saber más sobre su experiencia al usar este sitio.
         whats_next_2_title: Ayude a mejorar esta experiencia.
     summaries:
@@ -346,7 +375,7 @@ es:
         description: 'No pudimos conectarnos al sistema de su empleador debido a un error. Para continuar, puede:'
         option_1: Volver a la búsqueda de empleadores para nuevamente intentar agregar este empleador.
         option_2: Volver a la búsqueda de empleadores para agregar otro trabajo.
-        option_3: Envíe su información de ingresos a este empleador visitando el sitio web de %{agency_acronym}.
+        option_3: Envíe su información de ingresos a este empleador visitando el sitio web de %{agency_portal_name}.
         title: No pudimos acceder a la información de su empleador
     synchronizations:
       indicators:
@@ -359,6 +388,36 @@ es:
       status:
         fetching_payroll_description: Esto puede tardar algunos minutos. Mantenga abierta esta ventana mientras trabajamos en esto.
         header: Estamos recopilando los detalles de pago de su empleador.
+    validation_failures:
+      other_ways_no_employer:
+        go_to_agency_portal: Ir a %{agency_portal_name}
+        other_ways_description: 'Si no hay otra cuenta en la que pueda iniciar sesión, es necesario entregar información de ingresos para este trabajo fuera de Verify My Income. Puede entregar los últimos 30 días de ingresos a %{agency_name}:'
+        other_ways_option_1_html: Usando el cargador de documentos en <a href="%{agency_website}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
+        other_ways_option_2: Enviando por correo o por fax documentos de ingresos impresos
+        other_ways_option_3: Llevando documentos de ingresos a una oficina de %{agency_acronym}
+        try_searching_again: Intente buscar de nuevo
+      other_ways_with_employer:
+        continue_to_income_summary: Continuar al Resumen de Ingresos
+        more_options: Más opciones
+        more_options_1_html: Usando el cargador de documentos en <a href="%{agency_website}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
+        more_options_2: Enviando por correo o por fax documentos de ingresos impresos
+        more_options_3: Llevando documentos de ingresos a una oficina de %{agency_acronym}
+        more_options_text: 'Puede entregar los últimos 30 días de ingresos a %{agency_name}:'
+        other_ways_description_multiple_jobs: 'Como ya inició sesión en %{job_count} trabajos, estos son sus siguientes pasos:'
+        other_ways_description_single_job: 'Como ya inició sesión en %{job_count} trabajo, estos son sus siguientes pasos:'
+        step_1: Paso 1
+        step_1_text_multiple_jobs: Continúe en Verify My Income para entregar información de ingresos para %{job_count} trabajos en los que ya ha iniciado sesión.
+        step_1_text_single_job: Continúe en Verify My Income para entregar información de ingresos para %{job_count} trabajo en el que ya ha iniciado sesión.
+        step_2: Paso 2
+        step_2_text: Después de entregar su informe de ingresos, entregue información de ingresos para trabajos que no pudo encontrar o donde no pudo iniciar sesión de otra manera
+        try_searching_again: Intente buscar de nuevo
+      show:
+        not_enough_information: Esta cuenta no tenía suficiente información
+        not_enough_information_description: Pudimos conectarnos a su cuenta de nómina, pero no había suficiente información para verificar sus ingresos. Esto sucede cuando la cuenta no puede mostrar su nombre, el nombre de su empleador o ingresos de los últimos 90 días.
+        options_next_steps: Sus opciones y próximos pasos
+        other_ways: Otras maneras de verificar ingresos para este trabajo
+        try_different_credentials: Intente iniciar sesión con una cuenta o credenciales diferentes
+        try_different_credentials_description: A veces ocurre un error si ha iniciado sesión en una cuenta de administrador, no en una cuenta de empleado. Si cree que esto sucedió, regrese a la búsqueda e inicie sesión con una cuenta diferente.
   components:
     report:
       employment_details_table:
@@ -368,10 +427,12 @@ es:
         accrued_gross_earnings: Ganancias brutas acumuladas
         compact:
           footnote:
-            definition_accrued_gross_earnings: Las ganancias brutas acumuladas se calculan sumando todos los pagos efectuados en ese mes.
-            definition_total_hours_worked: El total de horas trabajadas se calculan sumando el tiempo que demoró en finalizar cada trabajo completado durante ese mes. Es posible que algunos trabajos realizados en un mes que se le hayan pagado en el mes siguiente.
-            definition_verified_mileage_expenses: Los gastos de millaje verificados se calculan utilizando el millaje de la plataforma o aplicación. Multiplicamos el millaje total por la tarifa federal de millaje ($0.70 para 2025), que cubre todos los costos relacionados con un automóvil. Estos pueden ser costos como gasolina, pagos de automóvil o tarifas de arrendamiento, seguro de automóvil, reparaciones y mantenimiento.
-            what_does_this_mean: "¿Qué significa esta información?"
+            definition_accrued_gross_earnings_html: "<strong>“Ganancias brutas acumuladas”</strong> es la suma de todos los pagos brutos realizados en ese mes."
+            definition_self_employment_html: "<strong>“Empleo independiente”</strong> es una etiqueta para un trabajo por cuenta propia o como contratista 1099 de una aplicación en línea (como Uber o Doordash). La ganancia del empleo independiente se usa al determinar la elegibilidad. La ganancia se calcula así: ganancias brutas menos los costos permitidos del empleo independiente."
+            definition_total_hours_worked_html: "<strong>“Total de horas trabajadas”</strong> es la suma del tiempo que tomó completar cada trabajo. El total del mes muestra cuándo ocurrió un pago, no cuándo se realizó el trabajo."
+            definition_verified_mileage_expenses_html: "<strong>“Gastos de millaje verificados”</strong> son los gastos relacionados con el vehículo basados en las millas conducidas y registradas en la plataforma/aplicación. Las millas conducidas se multiplican por la tarifa de gasto de millaje definida por el IRS ($0.725 por milla en 2026). Esta tarifa incluye gasolina, pagos por el vehículo (compra o renta), seguro del vehículo, reparaciones y mantenimiento."
+            mileage_rate_note: Algunos informes pueden incluir ingresos de varios años. Aparecerá la tarifa de millaje que se aplica a cada año.
+            what_does_this_mean: ¿Qué significa la información en la tabla "Resumen mensual"?
         dollars_times_miles: "(%{dollar_amount} x %{number_of_miles} millas)"
         month: Mes
         monthly_summary: Resumen mensual
@@ -389,6 +450,15 @@ es:
           title_gross_income: Ingreso bruto
           title_number_of_paychecks: Cantidad de cheques de pago
           title_total_hours_worked: Total de horas trabajadas
+      w2_paystub_details_table:
+        details: Datos
+        earnings_items_description: Los siguientes elementos son categorías enumeradas en el talón de pago como parte del pago bruto de este cheque de pago.
+        earnings_items_title: Partidas de pago bruto
+        frequency_unknown: Frecuencia desconocida
+        gross_pay_item_prefix: 'Artículo de pago bruto:'
+        pay_information: Información de pago
+        paystub_heading_prefix: 'Detalles del pago:'
+        your_details: Sus datos
   continue: Continuar
   date:
     abbr_day_names:
@@ -441,9 +511,6 @@ es:
     - noviembre
     - diciembre
   help:
-    alert:
-      heading: "¿Necesita ayuda para conectarse a su proveedor de nómina?"
-      help_options: Obtenga ayuda aquí.
     index:
       company_id: No sé el ID de mi empresa
       credentials: No me siento cómodo ingresando mis credenciales de inicio de sesión
@@ -551,36 +618,48 @@ es:
       header: "¡Parece que algo salió mal!"
       refresh: Actualizar página
     home:
-      description_1: Reportar Mis Ingresos es una herramienta nueva que se diseñó para ayudarlo a vincular directamente los datos relacionados con sus ingresos con su agencia de beneficios. En este momento estamos probando esta herramienta para garantizar que funcione efectivamente.
-      description_2: Tenga en cuenta que, en este momento, este programa piloto solo está disponible para participantes que residan en Arizona y Louisiana.
+      description_1: Verificar Mis Ingresos es una herramienta nueva que se diseñó para ayudarlo a vincular directamente los datos relacionados con sus ingresos con su agencia de beneficios. En este momento estamos probando esta herramienta para garantizar que funcione efectivamente.
+      description_2: Tenga en cuenta que, en este momento, este programa piloto solo está disponible para participantes en ciertos estados.
       description_3: Para obtener más información sobre cómo presentar comprobantes de ingresos para sus beneficios, visite el sitio web de su agencia.
-      header: Bienvenido a Reportar Mis Ingresos
+      header: Bienvenido a Verificar Mis Ingresos
       pilot_ended:
         la_ldh:
-          body: "<strong>El período piloto para Luisiana ha terminado.</strong> Si aún necesita declarar sus ingresos, puede hacer lo siguiente:"
+          body: "<strong>El período piloto para Luisiana ha terminado.</strong> Si aún necesita verificar sus ingresos, puede hacer lo siguiente:"
           body_bullet_1: Subir los documentos a través del Portal de autoservicio en línea en <a href="http://MyMedicaid.LA.GOV" target="_blank" rel="noopener noreferrer">http://MyMedicaid.LA.GOV</a>
           body_bullet_2: 'Enviar los documentos por correo postal a: Louisiana Medicaid/LaCHIP, P.O. Box 91283, Baton Rouge, LA 70821-9278'
           body_bullet_3: 'Enviar los documentos por correo electrónico a: <a href="mailto:%{agency_email}">%{agency_email}</a>'
           body_bullet_4: Llevar los documentos a la oficina de Medicaid de su elección.
-          browser_title: Reportar Mis Ingresos | Departmento de Salud de Louisiana
-          header: Reportar Mis Ingresos
+          browser_title: Verificar Mis Ingresos | Departmento de Salud de Louisiana
+          header: Verificar Mis Ingresos
   session_timeout:
     modal:
       description: Parece no está realizando ninguna acción. Por motivos de seguridad, su sesión se cerrará, salvo que elija extender el tiempo de esta sesión.
       end_button: Finalizar esta sesión.
       extend_button: Sí, extender el tiempo de mi sesión.
       heading: "¿Necesita más tiempo en la sesión?"
+    page:
+      description: Las sesiones terminan después de 30 minutos de inactividad. Esto ayuda a que su información esté segura.
+      info_box_html: Para verificar sus ingresos, devuélvalo a <a href="%{agency_contact_website}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
+      title: Su sesión ha terminado.
   shared:
     agency_acronym:
-      az_des: DES/FAA (por sus siglas en inglés)
-      la_ldh: LDH (por sus siglas en inglés)
+      az_des: DES/FAA
+      la_ldh: LDH
+      pa_dhs: DHS
       sandbox: CBV
     agency_full_name:
       az_des: Departamento de Seguridad Económica de Arizona/Administración de Asistencia Familiar
       la_ldh: Departamento de Salud de Luisiana
+      pa_dhs: Departamento de Servicios Humanos
       sandbox: Agencia de pruebas CBV
+    agency_portal_name:
+      az_des: DES/FAA
+      la_ldh: LDH
+      pa_dhs: COMPASS
+      sandbox: VMI
     app_name:
       az_des: MyFamilyBenefits
+      pa_dhs: VerifyMyIncome
       sandbox: CBVApp
     banner:
       lock: Candado
@@ -588,6 +667,7 @@ es:
     benefit:
       az_des: Asistencia Nutricional
       la_ldh: Medicaid
+      pa_dhs: Asistencia Nutricional
       sandbox: SNAP
     error_unauthorized: La URL a la que estás accediendo está prohibida para el usuario actual. Verifique que está conectado como el usuario correcto e intente acceder de nuevo a la URL.
     footer:
@@ -597,6 +677,7 @@ es:
       cbv_flow_title:
         az_des: Departamento de Seguridad Económica
         la_ldh: Departamento de Salud
+        pa_dhs: Departamento de Servicios Humanos
         sandbox: Agencia de pruebas CBV
       close: Cerrar
       help: Ayuda
@@ -605,6 +686,7 @@ es:
         az_des: Un sitio web en colaboración con el Departamento de Seguridad Económica de Arizona.
         default: Un sitio web en colaboración con la Agencia de pruebas CBV.
         la_ldh: Un sitio web en colaboración con el Departamento de Salud de Luisiana
+        pa_dhs: Un sitio web en colaboración con el Departamento de Salud de Pensilvania
       primary: Menú principal
     languages:
       en: English
@@ -614,13 +696,14 @@ es:
     next_path:
       notice_no_answer: Debe seleccionar una respuesta para continuar.
     not_applicable: N/C
-    pilot_name: Reportar Mis Ingresos
+    pilot_name: Verificar Mis Ingresos
     report_data_range:
       ninety_days: 90 días
       six_months: 6 meses
     reporting_purpose:
       az_des: Formulario de contacto para aprobaciones intermedias
       la_ldh: beneficios
+      pa_dhs: Revisión de SNAP
       sandbox: beneficios
     select_placeholder: "- Seleccione -"
     skip_link: Saltar al contenido principal

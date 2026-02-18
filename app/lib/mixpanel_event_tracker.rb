@@ -22,10 +22,11 @@ class MixpanelEventTracker
     # represents the concept of a unique user.
     user_id = attributes.fetch(:user_id, "")
     applicant_id = attributes.fetch(:cbv_applicant_id, "")
+    prefix = ENV["MIXPANEL_DISTINCT_ID_PREFIX"].present? ? "#{ENV["MIXPANEL_DISTINCT_ID_PREFIX"]}-" : ""
     if user_id.present?
-      distinct_id = "caseworker-#{user_id}"
+      distinct_id = "#{prefix}caseworker-#{user_id}"
     elsif applicant_id.present?
-      distinct_id = "applicant-#{applicant_id}"
+      distinct_id = "#{prefix}applicant-#{applicant_id}"
     end
 
     # This creates a profile for a distinct user

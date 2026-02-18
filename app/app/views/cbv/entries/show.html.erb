@@ -3,7 +3,8 @@
 <div data-controller="cbv-entry-page">
   <h1><%= title %></h1>
 
-  <p><%= t(".subheader_html", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
+  <p><%= t(".subheader_html", agency_full_name: agency_translation("shared.agency_full_name"),
+           agency_acronym: agency_translation("shared.agency_acronym")) %></p>
 
   <ol class="usa-process-list">
     <li class="usa-process-list__item">
@@ -20,10 +21,21 @@
     </li>
   </ol>
 
-  <%= form_with(url: cbv_flow_entry_path, builder: UswdsFormBuilder, data: { turbo: "false" }) do |f| %>
-    <%= f.check_box(:agreement, { label: agency_translation(".checkbox", agency_full_name: agency_translation("shared.agency_full_name")), "data-action": "cbv-entry-page#consent", "data-cbv-entry-page-target": "consentCheckbox" }) %>
-    <%= f.submit t(".continue") %>
-  <% end %>
+  <div data-controller="cbv-attestation-check">
+    <%= form_with(url: cbv_flow_entry_path, builder: UswdsFormBuilder) do |f| %>
+      <span class="d-block"> <abbr title="required" class="usa-hint--required">*</abbr> Required </span>
+      <%= f.check_box(:agreement, { label: agency_translation(".checkbox", agency_full_name: agency_translation("shared.agency_full_name")),
+                                    required: true,
+                                    data: {
+                                      action: "cbv-entry-page#consent change->cbv-attestation-check#setButton",
+                                      cbv_entry_page_target: "consentCheckbox",
+                                      cbv_attestation_check_target: "attestationCheckbox",
+                                      testid: "attestation-checkbox"
+                                    }
+      }) %>
+      <%= f.submit t(".continue"), { "data-cbv-attestation-check-target": "submitButton" } %>
+    <% end %>
+  </div>
 
   <div class="divider margin-bottom-5"></div>
 
@@ -41,8 +53,8 @@
       <%= t(".what_if_i_cant_use_this_title") %>
     <% end %>
     <% accordion.with_accordion_item do %>
-      <%= t(".what_if_i_cant_use_this_body_1", agency_acronym: agency_translation("shared.agency_acronym")) %>
-      <%= agency_translation(".what_if_i_cant_use_this_body_2_html", agency_url: current_agency.agency_contact_website, agency_acronym: agency_translation("shared.agency_acronym")) %>
+      <%= t(".what_if_i_cant_use_this_body_1", agency_portal_name: agency_translation("shared.agency_portal_name")) %>
+      <%= agency_translation(".what_if_i_cant_use_this_body_2_html", agency_url: current_agency.agency_contact_website, agency_portal_name: agency_translation("shared.agency_portal_name")) %>
     <% end %>
   <% end %>
 </div>

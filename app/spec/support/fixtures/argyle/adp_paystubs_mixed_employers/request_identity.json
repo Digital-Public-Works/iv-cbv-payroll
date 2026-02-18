@@ -1,0 +1,53 @@
+{
+  "results": [
+    {
+      "id": "9949e127-61f9-35a7-89c4-28c86bbfcde7",
+      "account": "019bba14-44b2-3c28-8d2d-cd377b0354f9",
+      "address": {
+        "city": "Philadelphia",
+        "line1": "14 E Snyder Ave",
+        "line2": null,
+        "state": "PA",
+        "country": "US",
+        "postal_code": "19148"
+      },
+      "first_name": "Neil",
+      "last_name": "Flynn",
+      "full_name": "Neil Flynn",
+      "birth_date": "[obfuscated]",
+      "email": "nf@example.com",
+      "phone_number": "+12345678900",
+      "picture_url": null,
+      "employment_status": null,
+      "employment_type": null,
+      "job_title": "JANITOR - Janitorial Cleaner; 5000",
+      "ssn": "1234",
+      "marital_status": null,
+      "gender": null,
+      "hire_date": "2019-08-01",
+      "original_hire_date": "2019-08-01",
+      "termination_date": null,
+      "termination_reason": null,
+      "employer": "ABC Services Inc.",
+      "base_pay": {
+        "amount": null,
+        "period": "hourly",
+        "currency": "USD"
+      },
+      "pay_cycle": null,
+      "platform_ids": {
+        "employee_id": null,
+        "position_id": "p-123",
+        "platform_user_id": "u-123"
+      },
+      "created_at": "2026-01-14T01:18:59.234Z",
+      "updated_at": "2026-01-14T01:18:59.234Z",
+      "metadata": {
+        "raw_ssn": "[obfuscated]",
+        "raw_employment_base_pay_period": "HOURLY",
+        "raw_address_line1": "123 7TH ST"
+      },
+      "employment": "b2861278-2af1-3835-b234-13013891e202"
+    }
+  ]
+}

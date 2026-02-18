@@ -1,6 +1,7 @@
 module Aggregators::ResponseObjects
   PAYSTUB_FIELDS = %i[
     account_id
+    id
     gross_pay_amount
     net_pay_amount
     gross_pay_ytd
@@ -11,6 +12,7 @@ module Aggregators::ResponseObjects
     hours_by_earning_category
     hours
     earnings
+    employment_id
   ]
 
   Paystub = Struct.new(*PAYSTUB_FIELDS, keyword_init: true) do
@@ -33,11 +35,13 @@ module Aggregators::ResponseObjects
             amount: deduction["amount"],
           )
         end,
+        employment_id: nil # Not provided
       )
     end
 
     def self.from_argyle(response_body)
       new(
+        id: response_body["id"],
         account_id: response_body["account"],
         gross_pay_amount: Aggregators::FormatMethods::Argyle.format_currency(response_body["gross_pay"]),
         net_pay_amount: Aggregators::FormatMethods::Argyle.format_currency(response_body["net_pay"]),
@@ -55,6 +59,7 @@ module Aggregators::ResponseObjects
             amount: Aggregators::FormatMethods::Argyle.format_currency(deduction["amount"]),
           )
         end,
+        employment_id: response_body["employment"]
       )
     end
 

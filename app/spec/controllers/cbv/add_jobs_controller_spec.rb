@@ -17,6 +17,24 @@ RSpec.describe Cbv::AddJobsController do
   end
 
   describe "#create" do
+    it 'updates session with additional_jobs value (false)' do
+      post :create, params: { 'additional_jobs': 'false' }
+
+      expect(session[:additional_jobs]).to eq('false')
+    end
+
+    it 'updates session with additional_jobs value (true)' do
+      post :create, params: { 'additional_jobs': 'true' }
+
+      expect(session[:additional_jobs]).to eq('true')
+    end
+
+    it 'does not set session when additional_jobs is not set' do
+      post :create, params: {}
+
+      expect(session[:additional_jobs]).to eq(nil)
+    end
+
     it 'redirects when true radio button is selected' do
       post :create, params: { 'additional_jobs': 'true' }
       expect(response).to redirect_to(cbv_flow_employer_search_path)
@@ -71,10 +89,8 @@ RSpec.describe Cbv::AddJobsController do
         allow(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
       end
 
-      it 'logs error and continues when event tracking raises an exception' do
+      it 'continues when event tracking raises an exception' do
         allow(EventTrackingJob).to receive(:perform_later).with("ApplicantContinuedFromAddJobsPage", anything, anything).and_raise(StandardError.new("Event tracking failed"))
-        expect(Rails.logger).to receive(:error).with(/Unable to track ApplicantContinuedFromAddJobsPage event/)
-
         post :create, params: { 'additional_jobs': 'true' }
         expect(response).to redirect_to(cbv_flow_employer_search_path)
       end

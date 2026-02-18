@@ -12,12 +12,24 @@ class ClientAgencyConfig
   # 'ninety_days'/'six_months' to see other places you will need to customize.
   VALID_PAY_INCOME_DAYS = [ 90, 182 ]
 
-  def initialize(config_path)
-    template = ERB.new File.read(config_path)
-    @client_agencies = YAML
-      .safe_load(template.result(binding))
-      .map { |s| [ s["id"], ClientAgency.new(s) ] }
-      .to_h
+  # load all configuration files in the configuration directory passed in if load_all_agency_configs is true,
+  # otherwise load configurations where the environment variable for 'active' is set to true
+  def initialize(config_path, load_all_agency_configs)
+    @client_agencies = Dir.glob(File.join(config_path, "*.yml"))
+     .each_with_object({}) do |path, h|
+      data = load_yaml(path)
+      # load all in dev, otherwise load only if the 'active' property is true for the env (see agency config file)
+      next unless load_all_agency_configs || ActiveModel::Type::Boolean.new.cast(data["active"])
+
+      puts "LOADED AGENCY #{data["id"]}"
+      id = data["id"]
+      h[id] = ClientAgency.new(data)
+    end
+  end
+
+  def load_yaml(path)
+    template = ERB.new(File.read(path))
+    YAML.safe_load(template.result(binding))
   end
 
   def self.client_agencies
@@ -36,6 +48,7 @@ class ClientAgencyConfig
     attr_reader(*%i[
       id
       agency_name
+      timezone
       agency_contact_website
       agency_domain
       authorized_emails
@@ -55,12 +68,14 @@ class ClientAgencyConfig
       transmission_method_configuration
       weekly_report
       applicant_attributes
-      allow_invitation_reuse
       generic_links_disabled
+      report_customization_show_earnings_list
+      require_applicant_information_on_invitation
     ])
 
     def initialize(yaml)
       @id = yaml["id"]
+      @timezone = yaml["timezone"]
       @agency_name = yaml["agency_name"]
       @agency_contact_website = yaml["agency_contact_website"]
       @agency_domain = yaml["agency_domain"]
@@ -80,16 +95,16 @@ class ClientAgencyConfig
       @sso = yaml["sso"]
       @weekly_report = yaml["weekly_report"]
       @applicant_attributes = yaml["applicant_attributes"] || {}
-      @allow_invitation_reuse = yaml["allow_invitation_reuse"] || false
+      @report_customization_show_earnings_list = !!yaml["report_customization_show_earnings_list"]
       @generic_links_disabled = yaml["generic_links_disabled"]
+      @require_applicant_information_on_invitation = yaml["require_applicant_information_on_invitation"] || false
 
       raise ArgumentError.new("Client Agency missing id") if @id.blank?
+      raise ArgumentError.new("Client Agency #{@id} missing required attribute `timezone`") if @timezone.blank?
       raise ArgumentError.new("Client Agency #{@id} missing required attribute `agency_name`") if @agency_name.blank?
-      raise ArgumentError.new("Client Agency #{@id} missing required attribute `pinwheel.environment`") if @pinwheel_environment.blank?
       raise ArgumentError.new("Client Agency #{@id} invalid value for pay_income_days.w2") unless VALID_PAY_INCOME_DAYS.include?(@pay_income_days[:w2])
       raise ArgumentError.new("Client Agency #{@id} invalid value for pay_income_days.gig") unless VALID_PAY_INCOME_DAYS.include?(@pay_income_days[:gig])
-
-      # TODO: Add a validation for the dependent attribute, transmission_method_configuration.email, if transmission_method is present
+      raise ArgumentError.new("Client Agency #{@id} missing required attribute `transmission_method`") if @transmission_method.blank?
     end
   end
 end

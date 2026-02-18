@@ -18,7 +18,8 @@ RSpec.describe CaseworkerMailer, type: :mailer do
   let(:caseworker_email) { cbv_flow.cbv_flow_invitation.user.email }
   let(:pinwheel_report) { build(:pinwheel_report, :with_pinwheel_account) }
   let(:email_address) { "test@example.com" }
-  let(:current_agency) { ClientAgencyConfig.new(File.join(Rails.root, 'config', 'client-agency-config.yml'))[cbv_flow.client_agency_id] }
+  # TODO: test to make sure that it loads the correct agency for this test
+  let(:current_agency) { ClientAgencyConfig.new(File.join(Rails.root, 'config', 'client-agency-config', "#{cbv_flow.client_agency_id}.yml"), true) }
 
   let(:mail) {
     CaseworkerMailer.with(
@@ -63,12 +64,36 @@ RSpec.describe CaseworkerMailer, type: :mailer do
       email_body = strip_tags(email_html).gsub(/\s+/, ' ').strip
       expected_date = format_parsed_date(Time.zone.today)
       request_date = format_parsed_date(cbv_flow.created_at)
-      expect(email_body).to include("Attached is a Report My Income CBV Report PDF with confirmation number #{cbv_flow.confirmation_code}")
+      expect(email_body).to include("Attached is a Verify My Income CBV Report PDF with confirmation number #{cbv_flow.confirmation_code}")
     end
 
     it 'attaches a PDF which has a file name prefix of {case_number}_timestamp_' do
       expect(mail.attachments.any? { |attachment| attachment.filename =~ /\A#{cbv_flow.cbv_applicant.case_number}_\d{14}_income_verification\.pdf\z/ }).to be true
       expect(mail.attachments.first.content_type).to start_with('application/pdf')
+    end
+
+    context 'with gig employment' do
+      let(:pinwheel_report) do
+        report = build(:pinwheel_report, :with_pinwheel_account)
+        # Replace the default W2 employment with gig employment
+        report.instance_variable_set(:@employments, [
+          Aggregators::ResponseObjects::Employment.new(
+            account_id: "account1",
+            employer_name: "Uber",
+            start_date: "2020-01-01",
+            termination_date: nil,
+            status: "employed",
+            employment_type: :gig,
+            account_source: "pinwheel_payroll_provider"
+          )
+        ])
+        report
+      end
+
+      it 'attaches a PDF without error' do
+        expect { mail.attachments }.not_to raise_error
+        expect(mail.attachments.first.content_type).to start_with('application/pdf')
+      end
     end
   end
 end

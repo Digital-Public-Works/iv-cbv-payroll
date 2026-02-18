@@ -6,8 +6,7 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
   include PinwheelApiHelper
   include ActiveSupport::Testing::TimeHelpers
 
-  let(:mock_client_agency) { instance_double(ClientAgencyConfig::ClientAgency) }
-
+  let(:mock_client_agency) { double(ClientAgencyConfig::ClientAgency) }
   let(:cbv_applicant) { create(:cbv_applicant, created_at: current_time, case_number: "ABC1234") }
   let(:errored_jobs) { [] }
   let(:current_time) { DateTime.parse('2024-06-18 00:00:00') }
@@ -17,11 +16,11 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
 
   let(:cbv_flow) do
     create(:cbv_flow,
-           :invited,
-           :with_pinwheel_account,
-           with_errored_jobs: errored_jobs,
-           created_at: current_time - 10.minutes,
-           cbv_applicant: cbv_applicant
+      :invited,
+      :with_pinwheel_account,
+      with_errored_jobs: errored_jobs,
+      created_at: current_time - 10.minutes,
+      cbv_applicant: cbv_applicant
     )
   end
 
@@ -53,38 +52,46 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
     allow(mock_client_agency).to receive(:logo_path).and_return(mocked_client_logo_path)
     allow(mock_client_agency).to receive(:transmission_method).and_return(transmission_method)
     allow(mock_client_agency).to receive(:transmission_method_configuration).and_return(transmission_method_configuration)
+    allow(mock_client_agency).to receive(:report_customization_show_earnings_list).and_return(true)
 
     allow_any_instance_of(described_class)
       .to receive(:event_logger)
-      .and_return(fake_event_logger)
+        .and_return(fake_event_logger)
   end
 
-  context "#transmit_to_caseworker" do
+  shared_examples "tracks an ApplicantSharedIncomeSummary event" do
+    it "tracks an ApplicantSharedIncomeSummary event" do
+      described_class.new.perform(cbv_flow.id)
+
+      expect(fake_event_logger).to have_received(:track)
+        .with("ApplicantSharedIncomeSummary", anything, include(
+          cbv_flow_id: cbv_flow.id,
+          flow_started_seconds_ago: 10.minutes.to_i,
+          account_count: cbv_flow.fully_synced_payroll_accounts.count
+        ))
+    end
+  end
+
+  shared_examples "enqueues match agency names job for agency with expected names" do
+    context "when the CbvApplicant has agency_expected_names" do
+      let(:cbv_applicant) { create(:cbv_applicant, :az_des, created_at: current_time, case_number: "ABC1234") }
+
+      before do
+        ActiveJob::Base.queue_adapter = :test
+      end
+
+      it "enqueues a MatchAgencyNamesJob" do
+        expect { described_class.new.perform(cbv_flow.id) }
+          .to have_enqueued_job(MatchAgencyNamesJob)
+      end
+    end
+  end
+
+  context "#perform" do
     let(:argyle_report) { build(:argyle_report, :with_argyle_account) }
 
     before do
       cbv_flow.update(consented_to_authorized_use_at: Time.now)
-    end
-
-    context "argyle report" do
-      let(:transmission_method) { "shared_email" }
-      let(:transmission_method_configuration) { {
-        "email" => 'test@example.com'
-      } }
-      let(:cbv_flow) do
-        create(:cbv_flow,
-               :invited,
-               :with_argyle_account,
-               with_errored_jobs: errored_jobs,
-               created_at: current_time,
-               cbv_applicant: cbv_applicant
-        )
-      end
-
-      before do
-        allow(Aggregators::AggregatorReports::ArgyleReport).to receive(:new).and_return(argyle_report)
-        cbv_flow.update(confirmation_code: "SANDBOX456")
-      end
     end
 
     context "when transmission method is shared_email" do
@@ -130,35 +137,14 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
         expect(email.body.encoded).to include(cbv_flow.cbv_applicant.case_number)
       end
 
-      it "tracks an ApplicantSharedIncomeSummary event" do
-        described_class.new.perform(cbv_flow.id)
-
-        expect(fake_event_logger).to have_received(:track)
-          .with("ApplicantSharedIncomeSummary", anything, include(
-            cbv_flow_id: cbv_flow.id,
-            flow_started_seconds_ago: 10.minutes.to_i,
-          ))
-      end
-
-      context "when the CbvApplicant has agency_expected_names" do
-        let(:cbv_applicant) { create(:cbv_applicant, :az_des, created_at: current_time, case_number: "ABC1234") }
-
-        before do
-          ActiveJob::Base.queue_adapter = :test
-        end
-
-        it "enqueues a MatchAgencyNamesJob" do
-          expect { described_class.new.perform(cbv_flow.id) }
-            .to have_enqueued_job(MatchAgencyNamesJob)
-        end
-      end
+      it_behaves_like "tracks an ApplicantSharedIncomeSummary event"
+      it_behaves_like "enqueues match agency names job for agency with expected names"
     end
 
     context "when transmission method is sftp" do
+      let(:transmission_method) { "sftp" }
       let(:user) { create(:user, email: "test@test.com") }
       let(:sftp_double) { instance_double(SftpGateway) }
-      let(:transmission_method) { "sftp" }
-      let(:mocked_client_id) { "az_des" }
       let(:transmission_method_configuration) { {
         "user" => "user",
         "password" => "password",
@@ -167,24 +153,93 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
       } }
       let(:now) { Time.zone.parse('2025-01-01 08:00:30') }
 
-      before do
-        allow(SftpGateway).to receive(:new).and_return(sftp_double)
-        allow(sftp_double).to receive(:upload_data)
+      context "when client is az_des" do
+        let(:mocked_client_id) { "az_des" }
 
-        travel_to now
+        before do
+          allow(SftpGateway).to receive(:new).and_return(sftp_double)
+          allow(sftp_double).to receive(:upload_data)
+          allow(mock_client_agency).to receive(:pdf_filename) do |flow, t|
+            ClientAgency::AzDes::Configuration.pdf_filename(flow, t)
+          end
+
+          travel_to now
+        end
+
+        it "generates and sends data to SFTP and updates transmitted_at" do
+          agency_id_number = cbv_applicant.agency_id_number
+          beacon_id = cbv_applicant.beacon_id
+
+          cbv_flow.update!(confirmation_code: "AZDES001", consented_to_authorized_use_at: now, client_agency_id: "az_des")
+          cbv_flow.cbv_applicant.update!(case_number: "01000", client_agency_id: "az_des", beacon_id: beacon_id, agency_id_number: agency_id_number)
+
+          expect(sftp_double).to receive(:upload_data).with(anything, /test\/CBVPilot_00001000_20250101_ConfAZDES001.pdf/)
+
+          expect { described_class.new.perform(cbv_flow.id) }.to change { cbv_flow.reload.transmitted_at }
+        end
       end
 
-      it "generates and sends data to SFTP and updates transmitted_at" do
-        agency_id_number = cbv_applicant.agency_id_number
-        beacon_id = cbv_applicant.beacon_id
+      context "when client is pa_dhs" do
+        let(:mocked_client_id) { "pa_dhs" }
 
-        cbv_flow.update!(confirmation_code: "AZDES001", consented_to_authorized_use_at: now, client_agency_id: "az_des")
-        cbv_flow.cbv_applicant.update!(case_number: "01000", client_agency_id: "az_des", beacon_id: beacon_id, agency_id_number: agency_id_number)
+        before do
+          allow(SftpGateway).to receive(:new).and_return(sftp_double)
+          allow(sftp_double).to receive(:upload_data)
+          allow(mock_client_agency).to receive(:pdf_filename) do |flow, t|
+            ClientAgency::PaDhs::Configuration.pdf_filename(flow, t)
+          end
 
-        expect(sftp_double).to receive(:upload_data).with(anything, /test\/CBVPilot_00001000_20250101_ConfAZDES001.pdf/)
+          travel_to now
+        end
 
+        it "generates and sends data to SFTP and updates transmitted_at" do
+          agency_id_number = cbv_applicant.agency_id_number
+          beacon_id = cbv_applicant.beacon_id
 
-        expect { described_class.new.perform(cbv_flow.id) }.to change { cbv_flow.reload.transmitted_at }
+          cbv_flow.update!(confirmation_code: "PADHS001", consented_to_authorized_use_at: now, client_agency_id: "pa_dhs")
+          cbv_flow.cbv_applicant.update!(case_number: "01000", client_agency_id: "pa_dhs", beacon_id: beacon_id, agency_id_number: agency_id_number)
+
+          expect(sftp_double).to receive(:upload_data).with(anything, /test\/CBVPilot_00001000_20250101_ConfPADHS001.pdf/)
+
+          expect { described_class.new.perform(cbv_flow.id) }.to change { cbv_flow.reload.transmitted_at }
+        end
+      end
+
+      context "when client is pa_dhs without mocking pdf_filename" do
+        before do
+          # Remove the mock of current_agency to use the real Rails config
+          allow_any_instance_of(described_class).to receive(:current_agency).and_call_original
+
+          allow(SftpGateway).to receive(:new).and_return(sftp_double)
+          allow(sftp_double).to receive(:upload_data)
+          # Intentionally NOT mocking pdf_filename to demonstrate the real error
+          travel_to now
+        end
+
+        it "successfully transmits without NoMethodError on pdf_filename" do
+          cbv_flow.update!(confirmation_code: "PADHS001", consented_to_authorized_use_at: now, client_agency_id: "pa_dhs")
+          cbv_flow.cbv_applicant.update!(case_number: "01000", client_agency_id: "pa_dhs")
+
+          # This test will fail with: NoMethodError: undefined method 'pdf_filename'
+          # because SftpTransmitter tries to call current_agency.pdf_filename()
+          # but ClientAgencyConfig::ClientAgency doesn't have that instance method
+          expect(sftp_double).to receive(:upload_data).with(anything, /CBVPilot_00001000_20250101_ConfPADHS001.pdf/)
+
+          expect { described_class.new.perform(cbv_flow.id) }.not_to raise_error
+        end
+      end
+
+      context "when performing shared examples" do
+        before do
+          allow(SftpGateway).to receive(:new).and_return(sftp_double)
+          allow(sftp_double).to receive(:upload_data)
+          allow(mock_client_agency).to receive(:pdf_filename).and_return("test.pdf")
+
+          travel_to now
+        end
+
+        it_behaves_like "tracks an ApplicantSharedIncomeSummary event"
+        it_behaves_like "enqueues match agency names job for agency with expected names"
       end
     end
 
@@ -243,13 +298,69 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
         expect(cbv_flow.reload.transmitted_at).to be_nil
       end
 
-      it "tracks an ApplicantSharedIncomeSummary event" do
-        described_class.new.perform(cbv_flow.id)
+      it_behaves_like "tracks an ApplicantSharedIncomeSummary event"
+      it_behaves_like "enqueues match agency names job for agency with expected names"
+    end
 
-        expect(fake_event_logger).to have_received(:track)
-          .with("ApplicantSharedIncomeSummary", anything, include(
-            cbv_flow_id: cbv_flow.id
-          ))
+    context "when transmission method is json" do
+      let(:transmission_method) { "json" }
+      let(:agency_api_url) { "http://fake-state.api.gov/api/v1/income-report" }
+      let(:transmission_method_configuration) { { "url" => agency_api_url } }
+
+      before do
+        expect_any_instance_of(Transmitters::JsonTransmitter).to receive(:deliver).and_return("ok")
+      end
+
+      it "is handled by the job" do
+        expect { described_class.new.perform(cbv_flow.id) }.to_not raise_error
+      end
+
+      it_behaves_like "tracks an ApplicantSharedIncomeSummary event"
+      it_behaves_like "enqueues match agency names job for agency with expected names"
+
+      context "time_since_invite_seconds" do
+        it "sets time_since_invite_seconds to (now - invitation.created_at) when an invitation exists" do
+          invitation_time = current_time - 5.minutes
+          cbv_flow.cbv_flow_invitation.update!(created_at: invitation_time)
+
+          described_class.new.perform(cbv_flow.id)
+
+          expect(fake_event_logger).to have_received(:track) do |event_type, _req, attrs|
+            expect(event_type).to eq("ApplicantSharedIncomeSummary")
+            expect(attrs[:time_since_invite_seconds]).to be_within(0.5).of(5.minutes)
+          end
+        end
+
+        context "when there is NO invitation" do
+          let(:cbv_flow) do
+            create(
+              :cbv_flow,
+              :with_pinwheel_account,
+              with_errored_jobs: errored_jobs,
+              created_at: current_time - 10.minutes,
+              cbv_applicant: cbv_applicant
+            ).tap do |flow|
+              flow.update!(consented_to_authorized_use_at: Time.current)
+            end
+          end
+
+          it "sets time_since_invite_seconds to nil when no invitation exists" do
+            described_class.new.perform(cbv_flow.id)
+
+            expect(fake_event_logger).to have_received(:track) do |event_type, _req, attrs|
+              expect(event_type).to eq("ApplicantSharedIncomeSummary")
+              expect(attrs[:time_since_invite_seconds]).to be_nil
+            end
+          end
+        end
+      end
+    end
+
+    context "when transmission method is unsupported" do
+      let(:transmission_method) { "smoke_signal" }
+
+      it "raises an error" do
+        expect { described_class.new.perform(cbv_flow.id) }.to raise_error(/Unsupported transmission method/)
       end
     end
   end

@@ -2,9 +2,9 @@ require 'rails_helper'
 
 RSpec.describe ReportViewHelper, type: :helper do
   describe '#format_hours' do
-    it "rounds to the nearest tenth" do
-      expect(helper.format_hours(57.3611)).to eq(57.4)
-      expect(helper.format_hours(57.3411)).to eq(57.3)
+    it "rounds to the nearest hundredth" do
+      expect(helper.format_hours(57.3611)).to eq(57.36)
+      expect(helper.format_hours(57.3451)).to eq(57.35)
     end
 
     it "ignores non numbers" do
@@ -15,9 +15,32 @@ RSpec.describe ReportViewHelper, type: :helper do
 
   describe '#federal_cents_per_mile' do
     it "test different years" do
-      expect(helper.federal_cents_per_mile(2025)).to eq(70)
       expect(helper.federal_cents_per_mile(2024)).to eq(67)
-      expect(helper.federal_cents_per_mile(2027)).to eq(70)
+      expect(helper.federal_cents_per_mile(2025)).to eq(70)
+      expect(helper.federal_cents_per_mile(2026)).to eq(72.5)
+      expect(helper.federal_cents_per_mile(2027)).to eq(72.5)
+    end
+  end
+
+  describe '#format_money_with_subcents' do
+    it "formats full cent values with 2 decimal precision" do
+      expect(helper.format_money_with_subcents(70)).to eq("$0.70")
+    end
+
+    it "formats half-cent values with 3 decimal precision" do
+      expect(helper.format_money_with_subcents(72.5)).to eq("$0.725")
+    end
+
+    it "formats whole dollar amounts with 2 decimal precision" do
+      expect(helper.format_money_with_subcents(100)).to eq("$1.00")
+    end
+
+    it "formats zero with 2 decimal precision" do
+      expect(helper.format_money_with_subcents(0)).to eq("$0.00")
+    end
+
+    it "formats quarter-cent values with 3 decimal precision" do
+      expect(helper.format_money_with_subcents(67.5)).to eq("$0.675")
     end
   end
 
@@ -309,6 +332,25 @@ RSpec.describe ReportViewHelper, type: :helper do
       expect { helper.format_boolean('any string') }.to raise_error(ArgumentError, /format_boolean only accepts/)
       expect { helper.format_boolean(1) }.to raise_error(ArgumentError, /format_boolean only accepts/)
       expect { helper.format_boolean([]) }.to raise_error(ArgumentError, /format_boolean only accepts/)
+    end
+  end
+
+  describe "#format_string" do
+    subject { helper.format_string(string) }
+
+    context "when the field is nil" do
+      let(:string) { nil }
+      it { is_expected.to eq(I18n.t("shared.not_applicable")) }
+    end
+
+    context "when the field is empty string" do
+      let(:string) { "" }
+      it { is_expected.to eq(I18n.t("shared.not_applicable")) }
+    end
+
+    context "when the field is anything else" do
+      let(:string) { "foo bar" }
+      it { is_expected.to eq(string) }
     end
   end
 end

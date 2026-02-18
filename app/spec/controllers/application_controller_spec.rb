@@ -61,6 +61,10 @@ RSpec.describe ApplicationController, type: :controller do
       let(:domain_name) { "snap-income-pilot.com" }
 
       it 'does not authorize mini profiler' do
+        allow(Rails.env).to receive(:development?).and_return(false)
+        allow(Rails.env).to receive(:test?).and_return(false)
+        allow(Rails.env).to receive(:production?).and_return(true)
+
         expect(Rack::MiniProfiler).not_to receive(:authorize_request)
         get :test_action
       end
@@ -72,11 +76,11 @@ RSpec.describe ApplicationController, type: :controller do
       routes.draw do
         get 'show', to: 'anonymous#show'
       end
-      stub_client_agency_config_value("sandbox", "agency_domain", "sandbox.reportmyincome.org")
+      stub_client_agency_config_value("sandbox", "agency_domain", "sandbox.verifymyincome.org")
     end
 
     it "identifies the correct agency config based on the domain name" do
-      request.host = "sandbox.reportmyincome.org"
+      request.host = "sandbox.verifymyincome.org"
       get :show
       expect(response.body).to eq("sandbox")
     end

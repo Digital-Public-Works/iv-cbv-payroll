@@ -18,11 +18,17 @@ module Aggregators::Sdk
         api_key_id: ENV["ARGYLE_API_TOKEN_ID"],
         api_key_secret: ENV["ARGYLE_API_TOKEN_SECRET"],
         webhook_secret: ENV["ARGYLE_WEBHOOK_SECRET"]
+      },
+      mock: {
+        base_url: "http://localhost:3000",
+        api_key_id: "mock",
+        api_key_secret: "mock",
+        webhook_secret: "mock"
       }
     }
 
     # See: https://console.argyle.com/flows
-    FLOW_ID = "BXSHLUUJ"
+    FLOW_ID = "EV7MFL8Y"
 
     EMPLOYER_SEARCH_ENDPOINT = "employer-search"
     PAYSTUBS_ENDPOINT = "paystubs"
@@ -37,7 +43,21 @@ module Aggregators::Sdk
 
     attr_reader :webhook_secret
 
-    def initialize(environment, api_key_id = nil, api_key_secret = nil, webhook_secret = nil)
+    # Factory method to return MockArgyleService when environment is "mock"
+    def self.new(environment, api_key_id = nil, api_key_secret = nil, webhook_secret = nil, fixture_user: nil)
+      if environment.to_s == "mock" || environment.to_sym == :mock
+        require_relative "mock_argyle_service"
+        MockArgyleService.allocate.tap do |instance|
+          instance.send(:initialize, environment, api_key_id, api_key_secret, webhook_secret, fixture_user: fixture_user)
+        end
+      else
+        super
+      end
+    end
+
+    def initialize(environment, api_key_id = nil, api_key_secret = nil, webhook_secret = nil, fixture_user: nil)
+      # Note: fixture_user is accepted but unused here. It's used by MockArgyleService
+      # and needs to be in this signature so the factory method's `super` call works.
       @environment = ENVIRONMENTS.fetch(environment.to_sym) { |env| raise KeyError.new("ArgyleService unknown environment: #{env}") }
       @api_key_id = api_key_id || @environment[:api_key_id]
       @api_key_secret = api_key_secret || @environment[:api_key_secret]
@@ -133,9 +153,9 @@ module Aggregators::Sdk
       @http.get(build_url("#{ACCOUNTS_ENDPOINT}/#{account}")).body
     end
 
-    # https://docs.argyle.com/api-reference/accounts#delete
-    def delete_account_api(account:)
-      @http.delete(build_url("#{ACCOUNTS_ENDPOINT}/#{account}")).body
+    # https://docs.argyle.com/api-reference/users#delete
+    def delete_user(argyle_user_id:)
+      @http.delete(build_url("#{USERS_ENDPOINT}/#{argyle_user_id}")).body
     end
 
     # https://docs.argyle.com/api-reference/paystubs#list
@@ -208,12 +228,14 @@ module Aggregators::Sdk
 
     # Surround any request with this method as long as the request returns an
     # array of `results` and a `next` cursor to traverse to future pages.
+    # Combine all results into a single object to return
     def with_pagination(&block)
       initial_response = block.call
       results = initial_response["results"]
       next_cursor = initial_response["next"]
 
-      while next_cursor.present?
+      # add basic url checking to ensure we are not subject to an injection attack / redirect
+      while next_cursor.present? && next_cursor.include?("argyle")
         response = @http.get(next_cursor).body
 
         results.concat(response["results"])

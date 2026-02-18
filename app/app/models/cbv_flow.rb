@@ -19,34 +19,51 @@ class CbvFlow < ApplicationRecord
     confirmation_code.present?
   end
 
-  def self.create_from_invitation(cbv_flow_invitation)
+  def self.create_from_invitation(cbv_flow_invitation, device_id)
     create(
       cbv_flow_invitation: cbv_flow_invitation,
       cbv_applicant: cbv_flow_invitation.cbv_applicant,
       client_agency_id: cbv_flow_invitation.client_agency_id,
+      device_id: device_id
     )
   end
 
-  def self.create_without_invitation(client_agency_id)
+  def self.create_without_invitation(client_agency_id, device_id)
     create(
       cbv_applicant: CbvApplicant.create(client_agency_id: client_agency_id),
-      client_agency_id: client_agency_id
+      client_agency_id: client_agency_id,
+      device_id: device_id
     )
   end
 
   def has_account_with_required_data?
-    payroll_accounts.any?(&:sync_succeeded?)
+    accounts_with_required_data.any?
   end
 
-  def to_generic_url
+  def accounts_with_required_data
+    payroll_accounts.includes(:webhook_events).select(&:sync_succeeded?)
+  end
+
+  def fully_synced_payroll_accounts
+    payroll_accounts.includes(:webhook_events).select { |account| account.has_fully_synced? }
+  end
+
+  def to_generic_url(origin: nil)
     client_agency = Rails.application.config.client_agencies[client_agency_id]
     raise ArgumentError.new("Client Agency #{client_agency_id} not found") unless client_agency
 
-    Rails.application.routes.url_helpers.cbv_flow_new_url({
-      client_agency_id: client_agency_id,
+    url_params = {
       host: client_agency.agency_domain,
-      protocol: (client_agency.agency_domain.nil? || client_agency.agency_domain == "localhost") ? "http" : "https",
+      protocol: (client_agency.agency_domain.nil? || Rails.env == "development") ? "http" : "https",
       locale: I18n.locale
-    }.compact)
+    }
+    url_params[:origin] = origin if origin.present?
+
+    if client_agency.agency_domain.present?
+      Rails.application.routes.url_helpers.root_url(url_params.compact)
+    else
+      url_params[:client_agency_id] = client_agency_id
+      Rails.application.routes.url_helpers.cbv_flow_new_url(url_params.compact)
+    end
   end
 end

@@ -68,7 +68,7 @@ RSpec.describe Aggregators::Validators::UsefulReportValidator do
         account_id: "123",
         employer_name: "Example Company",
         start_date: "2022-01-01",
-        termination_date: "2025-01-01",
+        termination_date: 1.year.ago.strftime("%Y-%m-%d"),
         status: "",
         employer_phone_number: "555-555-5555",
         employer_address: "1234 Example Street",
@@ -81,7 +81,7 @@ RSpec.describe Aggregators::Validators::UsefulReportValidator do
         account_id: "123",
         employer_name: "Example Company",
         start_date: "2022-01-01",
-        termination_date: "2025-01-01",
+        termination_date: 19.months.ago.strftime("%Y-%m-%d"),
         status: "employed",
         employer_phone_number: "555-555-5555",
         employer_address: "1234 Example Street",
@@ -94,7 +94,20 @@ RSpec.describe Aggregators::Validators::UsefulReportValidator do
         account_id: "123",
         employer_name: "Example Company",
         start_date: "2022-01-01",
-        termination_date: "2025-01-01",
+        termination_date: 19.months.ago.strftime("%Y-%m-%d"),
+        status: "furloughed",
+        employer_phone_number: "555-555-5555",
+        employer_address: "1234 Example Street",
+        employment_type: :w2
+      )
+    end
+
+    let(:recently_terminated_employment) do
+      Aggregators::ResponseObjects::Employment.new(
+        account_id: "123",
+        employer_name: "Example Company",
+        start_date: "2022-01-01",
+        termination_date: 11.months.ago.strftime("%Y-%m-%d"),
         status: "furloughed",
         employer_phone_number: "555-555-5555",
         employer_address: "1234 Example Street",
@@ -122,6 +135,39 @@ RSpec.describe Aggregators::Validators::UsefulReportValidator do
         start_date: "2022-01-01",
         termination_date: "",
         status: "",
+        employment_type: :w2
+      )
+    end
+
+    let(:empty_employment_no_start_date) do
+      Aggregators::ResponseObjects::Employment.new(
+        account_id: "123",
+        employer_name: "Example Company",
+        start_date: "",
+        termination_date: "",
+        status: "",
+        employment_type: :w2
+      )
+    end
+
+    let(:empty_employment_old_start_date) do
+      Aggregators::ResponseObjects::Employment.new(
+        account_id: "123",
+        employer_name: "Example Company",
+        start_date: 6.months.ago.strftime("%Y-%m-%d"),
+        termination_date: "",
+        status: "",
+        employment_type: :w2
+      )
+    end
+
+    let(:employment_recent_start_date) do
+      Aggregators::ResponseObjects::Employment.new(
+        account_id: "123",
+        employer_name: "Example Company",
+        start_date: 1.week.ago.strftime("%Y-%m-%d"),
+        termination_date: "",
+        status: "employed",
         employment_type: :w2
       )
     end
@@ -276,13 +322,15 @@ RSpec.describe Aggregators::Validators::UsefulReportValidator do
       end
     end
 
-    context 'when there are no paystubs' do
+    context 'when there are no paystubs and a valid employment' do
       let(:identities) { [ valid_identity ] }
       let(:employments) { [ valid_employment ] }
 
-      it 'is still valid' do
-        expect(report).to be_valid(:useful_report)
-        expect(report.errors).to be_empty
+      it 'is invalid' do
+        expect(report).not_to be_valid(:useful_report)
+        expect(report.errors[:base]).to include(
+          /Report did not meet minimum criteria for useful reports/
+        )
       end
     end
 
@@ -333,13 +381,10 @@ RSpec.describe Aggregators::Validators::UsefulReportValidator do
       let(:employments) { [ valid_employment ] }
       let(:paystubs) { [ invalid_paystub ] }
 
-      it 'fails when required values are missing' do
+      it 'is invalid when no valid paystubs' do
         expect(report).not_to be_valid(:useful_report)
-        expect(report.errors[:paystubs]).to include(
-          /No paystub has pay_date/,
-          /No paystub has valid gross_pay_amount/
-          # Removing hours check for LA launch - FFS-2866 ticket to add back logic for SNAP only pilots
-          # /Report has invalid hours total/
+        expect(report.errors[:base]).to include(
+          /Report did not meet minimum criteria for useful reports/
         )
       end
 
@@ -383,14 +428,78 @@ RSpec.describe Aggregators::Validators::UsefulReportValidator do
       end
     end
 
-    context 'with fully terminated employment' do
+    context 'with paystub that has nil hours and no gross pay' do
+      let(:paystub_nil_hours_no_gross_pay) do
+        Aggregators::ResponseObjects::Paystub.new(
+          account_id: "123",
+          gross_pay_amount: 0.0,
+          net_pay_amount: 0.0,
+          gross_pay_ytd: 0.0,
+          pay_period_start: "2022-12-01",
+          pay_period_end: "2022-12-31",
+          pay_date: "2023-01-01",
+          deductions: [],
+          hours_by_earning_category: {},
+          hours: nil
+        )
+      end
+
+      let(:identities) { [ valid_identity ] }
+      let(:employments) { [ valid_employment ] }
+      let(:paystubs) { [ paystub_nil_hours_no_gross_pay ] }
+
+      it 'does not raise an error when hours is nil' do
+        expect { report.valid?(:useful_report) }.not_to raise_error
+      end
+
+      it 'is invalid when paystub has nil hours and no gross pay' do
+        expect(report).not_to be_valid(:useful_report)
+        expect(report.errors[:base]).to include(
+          /Report did not meet minimum criteria for useful reports/
+        )
+      end
+    end
+
+    context 'with paystub that has nil hours but has gross pay' do
+      let(:paystub_nil_hours_with_gross_pay) do
+        Aggregators::ResponseObjects::Paystub.new(
+          account_id: "123",
+          gross_pay_amount: 1000.0,
+          net_pay_amount: 800.0,
+          gross_pay_ytd: 12000.0,
+          pay_period_start: "2022-12-01",
+          pay_period_end: "2022-12-31",
+          pay_date: "2023-01-01",
+          deductions: [],
+          hours_by_earning_category: {},
+          hours: nil
+        )
+      end
+
+      let(:identities) { [ valid_identity ] }
+      let(:employments) { [ valid_employment ] }
+      let(:paystubs) { [ paystub_nil_hours_with_gross_pay ] }
+
+      it 'does not raise an error when hours is nil' do
+        expect { report.valid?(:useful_report) }.not_to raise_error
+      end
+
+      it 'is valid when paystub has gross pay even with nil hours' do
+        expect(report).to be_valid(:useful_report)
+        expect(report.errors).to be_empty
+      end
+    end
+
+    context 'furloughed with fully terminated employment' do
       let(:identities) { [ valid_identity ] }
       let(:employments) { [ fully_terminated_employment ] }
       let(:paystubs) { [ invalid_paystub ] }
 
-      it 'is valid even with invalid paystubs' do
-        expect(report).to be_valid(:useful_report)
-        expect(report.errors).to be_empty
+      it 'is not valid with invalid paystubs' do
+        expect(report).not_to be_valid(:useful_report)
+        expect(report.errors[:base]).to include(
+          /Report did not meet minimum criteria for useful reports/
+        )
       end
     end
 
@@ -399,9 +508,11 @@ RSpec.describe Aggregators::Validators::UsefulReportValidator do
       let(:employments) { [ terminated_status_employment ] }
       let(:paystubs) { [ invalid_paystub ] }
 
-      it 'is valid even with invalid paystubs' do
-        expect(report).to be_valid(:useful_report)
-        expect(report.errors).to be_empty
+      it 'is invalid with invalid paystubs' do
+        expect(report).not_to be_valid(:useful_report)
+        expect(report.errors[:base]).to include(
+          /Report did not meet minimum criteria for useful reports/
+        )
       end
     end
 
@@ -410,20 +521,34 @@ RSpec.describe Aggregators::Validators::UsefulReportValidator do
       let(:employments) { [ terminated_date_employment ] }
       let(:paystubs) { [ invalid_paystub ] }
 
-      it 'is valid even with invalid paystubs' do
+
+      it 'is valid with invalid paystubs due to new-ish termination date' do
         expect(report).to be_valid(:useful_report)
         expect(report.errors).to be_empty
       end
     end
 
-    context 'with employed status but terminated date' do
+    context 'with recent terminated date only' do
+      let(:identities) { [ valid_identity ] }
+      let(:employments) { [ recently_terminated_employment ] }
+      let(:paystubs) { [ invalid_paystub ] }
+
+      it 'is valid with invalid paystubs' do
+        expect(report).to be_valid(:useful_report)
+        expect(report.errors).to be_empty
+      end
+    end
+
+    context 'with employed status but old terminated date' do
       let(:identities) { [ valid_identity ] }
       let(:employments) { [ employed_status_terminated_date_employment ] }
       let(:paystubs) { [ invalid_paystub ] }
 
-      it 'is valid even with invalid paystubs' do
-        expect(report).to be_valid(:useful_report)
-        expect(report.errors).to be_empty
+      it 'is invalid with invalid paystubs' do
+        expect(report).not_to be_valid(:useful_report)
+        expect(report.errors[:base]).to include(
+          /Report did not meet minimum criteria for useful reports/
+        )
       end
     end
 
@@ -433,9 +558,99 @@ RSpec.describe Aggregators::Validators::UsefulReportValidator do
       let(:paystubs) { [ empty_paystub ] }
 
       # We want to generate a report to show that no hours or payments have been made. This shows lack of income
-      it 'is valid even with invalid paystubs' do
-        expect(report).to be_valid(:useful_report)
-        expect(report.errors).to be_empty
+      it 'is invalid due to empty paystubs' do
+        expect(report).not_to be_valid(:useful_report)
+        expect(report.errors[:base]).to include(
+          /Report did not meet minimum criteria for useful reports/
+        )
+      end
+    end
+
+    context 'with empty paystubs and no start date' do
+      let(:identities) { [ valid_identity ] }
+      let(:employments) { [ empty_employment_no_start_date ] }
+      let(:paystubs) { [] }
+
+      it 'is valid with no paystubs and no start date' do
+        expect(report).not_to be_valid(:useful_report)
+        expect(report.errors[:base]).to include(
+          /Report did not meet minimum criteria for useful reports/
+        )
+      end
+
+      context 'and termination date' do
+        let(:employments) { [ recently_terminated_employment ] }
+
+        it 'is valid when that termination date is recent' do
+          expect(report).to be_valid(:useful_report)
+          expect(report.errors).to be_empty
+        end
+      end
+    end
+
+    context 'unemployed with empty paystubs and old start date' do
+      let(:identities) { [ valid_identity ] }
+      let(:employments) { [ empty_employment_old_start_date ] }
+      let(:paystubs) { [] }
+
+      it 'is invalid with no paystubs and no start date' do
+        expect(report).not_to be_valid(:useful_report)
+        expect(report.errors[:base]).to include(
+          /Report did not meet minimum criteria for useful reports/
+        )
+      end
+
+      context 'and termination date' do
+        let(:employments) { [ recently_terminated_employment ] }
+
+        it 'is valid when that termination date is recent' do
+          expect(report).to be_valid(:useful_report)
+          expect(report.errors).to be_empty
+        end
+      end
+    end
+
+    context 'with empty paystubs and no termination date' do
+      let(:identities) { [ valid_identity ] }
+      let(:employments) { [ terminated_status_employment ] }
+      let(:paystubs) { [] }
+
+      it 'is invalid' do
+        expect(report).not_to be_valid(:useful_report)
+        expect(report.errors[:base]).to include(
+          /Report did not meet minimum criteria for useful reports/
+        )
+      end
+
+      context 'and start date' do
+        let(:employments) { [ employment_recent_start_date ] }
+
+        it 'is valid when that start date is recent' do
+          expect(report).to be_valid(:useful_report)
+          expect(report.errors).to be_empty
+        end
+      end
+    end
+
+    context 'with empty paystubs and old termination date' do
+      let(:identities) { [ valid_identity ] }
+      let(:employments) { [ employed_status_terminated_date_employment ] }
+      let(:paystubs) { [] }
+
+      it 'is not valid due to employment status' do
+        expect(report).not_to be_valid(:useful_report)
+        expect(report.errors[:base]).to include(
+          /Report did not meet minimum criteria for useful reports/
+        )
+      end
+
+      context 'and start date' do
+        let(:employments) { [ employment_recent_start_date ] }
+
+        it 'is valid when that start date is recent' do
+          expect(report).to be_valid(:useful_report)
+          expect(report.errors).to be_empty
+        end
       end
     end
   end

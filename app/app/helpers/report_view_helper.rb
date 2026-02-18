@@ -1,15 +1,20 @@
 module ReportViewHelper
   def format_hours(hour)
     return hour unless Float(hour, exception: false).present?
-    hour.to_f.round(1)
+    hour.to_f.round(2)
   end
 
   def federal_cents_per_mile(year)
     case year
     when 2024
       67
-    else
+    when 2025
       70
+    else
+      # The 2026 rate introduces a half-cent.  This results in a float value instead of an integer.
+      # If you plan to use this value for more extensive calculations, you will need to consider
+      # how it might be rounded via aggregations.
+      72.5
     end
   end
 
@@ -31,6 +36,14 @@ module ReportViewHelper
     number_to_currency(dollars_in_cents.to_f / 100)
   end
 
+  # Formats cents to currency with 3 decimal precision when there are subcents (e.g., 72.5 cents -> "$0.725"),
+  # otherwise uses standard 2 decimal precision (e.g., 70 cents -> "$0.70").
+  # Use case: federal mileage rate is published in subcents
+  def format_money_with_subcents(dollars_in_cents)
+    precision = (dollars_in_cents * 10) % 10 != 0 ? 3 : 2
+    number_to_currency(dollars_in_cents.to_f / 100, precision: precision)
+  end
+
   def format_boolean(boolean_value)
     case boolean_value
     when true, "true"
@@ -42,6 +55,12 @@ module ReportViewHelper
     else
       raise ArgumentError, "format_boolean only accepts true, false, 'true', 'false', or nil. Got: #{boolean_value.inspect}"
     end
+  end
+
+  def format_string(string)
+    return I18n.t("shared.not_applicable") if string.blank?
+
+    string
   end
 
   def report_data_range(report, account_id = nil)

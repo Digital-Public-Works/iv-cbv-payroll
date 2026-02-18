@@ -1,0 +1,123 @@
+{
+    "results": [
+        {
+            "id": "fc04da26-02ba-3821-962d-1ff0035f4d20",
+            "account": "01956d62-18a0-090f-bc09-2ac44b7edf99",
+            "payroll_document": "01956d62-57e1-6b0d-9f37-efe03c6858de",
+            "deduction_list": [
+                {
+                    "amount": "109.84",
+                    "name": "401K",
+                    "tax_classification": "pre_tax",
+                    "amount_ytd": "109.84"
+                },
+                {
+                    "amount": "219.68",
+                    "name": "Vision",
+                    "tax_classification": "pre_tax",
+                    "amount_ytd": "219.68"
+                },
+                {
+                    "amount": "219.68",
+                    "name": "Dental",
+                    "tax_classification": null,
+                    "amount_ytd": "549.20"
+                }
+            ],
+            "filing_status": [
+                {
+                    "type": "federal",
+                    "location": null,
+                    "status": "single"
+                },
+                {
+                    "type": "state",
+                    "location": "NY",
+                    "status": "married filing separately"
+                }
+            ],
+            "tax_list": [
+                {
+                    "amount": "549.21",
+                    "name": "Federal Income Tax",
+                    "type": "federal",
+                    "amount_ytd": "1153.34"
+                },
+                {
+                    "amount": "439.36",
+                    "name": "OASDI",
+                    "type": "fica",
+                    "amount_ytd": "1098.41"
+                },
+                {
+                    "amount": "604.13",
+                    "name": "Federal Withholding",
+                    "type": "federal",
+                    "amount_ytd": "1043.49"
+                }
+            ],
+            "status": "completed",
+            "paystub_date": "2025-03-03T00:00:00Z",
+            "paystub_period": {
+                "start_date": "2025-01-27T00:00:00Z",
+                "end_date": "2025-02-24T00:00:00Z"
+            },
+            "currency": "USD",
+            "gross_pay": "5492.06",
+            "deductions": "549.20",
+            "taxes": "1592.70",
+            "net_pay": "3350.16",
+            "reimbursements": "0.00",
+            "hours": "87",
+            "fees": null,
+            "net_pay_ytd": "10874.29",
+            "gross_pay_ytd": "16476.18",
+            "metadata": {},
+            "employer": "Conagra Brands",
+            "employer_address": {
+                "city": "Seattle",
+                "state": "WA",
+                "country": "US",
+                "postal_code": "98109",
+                "line1": "202 Westlake Ave N",
+                "line2": null
+            },
+            "created_at": "2025-03-06T21:35:16.592Z",
+            "updated_at": "2025-03-06T21:35:16.592Z",
+            "destinations": [],
+            "hours_ytd": "429.82",
+            "deductions_ytd": "1208.24",
+            "taxes_ytd": "4393.65",
+            "gross_pay_list": [
+                {
+                    "name": "Regular",
+                    "type": "base",
+                    "start_date": "2025-01-27",
+                    "end_date": "2025-02-24",
+                    "rate": "59.1067",
+                    "hours": "",
+                    "amount": "5492.06",
+                    "hours_ytd": "429.8200",
+                    "amount_ytd": "16476.18"
+                }
+            ],
+            "gross_pay_list_totals": {
+                "base": {
+                    "amount": "5492.06",
+                    "amount_ytd": "16476.18",
+                    "hours": "92.9177",
+                    "hours_ytd": "429.8200",
+                    "rate_implied": "59.1100",
+                    "rate_implied_ytd": "38.3300"
+                },
+                "overtime": null,
+                "commission": null,
+                "bonus": null,
+                "other": null
+            },
+            "employment": "f8a0ff8f-b99b-3584-b89a-6aac79463c3f"
+        }
+    ],
+    "next": "https://api-sandbox.argyle.com/v2/paystubs?cursor=stubbed-cursor-for-fixture%3D%3D",
+    "previous": null
+}

@@ -60,14 +60,7 @@ class PayrollAccount::Argyle < PayrollAccount
   end
 
   def redact!
-    argyle_environment = Rails.application.config.client_agencies[cbv_flow.client_agency_id].argyle_environment
-    argyle = Aggregators::Sdk::ArgyleService.new(argyle_environment)
-    argyle.delete_account_api(account: pinwheel_account_id)
+    # Do nothing, there is nothing to redact within this model.
     touch(:redacted_at)
-  rescue => ex
-    raise ex unless Rails.env.production?
-
-    Rails.logger.error "Unable to redact PayrollAccount::Argyle Account ID #{pinwheel_account_id} - #{ex.message}"
-    GenericEventTracker.new.track("DataRedactionFailure", nil, { account_id: pinwheel_account_id })
   end
 end

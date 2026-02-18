@@ -28,9 +28,12 @@ class ProviderSearchService
     if @providers.include?(:argyle)
       argyle_service = Aggregators::Sdk::ArgyleService.new(@client_agency_config.argyle_environment)
 
-      results = argyle_service.employer_search(query)["results"].map do |result|
-        Aggregators::ResponseObjects::SearchResult.from_argyle(result)
-      end
+      results =
+        argyle_service.employer_search(query)
+                      .fetch("results")
+                      # only include employers that are mapped by argyle.
+                      .select { |r| r["mapping_status"]&.downcase == "verified" }
+                      .map    { |r| Aggregators::ResponseObjects::SearchResult.from_argyle(r) }
 
       results = filter_results(results, BLOCKED_ARGYLE_EMPLOYERS)
     end
@@ -95,7 +98,7 @@ class ProviderSearchService
     {
       name: "Workday",
       response_type: "platform",
-      logo_url: "https://cdn.getpinwheel.com/assets/platforms/logos/search/cfmpw.png",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1595950192/partner-logos/workday_platform.png",
       provider_ids: {
         pinwheel: "5965580e-380f-4b86-8a8a-7278c77f73cb",
         argyle: "item_000043816"
@@ -104,7 +107,7 @@ class ProviderSearchService
     {
       name: "Paycom",
       response_type: "platform",
-      logo_url: "https://cdn.getpinwheel.com/assets/platforms/logos/search/paycom.svg",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1605726518/partner-logos/paycom.png",
       provider_ids: {
         pinwheel: "3f812c04-ac83-495b-99ca-7ec7d56dc68b",
         argyle: "item_000029935"
@@ -113,7 +116,7 @@ class ProviderSearchService
     {
       name: "Paychex",
       response_type: "platform",
-      logo_url: "https://cdn.getpinwheel.com/assets/platforms/logos/search/paychex.svg",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1713528637/partner-logos/Paychex%20Flex.png",
       provider_ids: {
         pinwheel: "9a4e213b-aeed-4cb2-aace-696bcd2b1e0d",
         argyle: "item_000029932"
@@ -122,7 +125,7 @@ class ProviderSearchService
     {
       name: "Paylocity",
       response_type: "platform",
-      logo_url: "https://cdn.getpinwheel.com/assets/platforms/logos/search/paylocity.png",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1599658277/partner-logos/paylocity.png",
       provider_ids: {
         pinwheel: "913170d1-393c-4f35-8c23-df3133ce7529",
         argyle: "item_000029947"
@@ -131,7 +134,7 @@ class ProviderSearchService
     {
       name: "Paycor",
       response_type: "platform",
-      logo_url: "https://cdn.getpinwheel.com/assets/platforms/logos/search/paycor.png",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1605726518/partner-logos/paycor.png",
       provider_ids: {
         pinwheel: "b0b655f8-4ae6-4d09-a60f-1df9a2a1fd16",
         argyle: "item_000029936"
@@ -142,7 +145,7 @@ class ProviderSearchService
     {
       name: "Amazon Flex",
       response_type: "employer",
-      logo_url: "https://cdn.getpinwheel.com/assets/employers/logos/Amazon%20Flex.png",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1566985961/partner-logos/amazon_flex.png",
       provider_ids: {
         pinwheel: "eec356b5-9338-4c7c-ac95-b5fdb2213633",
         argyle: "item_000002104"
@@ -151,7 +154,7 @@ class ProviderSearchService
     {
       name: "DoorDash",
       response_type: "employer",
-      logo_url: "https://cdn.getpinwheel.com/assets/employers/logos/DoorDash%20%28Dasher%29.svg",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1739973927/partner-logos/doordash.png",
       provider_ids: {
         pinwheel: "737d833a-1b68-44f7-92ae-3808374cb459",
         argyle: "item_000012375"
@@ -160,7 +163,7 @@ class ProviderSearchService
     {
       name: "Uber Driver",
       response_type: "employer",
-      logo_url: "https://cdn.getpinwheel.com/assets/employers/logos/Uber%20%28Driver%29.svg",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1730994902/partner-logos/Uber%20Driver.png",
       provider_ids: {
         pinwheel: "91063607-2b4a-4c8e-8045-a543f01b8b09",
         argyle: "item_000041078"
@@ -169,7 +172,7 @@ class ProviderSearchService
     {
       name: "Lyft Driver",
       response_type: "employer",
-      logo_url: "https://cdn.getpinwheel.com/assets/employers/logos/Lyft%20%28Driver%29.svg",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1742546027/partner-logos/Lyft%20Driver.png",
       provider_ids: {
         pinwheel: "70b2bed2-ada8-49ec-99c2-691cc7d28df6",
         argyle: "item_000024123"
@@ -178,7 +181,7 @@ class ProviderSearchService
     {
       name: "Instacart",
       response_type: "employer",
-      logo_url: "https://cdn.getpinwheel.com/assets/employers/logos/Instacart%20%28Full%20Service%20Shopper%29.svg",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1713529256/partner-logos/Instacart%20Shopper.png",
       provider_ids: {
         pinwheel: "9f7ddcaf-cbc5-4bd2-b701-d40c67389eae",
         argyle: "item_000020392"
@@ -187,7 +190,7 @@ class ProviderSearchService
     {
       name: "TaskRabbit",
       response_type: "employer",
-      logo_url: "https://cdn.getpinwheel.com/assets/platforms/logos/search/taskRabbit.png",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1739960031/partner-logos/taskrabbit.png",
       provider_ids: {
         pinwheel: "adde7178-43cd-4cc6-8857-65dfc54a77e8",
         argyle: "item_000038249"

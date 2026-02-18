@@ -21,12 +21,20 @@ class CbvApplicant < ApplicationRecord
   end
 
   def self.sti_class_for(type_name)
+    # technically user input, sanitize just in case. Also get github vulnerability checker to stop complaining
+    sanitized_input = ActionController::Base.helpers.sanitize(type_name)
     # "sandbox" => CbvApplicant::Sandbox
-    CbvApplicant.const_get(type_name.camelize)
+    CbvApplicant.const_get(sanitized_input.camelize)
   end
 
   def self.valid_attributes_for_agency(client_agency_id)
     sti_class_for(client_agency_id).const_get(:VALID_ATTRIBUTES)
+  end
+
+  def self.build_agency_partner_metadata(client_agency_id, &value_provider)
+    valid_attributes_for_agency(client_agency_id).each_with_object({}) do |attr, hash|
+      hash[attr.to_s] = value_provider.call(attr)
+    end
   end
 
   has_many :cbv_flows

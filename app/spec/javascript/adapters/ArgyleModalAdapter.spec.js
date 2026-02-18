@@ -17,6 +17,21 @@ import {
   mockApplicantUpdatedArgyleSearchTerm,
   mockApplicantAttemptedArgyleLogin,
   mockApplicantAccessedArgyleModalMFAScreen,
+  mockAccountErrorAuthenticationError,
+  mockAccountErrorMfaError,
+  mockAccountErrorPlatformError,
+  mockAccountErrorAccountIssueError,
+  mockAccountErrorCredentialError,
+  mockAccountErrorLimitError,
+  mockAccountErrorSystemError,
+  mockAccountErrorNoCode,
+  mockErrorOpenedEvent,
+  mockLinkClosedEvent,
+  mockUnknownArgyleEvent,
+  mockLoginHelpClickedEvent,
+  mockSuccessOpenedEvent,
+  mockAccountStatusOpenedEvent,
+  mockAccountStatusDisconnectedEvent,
 } from "@test/fixtures/argyle.fixture.js"
 
 const modalAdapterArgs = {
@@ -110,7 +125,9 @@ describe("ArgyleModalAdapter", () => {
     it("logs onAccountError Event", async () => {
       await triggers.triggerAccountError()
       expect(trackUserAction).toHaveBeenCalledTimes(2)
-      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleAccountError")
+      expect(trackUserAction.mock.calls[1][0]).toBe(
+        "ApplicantEncounteredArgyleAccountCallbackError"
+      )
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
     it("refreshes token onTokenExpired", async () => {
@@ -126,52 +143,46 @@ describe("ArgyleModalAdapter", () => {
       expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantViewedArgyleDefaultProviderSearch")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
-    it("logs ApplicantEncounteredArgyleAuthRequiredLoginError Event", async () => {
+    it("logs ApplicantEncounteredArgyleAuthenticationError for login with auth_required error", async () => {
       await triggers.triggerUIEvent(mockApplicantEncounteredArgyleAuthRequiredLoginError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
-      expect(trackUserAction.mock.calls[1][0]).toBe(
-        "ApplicantEncounteredArgyleAuthRequiredLoginError"
-      )
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleAuthenticationError")
+      expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBe("auth_required")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
-    it("logs ApplicantEncounteredArgyleConnectionUnavailableLoginError Event", async () => {
+    it("logs ApplicantEncounteredArgylePlatformError for login with connection_unavailable error", async () => {
       await triggers.triggerUIEvent(mockApplicantEncounteredArgyleConnectionUnavailableLoginError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
-      expect(trackUserAction.mock.calls[1][0]).toBe(
-        "ApplicantEncounteredArgyleConnectionUnavailableLoginError"
-      )
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgylePlatformError")
+      expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBe("connection_unavailable")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
-    it("logs ApplicantEncounteredArgyleExpiredCredentialsLoginError Event", async () => {
+    it("logs ApplicantEncounteredArgyleAuthenticationError for login with expired_credentials error", async () => {
       await triggers.triggerUIEvent(mockApplicantEncounteredArgyleExpiredCredentialsLoginError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
-      expect(trackUserAction.mock.calls[1][0]).toBe(
-        "ApplicantEncounteredArgyleExpiredCredentialsLoginError"
-      )
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleAuthenticationError")
+      expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBe("expired_credentials")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
-    it("logs ApplicantEncounteredArgyleInvalidAuthLoginError Event", async () => {
+    it("logs ApplicantEncounteredArgyleAuthenticationError for login with invalid_auth error", async () => {
       await triggers.triggerUIEvent(mockApplicantEncounteredArgyleInvalidAuthLoginError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
-      expect(trackUserAction.mock.calls[1][0]).toBe(
-        "ApplicantEncounteredArgyleInvalidAuthLoginError"
-      )
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleAuthenticationError")
+      expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBe("invalid_auth")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
-    it("logs ApplicantEncounteredArgyleInvalidCredentialsLoginError Event", async () => {
+    it("logs ApplicantEncounteredArgyleAuthenticationError for login with invalid_credentials error", async () => {
       await triggers.triggerUIEvent(mockApplicantEncounteredArgyleInvalidCredentialsLoginError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
-      expect(trackUserAction.mock.calls[1][0]).toBe(
-        "ApplicantEncounteredArgyleInvalidCredentialsLoginError"
-      )
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleAuthenticationError")
+      expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBe("invalid_credentials")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
-    it("logs ApplicantEncounteredArgyleMfaCanceledLoginError Event", async () => {
+    it("logs ApplicantEncounteredArgyleMfaError for login with mfa_cancelled error", async () => {
       await triggers.triggerUIEvent(mockApplicantEncounteredArgyleMfaCanceledLoginError)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
-      expect(trackUserAction.mock.calls[1][0]).toBe(
-        "ApplicantEncounteredArgyleMfaCanceledLoginError"
-      )
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleMfaError")
+      expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBe("mfa_cancelled_by_the_user")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
     it("logs ApplicantViewedArgyleLoginPage Event", async () => {
@@ -202,6 +213,125 @@ describe("ArgyleModalAdapter", () => {
       await triggers.triggerUIEvent(mockApplicantAccessedArgyleModalMFAScreen)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
       expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantAccessedArgyleModalMFAScreen")
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
+
+    // New "account error - opened" event tests (one per error category)
+    // Per Argyle docs: account error uses connectionErrorCode, not errorCode
+    it("logs ApplicantEncounteredArgyleAuthenticationError for account error with auth error code", async () => {
+      await triggers.triggerUIEvent(mockAccountErrorAuthenticationError)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleAuthenticationError")
+      expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBe("invalid_credentials")
+      expect(trackUserAction.mock.calls[1][1]["argyle.connectionStatus"]).toBe("error")
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
+    it("logs ApplicantEncounteredArgyleMfaError for account error with MFA error code", async () => {
+      await triggers.triggerUIEvent(mockAccountErrorMfaError)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleMfaError")
+      expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBe("mfa_timeout")
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
+    it("logs ApplicantEncounteredArgylePlatformError for account error with platform error code", async () => {
+      await triggers.triggerUIEvent(mockAccountErrorPlatformError)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgylePlatformError")
+      expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBe("platform_unavailable")
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
+    it("logs ApplicantEncounteredArgyleAccountStateError for account error with account issue code", async () => {
+      await triggers.triggerUIEvent(mockAccountErrorAccountIssueError)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleAccountStateError")
+      expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBe("account_not_found")
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
+    it("logs ApplicantEncounteredArgyleCredentialError for account error with credential error code", async () => {
+      await triggers.triggerUIEvent(mockAccountErrorCredentialError)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleCredentialError")
+      expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBe(
+        "invalid_employer_identifier"
+      )
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
+    it("logs ApplicantEncounteredArgyleLimitError for account error with limit error code", async () => {
+      await triggers.triggerUIEvent(mockAccountErrorLimitError)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleLimitError")
+      expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBe("login_attempts_exceeded")
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
+    it("logs ApplicantEncounteredArgyleSystemError for account error with system error code", async () => {
+      await triggers.triggerUIEvent(mockAccountErrorSystemError)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleSystemError")
+      expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBe("system_error")
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
+    it("logs ApplicantEncounteredArgyleUndefinedAccountError for account error with no error code", async () => {
+      await triggers.triggerUIEvent(mockAccountErrorNoCode)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe(
+        "ApplicantEncounteredArgyleUndefinedAccountError"
+      )
+      expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBeUndefined()
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
+
+    // New "error - opened" event test
+    // Per Argyle docs: error - opened uses errorType, not errorCode
+    it("logs ApplicantEncounteredArgyleLinkOpenError for error opened event", async () => {
+      await triggers.triggerUIEvent(mockErrorOpenedEvent)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleLinkOpenError")
+      expect(trackUserAction.mock.calls[1][1]["argyle.errorType"]).toBe("invalid_user_token")
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
+
+    // New "link closed" event test
+    it("logs ApplicantClosedArgyleLinkFromErrorScreen for link closed event", async () => {
+      await triggers.triggerUIEvent(mockLinkClosedEvent)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantClosedArgyleLinkFromErrorScreen")
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
+
+    // Unknown event test
+    it("logs ApplicantEncounteredUnknownArgyleEvent for unknown events", async () => {
+      await triggers.triggerUIEvent(mockUnknownArgyleEvent)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredUnknownArgyleEvent")
+      expect(trackUserAction.mock.calls[1][1]).toMatchObject({
+        "argyle.someNewProperty": "value",
+      })
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
+
+    // User journey event tests
+    it("logs ApplicantClickedArgyleLoginHelp for login help clicked event", async () => {
+      await triggers.triggerUIEvent(mockLoginHelpClickedEvent)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantClickedArgyleLoginHelp")
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
+    it("logs ApplicantViewedArgyleSuccessScreen for success opened event", async () => {
+      await triggers.triggerUIEvent(mockSuccessOpenedEvent)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantViewedArgyleSuccessScreen")
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
+    it("logs ApplicantViewedArgyleAccountStatus for account status opened event", async () => {
+      await triggers.triggerUIEvent(mockAccountStatusOpenedEvent)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantViewedArgyleAccountStatus")
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
+    it("logs ApplicantDisconnectedArgyleAccount for account status disconnected event", async () => {
+      await triggers.triggerUIEvent(mockAccountStatusDisconnectedEvent)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantDisconnectedArgyleAccount")
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
   })

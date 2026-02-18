@@ -12,24 +12,24 @@ RSpec.describe PagesController do
 
     context "when on an agency subdomain with an active pilot" do
       before do
-        stub_client_agency_config_value("la_ldh", "agency_domain", "la.reportmyincome.org")
+        stub_client_agency_config_value("la_ldh", "agency_domain", "la.verifymyincome.org")
         stub_client_agency_config_value("la_ldh", "pilot_ended", false)
       end
 
       it "redirects to the client agency entries page when the hostname matches a client agency domain" do
-        request.host = "la.reportmyincome.org"
+        request.host = "la.verifymyincome.org"
         get :home
         expect(response).to redirect_to(cbv_flow_new_path(client_agency_id: "la_ldh"))
       end
 
       it "defaults to sms origin for LA when no origin provided" do
-        request.host = "la.reportmyincome.org"
+        request.host = "la.verifymyincome.org"
         get :home
         expect(session[:cbv_origin]).to eq("sms")
       end
 
       it "uses provided origin parameter when given" do
-        request.host = "la.reportmyincome.org"
+        request.host = "la.verifymyincome.org"
         get :home, params: { origin: "mail" }
         expect(session[:cbv_origin]).to eq("mail")
       end
@@ -37,12 +37,12 @@ RSpec.describe PagesController do
 
     context "when on an agency subdomain with an ended pilot" do
       before do
-        stub_client_agency_config_value("la_ldh", "agency_domain", "la.reportmyincome.org")
+        stub_client_agency_config_value("la_ldh", "agency_domain", "la.verifymyincome.org")
         stub_client_agency_config_value("la_ldh", "pilot_ended", true)
       end
 
       it "renders the pilot end page" do
-        request.host = "la.reportmyincome.org"
+        request.host = "la.verifymyincome.org"
         get :home
         expect(response).to render_template("pages/_la_ldh_pilot_end")
       end
@@ -50,16 +50,34 @@ RSpec.describe PagesController do
 
     context "when agency has generic links disabled" do
       before do
-        stub_client_agency_config_value("sandbox", "agency_domain", "sandbox.reportmyincome.org")
+        stub_client_agency_config_value("sandbox", "agency_domain", "sandbox.verifymyincome.org")
         stub_client_agency_config_value("sandbox", "pilot_ended", false)
         stub_client_agency_config_value("sandbox", "generic_links_disabled", true)
       end
 
       it "does not redirect to generic links" do
-        request.host = "sandbox.reportmyincome.org"
+        request.host = "sandbox.verifymyincome.org"
         get :home
         expect(response).not_to redirect_to(cbv_flow_new_path(client_agency_id: "sandbox"))
         expect(response).to have_http_status(:ok)
+      end
+    end
+
+    context "when cbv_flow_timeout param is present" do
+      before do
+        stub_client_agency_config_value("sandbox", "agency_domain", "sandbox.verifymyincome.org")
+        stub_client_agency_config_value("sandbox", "pilot_ended", false)
+        request.host = "sandbox.verifymyincome.org"
+        get :home, params: { cbv_flow_timeout: true }
+      end
+
+      it "does not redirect to new flow path" do
+        expect(response).not_to redirect_to(cbv_flow_new_path(client_agency_id: "sandbox"))
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "renders the session timeout flash message" do
+        expect(response.body).to include(I18n.t("cbv.error_missing_token_html").gsub("\n", " "))
       end
     end
   end
@@ -86,7 +104,7 @@ RSpec.describe PagesController do
       let(:cbv_flow) { create(:cbv_flow, :invited) }
 
       it "renders" do
-        request.host = "la.reportmyincome.org"
+        request.host = "la.verifymyincome.org"
         get :error_404, session: { cbv_flow_id: cbv_flow.id }
         expect(response.status).to eq(404)
         expect(response.body).to include("Return to entry page")
@@ -105,7 +123,7 @@ RSpec.describe PagesController do
       let(:cbv_flow) { create(:cbv_flow, :invited) }
 
       it "renders" do
-        request.host = "la.reportmyincome.org"
+        request.host = "la.verifymyincome.org"
         get :error_500, session: { cbv_flow_id: cbv_flow.id }
         expect(response.status).to eq(500)
         expect(response.body).to include("It looks like something went wrong")

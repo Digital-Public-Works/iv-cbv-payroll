@@ -7,7 +7,7 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
 
   let(:account) { "abc123" }
   let!(:payroll_account) do
-    create(:payroll_account, :argyle_fully_synced, pinwheel_account_id: account)
+    create(:payroll_account, :argyle_fully_synced, aggregator_account_id: account)
   end
   let(:days_ago_to_fetch) { 90 }
   let(:days_ago_to_fetch_for_gig) { 90 }
@@ -158,6 +158,76 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
       end
     end
 
+
+    describe "Hours validations that trigger warnings" do
+      {
+        "high_hours_paystubs.json" => "hours outside expected range",
+        "high_hours_gross_pay_list_paystubs.json" => "hours outside expected range in gross pay list"
+      }.each do |fixture, reason|
+        context "with #{reason} (#{fixture})" do
+          before do
+            allow(argyle_service).to receive(:fetch_paystubs_api)
+              .and_return(argyle_load_relative_json_file("invalid_hours", fixture))
+
+            allow(NewRelic::Agent).to receive(:record_custom_event)
+            argyle_report.send(:fetch_report_data)
+          end
+
+          it "generates a warning" do
+            expect(argyle_report.warnings).not_to be_empty
+          end
+
+          it "includes the correct warning message" do
+            expect(argyle_report.warnings[:hours].size).to eq(1)
+            expect(argyle_report.warnings[:hours]).to include(match(/Invalid value received for hours/i))
+          end
+
+          it "sends a warning to New Relic" do
+            expect(NewRelic::Agent).to have_received(:record_custom_event).with(
+              TrackEvent::ArgyleDataUnexpectedHours,
+              hash_including(
+                time: anything,
+                cbv_flow_id: kind_of(Integer),
+                warnings: a_string_matching(/Invalid value received for hours/i)
+              )
+            )
+          end
+        end
+      end
+    end
+
+    describe "Hours validations that do not trigger warnings" do
+      {
+        "empty_hours_paystubs.json" => "empty hours",
+        "null_hours_in_gross_pay_list_paystubs.json" => "null hours in gross pay list",
+        "empty_hours_gross_pay_list_paystubs.json" => "empty hours in gross pay list",
+        "negative_hours_paystubs.json" => "negative values",
+        "negative_hours_gross_pay_list_paystubs.json" => "negative values in gross pay list"
+      }.each do |fixture, reason|
+        context "with #{reason} (#{fixture})" do
+          before do
+            allow(argyle_service).to receive(:fetch_paystubs_api)
+              .and_return(argyle_load_relative_json_file("invalid_hours", fixture))
+
+            allow(NewRelic::Agent).to receive(:record_custom_event)
+            argyle_report.send(:fetch_report_data)
+          end
+
+          it "does not generate a warning" do
+            expect(argyle_report.warnings).to be_empty
+          end
+
+          it "does not send a warning to New Relic" do
+            expect(NewRelic::Agent).not_to have_received(:record_custom_event).with(
+              anything,
+              anything
+            )
+          end
+        end
+      end
+    end
+
+
     describe '#fetch_gigs' do
       context "for Bob, a Uber driver" do
         before do
@@ -251,54 +321,6 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
     end
   end
 
-  describe '#most_recent_paystub_with_address' do
-    it('returns nil when no paystubs returned') do
-      paystubs = { "results" => [] }
-      expect(Aggregators::AggregatorReports::ArgyleReport.most_recent_paystub_with_address(paystubs)).to be_nil
-    end
-
-    it 'returns nil when no employer_address is present' do
-      paystubs = {
-        "results" => [
-          {
-            "employer_address" => nil,
-            "paystub_date" => "2021-01-15"
-          }
-        ]
-      }
-      expect(Aggregators::AggregatorReports::ArgyleReport.most_recent_paystub_with_address(paystubs)).to be_nil
-    end
-
-    it 'returns nil when employer_address.line1 is nil' do
-      paystubs = {
-        "results" => [
-          {
-            "employer_address" => { "line1" => nil },
-            "paystub_date" => "2021-01-15"
-          }
-        ]
-      }
-      expect(Aggregators::AggregatorReports::ArgyleReport.most_recent_paystub_with_address(paystubs)).to be_nil
-    end
-
-    it 'returns the most recent paystub with a valid employer_address' do
-      paystubs = {
-        "results" => [
-          {
-            "employer_address" => { "line1" => "123 Main St" },
-            "paystub_date" => "2021-01-15"
-          },
-          {
-            "employer_address" => { "line1" => "456 Elm St" },
-            "paystub_date" => "2021-02-15"
-          }
-        ]
-      }
-      result = Aggregators::AggregatorReports::ArgyleReport.most_recent_paystub_with_address(paystubs)
-      expect(result["employer_address"]["line1"]).to eq("456 Elm St")
-    end
-  end
-
   describe '#summarize_by_month' do
     context "bob, a gig employee" do
       let(:argyle_report) { Aggregators::AggregatorReports::ArgyleReport.new(
@@ -362,6 +384,71 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
                                                                included_range_end: Date.parse("2025-01-31")
                                                              })
       end
+    end
+
+    context "busy_joe, an employee with multiple employments" do
+      let(:account) { "01959b15-8b7f-5487-212d-2c0f50e3ec96" }
+      let!(:payroll_account_2) do
+        create(:payroll_account, :argyle_fully_synced, aggregator_account_id: account)
+      end
+
+      let(:argyle_report) { Aggregators::AggregatorReports::ArgyleReport.new(
+        payroll_accounts: [ payroll_account_2 ],
+        argyle_service: argyle_service,
+        days_to_fetch_for_w2: days_ago_to_fetch,
+        days_to_fetch_for_gig: days_ago_to_fetch) }
+
+      let(:identities_json) { argyle_load_relative_json_file('busy_joe', 'request_identity.json') }
+      let(:employments_json) { argyle_load_relative_json_file('busy_joe', 'request_employment.json') }
+      let(:paystubs_json) { argyle_load_relative_json_file('busy_joe', 'request_paystubs.json') }
+      let(:account_json) { argyle_load_relative_json_file('busy_joe', 'request_accounts.json') }
+
+      before do
+        allow(argyle_service).to receive(:fetch_identities_api).and_return(identities_json)
+        allow(argyle_service).to receive(:fetch_employments_api).and_return(employments_json)
+        allow(argyle_service).to receive(:fetch_paystubs_api).and_return(paystubs_json)
+        allow(argyle_service).to receive(:fetch_account_api).and_return(account_json)
+        allow(argyle_service).to receive(:fetch_gigs_api).and_return(nil)
+        argyle_report.fetch
+      end
+
+      it "returns a hash of monthly totals" do
+        monthly_summary_all_accounts = argyle_report.summarize_by_month(from_date: Date.parse("2010-01-08"), to_date: Date.parse("2026-03-31"))
+
+        expect(monthly_summary_all_accounts.keys).to match_array([ account ])
+        monthly_summary = monthly_summary_all_accounts[account]
+        expect(monthly_summary.keys).to match_array([ "2025-03" ])
+        expect(monthly_summary["2025-03"][:paystubs].length).to eq(2)
+      end
+    end
+  end
+
+  describe 'valid fixture: valid identity, valid employer, gig worker, no paystubs' do
+    let(:argyle_service) { instance_double(Aggregators::Sdk::ArgyleService) }
+    let(:payroll_account) { create(:payroll_account, :argyle_fully_synced) }
+    let(:argyle_report) do
+      described_class.new(
+        payroll_accounts: [ payroll_account ],
+        argyle_service: argyle_service,
+        days_to_fetch_for_w2: days_ago_to_fetch,
+        days_to_fetch_for_gig: days_ago_to_fetch
+      )
+    end
+
+    it 'A gig with valid identity and employer is valid even with no paystubs' do
+      identities_json = argyle_load_relative_json_file('masked_prod_gig_validation_pass', 'request_identity.json')
+      empty_response = { "results" => [] }
+
+      allow(argyle_service).to receive(:fetch_identities_api).and_return(identities_json)
+      allow(argyle_service).to receive(:fetch_paystubs_api).and_return(empty_response)
+      allow(argyle_service).to receive(:fetch_account_api).and_return(empty_response)
+      allow(argyle_service).to receive(:fetch_gigs_api).and_return(empty_response)
+
+      argyle_report.fetch
+
+      expect(argyle_report.valid?(:useful_report)).to be true
+
+      expect(argyle_report.errors.full_messages).to be_empty
     end
   end
 end

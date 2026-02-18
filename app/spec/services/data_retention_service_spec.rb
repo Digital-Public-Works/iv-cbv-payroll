@@ -57,7 +57,7 @@ RSpec.describe DataRetentionService do
     let!(:cbv_flow_invitation) do
       create(:cbv_flow_invitation)
     end
-    let!(:cbv_flow) { CbvFlow.create_from_invitation(cbv_flow_invitation) }
+    let!(:cbv_flow) { CbvFlow.create_from_invitation(cbv_flow_invitation, "test_device_id") }
     let(:service) { DataRetentionService.new }
     let(:deletion_threshold) { cbv_flow_invitation.expires_at + DataRetentionService::REDACT_UNUSED_INVITATIONS_AFTER }
     let(:now) { Time.now }
@@ -155,6 +155,27 @@ RSpec.describe DataRetentionService do
             .not_to change { cbv_flow_invitation.reload.attributes }
         end
       end
+
+      context "when the cbv_flow has an argyle_user_id" do
+        let(:fake_argyle) { instance_double(Aggregators::Sdk::ArgyleService) }
+
+        before do
+          cbv_flow.update(argyle_user_id: "argyle_123")
+
+          argyle_environment = Rails.application.config.client_agencies[cbv_flow.client_agency_id].argyle_environment
+          allow(Aggregators::Sdk::ArgyleService)
+            .to receive(:new)
+                  .with(argyle_environment)
+                  .and_return(fake_argyle)
+
+          allow(fake_argyle).to receive(:delete_user)
+        end
+
+        it "deletes the argyle user" do
+          expect(fake_argyle).to receive(:delete_user).with(argyle_user_id: "argyle_123")
+          service.redact_incomplete_cbv_flows
+        end
+      end
     end
 
     context "when the CbvFlow has no invitation" do
@@ -192,13 +213,13 @@ RSpec.describe DataRetentionService do
     end
   end
 
-  describe "#redact_complete_cbv_flows" do
+  describe "#redact_transmitted_cbv_flows" do
     let!(:cbv_flow_invitation) do
       create(:cbv_flow_invitation)
     end
     let!(:cbv_flow) do
       CbvFlow
-        .create_from_invitation(cbv_flow_invitation)
+        .create_from_invitation(cbv_flow_invitation, "test_device_id")
         .tap do |cbv_flow|
           cbv_flow.update(
             end_user_id: "11111111-1111-1111-1111-111111111111",
@@ -220,24 +241,24 @@ RSpec.describe DataRetentionService do
       let(:now) { deletion_threshold - 1.minute }
 
       it "does not redact the CbvFlow" do
-        expect { service.redact_complete_cbv_flows }
+        expect { service.redact_transmitted_cbv_flows }
           .not_to change { cbv_flow.reload.attributes }
       end
 
       it "does not redact the CbvFlowInvitation" do
-        expect { service.redact_complete_cbv_flows }
+        expect { service.redact_transmitted_cbv_flows }
           .not_to change { cbv_flow_invitation.reload.attributes }
       end
 
       it "does not redact the CbvApplicant" do
-        expect { service.redact_complete_cbv_flows }
+        expect { service.redact_transmitted_cbv_flows }
           .not_to change { cbv_flow.cbv_applicant.reload.attributes }
       end
 
       it "does not redact an associated PayrollAccount" do
         payroll_account = create(:payroll_account, cbv_flow: cbv_flow)
 
-        expect { service.redact_complete_cbv_flows }
+        expect { service.redact_transmitted_cbv_flows }
           .not_to change { payroll_account.reload.attributes }
       end
     end
@@ -246,7 +267,7 @@ RSpec.describe DataRetentionService do
       let(:now) { deletion_threshold + 1.minute }
 
       it "redacts the incomplete CbvFlow" do
-        service.redact_complete_cbv_flows
+        service.redact_transmitted_cbv_flows
         expect(cbv_flow.reload).to have_attributes(
           end_user_id: "00000000-0000-0000-0000-000000000000",
           additional_information: {}
@@ -254,7 +275,7 @@ RSpec.describe DataRetentionService do
       end
 
       it "redacts the associated invitation" do
-        service.redact_complete_cbv_flows
+        service.redact_transmitted_cbv_flows
         expect(cbv_flow_invitation.reload).to have_attributes(
           auth_token: "REDACTED",
           redacted_at: within(1.second).of(now)
@@ -262,7 +283,7 @@ RSpec.describe DataRetentionService do
       end
 
       it "redacts the associated applicant" do
-        service.redact_complete_cbv_flows
+        service.redact_transmitted_cbv_flows
         expect(cbv_flow.cbv_applicant.reload).to have_attributes(
           first_name: "REDACTED"
         )
@@ -270,25 +291,255 @@ RSpec.describe DataRetentionService do
 
       it "redacts an associated PayrollAccount" do
         payroll_account = create(:payroll_account, cbv_flow: cbv_flow)
-        service.redact_complete_cbv_flows
+        service.redact_transmitted_cbv_flows
         expect(payroll_account.reload).to have_attributes(
           redacted_at: within(1.second).of(now)
         )
       end
 
       it "skips redacting already-redacted CbvFlows" do
-        service.redact_complete_cbv_flows
+        service.redact_transmitted_cbv_flows
 
         expect_any_instance_of(CbvFlow).not_to receive(:redact!)
-        service.redact_complete_cbv_flows
+        service.redact_transmitted_cbv_flows
+      end
+
+      context "when the cbv_flow has an argyle_user_id" do
+        let(:fake_argyle) { instance_double(Aggregators::Sdk::ArgyleService) }
+
+        before do
+          cbv_flow.update(argyle_user_id: "argyle_123")
+
+          argyle_environment = Rails.application.config.client_agencies[cbv_flow.client_agency_id].argyle_environment
+          allow(Aggregators::Sdk::ArgyleService)
+            .to receive(:new)
+                  .with(argyle_environment)
+                  .and_return(fake_argyle)
+
+          allow(fake_argyle).to receive(:delete_user)
+        end
+
+        it "deletes the argyle user" do
+          expect(fake_argyle).to receive(:delete_user).with(argyle_user_id: "argyle_123")
+          service.redact_transmitted_cbv_flows
+        end
+      end
+
+      context "when the cbv_flow has no argyle_user_id" do
+        before do
+          cbv_flow.update(argyle_user_id: nil)
+        end
+
+        it "does not attempt to delete argyle user" do
+          expect(service).not_to receive(:delete_argyle_user)
+          service.redact_transmitted_cbv_flows
+        end
+      end
+    end
+  end
+
+  describe "#redact_old_cbv_flows" do
+    let!(:cbv_flow_invitation) do
+      create(:cbv_flow_invitation)
+    end
+    let!(:cbv_flow) do
+      CbvFlow
+        .create_from_invitation(cbv_flow_invitation, 'test_device_id')
+        .tap do |cbv_flow|
+        cbv_flow.update(
+          end_user_id: "11111111-1111-1111-1111-111111111111",
+          additional_information: { "account-id" => "some string here" },
+          confirmation_code: "SANDBOX0002",
+          created_at: Time.new(2024, 8, 1, 12, 0, 0, "-04:00")
+        )
+      end
+    end
+    let(:service) { DataRetentionService.new }
+    let(:deletion_threshold) { cbv_flow.created_at + DataRetentionService::REDACT_OLD_RECORD_BACKSTOP }
+    let(:now) { Time.now }
+
+    around do |ex|
+      Timecop.freeze(now, &ex)
+    end
+
+    context "before the deletion threshold" do
+      let(:now) { deletion_threshold - 1.minute }
+
+      it "does not redact the CbvFlow" do
+        expect { service.redact_old_cbv_flows }
+          .not_to change { cbv_flow.reload.attributes }
+      end
+
+      it "does not redact the CbvFlowInvitation" do
+        expect { service.redact_old_cbv_flows }
+          .not_to change { cbv_flow_invitation.reload.attributes }
+      end
+
+      it "does not redact the CbvApplicant" do
+        expect { service.redact_old_cbv_flows }
+          .not_to change { cbv_flow.cbv_applicant.reload.attributes }
+      end
+
+      it "does not redact an associated PayrollAccount" do
+        payroll_account = create(:payroll_account, cbv_flow: cbv_flow)
+
+        expect { service.redact_old_cbv_flows }
+          .not_to change { payroll_account.reload.attributes }
+      end
+    end
+
+    context "after the deletion threshold" do
+      let(:now) { deletion_threshold + 1.minute }
+
+      it "redacts the incomplete CbvFlow" do
+        service.redact_old_cbv_flows
+        expect(cbv_flow.reload).to have_attributes(
+                                     end_user_id: "00000000-0000-0000-0000-000000000000",
+                                     additional_information: {}
+                                   )
+      end
+
+      it "redacts the associated invitation" do
+        service.redact_old_cbv_flows
+        expect(cbv_flow_invitation.reload).to have_attributes(
+                                                auth_token: "REDACTED",
+                                                redacted_at: within(1.second).of(now)
+                                              )
+      end
+
+      it "redacts the associated applicant" do
+        service.redact_old_cbv_flows
+        expect(cbv_flow.cbv_applicant.reload).to have_attributes(
+                                                   first_name: "REDACTED"
+                                                 )
+      end
+
+      it "redacts an associated PayrollAccount" do
+        payroll_account = create(:payroll_account, cbv_flow: cbv_flow)
+        service.redact_old_cbv_flows
+        expect(payroll_account.reload).to have_attributes(
+                                            redacted_at: within(1.second).of(now)
+                                          )
+      end
+
+      it "skips redacting already-redacted CbvFlows" do
+        service.redact_old_cbv_flows
+
+        expect_any_instance_of(CbvFlow).not_to receive(:redact!)
+        service.redact_old_cbv_flows
+      end
+
+      context "when the cbv_flow has an argyle_user_id" do
+        let(:fake_argyle) { instance_double(Aggregators::Sdk::ArgyleService) }
+
+        before do
+          cbv_flow.update(argyle_user_id: "argyle_123")
+
+          argyle_environment = Rails.application.config.client_agencies[cbv_flow.client_agency_id].argyle_environment
+          allow(Aggregators::Sdk::ArgyleService)
+            .to receive(:new)
+                  .with(argyle_environment)
+                  .and_return(fake_argyle)
+
+          allow(fake_argyle).to receive(:delete_user)
+        end
+
+        it "deletes the argyle user" do
+          expect(fake_argyle).to receive(:delete_user).with(argyle_user_id: "argyle_123")
+          service.redact_old_cbv_flows
+        end
+      end
+    end
+  end
+
+  describe "#delete_argyle_user" do
+    let(:argyle_user_id) { "argyle_123" }
+    let(:client_agency_id) { "sandbox" }
+    let(:service) { DataRetentionService.new }
+    let(:argyle_service) { instance_double(Aggregators::Sdk::ArgyleService) }
+    let(:argyle_environment) { "sandbox" }
+
+    before do
+      # Mock the config lookup
+      allow(Rails.application.config).to receive_message_chain(:client_agencies, :[]).with(client_agency_id).and_return(
+        double(argyle_environment: argyle_environment)
+      )
+      allow(Aggregators::Sdk::ArgyleService).to receive(:new).with(argyle_environment).and_return(argyle_service)
+    end
+
+    it "initializes ArgyleService with the correct environment" do
+      allow(argyle_service).to receive(:delete_user)
+
+      expect(Aggregators::Sdk::ArgyleService).to receive(:new).with(argyle_environment)
+      service.send(:delete_argyle_user, client_agency_id, argyle_user_id)
+    end
+
+    it "calls delete_user with the correct user_id" do
+      expect(argyle_service).to receive(:delete_user).with(argyle_user_id: argyle_user_id)
+      service.send(:delete_argyle_user, client_agency_id, argyle_user_id)
+    end
+
+    context "when the user has already been deleted (404)" do
+      before do
+        allow(argyle_service).to receive(:delete_user).and_raise(Faraday::ResourceNotFound.new(nil, nil))
+      end
+
+      it "does not raise an error" do
+        expect { service.send(:delete_argyle_user, client_agency_id, argyle_user_id) }.not_to raise_error
+      end
+
+      it "logs an info message" do
+        expect(Rails.logger).to receive(:info).with("Argyle User #{argyle_user_id} already deleted")
+        service.send(:delete_argyle_user, client_agency_id, argyle_user_id)
+      end
+    end
+
+    context "when deletion fails" do
+      let(:error) { StandardError.new("API Error") }
+
+      before do
+        allow(argyle_service).to receive(:delete_user).and_raise(error)
+      end
+
+      context "in production" do
+        before do
+          allow(Rails.env).to receive(:production?).and_return(true)
+        end
+
+        it "logs the error" do
+          expect(Rails.logger).to receive(:error).with("Unable to delete Argyle User #{argyle_user_id} - API Error")
+          service.send(:delete_argyle_user, client_agency_id, argyle_user_id)
+        end
+
+        it "tracks the failure event" do
+          tracker = instance_double(GenericEventTracker)
+          allow(GenericEventTracker).to receive(:new).and_return(tracker)
+          expect(tracker).to receive(:track).with("DataRedactionFailure", nil, { argyle_user_id: argyle_user_id })
+          service.send(:delete_argyle_user, client_agency_id, argyle_user_id)
+        end
+
+        it "does not raise the error" do
+          expect { service.send(:delete_argyle_user, client_agency_id, argyle_user_id) }.not_to raise_error
+        end
+      end
+
+      context "in non-production" do
+        before do
+          allow(Rails.env).to receive(:production?).and_return(false)
+        end
+
+        it "raises the error" do
+          expect { service.send(:delete_argyle_user, client_agency_id, argyle_user_id) }
+            .to raise_error(StandardError, "API Error")
+        end
       end
     end
   end
 
   describe ".manually_redact_by_case_number!" do
     let(:cbv_flow_invitation) { create(:cbv_flow_invitation, cbv_applicant_attributes: { case_number: "DELETEME001" }) }
-    let!(:cbv_flow) { CbvFlow.create_from_invitation(cbv_flow_invitation) }
-    let!(:second_cbv_flow) { CbvFlow.create_from_invitation(cbv_flow_invitation) }
+    let!(:cbv_flow) { CbvFlow.create_from_invitation(cbv_flow_invitation, "test_device_id") }
+    let!(:second_cbv_flow) { CbvFlow.create_from_invitation(cbv_flow_invitation, "test_device_id_2") }
     let!(:payroll_account) { create(:payroll_account, cbv_flow: second_cbv_flow) }
 
     it "redacts the invitation and all flow objects" do
@@ -308,6 +559,70 @@ RSpec.describe DataRetentionService do
         redacted_at: within(1.second).of(Time.now)
       )
       expect(payroll_account.reload).to have_attributes(
+        redacted_at: within(1.second).of(Time.now)
+      )
+    end
+
+    context "when a flow has an argyle_user_id" do
+      before do
+        second_cbv_flow.update!(argyle_user_id: "argyle_manual_123", client_agency_id: "sandbox")
+      end
+
+      it "deletes the argyle user" do
+        expect_any_instance_of(DataRetentionService).to receive(:delete_argyle_user).with("sandbox", "argyle_manual_123")
+        DataRetentionService.manually_redact_by_case_number!("DELETEME001")
+      end
+    end
+  end
+
+  describe "#redact_cbv_flow" do
+    let(:cbv_flow) { create(:cbv_flow, argyle_user_id: "argyle_123", client_agency_id: "sandbox") }
+    let(:service) { DataRetentionService.new }
+
+    it "deletes the argyle user when argyle_user_id is present" do
+      expect(service).to receive(:delete_argyle_user).with(cbv_flow.client_agency_id, cbv_flow.argyle_user_id)
+      service.send(:redact_cbv_flow, cbv_flow)
+    end
+
+    it "does not attempt to delete argyle user when argyle_user_id is nil" do
+      cbv_flow.update(argyle_user_id: nil)
+      expect(service).not_to receive(:delete_argyle_user)
+      service.send(:redact_cbv_flow, cbv_flow)
+    end
+
+    it "calls delete_argyle_user before redacting local records" do
+      expect(service).to receive(:delete_argyle_user).ordered
+      expect(cbv_flow).to receive(:redact!).ordered
+      service.send(:redact_cbv_flow, cbv_flow)
+    end
+
+    context "when delete_argyle_user raises an error" do
+      before do
+        allow(service).to receive(:delete_argyle_user).and_raise(StandardError.new("API Error"))
+      end
+
+      it "does not redact local records" do
+        expect { service.send(:redact_cbv_flow, cbv_flow) }.to raise_error(StandardError)
+        expect(cbv_flow.reload.redacted_at).to be_nil
+      end
+    end
+  end
+
+  describe ".redact_case_numbers_by_agency" do
+    let(:agency_to_redact) { "sandbox" }
+    let!(:cbv_flow_invitation) { create(:cbv_flow_invitation, cbv_applicant_attributes: { case_number: "DELETEME001", client_agency_id: agency_to_redact }) }
+    let!(:cbv_flow_invitation2) { create(:cbv_flow_invitation, cbv_applicant_attributes: { case_number: "DELETEME002", client_agency_id: agency_to_redact }) }
+    let!(:cbv_flow) { CbvFlow.create_from_invitation(cbv_flow_invitation, "test_device_id") }
+    let!(:cbv_flow2) { CbvFlow.create_from_invitation(cbv_flow_invitation2, "test_device_id_2") }
+
+    it "redacts all case numbers for a given agency" do
+      DataRetentionService.redact_case_numbers_by_agency(agency_to_redact)
+      expect(cbv_flow.cbv_applicant.reload).to have_attributes(
+        case_number: "REDACTED",
+        redacted_at: within(1.second).of(Time.now)
+      )
+      expect(cbv_flow2.cbv_applicant.reload).to have_attributes(
+        case_number: "REDACTED",
         redacted_at: within(1.second).of(Time.now)
       )
     end

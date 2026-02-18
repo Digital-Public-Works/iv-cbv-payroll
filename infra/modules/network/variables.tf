@@ -1,3 +1,8 @@
+variable "vpc_cidr" {
+  type        = string
+  description = "The IPv4 CIDR block for the VPC"
+}
+
 variable "num_availability_zones" {
   type        = number
   description = "Number of availability zones (AZs) to provision across"
@@ -38,6 +43,12 @@ variable "has_external_non_aws_service" {
 variable "single_nat_gateway" {
   type        = bool
   description = "Whether to provision only a single NAT gateway, rather than one per AZ. Good for saving costs in non-production environments."
+  default     = false
+}
+
+variable "enable_vpc_endpoint_interfaces" {
+  type        = bool
+  description = "Whether to create VPC Interface endpoints for accessing AWS services. Set to false to save costs in non-production environments."
   default     = false
 }
 

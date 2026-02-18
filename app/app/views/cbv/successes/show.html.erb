@@ -30,7 +30,7 @@
         <div class="usa-icon-list__content">
           <h3 class="margin-bottom-1"><%= t(".whats_next_1_title") %></h3>
           <p><%= t(".whats_next_1_li_1", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
-          <p><%= t(".whats_next_1_li_2_html", agency_acronym: agency_translation("shared.agency_acronym"), agency_website: current_agency.agency_contact_website) %></p>
+          <p><%= t(".whats_next_1_li_2_html", agency_portal_name: agency_translation("shared.agency_portal_name"), agency_website: current_agency.agency_contact_website) %></p>
         </div>
       </li>
       <li class="usa-icon-list__item">
@@ -84,7 +84,7 @@
         icon: "launch",
         class: "usa-button usa-button--outline",
         icon_position: :trailing,
-        url: feedbacks_path(form: "survey"),
+        url: feedbacks_path(form: "survey", referer: request.original_url),
         target: "_blank",
         rel: "noopener noreferrer"
       )) %>

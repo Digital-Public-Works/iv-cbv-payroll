@@ -114,11 +114,8 @@ module TestHelpers
   end
 
   def extract_pdf_text(response)
-    pdf = PDF::Reader.new(StringIO.new(response.body))
-    pdf_text = ""
-    pdf.pages.each do |page|
-      pdf_text += page.text.gsub(/\s+/, ' ')
-    end
-    pdf_text
+    reader = PDF::Reader.new(StringIO.new(response.body))
+    text = reader.pages.map(&:text).join("\n")
+    text.gsub(/\s+/, ' ').strip # Normalize all whitespace to single spaces
   end
 end

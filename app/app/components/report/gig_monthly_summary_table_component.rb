@@ -11,7 +11,7 @@ class Report::GigMonthlySummaryTableComponent < ViewComponent::Base
     @is_pdf = is_pdf
 
     # Note: payroll_account may either be the ID or the payroll_account object
-    @account_id = payroll_account.class == String ? payroll_account : payroll_account.pinwheel_account_id
+    @account_id = payroll_account.class == String ? payroll_account : payroll_account.aggregator_account_id
     account_report = report.find_account_report(@account_id)
     @paystubs = account_report&.paystubs
     @employer_name = account_report&.dig(:employment, :employer_name)
@@ -78,7 +78,7 @@ class Report::GigMonthlySummaryTableComponent < ViewComponent::Base
     year = parse_month_safely(month_string).year
     cents_per_mile = self.federal_cents_per_mile(year)
     t("components.report.monthly_summary_table.dollars_times_miles",
-      dollar_amount: format_money(cents_per_mile), number_of_miles: month_summary[:total_mileage].to_f.round(0))
+      dollar_amount: format_money_with_subcents(cents_per_mile), number_of_miles: month_summary[:total_mileage].to_f.round(0))
   end
 
   def format_total_gig_hours(month_summary)

@@ -3,7 +3,7 @@ locals {
   # This will be used in names of AWS resources
   project_name = "iv-cbv-payroll"
 
-  # Project owner (e.g. navapbc). Used for tagging infra resources.
+  # Project owner. Used for tagging infra resources.
   owner = "Digital-Public-Works"
 
   # URL of project source code repository
@@ -14,7 +14,11 @@ locals {
   # otherwise us-east-1 is a good default
   default_region = "us-east-1"
 
+  # The name of the IAM role created by this terraform template
+  # that the GitHub Action will assume when running CI/CD operations.
   github_actions_role_name = "${local.project_name}-github-actions"
 
+  # Prefix for AWS security group name used for VPC endpoints to access AWS services
+  # from the VPCs private subnets
   aws_services_security_group_name_prefix = "aws-service-vpc-endpoints"
 }
