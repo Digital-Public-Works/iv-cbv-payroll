@@ -88,7 +88,7 @@ class CbvFlowInvitation < ApplicationRecord
   private
 
   def agency_config
-    Rails.application.config.client_agencies[client_agency_id]
+    Rails.application.config.client_agencies[client_agency_id] || {}
   end
 
   def agency_time_zone

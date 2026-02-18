@@ -15,7 +15,8 @@ class Caseworker::CbvFlowInvitationsController < Caseworker::BaseController
       @cbv_flow_invitation = CbvInvitationService.new(event_logger).invite(
         invitation_params.deep_merge(client_agency_id: client_agency_id, cbv_applicant_attributes: { client_agency_id: client_agency_id }),
         current_user,
-        delivery_method: :email
+        delivery_method: :email,
+        expiration_params: { expiration_days: agency_config.invitation_valid_days }
       )
     rescue => e
       Rails.logger.error("Error inviting applicant: #{e.message}")
@@ -75,5 +76,9 @@ class Caseworker::CbvFlowInvitationsController < Caseworker::BaseController
 
   def client_agency_id
     params[:client_agency_id]
+  end
+
+  def agency_config
+    Rails.application.config.client_agencies[client_agency_id]
   end
 end
