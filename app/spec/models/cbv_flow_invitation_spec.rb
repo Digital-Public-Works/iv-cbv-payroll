@@ -99,16 +99,22 @@ RSpec.describe CbvFlowInvitation, type: :model do
     end
 
     context "after 11:59pm ET on the day of the validity window" do
-      let(:invitation_sent_at) { Time.use_zone(agency_time_zone) { Time.new(2024, 8,  1, 12, 0, 0) } }
+      let(:invitation_sent_at) { Time.use_zone(agency_time_zone) { Time.new(2024, 8, 1, 12, 0, 0) } }
       let(:now)                { Time.use_zone(agency_time_zone) { Time.new(2024, 8, 16, 0, 1, 0) } }
 
-      it { is_expected.to eq(true) }
+      it do
+        puts "invitation_sent_at: #{invitation_sent_at}"
+        puts "expires_at: #{invitation.expires_at}"
+        puts "now: #{now}"
+        puts "expired?: #{invitation.expired?}"
+        is_expected.to eq(true)
+      end
     end
   end
 
   describe "#expires_at_local" do
     let(:client_agency_id) { "sandbox" }
-    let(:agency_time_zone) { "America/New_York" }
+    let(:agency_time_zone) { Rails.application.config.client_agencies[client_agency_id].timezone }
     let(:invitation_valid_days) { 14 }
     let(:invitation) do
       create(:cbv_flow_invitation, valid_attributes.merge(
