@@ -15,6 +15,7 @@ import PreviewFormController from "./preview_form_controller.js"
 import PreviewToggleController from "./preview_toggle_controller.js"
 import ClickTrackerController from "./click_tracker_controller.js"
 import AttestationCheckController from "./cbv/attestation_check_controller.js"
+import TooltipTrackerController from "./employer_search_tooltip_tracker_controller.js"
 
 application.register("anchor-scroll", AnchorScrollController)
 application.register("scroll-reset", ScrollResetController)
@@ -31,6 +32,7 @@ application.register("preview-form", PreviewFormController)
 application.register("preview-toggle", PreviewToggleController)
 application.register("session-timeout", SessionTimeoutPageController)
 application.register("cbv-attestation-check", AttestationCheckController)
+application.register("tooltip-tracker", TooltipTrackerController)
 
 Turbo.StreamActions.redirect = function () {
   Turbo.visit(this.target)

@@ -174,6 +174,7 @@ class Webhooks::Pinwheel::EventsController < ApplicationController
   rescue => ex
     raise ex unless Rails.env.production?
 
+    NewRelic::Agent.notice_error(ex)
     Rails.logger.error "Unable to process webhook event (in #{self.class.name}): #{ex}"
   end
 
@@ -188,7 +189,7 @@ class Webhooks::Pinwheel::EventsController < ApplicationController
         invitation_id: @cbv_flow&.cbv_flow_invitation_id
       })
     rescue => e
-      log.error "Failed to send New Relic notification: #{e}"
+      Rails.logger.error "Failed to send New Relic notification: #{e}"
     end
 
     report_is_valid = report.valid?(:useful_report)
