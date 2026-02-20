@@ -20,7 +20,6 @@ class CbvFlowInvitation < ApplicationRecord
 
   accepts_nested_attributes_for :cbv_applicant
 
-  before_create :set_expires_at, if: :new_record?
   before_validation :normalize_language
 
   validates :client_agency_id, inclusion: Rails.application.config.client_agencies.client_agency_ids
@@ -87,19 +86,6 @@ class CbvFlowInvitation < ApplicationRecord
   end
 
   private
-
-  def set_expires_at
-    self.expires_at ||= calculate_expires_at
-  end
-
-  # Invitations are valid until 11:59pm in the agency's time zone on the Nth day
-  # after sending the invitation.
-  def calculate_expires_at
-    base_time = (created_at || Time.current)
-    end_of_day_sent = base_time.in_time_zone(agency_time_zone).end_of_day
-    days_valid_for  = agency_config.invitation_valid_days
-    end_of_day_sent + days_valid_for.days
-  end
 
   def agency_config
     Rails.application.config.client_agencies[client_agency_id]
