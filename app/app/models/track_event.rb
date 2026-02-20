@@ -104,6 +104,7 @@ module TrackEvent
   ApplicantViewedPinwheelProviderConfirmation = "ApplicantViewedPinwheelProviderConfirmation"
   ApplicantWarnedAboutTimeout = "ApplicantWarnedAboutTimeout"
   ArgyleDataUnexpectedHours = "ArgyleDataUnexpectedHours"
+  ArgylePaystubHours = "ArgylePaystubHours"
   CaseworkerInvitedApplicantToFlow = "CaseworkerInvitedApplicantToFlow"
   CaseworkerLoggedIn = "CaseworkerLoggedIn"
   CbvPageView = "CbvPageView"

@@ -93,6 +93,35 @@ RSpec.describe Aggregators::ResponseObjects::Paystub, type: :model do
       expect(paystub.earnings.first.name).to eq("Regular")
     end
 
+    it 'logs paystub to MixPanel when parsing' do
+      tracker_instance = instance_double(GenericEventTracker)
+      allow(GenericEventTracker).to receive(:new).and_return(tracker_instance)
+
+      expect(tracker_instance)
+        .to receive(:track)
+        .with("ArgylePaystubHours", nil, include(
+          time: anything,
+          argyle_total_hours: 80.0,
+          gross_pay_sum: 65.59,
+          synthetic_total_hours: anything,
+          argyle_total_hours_matches_synthetic: false,
+          argyle_hours_null: false
+        )).once
+
+      paystub = described_class.from_argyle(argyle_response)
+    end
+
+    it 'sends an error to New Relic when it cannot send to MixPanel' do
+      tracker_instance = instance_double(GenericEventTracker)
+      allow(GenericEventTracker).to receive(:new).and_raise(RuntimeError, "Test error")
+      allow(NewRelic::Agent).to receive(:notice_error)
+
+      paystub = described_class.from_argyle(argyle_response)
+
+      expect(NewRelic::Agent).to have_received(:notice_error)
+                                   .with(kind_of(RuntimeError))
+    end
+
     context 'with realistic USDS employee data structure' do
       let(:argyle_response) do
         {
