@@ -7,9 +7,8 @@ class CbvInvitationService
     cbv_flow_invitation_params[:user] = current_user
     @cbv_flow_invitation = CbvFlowInvitation.new(cbv_flow_invitation_params)
     @agency_config = Rails.application.config.client_agencies[current_user.client_agency_id]
-    validate_expiration_params(expiration_params)
 
-    if @cbv_flow_invitation.errors.empty?
+    if validate_expiration_params(expiration_params)
       expires_at = calculate_expires_at(expiration_params)
       @cbv_flow_invitation.expires_at = expires_at
       @cbv_flow_invitation.save
@@ -57,34 +56,32 @@ class CbvInvitationService
   def validate_expiration_params(expiration_params)
     if expiration_params[:expiration_days].present? && expiration_params[:expiration_date].present?
       @cbv_flow_invitation.errors.add(:expiration, "Provide either expiration_days or expiration_date, but not both.")
-      return
-    end
-
-    if expiration_params[:expiration_date].present?
+      return false if @cbv_flow_invitation.errors.present?
+    elsif expiration_params[:expiration_date].present?
       begin
         parsed_date = Time.iso8601(expiration_params[:expiration_date].to_s)
 
         if parsed_date < Time.current
           @cbv_flow_invitation.errors.add(:expiration_date, "cannot be in the past")
-          return
+          return false if @cbv_flow_invitation.errors.present?
         elsif parsed_date > 1.year.from_now
           @cbv_flow_invitation.errors.add(:expiration_date, "cannot be more than 1 year in the future")
-          return
+          return false if @cbv_flow_invitation.errors.present?
         end
 
       rescue ArgumentError
         @cbv_flow_invitation.errors.add(:expiration_date, "must be a full ISO8601 datetime with a timezone")
-        return
+        return false if @cbv_flow_invitation.errors.present?
       end
-    end
-
-    if expiration_params[:expiration_days].present?
+    elsif expiration_params[:expiration_days].present?
       exp_days = expiration_params[:expiration_days].to_i
       if exp_days < 1 || (Time.current + exp_days.days) > 1.year.from_now
         @cbv_flow_invitation.errors.add(:expiration_days, "cannot be more than 1 year in the future")
-        nil
+        return false if @cbv_flow_invitation.errors.present?
       end
     end
+
+    true
   end
 
   def calculate_expires_at(exp_params)
