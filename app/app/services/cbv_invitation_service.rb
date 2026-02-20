@@ -57,43 +57,45 @@ class CbvInvitationService
   def validate_expiration_params(expiration_params)
     if expiration_params[:expiration_days].present? && expiration_params[:expiration_date].present?
       @cbv_flow_invitation.errors.add(:expiration, "Provide either expiration_days or expiration_date, but not both.")
+      return
     end
 
     if expiration_params[:expiration_date].present?
       begin
         parsed_date = Time.iso8601(expiration_params[:expiration_date].to_s)
 
-        if parsed_date < Time.now
+        if parsed_date < Time.current
           @cbv_flow_invitation.errors.add(:expiration_date, "cannot be in the past")
-        elsif parsed_date > Time.zone.today + 366.days
+          return
+        elsif parsed_date > 1.year.from_now
           @cbv_flow_invitation.errors.add(:expiration_date, "cannot be more than 1 year in the future")
+          return
         end
 
       rescue ArgumentError
         @cbv_flow_invitation.errors.add(:expiration_date, "must be a full ISO8601 datetime with a timezone")
+        return
       end
     end
 
     if expiration_params[:expiration_days].present?
-      if expiration_params[:expiration_days].to_i < 1 || expiration_params[:expiration_days].to_i > 366
-        @cbv_flow_invitation.errors.add(:expiration_days, "must be between 1 and 366")
+      exp_days = expiration_params[:expiration_days].to_i
+      if exp_days < 1 || (Time.current + exp_days.days) > 1.year.from_now
+        @cbv_flow_invitation.errors.add(:expiration_days, "cannot be more than 1 year in the future")
+        nil
       end
     end
   end
 
   def calculate_expires_at(exp_params)
-    Time.use_zone(agency_time_zone) do
+    Time.use_zone(@agency_config.timezone) do
       if exp_params[:expiration_date].present?
-        exp_params[:expiration_date]
+        Time.zone.parse(exp_params[:expiration_date])
       elsif exp_params[:expiration_days].present?
         Time.current.end_of_day + exp_params[:expiration_days].to_i.days
       else
         Time.current.end_of_day + @agency_config.invitation_valid_days.days
       end
     end
-  end
-
-  def agency_time_zone
-    @agency_config.timezone
   end
 end

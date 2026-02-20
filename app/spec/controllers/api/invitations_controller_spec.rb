@@ -257,7 +257,7 @@ RSpec.describe Api::InvitationsController do
           it "returns an error with a descriptive message" do
               expect(response).to have_http_status(:unprocessable_entity)
               parsed_response = JSON.parse(response.body)
-              expect(parsed_response["errors"][0]["message"]).to include("must be between 1 and 366")
+              expect(parsed_response["errors"][0]["message"]).to include("cannot be more than 1 year")
             end
         end
 
