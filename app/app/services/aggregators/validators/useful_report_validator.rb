@@ -30,6 +30,8 @@ module Aggregators::Validators
       end
 
       report.errors.add(:base, "Invalid report: probably had no valid paystubs for the logged-in account (likely ADP). Look at AggregatorReport::find_account_report where paystubs get filtered.")
+      report.errors.add(:base, "Report has paystubs: #{has_paystubs?(report)}; Report has a valid paystub: #{has_valid_paystub?(report)}")
+      report.errors.add(:base, "Report has a recent termination date: #{has_recent_termination_date?(report)}; Report has a recent start date: #{has_recent_start_date?(report)}")
       report.errors.add(:base, %Q(# of paystubs: #{report&.paystubs&.size}, # of valid paystubs: #{valid_paystubs(report)&.size}))
 
       false
