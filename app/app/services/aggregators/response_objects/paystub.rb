@@ -70,6 +70,8 @@ module Aggregators::ResponseObjects
       )
     end
 
+    # TODO: Tech Debt - this will need to be moved after PF-586 (https://app.asana.com/1/1210277703905441/project/1210563646012085/task/1213127420002904?focus=true)
+    # is complete and we are operating on an internal model instead of regenerating the synthetic hours as part of the view
     def self.log_paystub_to_mixpanel(response_body)
       gross_pay_total = response_body["gross_pay_list"]&.map { |item| item["hours"] || 0 }&.map(&:to_f)&.sum
       synthetic_total_hours = Aggregators::FormatMethods::Argyle.hours_by_earning_category(response_body["gross_pay_list"]).map { |_category, hours| hours.to_f }&.max
