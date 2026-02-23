@@ -105,6 +105,7 @@ module TrackEvent
   ApplicantWarnedAboutTimeout = "ApplicantWarnedAboutTimeout"
   ArgyleDataUnexpectedHours = "ArgyleDataUnexpectedHours"
   ArgylePaystubHours = "ArgylePaystubHours"
+  ArgyleReportHours = "ArgyleReportHours"
   CaseworkerInvitedApplicantToFlow = "CaseworkerInvitedApplicantToFlow"
   CaseworkerLoggedIn = "CaseworkerLoggedIn"
   CbvPageView = "CbvPageView"

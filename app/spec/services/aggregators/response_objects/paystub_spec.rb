@@ -102,8 +102,8 @@ RSpec.describe Aggregators::ResponseObjects::Paystub, type: :model do
         .with("ArgylePaystubHours", nil, include(
           time: anything,
           argyle_total_hours: 80.0,
-          gross_pay_sum: 65.59,
-          synthetic_total_hours: anything,
+          gross_pay_sum: 65.5861,
+          synthetic_total_hours: 65.5861,
           argyle_total_hours_matches_synthetic: false,
           argyle_hours_null: false
         )).once
