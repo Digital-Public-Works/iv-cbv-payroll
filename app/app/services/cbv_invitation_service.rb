@@ -7,11 +7,6 @@ class CbvInvitationService
     cbv_flow_invitation_params[:user] = current_user
     cbv_flow_invitation = CbvFlowInvitation.new(cbv_flow_invitation_params)
 
-    unless cbv_flow_invitation.valid?
-      e = cbv_flow_invitation.errors.full_messages.join(", ")
-      Rails.logger.warn("Error inviting applicant: #{e}")
-    end
-
     return cbv_flow_invitation unless cbv_flow_invitation.save
 
     deliver(cbv_flow_invitation, delivery_method)

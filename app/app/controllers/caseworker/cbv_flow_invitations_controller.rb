@@ -26,6 +26,9 @@ class Caseworker::CbvFlowInvitationsController < Caseworker::BaseController
     end
 
     if @cbv_flow_invitation.errors.any?
+      e = @cbv_flow_invitation.errors.full_messages.join(", ")
+      Rails.logger.warn("Error inviting applicant: #{e}")
+
       @cbv_flow_invitation.errors.delete(:cbv_applicant)
 
       error_count = @cbv_flow_invitation.errors.size

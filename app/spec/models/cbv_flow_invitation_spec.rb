@@ -80,7 +80,7 @@ RSpec.describe CbvFlowInvitation, type: :model do
         subject { invitation }
 
         context "when expiration_date and expiration_days are both present" do
-          let(:expiration_date) { (Time.current + 10.day).iso8601 }
+          let(:expiration_date) { (Time.current + 10.days).iso8601 }
           let(:expiration_days) { 10 }
 
           it { is_expected.not_to be_valid }
