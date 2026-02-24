@@ -10,7 +10,7 @@ class Api::InvitationsController < ApplicationController
 
     errors = cbv_flow_invitation.errors
     if errors.any?
-      e = cbv_flow_invitation.errors.full_messages.join(", ")
+      e = errors.full_messages.join(", ")
       Rails.logger.warn("Error inviting applicant: #{e}")
       return render json: errors_to_json(errors), status: :unprocessable_entity
     end
