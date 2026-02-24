@@ -33,22 +33,12 @@ FactoryBot.define do
 
     transient do
       cbv_applicant_attributes { {} }
-      days_to_expire { 14 }
-      time_zone { "UTC" }
     end
 
     after(:build) do |cbv_flow_invitation, evaluator|
       if cbv_flow_invitation.cbv_applicant
         cbv_flow_invitation.cbv_applicant.update(evaluator.cbv_applicant_attributes)
       end
-    end
-
-    after(:create) do |invitation, evaluator|
-      if invitation.cbv_applicant
-        invitation.update(expires_at: invitation.created_at.in_time_zone(evaluator.time_zone).end_of_day + 14.days)
-      end
-
-      invitation.update(expires_at: invitation.created_at.in_time_zone(evaluator.time_zone).end_of_day + evaluator.days_to_expire.days)
     end
   end
 end

@@ -9,7 +9,6 @@ RSpec.describe CbvInvitationService, type: :service do
     )
   end
   let(:current_user) { create(:user) }
-  let(:agency_config) { Rails.application.config.client_agencies[current_user.client_agency_id] }
 
   before do
     allow(event_logger).to receive(:track)
@@ -108,64 +107,6 @@ RSpec.describe CbvInvitationService, type: :service do
           nil,
           hash_including(invitation_id: invitation.id)
         )
-      end
-    end
-
-    context 'when expiration params are not provided' do
-      it 'uses the agency config invitation expiration default' do
-        service.invite(
-          cbv_flow_invitation_params,
-          current_user,
-          delivery_method: :email
-        )
-
-        invitation = CbvFlowInvitation.last
-
-        expected_expiration = Time.use_zone(agency_config.timezone) do
-          agency_config.invitation_valid_days.days.from_now.end_of_day
-        end
-
-        expect(invitation.expires_at).to be_within(1.second).of(expected_expiration)
-      end
-    end
-
-    context 'when expiration params are provided' do
-      it "uses the provided expiration date" do
-        Time.use_zone(agency_config.timezone) do
-          travel_to Time.zone.local(2025, 12, 17) do
-            expiration_date = "2026-02-28T23:59:59Z"
-            service.invite(
-              cbv_flow_invitation_params,
-              current_user,
-              delivery_method: :email,
-              expiration_params: { expiration_date: expiration_date }
-            )
-
-            invitation = CbvFlowInvitation.last
-            expected_expiration = Time.parse(expiration_date)
-
-            expect(invitation.expires_at).to be_within(1.second).of(expected_expiration)
-          end
-        end
-      end
-
-      it "uses the provided expiration days" do
-        Time.use_zone(agency_config.timezone) do
-          travel_to Time.zone.local(2025, 12, 17) do
-            expiration_days = 60
-            service.invite(
-              cbv_flow_invitation_params,
-              current_user,
-              delivery_method: :email,
-              expiration_params: { expiration_days: expiration_days }
-            )
-
-            invitation = CbvFlowInvitation.last
-            expected_expiration = invitation.created_at.end_of_day + expiration_days.days
-
-            expect(invitation.expires_at).to be_within(1.second).of(expected_expiration)
-          end
-        end
       end
     end
   end

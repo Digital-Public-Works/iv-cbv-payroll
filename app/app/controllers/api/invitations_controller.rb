@@ -6,7 +6,7 @@ class Api::InvitationsController < ApplicationController
 
   def create
     @cbv_flow_invitation = CbvInvitationService.new(event_logger)
-      .invite(cbv_flow_invitation_params, @current_user, delivery_method: nil, expiration_params: expiration_params)
+      .invite(cbv_flow_invitation_params, @current_user, delivery_method: nil)
 
     errors = @cbv_flow_invitation.errors
     if errors.any?
@@ -29,7 +29,7 @@ class Api::InvitationsController < ApplicationController
 
     # Permit top-level params of the invitation itself, while merging back in
     # the allowed applicant attributes.
-    permitted = params.without(:client_agency_id, :agency_partner_metadata).permit(:language, :email_address, :user_id)
+    permitted = params.without(:client_agency_id, :agency_partner_metadata).permit(:language, :email_address, :user_id, :expiration_date, :expiration_days)
     permitted.deep_merge!(
       client_agency_id: client_agency_id,
       email_address: @current_user.email,
@@ -46,10 +46,6 @@ class Api::InvitationsController < ApplicationController
     ActionController::Parameters.new(
       CbvApplicant.build_agency_partner_metadata(@current_user.client_agency_id) { |attr| params[:agency_partner_metadata][attr] }
     )
-  end
-
-  def expiration_params
-    params.permit(:expiration_date, :expiration_days)
   end
 
   def authenticate
