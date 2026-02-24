@@ -19,12 +19,12 @@ RSpec.describe CbvFlowInvitation, type: :model do
         expect(invitation.created_at).to eq(current_time)
         # Saved in the database as UTC, so this will show as 4 hours later than we expect
         expect(invitation.expires_at).to have_attributes(
-                                           hour: 3,
-                                           min: 59,
-                                           sec: 59,
-                                           month: 7,
-                                           day: 1,
-                                           )
+           hour: 3,
+           min: 59,
+           sec: 59,
+           month: 7,
+           day: 1
+           )
       end
     end
   end
@@ -172,10 +172,7 @@ RSpec.describe CbvFlowInvitation, type: :model do
       let(:invitation_sent_at)    { Time.zone.local(2024, 8,  1, 12, 0, 0) }
       let(:now)                   { Time.zone.local(2024, 8,  15, 23, 0, 0) }
 
-      it {
-        puts "expires_at: #{invitation.expires_at}"
-        puts "now: #{now}"
-        is_expected.to eq(false) }
+      it { is_expected.to eq(false) }
     end
 
     context "after 11:59pm ET on the day of the validity window" do
