@@ -111,7 +111,7 @@ en:
       body_2_html:
         default: This process is unique to you. Please don't share this invitation with anyone else. <strong>You have until %{deadline}, to complete your verification.</strong> Otherwise, you can request a new invitation.
       body_3:
-        default: This is an optional tool. If you decide that you don't want to use it, you can provide income documents via the %{app_name} app, fax, mail, or in-person.
+        default: This is an optional tool. If you decide that you don't want to use it, you can provide income documents via %{agency_portal}, fax, mail, or in-person.
       button: Verify your income
       button_caption: 'To verify your income with the SNAP Income Pilot, click the button below:'
       footer: This is an automatically generated message from your SNAP agency. Please don’t reply to this email.
@@ -252,14 +252,16 @@ en:
           help_options: Get help here.
         app_based_providers: App-based employers
         can_not_find_employer: Explore your options
+        company_examples: 'Examples: Uber, McDonald''s, ADP'
+        company_name: Company Name
         employer_not_listed: Trouble finding your employer or payroll provider?
-        header: Search for your employer or payroll provider
+        header: Find your employer or payroll company
         payroll_providers: Payroll providers
         popular_providers: Or choose from popular payroll providers or apps
         results: Results
         search: Search
-        search_label: 'Enter the name of your current or recent employer or payroll provider:'
         select: Select
+        type_the_full_name_tooltip: Type the full name using letters or numbers
     entries:
       create:
         error: You must check the agreement checkbox to proceed.
@@ -275,7 +277,7 @@ en:
         step2_description: You will be able to preview and approve everything that is shared with %{agency_acronym}.
         step3: Submit your payment information.
         step3_description: We’ll automatically send it to %{agency_acronym}. This will help you prove your income and can help %{agency_acronym} get to a decision faster.
-        subheader_html: 'We’ll send your payment records from your employer(s) to %{agency_full_name} to verify your income. <strong>Most people complete this process in about 5 minutes.</strong> Just follow these steps:'
+        subheader_html: 'We’ll send your payment records from your employer(s) to %{agency_full_name} (%{agency_acronym}) to verify your income. <strong>Most people complete this process in about 5 minutes.</strong> Just follow these steps:'
         what_if_i_cant_use_this_body_1: If you need to verify your income and can’t use this tool, then you’ll need to share your income information for this job directly with %{agency_portal_name}.
         what_if_i_cant_use_this_body_2_html:
           default: Visit the <a href="%{agency_url}" target="_blank" rel="noopener noreferrer">%{agency_portal_name} website</a> for more information on how to submit documents.
@@ -398,7 +400,7 @@ en:
         application_or_recertification_date: SNAP application or recertification interview date
         consent_checkbox_label_html:
           az_des: Check this box to affirm under penalty of perjury that the information provided by you is true and complete to the best of your knowledge.<ul class="margin-y-2"><li>You agree to tell %{agency_acronym} about:<ul><li>any other income not included in this report,</li><li>or any errors found in the information gathered with this tool.</li></ul></li><li>You understand that providing accurate and complete information is your responsibility.</li><li>Any false or missing information may result in:<ul><li>an overpayment, which you must repay to %{agency_acronym},</li><li>or program disqualification.</li></ul></li></ul>By sending this report, you authorize its use for income verification by %{agency_acronym} and authorized personnel.
-          default: 'Check this box to confirm: <ul class="margin-y-2"><li>The information provided by you is true and complete to the best of your knowledge.</li><li>You agree to inform the %{agency_full_name} of any income not reflected in this report or any discrepancies found in the information gathered with this tool.</li><li>You understand that providing accurate and complete information is your responsibility, and any false or omitted information may have legal consequences.</li></ul> By sending this report, you authorize its use for income verification by authorized %{agency_acronym} personnel.'
+          default: 'Check this box to confirm: <ul class="margin-y-2"><li>The information provided by you is true and complete to the best of your knowledge.</li><li>You agree to inform the %{agency_full_name} (%{agency_acronym}) of any income not reflected in this report or any discrepancies found in the information gathered with this tool.</li><li>You understand that providing accurate and complete information is your responsibility, and any false or omitted information may have legal consequences.</li></ul> By sending this report, you authorize its use for income verification by authorized %{agency_acronym} personnel.'
           pa_dhs: "<strong>I agree and confirm:</strong><p><strong>I am sharing accurate information.</strong><br>The information I provided is true and complete to the best of my knowledge. I will not share the report if anything in it is incorrect.<p><strong>I will share any missing information.</strong><br>I agree to inform the PA Department of Human Services about any income that is not in this report.<p><strong>I am not sharing false information.</strong><br>I understand that I must share honest information. I understand I could get in legal trouble if I leave out information.<p><strong>I will share my income information.</strong><br>I allow the income information this webpage showed me to be shared with the PA Department of Human Services."
         legal_header: Legal agreement
         none_found: We didn't find any payments from this employer.
@@ -476,7 +478,7 @@ en:
         edit: Edit
         header: Review your income report
         must_match:
-          default: This must match what is shown on your %{agency_portal_name} application.
+          default: This must match what is shown on your %{agency_acronym} application.
           la_ldh: This must match what is shown on your Medicaid benefits.
         none_found: We didn't find any payments from this employer in the past %{report_data_range}.
         none_found_description: This typically happens when you haven't received income from this job in the past %{report_data_range}. If you believe this is an error, please add a comment in the additional comments box. Otherwise, continue to the next page.

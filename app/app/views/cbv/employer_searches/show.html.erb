@@ -7,11 +7,25 @@
     <% end %>
   </div>
 
-  <h1 class="margin-top-0">
+  <h1 class="margin-top-0 display-flex flex-column flex-align-start gap-1 flex-align-self-stretch padding-bottom-3">
     <%= t(".header") %>
   </h1>
+  <div class="display-flex flex-align-center text-ink font-sans-md">
+    <span><%= t(".company_name") %></span>
+    <button type="button"
+            class="usa-button usa-button--unstyled text-ink usa-tooltip margin-left-05"
+            data-position="right"
+            title="<%= t(".type_the_full_name_tooltip") %>"
+            aria-label="More information"
+            data-controller="tooltip-tracker"
+            data-action="mouseenter->tooltip-tracker#track focus->tooltip-tracker#track">
+      <svg class="usa-icon" style="pointer-events: none;" aria-hidden="true" focusable="false" role="img">
+        <use href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#info_outline") %>"></use>
+      </svg>
+    </button>
+  </div>
 
-  <p><%= t(".search_label") %></p>
+  <div class="text-gray-50"><%= t(".company_examples") %></div>
 
   <%= form_with url: cbv_flow_employer_search_path, method: :get, class: "usa-search usa-search--big margin-y-4", html: { role: "search" }, data: { turbo_frame: "employers", turbo_action: "advance" } do |f| %>
     <%= f.label :query, "Search for your employer", class: "usa-sr-only" %>

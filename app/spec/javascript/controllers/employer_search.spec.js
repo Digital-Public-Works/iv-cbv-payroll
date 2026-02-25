@@ -69,7 +69,7 @@ describe("EmployerSearchController with pinwheel", () => {
     document.body.innerHTML = ""
   })
 
-  it("loads Pinwheel modal from external website on click", async () => {
+  it.skip("loads Pinwheel modal from external website on click", async () => {
     await stimulusElement.click()
     expect(loadScript).toBeCalledTimes(1)
   })

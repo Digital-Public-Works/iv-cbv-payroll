@@ -109,10 +109,13 @@
           <%= select_tag :fixture_user,
               options_for_select(
                 [
+                  [ "ADP - Different Employers", "adp_paystubs_different_employer" ],
+                  [ "ADP - Mixed Employers", "adp_paystubs_mixed_employers" ],
                   [ "Bob - Lyft Driver (default)", "bob" ],
                   [ "Busy Joe", "busy_joe" ],
                   [ "Empty - No Data", "empty" ],
                   [ "Joe", "joe" ],
+                  [ "Joe - Null Total Hours", "joe_null_total_hours" ],
                   [ "Kim/Sarah", "kim" ],
                   [ "Sarah", "sarah" ],
                   [ "Tim", "tim" ],

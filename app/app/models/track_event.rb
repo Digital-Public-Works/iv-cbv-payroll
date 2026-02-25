@@ -26,6 +26,7 @@ module TrackEvent
   ApplicantClickedPopularAppEmployers = "ApplicantClickedPopularAppEmployers"
   ApplicantClickedPopularPayrollProviders = "ApplicantClickedPopularPayrollProviders"
   ApplicantClosedArgyleLinkFromErrorScreen = "ApplicantClosedArgyleLinkFromErrorScreen"
+  ApplicantClickedSearchBarTooltip = "ApplicantClickedSearchBarTooltip"
   ApplicantClickedSearchTipsAnchor = "ApplicantClickedSearchTipsAnchor"
   ApplicantClosedArgyleModal = "ApplicantClosedArgyleModal"
   ApplicantClosedPinwheelModal = "ApplicantClosedPinwheelModal"

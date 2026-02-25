@@ -19,13 +19,21 @@ module Aggregators::Validators
       # This is a report for a W-2 employee.
       return true if has_valid_paystub?(report)
 
+      # This logic is a heuristic to determine whether the user logged into the wrong payroll account.
+      # Also checks whether they have logged in as a brand-new employee who has not received a paystub yet..
+      # Summary: if you don't have any valid paystubs, either your paystubs are all too old and outside the
+      # retrieval window, or you just started and have not received a paystub yet.
       if !has_paystubs?(report) || !has_valid_paystub?(report)
         return true if has_recent_termination_date?(report)
 
         return true if has_recent_start_date?(report)
       end
 
-      report.errors.add(:base, "Report did not meet minimum criteria for useful reports.")
+      report.errors.add(:base, "Invalid report: probably had no valid paystubs for the logged-in account (likely ADP). Look at AggregatorReport::find_account_report where paystubs get filtered.")
+      report.errors.add(:base, "Report has paystubs: #{has_paystubs?(report)}; Report has a valid paystub: #{has_valid_paystub?(report)}")
+      report.errors.add(:base, "Report has a recent termination date: #{has_recent_termination_date?(report)}; Report has a recent start date: #{has_recent_start_date?(report)}")
+      report.errors.add(:base, %Q(# of paystubs: #{report&.paystubs&.size}, # of valid paystubs: #{valid_paystubs(report)&.size}))
+
       false
     end
 
@@ -74,7 +82,11 @@ module Aggregators::Validators
     end
 
     def has_valid_paystub?(report)
-      report&.paystubs&.any? { |paystub| valid_paystub?(paystub) }
+      valid_paystubs(report).present?
+    end
+
+    def valid_paystubs(report)
+      report&.paystubs&.select { |paystub| valid_paystub?(paystub) }
     end
 
     def valid_paystub?(paystub)

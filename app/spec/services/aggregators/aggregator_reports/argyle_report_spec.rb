@@ -159,13 +159,9 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
     end
 
 
-    describe "Hours validations" do
+    describe "Hours validations that trigger warnings" do
       {
-        "empty_hours_paystubs.json" => "empty hours",
-        "negative_hours_paystubs.json" => "negative values",
         "high_hours_paystubs.json" => "hours outside expected range",
-        "empty_hours_gross_pay_list_paystubs.json" => "empty hours in gross pay list",
-        "negative_hours_gross_pay_list_paystubs.json" => "negative values in gross pay list",
         "high_hours_gross_pay_list_paystubs.json" => "hours outside expected range in gross pay list"
       }.each do |fixture, reason|
         context "with #{reason} (#{fixture})" do
@@ -194,6 +190,37 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
                 cbv_flow_id: kind_of(Integer),
                 warnings: a_string_matching(/Invalid value received for hours/i)
               )
+            )
+          end
+        end
+      end
+    end
+
+    describe "Hours validations that do not trigger warnings" do
+      {
+        "empty_hours_paystubs.json" => "empty hours",
+        "null_hours_in_gross_pay_list_paystubs.json" => "null hours in gross pay list",
+        "empty_hours_gross_pay_list_paystubs.json" => "empty hours in gross pay list",
+        "negative_hours_paystubs.json" => "negative values",
+        "negative_hours_gross_pay_list_paystubs.json" => "negative values in gross pay list"
+      }.each do |fixture, reason|
+        context "with #{reason} (#{fixture})" do
+          before do
+            allow(argyle_service).to receive(:fetch_paystubs_api)
+              .and_return(argyle_load_relative_json_file("invalid_hours", fixture))
+
+            allow(NewRelic::Agent).to receive(:record_custom_event)
+            argyle_report.send(:fetch_report_data)
+          end
+
+          it "does not generate a warning" do
+            expect(argyle_report.warnings).to be_empty
+          end
+
+          it "does not send a warning to New Relic" do
+            expect(NewRelic::Agent).not_to have_received(:record_custom_event).with(
+              anything,
+              anything
             )
           end
         end

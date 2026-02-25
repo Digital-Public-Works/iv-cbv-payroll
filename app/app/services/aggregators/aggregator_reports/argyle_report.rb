@@ -89,13 +89,13 @@ module Aggregators::AggregatorReports
         raw_hours_valid = valid_hours_value?(ps["hours"])
         all_gross_hours_valid = ps["gross_pay_list"]&.all? { |gp| valid_hours_value?(gp["hours"]) }
         if !raw_hours_valid || !all_gross_hours_valid
-          self.warnings.add(:hours, "Invalid value received for hours.")
+          self.warnings.add(:hours, "Invalid value received for hours (paystub: #{ps['id']}")
         end
       end
     end
 
     def valid_hours_value?(hours)
-      (0..10_000).cover?(Float(hours, exception: false))
+      hours.blank? || (-10_000..10_000).cover?(Float(hours, exception: false))
     end
 
     def transform_gigs(gigs_json)

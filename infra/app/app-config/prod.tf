@@ -11,6 +11,7 @@ module "prod_config" {
   has_incident_management_service = local.has_incident_management_service
   enable_identity_provider        = local.enable_identity_provider
 
+
   database_serverless_min_capacity = 1.0
   database_serverless_max_capacity = 5.0
   backup_retention_period          = 7

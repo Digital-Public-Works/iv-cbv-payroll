@@ -155,6 +155,27 @@ RSpec.describe DataRetentionService do
             .not_to change { cbv_flow_invitation.reload.attributes }
         end
       end
+
+      context "when the cbv_flow has an argyle_user_id" do
+        let(:fake_argyle) { instance_double(Aggregators::Sdk::ArgyleService) }
+
+        before do
+          cbv_flow.update(argyle_user_id: "argyle_123")
+
+          argyle_environment = Rails.application.config.client_agencies[cbv_flow.client_agency_id].argyle_environment
+          allow(Aggregators::Sdk::ArgyleService)
+            .to receive(:new)
+                  .with(argyle_environment)
+                  .and_return(fake_argyle)
+
+          allow(fake_argyle).to receive(:delete_user)
+        end
+
+        it "deletes the argyle user" do
+          expect(fake_argyle).to receive(:delete_user).with(argyle_user_id: "argyle_123")
+          service.redact_incomplete_cbv_flows
+        end
+      end
     end
 
     context "when the CbvFlow has no invitation" do
@@ -282,6 +303,38 @@ RSpec.describe DataRetentionService do
         expect_any_instance_of(CbvFlow).not_to receive(:redact!)
         service.redact_transmitted_cbv_flows
       end
+
+      context "when the cbv_flow has an argyle_user_id" do
+        let(:fake_argyle) { instance_double(Aggregators::Sdk::ArgyleService) }
+
+        before do
+          cbv_flow.update(argyle_user_id: "argyle_123")
+
+          argyle_environment = Rails.application.config.client_agencies[cbv_flow.client_agency_id].argyle_environment
+          allow(Aggregators::Sdk::ArgyleService)
+            .to receive(:new)
+                  .with(argyle_environment)
+                  .and_return(fake_argyle)
+
+          allow(fake_argyle).to receive(:delete_user)
+        end
+
+        it "deletes the argyle user" do
+          expect(fake_argyle).to receive(:delete_user).with(argyle_user_id: "argyle_123")
+          service.redact_transmitted_cbv_flows
+        end
+      end
+
+      context "when the cbv_flow has no argyle_user_id" do
+        before do
+          cbv_flow.update(argyle_user_id: nil)
+        end
+
+        it "does not attempt to delete argyle user" do
+          expect(service).not_to receive(:delete_argyle_user)
+          service.redact_transmitted_cbv_flows
+        end
+      end
     end
   end
 
@@ -375,6 +428,111 @@ RSpec.describe DataRetentionService do
         expect_any_instance_of(CbvFlow).not_to receive(:redact!)
         service.redact_old_cbv_flows
       end
+
+      context "when the cbv_flow has an argyle_user_id" do
+        let(:fake_argyle) { instance_double(Aggregators::Sdk::ArgyleService) }
+
+        before do
+          cbv_flow.update(argyle_user_id: "argyle_123")
+
+          argyle_environment = Rails.application.config.client_agencies[cbv_flow.client_agency_id].argyle_environment
+          allow(Aggregators::Sdk::ArgyleService)
+            .to receive(:new)
+                  .with(argyle_environment)
+                  .and_return(fake_argyle)
+
+          allow(fake_argyle).to receive(:delete_user)
+        end
+
+        it "deletes the argyle user" do
+          expect(fake_argyle).to receive(:delete_user).with(argyle_user_id: "argyle_123")
+          service.redact_old_cbv_flows
+        end
+      end
+    end
+  end
+
+  describe "#delete_argyle_user" do
+    let(:argyle_user_id) { "argyle_123" }
+    let(:client_agency_id) { "sandbox" }
+    let(:service) { DataRetentionService.new }
+    let(:argyle_service) { instance_double(Aggregators::Sdk::ArgyleService) }
+    let(:argyle_environment) { "sandbox" }
+
+    before do
+      # Mock the config lookup
+      allow(Rails.application.config).to receive_message_chain(:client_agencies, :[]).with(client_agency_id).and_return(
+        double(argyle_environment: argyle_environment)
+      )
+      allow(Aggregators::Sdk::ArgyleService).to receive(:new).with(argyle_environment).and_return(argyle_service)
+    end
+
+    it "initializes ArgyleService with the correct environment" do
+      allow(argyle_service).to receive(:delete_user)
+
+      expect(Aggregators::Sdk::ArgyleService).to receive(:new).with(argyle_environment)
+      service.send(:delete_argyle_user, client_agency_id, argyle_user_id)
+    end
+
+    it "calls delete_user with the correct user_id" do
+      expect(argyle_service).to receive(:delete_user).with(argyle_user_id: argyle_user_id)
+      service.send(:delete_argyle_user, client_agency_id, argyle_user_id)
+    end
+
+    context "when the user has already been deleted (404)" do
+      before do
+        allow(argyle_service).to receive(:delete_user).and_raise(Faraday::ResourceNotFound.new(nil, nil))
+      end
+
+      it "does not raise an error" do
+        expect { service.send(:delete_argyle_user, client_agency_id, argyle_user_id) }.not_to raise_error
+      end
+
+      it "logs an info message" do
+        expect(Rails.logger).to receive(:info).with("Argyle User #{argyle_user_id} already deleted")
+        service.send(:delete_argyle_user, client_agency_id, argyle_user_id)
+      end
+    end
+
+    context "when deletion fails" do
+      let(:error) { StandardError.new("API Error") }
+
+      before do
+        allow(argyle_service).to receive(:delete_user).and_raise(error)
+      end
+
+      context "in production" do
+        before do
+          allow(Rails.env).to receive(:production?).and_return(true)
+        end
+
+        it "logs the error" do
+          expect(Rails.logger).to receive(:error).with("Unable to delete Argyle User #{argyle_user_id} - API Error")
+          service.send(:delete_argyle_user, client_agency_id, argyle_user_id)
+        end
+
+        it "tracks the failure event" do
+          tracker = instance_double(GenericEventTracker)
+          allow(GenericEventTracker).to receive(:new).and_return(tracker)
+          expect(tracker).to receive(:track).with("DataRedactionFailure", nil, { argyle_user_id: argyle_user_id })
+          service.send(:delete_argyle_user, client_agency_id, argyle_user_id)
+        end
+
+        it "does not raise the error" do
+          expect { service.send(:delete_argyle_user, client_agency_id, argyle_user_id) }.not_to raise_error
+        end
+      end
+
+      context "in non-production" do
+        before do
+          allow(Rails.env).to receive(:production?).and_return(false)
+        end
+
+        it "raises the error" do
+          expect { service.send(:delete_argyle_user, client_agency_id, argyle_user_id) }
+            .to raise_error(StandardError, "API Error")
+        end
+      end
     end
   end
 
@@ -403,6 +561,50 @@ RSpec.describe DataRetentionService do
       expect(payroll_account.reload).to have_attributes(
         redacted_at: within(1.second).of(Time.now)
       )
+    end
+
+    context "when a flow has an argyle_user_id" do
+      before do
+        second_cbv_flow.update!(argyle_user_id: "argyle_manual_123", client_agency_id: "sandbox")
+      end
+
+      it "deletes the argyle user" do
+        expect_any_instance_of(DataRetentionService).to receive(:delete_argyle_user).with("sandbox", "argyle_manual_123")
+        DataRetentionService.manually_redact_by_case_number!("DELETEME001")
+      end
+    end
+  end
+
+  describe "#redact_cbv_flow" do
+    let(:cbv_flow) { create(:cbv_flow, argyle_user_id: "argyle_123", client_agency_id: "sandbox") }
+    let(:service) { DataRetentionService.new }
+
+    it "deletes the argyle user when argyle_user_id is present" do
+      expect(service).to receive(:delete_argyle_user).with(cbv_flow.client_agency_id, cbv_flow.argyle_user_id)
+      service.send(:redact_cbv_flow, cbv_flow)
+    end
+
+    it "does not attempt to delete argyle user when argyle_user_id is nil" do
+      cbv_flow.update(argyle_user_id: nil)
+      expect(service).not_to receive(:delete_argyle_user)
+      service.send(:redact_cbv_flow, cbv_flow)
+    end
+
+    it "calls delete_argyle_user before redacting local records" do
+      expect(service).to receive(:delete_argyle_user).ordered
+      expect(cbv_flow).to receive(:redact!).ordered
+      service.send(:redact_cbv_flow, cbv_flow)
+    end
+
+    context "when delete_argyle_user raises an error" do
+      before do
+        allow(service).to receive(:delete_argyle_user).and_raise(StandardError.new("API Error"))
+      end
+
+      it "does not redact local records" do
+        expect { service.send(:redact_cbv_flow, cbv_flow) }.to raise_error(StandardError)
+        expect(cbv_flow.reload.redacted_at).to be_nil
+      end
     end
   end
 
