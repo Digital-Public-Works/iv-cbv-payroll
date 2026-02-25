@@ -45,6 +45,7 @@ module TrackEvent
   ApplicantEncounteredArgyleAccountSystemError = "ApplicantEncounteredArgyleAccountSystemError"
   ApplicantEncounteredArgyleAuthenticationError = "ApplicantEncounteredArgyleAuthenticationError"
   ApplicantEncounteredArgyleAuthRequiredLoginError = "ApplicantEncounteredArgyleAuthRequiredLoginError"
+  ApplicantEncounteredArgyleConnectionPendingEvent = "ApplicantEncounteredArgyleConnectionPendingEvent"
   ApplicantEncounteredArgyleConnectionUnavailableLoginError = "ApplicantEncounteredArgyleConnectionUnavailableLoginError"
   ApplicantEncounteredArgyleCredentialError = "ApplicantEncounteredArgyleCredentialError"
   ApplicantEncounteredArgyleError = "ApplicantEncounteredArgyleError"

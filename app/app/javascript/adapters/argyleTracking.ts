@@ -14,8 +14,22 @@ export function namespaceTrackingProperties(
   )
 }
 
-// Convert account error events to tracking name based on connection error code
+// Connection statuses that indicate a pending/in-progress state (not a real error)
+const CONNECTION_PENDING_STATUSES = ["connecting", "awaiting_user_action", "updating"]
+
+// Convert account error events to tracking name based on connection status and error code
+// When connectionStatus is "connecting", "awaiting_user_action", or "updating", the user sees
+// the "Connection Pending" screen (timeout scenario)
+// When connectionStatus is "error", it's a real failure with connectionErrorCode present
+// See: https://docs.argyle.com/workflows/account-connections#connection-pending
 function accountErrorToTrackingName(properties: ArgyleUIEvent["properties"]): string {
+  if (
+    "connectionStatus" in properties &&
+    typeof properties.connectionStatus === "string" &&
+    CONNECTION_PENDING_STATUSES.includes(properties.connectionStatus)
+  ) {
+    return "ApplicantEncounteredArgyleConnectionPendingEvent"
+  }
   if ("connectionErrorCode" in properties && typeof properties.connectionErrorCode === "string") {
     return argyleErrorToTrackingName(properties.connectionErrorCode)
   }
