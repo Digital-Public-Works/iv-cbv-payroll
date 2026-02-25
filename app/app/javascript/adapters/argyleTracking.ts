@@ -21,6 +21,7 @@ const CONNECTION_PENDING_STATUSES = ["connecting", "awaiting_user_action", "upda
 // When connectionStatus is "connecting", "awaiting_user_action", or "updating", the user sees
 // the "Connection Pending" screen (timeout scenario)
 // When connectionStatus is "error", it's a real failure with connectionErrorCode present
+// See: https://docs.argyle.com/workflows/account-connections#connection-pending
 function accountErrorToTrackingName(properties: ArgyleUIEvent["properties"]): string {
   if (
     "connectionStatus" in properties &&
