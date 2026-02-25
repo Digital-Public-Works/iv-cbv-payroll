@@ -40,6 +40,13 @@ module Aggregators::ResponseObjects
     end
 
     def self.from_argyle(response_body)
+      begin
+        self.log_paystub_to_mixpanel(response_body)
+      rescue => ex
+        NewRelic::Agent.notice_error(ex)
+        Rails.logger.error "Error logging paystub to MixPanel: #{ex}"
+      end
+
       new(
         id: response_body["id"],
         account_id: response_body["account"],
@@ -61,6 +68,22 @@ module Aggregators::ResponseObjects
         end,
         employment_id: response_body["employment"]
       )
+    end
+
+    # TODO: Tech Debt - this will need to be moved after PF-586 (https://app.asana.com/1/1210277703905441/project/1210563646012085/task/1213127420002904?focus=true)
+    # is complete and we are operating on an internal model instead of regenerating the synthetic hours as part of the view
+    def self.log_paystub_to_mixpanel(response_body)
+      gross_pay_total = response_body["gross_pay_list"]&.map { |item| item["hours"] || 0 }&.map(&:to_f)&.sum
+      synthetic_total_hours = Aggregators::FormatMethods::Argyle.hours_by_earning_category(response_body["gross_pay_list"]).map { |_category, hours| hours.to_f }&.max
+
+      GenericEventTracker.new.track(TrackEvent::ArgylePaystubHours, nil, {
+        time: Time.now.to_i,
+        argyle_total_hours: response_body["hours"],
+        gross_pay_sum: gross_pay_total,
+        synthetic_total_hours: synthetic_total_hours,
+        argyle_total_hours_matches_synthetic: synthetic_total_hours == response_body["hours"],
+        argyle_hours_null: response_body["hours"].nil?
+      })
     end
 
     alias_attribute :start, :pay_period_start

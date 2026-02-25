@@ -329,7 +329,7 @@ RSpec.describe Aggregators::Validators::UsefulReportValidator do
       it 'is invalid' do
         expect(report).not_to be_valid(:useful_report)
         expect(report.errors[:base]).to include(
-          /Report did not meet minimum criteria for useful reports/
+          /Invalid report: probably had no valid paystubs for the logged-in account/
         )
       end
     end
@@ -384,7 +384,7 @@ RSpec.describe Aggregators::Validators::UsefulReportValidator do
       it 'is invalid when no valid paystubs' do
         expect(report).not_to be_valid(:useful_report)
         expect(report.errors[:base]).to include(
-          /Report did not meet minimum criteria for useful reports/
+          /Invalid report: probably had no valid paystubs for the logged-in account/
         )
       end
 
@@ -455,7 +455,7 @@ RSpec.describe Aggregators::Validators::UsefulReportValidator do
       it 'is invalid when paystub has nil hours and no gross pay' do
         expect(report).not_to be_valid(:useful_report)
         expect(report.errors[:base]).to include(
-          /Report did not meet minimum criteria for useful reports/
+          /Invalid report: probably had no valid paystubs for the logged-in account/
         )
       end
     end
@@ -498,7 +498,7 @@ RSpec.describe Aggregators::Validators::UsefulReportValidator do
       it 'is not valid with invalid paystubs' do
         expect(report).not_to be_valid(:useful_report)
         expect(report.errors[:base]).to include(
-          /Report did not meet minimum criteria for useful reports/
+          /Invalid report: probably had no valid paystubs for the logged-in account/
         )
       end
     end
@@ -511,7 +511,7 @@ RSpec.describe Aggregators::Validators::UsefulReportValidator do
       it 'is invalid with invalid paystubs' do
         expect(report).not_to be_valid(:useful_report)
         expect(report.errors[:base]).to include(
-          /Report did not meet minimum criteria for useful reports/
+          /Invalid report: probably had no valid paystubs for the logged-in account/
         )
       end
     end
@@ -547,7 +547,7 @@ RSpec.describe Aggregators::Validators::UsefulReportValidator do
       it 'is invalid with invalid paystubs' do
         expect(report).not_to be_valid(:useful_report)
         expect(report.errors[:base]).to include(
-          /Report did not meet minimum criteria for useful reports/
+          /Invalid report: probably had no valid paystubs for the logged-in account/
         )
       end
     end
@@ -561,7 +561,7 @@ RSpec.describe Aggregators::Validators::UsefulReportValidator do
       it 'is invalid due to empty paystubs' do
         expect(report).not_to be_valid(:useful_report)
         expect(report.errors[:base]).to include(
-          /Report did not meet minimum criteria for useful reports/
+          /Invalid report: probably had no valid paystubs for the logged-in account/
         )
       end
     end
@@ -574,7 +574,7 @@ RSpec.describe Aggregators::Validators::UsefulReportValidator do
       it 'is valid with no paystubs and no start date' do
         expect(report).not_to be_valid(:useful_report)
         expect(report.errors[:base]).to include(
-          /Report did not meet minimum criteria for useful reports/
+          /Invalid report: probably had no valid paystubs for the logged-in account/
         )
       end
 
@@ -596,7 +596,7 @@ RSpec.describe Aggregators::Validators::UsefulReportValidator do
       it 'is invalid with no paystubs and no start date' do
         expect(report).not_to be_valid(:useful_report)
         expect(report.errors[:base]).to include(
-          /Report did not meet minimum criteria for useful reports/
+          /Invalid report: probably had no valid paystubs for the logged-in account/
         )
       end
 
@@ -618,7 +618,7 @@ RSpec.describe Aggregators::Validators::UsefulReportValidator do
       it 'is invalid' do
         expect(report).not_to be_valid(:useful_report)
         expect(report.errors[:base]).to include(
-          /Report did not meet minimum criteria for useful reports/
+          /Invalid report: probably had no valid paystubs for the logged-in account/
         )
       end
 
@@ -640,7 +640,7 @@ RSpec.describe Aggregators::Validators::UsefulReportValidator do
       it 'is not valid due to employment status' do
         expect(report).not_to be_valid(:useful_report)
         expect(report.errors[:base]).to include(
-          /Report did not meet minimum criteria for useful reports/
+          /Invalid report: probably had no valid paystubs for the logged-in account/
         )
       end
 
