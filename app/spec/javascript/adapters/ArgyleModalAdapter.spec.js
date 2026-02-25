@@ -25,7 +25,9 @@ import {
   mockAccountErrorLimitError,
   mockAccountErrorSystemError,
   mockAccountErrorNoCode,
-  mockAccountErrorConnectionPending,
+  mockAccountErrorConnectionPendingConnecting,
+  mockAccountErrorConnectionPendingAwaitingUserAction,
+  mockAccountErrorConnectionPendingUpdating,
   mockErrorOpenedEvent,
   mockLinkClosedEvent,
   mockUnknownArgyleEvent,
@@ -280,13 +282,35 @@ describe("ArgyleModalAdapter", () => {
       expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBeUndefined()
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
-    it("logs ApplicantEncounteredArgyleConnectionPendingEvent for connection pending (timeout) scenario", async () => {
-      await triggers.triggerUIEvent(mockAccountErrorConnectionPending)
+    it("logs ApplicantEncounteredArgyleConnectionPendingEvent for connectionStatus 'connecting'", async () => {
+      await triggers.triggerUIEvent(mockAccountErrorConnectionPendingConnecting)
       expect(trackUserAction).toHaveBeenCalledTimes(2)
       expect(trackUserAction.mock.calls[1][0]).toBe(
         "ApplicantEncounteredArgyleConnectionPendingEvent"
       )
       expect(trackUserAction.mock.calls[1][1]["argyle.connectionStatus"]).toBe("connecting")
+      expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBeUndefined()
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
+    it("logs ApplicantEncounteredArgyleConnectionPendingEvent for connectionStatus 'awaiting_user_action'", async () => {
+      await triggers.triggerUIEvent(mockAccountErrorConnectionPendingAwaitingUserAction)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe(
+        "ApplicantEncounteredArgyleConnectionPendingEvent"
+      )
+      expect(trackUserAction.mock.calls[1][1]["argyle.connectionStatus"]).toBe(
+        "awaiting_user_action"
+      )
+      expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBeUndefined()
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
+    it("logs ApplicantEncounteredArgyleConnectionPendingEvent for connectionStatus 'updating'", async () => {
+      await triggers.triggerUIEvent(mockAccountErrorConnectionPendingUpdating)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe(
+        "ApplicantEncounteredArgyleConnectionPendingEvent"
+      )
+      expect(trackUserAction.mock.calls[1][1]["argyle.connectionStatus"]).toBe("updating")
       expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBeUndefined()
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })

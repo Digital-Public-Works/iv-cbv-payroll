@@ -79,9 +79,25 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleAuthe
 }
 `;
 
-exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleConnectionPendingEvent for connection pending (timeout) scenario 1`] = `
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleConnectionPendingEvent for connectionStatus 'awaiting_user_action' 1`] = `
+{
+  "argyle.connectionStatus": "awaiting_user_action",
+  "argyle.eventName": "account error - opened",
+  "argyle.userId": "test-user-id",
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleConnectionPendingEvent for connectionStatus 'connecting' 1`] = `
 {
   "argyle.connectionStatus": "connecting",
+  "argyle.eventName": "account error - opened",
+  "argyle.userId": "test-user-id",
+}
+`;
+
+exports[`ArgyleModalAdapter > event:other > logs ApplicantEncounteredArgyleConnectionPendingEvent for connectionStatus 'updating' 1`] = `
+{
+  "argyle.connectionStatus": "updating",
   "argyle.eventName": "account error - opened",
   "argyle.userId": "test-user-id",
 }

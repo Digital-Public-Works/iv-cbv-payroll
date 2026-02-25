@@ -137,7 +137,8 @@ type ArgyleUIEvent =
       properties: ArgyleUIEventBase & {
         connectionStatus: string
         // connectionErrorCode is only present when connectionStatus is "error"
-        // When connectionStatus is "connecting", this is a connection pending/timeout scenario
+        // When connectionStatus is "connecting", "awaiting_user_action", or "updating",
+        // this is a connection pending/timeout scenario
         connectionErrorCode?: ArgyleConnectionErrorCode
         ddsStatus?: string
         ddsErrorCode?: string

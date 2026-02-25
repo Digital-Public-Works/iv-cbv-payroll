@@ -108,12 +108,27 @@ export const mockAccountErrorNoCode = {
   },
 }
 
-// Connection pending event - user sees "Connection Pending" screen
-// Per Argyle docs: connectionStatus "connecting" indicates timeout/pending, not a real error
-export const mockAccountErrorConnectionPending = {
+// Connection pending events - user sees "Connection Pending" screen
+// Per Argyle docs: connectionStatus "connecting", "awaiting_user_action", or "updating"
+// indicates a pending/in-progress state, not a real error
+export const mockAccountErrorConnectionPendingConnecting = {
   name: "account error - opened",
   properties: {
     connectionStatus: "connecting",
+    userId: "test-user-id",
+  },
+}
+export const mockAccountErrorConnectionPendingAwaitingUserAction = {
+  name: "account error - opened",
+  properties: {
+    connectionStatus: "awaiting_user_action",
+    userId: "test-user-id",
+  },
+}
+export const mockAccountErrorConnectionPendingUpdating = {
+  name: "account error - opened",
+  properties: {
+    connectionStatus: "updating",
     userId: "test-user-id",
   },
 }
