@@ -5,22 +5,11 @@ class CbvInvitationService
 
   def invite(cbv_flow_invitation_params, current_user, delivery_method: :email)
     cbv_flow_invitation_params[:user] = current_user
-    cbv_flow_invitation = CbvFlowInvitation.create(cbv_flow_invitation_params)
+    cbv_flow_invitation = CbvFlowInvitation.new(cbv_flow_invitation_params)
 
-    if cbv_flow_invitation.errors.any?
-      e = cbv_flow_invitation.errors.full_messages.join(", ")
-      Rails.logger.warn("Error inviting applicant: #{e}")
-      return cbv_flow_invitation
-    end
+    return cbv_flow_invitation unless cbv_flow_invitation.save
 
-    case delivery_method
-    when :email
-      send_invitation_email(cbv_flow_invitation)
-    when nil
-      Rails.logger.info "Generated invitation ID: #{cbv_flow_invitation.id} (no delivery method specified)"
-    else
-      raise ArgumentError.new("Unknown delivery_method: #{delivery_method}")
-    end
+    deliver(cbv_flow_invitation, delivery_method)
 
     track_event(cbv_flow_invitation, current_user)
 
@@ -38,6 +27,17 @@ class CbvInvitationService
       cbv_applicant_id: cbv_flow_invitation.cbv_applicant_id,
       invitation_id: cbv_flow_invitation.id
     })
+  end
+
+  def deliver(cbv_flow_invitation, delivery_method)
+    case delivery_method
+    when :email
+      send_invitation_email(cbv_flow_invitation)
+    when nil
+      Rails.logger.info "Generated invitation ID: #{cbv_flow_invitation.id} (no delivery method specified)"
+    else
+      raise ArgumentError.new("Unknown delivery_method: #{delivery_method}")
+    end
   end
 
   def send_invitation_email(cbv_flow_invitation)

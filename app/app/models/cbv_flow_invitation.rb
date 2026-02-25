@@ -12,6 +12,8 @@ class CbvFlowInvitation < ApplicationRecord
 
   VALID_LOCALES = Rails.application.config.i18n.available_locales.map(&:to_s).freeze
 
+  attr_accessor :expiration_days, :expiration_date
+
   belongs_to :user
   belongs_to :cbv_applicant, optional: true
   has_many :cbv_flows
@@ -31,7 +33,10 @@ class CbvFlowInvitation < ApplicationRecord
     message: :invalid_format,
     case_sensitive: false
   }
-  validate :applicant_information
+  validate :applicant_information, :validate_expiration_params
+  validates :expiration_days,
+            numericality: { only_integer: true, greater_than_or_equal_to: 1 },
+            allow_nil: true
 
   include Redactable
   has_redactable_fields(
@@ -86,19 +91,48 @@ class CbvFlowInvitation < ApplicationRecord
     errors.add(:'cbv_applicant.snap_application_date', I18n.t("activerecord.errors.models.cbv_applicant.attributes.snap_application_date.invalid_date")) if cbv_applicant.snap_application_date.blank?
   end
 
-  private
+  def validate_expiration_params
+    if expiration_days.present? && expiration_date.present?
+      errors.add(:base, "Provide either expiration_days or expiration_date, but not both.")
+      return
+    end
 
+    if expiration_date.present?
+      begin
+        parsed_date = Time.iso8601(expiration_date.to_s)
+
+        if parsed_date < Time.current
+          errors.add(:expiration_date, "cannot be in the past")
+        elsif parsed_date > 1.year.from_now
+          errors.add(:expiration_date, "cannot be more than 1 year in the future")
+        end
+      rescue ArgumentError
+        errors.add(:expiration_date, "must be a full ISO8601 datetime with a timezone")
+      end
+      return
+    end
+
+    # expiration_days is also validated using a numericality validator above
+    if expiration_days.present? && (Time.current + expiration_days.to_i.days) > 1.year.from_now
+      errors.add(:expiration_days, "cannot be more than 1 year in the future")
+    end
+  end
+
+  private
   def set_expires_at
     self.expires_at ||= calculate_expires_at
   end
 
-  # Invitations are valid until 11:59pm in the agency's time zone on the Nth day
-  # after sending the invitation.
   def calculate_expires_at
-    base_time = (created_at || Time.current)
-    end_of_day_sent = base_time.in_time_zone(agency_time_zone).end_of_day
-    days_valid_for  = agency_config.invitation_valid_days
-    end_of_day_sent + days_valid_for.days
+    Time.use_zone(agency_config.timezone) do
+      if expiration_date.present?
+        Time.zone.parse(expiration_date)
+      elsif expiration_days.present?
+        (created_at || Time.current).end_of_day + expiration_days.to_i.days
+      else
+        (created_at || Time.current).end_of_day + agency_config.invitation_valid_days.days
+      end
+    end
   end
 
   def agency_config
