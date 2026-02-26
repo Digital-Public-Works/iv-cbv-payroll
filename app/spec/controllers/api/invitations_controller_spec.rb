@@ -195,22 +195,92 @@ RSpec.describe Api::InvitationsController do
       end
     end
 
-    it "computes expiration_date using the agency's timezone" do
-      travel_to(Time.zone.parse("2025-01-15 12:00:00")) do
-        subject
+    context "with optional expiration params" do
+      let(:valid_expiration_date) { 30.days.from_now.iso8601 }
+      let(:valid_expiration_days) { 21 }
+      let(:agency_config) { ClientAgencyConfig.client_agencies[client_agency_id.to_s] }
+      let(:expiration_params) { {} }
+
+      before do
+        post :create, params: valid_params.merge(expiration_params)
       end
 
-      invitation = CbvFlowInvitation.last
-      parsed_response = JSON.parse(response.body)
+      context "when both an expiration date and expiration days are provided" do
+        let(:expiration_params) { { expiration_date: valid_expiration_date, expiration_days: valid_expiration_days } }
 
-      expiration_from_response = Date.parse(parsed_response["expiration_date"].to_s)
+        it "returns an error with a descriptive message" do
+          expect(response).to have_http_status(:unprocessable_entity)
+          parsed_response = JSON.parse(response.body)
+          expect(parsed_response["errors"][0]["message"]).to include("either expiration_days or expiration_date, but not both")
+        end
+      end
 
-      agency_config = ClientAgencyConfig.client_agencies[client_agency_id.to_s]
+      context "when only a valid expiration date is provided" do
+        let(:expiration_params) { { expiration_date: valid_expiration_date } }
 
-      expected_expiration_date =
-        (invitation.created_at.in_time_zone(agency_config.timezone) + agency_config.invitation_valid_days.days).to_date
+        it "creates an invitation with the provided expiration date" do
+          expect(response).to have_http_status(:success)
+          invitation = CbvFlowInvitation.last
+          actual_expires_at = invitation.expires_at
+          expected_expires_at = Time.zone.parse(valid_expiration_date)
 
-      expect(expiration_from_response).to eq(expected_expiration_date)
+          expect(actual_expires_at).to be_within(1.second).of(expected_expires_at)
+        end
+      end
+
+      context "when only a valid expiration days is provided" do
+        let(:expiration_params) { { expiration_days: valid_expiration_days } }
+
+        it "creates an invitation with the provided days from now" do
+          expect(response).to have_http_status(:success)
+          invitation = CbvFlowInvitation.last
+          actual_expires_at = invitation.expires_at
+          expected_expires_at = Time.current.in_time_zone(agency_config.timezone).end_of_day + valid_expiration_days.days
+          expect(actual_expires_at).to be_within(1.second).of(expected_expires_at)
+        end
+      end
+
+      context "that are invalid" do
+        context "with a date in the past" do
+          let(:expiration_params) { { expiration_date: 3.days.ago.iso8601 } }
+
+          it "returns an error with a descriptive message" do
+            expect(response).to have_http_status(:unprocessable_entity)
+            parsed_response = JSON.parse(response.body)
+            expect(parsed_response["errors"][0]["message"]).to include("cannot be in the past")
+          end
+        end
+
+        context "with a days value that is too large" do
+          let(:expiration_params) { { expiration_days: 400 } }
+
+          it "returns an error with a descriptive message" do
+              expect(response).to have_http_status(:unprocessable_entity)
+              parsed_response = JSON.parse(response.body)
+              expect(parsed_response["errors"][0]["message"]).to include("cannot be more than 1 year")
+            end
+        end
+
+        context "with a date too far in the future" do
+          let(:expiration_params) { { expiration_date: 367.days.from_now.iso8601 } }
+
+          it "returns an error with a descriptive message" do
+            expect(response).to have_http_status(:unprocessable_entity)
+            parsed_response = JSON.parse(response.body)
+            expect(parsed_response["errors"][0]["message"]).to include("cannot be more than 1 year")
+          end
+        end
+
+        context "with an invalid date format" do
+          let(:expiration_params) { { expiration_date: "not a date" } }
+
+          it "returns an error with a descriptive message" do
+            expect(response).to have_http_status(:unprocessable_entity)
+            parsed_response = JSON.parse(response.body)
+            expect(parsed_response["errors"][0]["message"]).to include("must be a full ISO8601 datetime")
+          end
+        end
+      end
     end
   end
 end

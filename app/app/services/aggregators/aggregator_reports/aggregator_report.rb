@@ -57,13 +57,25 @@ module Aggregators::AggregatorReports
       null_employment_paystubs = @paystubs.select(&null_employment_filter)
       notify_flagged_paystubs(null_employment_paystubs)
 
-      AccountReport.new(
+      report = AccountReport.new(
         identity: @identities.filter(&employment_filter).first,
         income: @incomes.filter(&employment_filter).first,
         employment: account_employment,
         paystubs: filtered_paystubs,
         gigs: @gigs.find_all { |gig| gig.account_id == account_id }
       )
+
+      log_report_hours_to_mixpanel(report)
+
+      report
+    end
+
+    def log_report_hours_to_mixpanel(report)
+      GenericEventTracker.new.track(TrackEvent::ArgyleReportHours, nil, {
+        time: Time.now.to_i,
+        total_paystubs: report&.paystubs&.size,
+        paystubs_with_argyle_hours_null: report&.paystubs&.select { |s| s&.hours.nil? }.size
+      })
     end
 
     def notify_flagged_paystubs(paystubs_to_report)
