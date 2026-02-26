@@ -376,6 +376,7 @@ en:
         header: Review your payment information from %{employer_name}
         header_no_employer_name: Your payment information from your employer
         hourly_rate: Compensation amount
+        hourly_rate_not_found: Rate not available. See paystubs below.
         hours:
           one: "%{count} hour"
           other: "%{count} hours"
