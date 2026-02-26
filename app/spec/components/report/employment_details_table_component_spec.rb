@@ -230,5 +230,29 @@ RSpec.describe Report::EmploymentDetailsTableComponent, type: :component do
         end
       end
     end
+
+    context "with joe_null, with a null value for base pay period" do
+      let(:account_id) { "01956d62-18a0-090f-bc09-2ac44b7edf99" }
+      let(:argyle_report) { Aggregators::AggregatorReports::ArgyleReport.new(payroll_accounts: [ payroll_account ], argyle_service: argyle_service, days_to_fetch_for_w2: 90, days_to_fetch_for_gig: 182) }
+      before do
+        argyle_stub_request_identities_response("joe_null_total_hours")
+        argyle_stub_request_paystubs_response("joe_null_total_hours")
+        argyle_stub_request_account_response("joe_null_total_hours")
+        argyle_stub_request_gigs_response("joe_null_total_hours")
+        argyle_report.fetch
+      end
+
+      around do |ex|
+        Timecop.freeze(Time.local(2025, 04, 1, 0, 0), &ex)
+      end
+
+      subject { render_inline(described_class.new(argyle_report, payroll_account, show_income: true)) }
+
+      it "renders help text next to Compensation Amonut due to a null base pay value" do
+        compensation_row = subject.css("tbody tr:nth-child(7)").to_html
+        expect(compensation_row).to include "Compensation amount"
+        expect(compensation_row).to include "Rate not available."
+      end
+    end
   end
 end
