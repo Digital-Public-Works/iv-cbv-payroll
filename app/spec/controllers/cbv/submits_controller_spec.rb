@@ -511,6 +511,50 @@ RSpec.describe Cbv::SubmitsController do
           expect(pdf_text.scan("What does the information in the ‘Monthly Summary’ table mean? Self-employment").size).to eq(0)
         end
       end
+
+      context "for Joe Null who has a null value in base_pay" do
+        let(:cbv_applicant) { create(:cbv_applicant, created_at: current_time, case_number: "ABC1234") }
+        let(:account_id) { "01956d62-18a0-090f-bc09-2ac44b7edf99" }
+        let(:supported_jobs) { %w[accounts identity paystubs employment income] }
+        let(:errored_jobs) { [] }
+        let(:cbv_flow) do
+          create(:cbv_flow,
+                 :completed,
+                 :invited,
+                 created_at: current_time,
+                 cbv_applicant: cbv_applicant
+          )
+        end
+        let!(:payroll_account) do
+          create(
+            :payroll_account,
+            :argyle_fully_synced,
+            with_errored_jobs: errored_jobs,
+            cbv_flow: cbv_flow,
+            aggregator_account_id: account_id,
+            supported_jobs: supported_jobs,
+            )
+        end
+
+        before do
+          session[:cbv_flow_id] = cbv_flow.id
+          argyle_stub_request_identities_response("joe_null_total_hours")
+          argyle_stub_request_paystubs_response("joe_null_total_hours")
+          argyle_stub_request_gigs_response("joe_null_total_hours")
+          argyle_stub_request_account_response("joe_null_total_hours")
+          Timecop.freeze(Time.local(2025, 04, 1, 0, 0))
+        end
+
+        render_views
+
+        it "renders properly" do
+          get :show, format: :pdf
+          pdf_text = extract_pdf_text(response)
+
+          expect(response).to be_successful
+          expect(pdf_text).to include("Rate not available.")
+        end
+      end
     end
   end
 
