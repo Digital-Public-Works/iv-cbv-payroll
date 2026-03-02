@@ -67,7 +67,7 @@ RSpec.describe Cbv::EntriesController do
 
       context "with multiple cbv flows" do
         it "sends multiple related tracking events" do
-          expect(EventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
+          expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
             cbv_flow_id: be_a(Integer),
             time: be_a(Integer),
             invitation_id: invitation.id,
@@ -75,7 +75,7 @@ RSpec.describe Cbv::EntriesController do
             seconds_since_invitation: seconds_since_invitation
           ))
 
-          expect(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, hash_including(
+          expect(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, hash_including(
             user_agent: be_a(String),
             invitation_id: invitation.id,
             cbv_flow_id: be_a(Integer),
@@ -83,7 +83,7 @@ RSpec.describe Cbv::EntriesController do
             path: a_string_starting_with("/start/")
           ))
 
-          expect(EventTrackingJob).to receive(:perform_later).with("ApplicantViewedAgreement", anything, hash_including(
+          expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantViewedAgreement", anything, hash_including(
             cbv_flow_id: be_a(Integer),
             time: be_a(Integer),
             invitation_id: invitation.id,
@@ -98,7 +98,7 @@ RSpec.describe Cbv::EntriesController do
       it "sends events with metadata" do
         request.headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
           cbv_flow_id: be_a(Integer),
           time: be_a(Integer),
           invitation_id: invitation.id,
@@ -106,7 +106,7 @@ RSpec.describe Cbv::EntriesController do
           seconds_since_invitation: seconds_since_invitation
         ))
 
-        expect(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, hash_including(
           user_agent: be_a(String),
           invitation_id: invitation.id,
           cbv_flow_id: be_a(Integer),
@@ -114,7 +114,7 @@ RSpec.describe Cbv::EntriesController do
           path: a_string_starting_with("/start/")
         ))
 
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantViewedAgreement", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantViewedAgreement", anything, hash_including(
           cbv_flow_id: be_a(Integer),
           time: be_a(Integer),
           invitation_id: invitation.id,
@@ -125,15 +125,15 @@ RSpec.describe Cbv::EntriesController do
       end
 
       it "tracks a CbvPageView event with Mixpanel (from the base controller)" do
-        expect(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, hash_including(
           invitation_id: invitation.id,
           cbv_flow_id: be_a(Integer),
           client_agency_id: invitation.client_agency_id,
           path: a_string_starting_with("/start/")
         ))
 
-        allow(EventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, anything)
-        allow(EventTrackingJob).to receive(:perform_later).with("ApplicantViewedAgreement", anything, anything)
+        allow(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, anything)
+        allow(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantViewedAgreement", anything, anything)
 
         request.headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
         get :show, params: { token: invitation.auth_token }
@@ -142,8 +142,8 @@ RSpec.describe Cbv::EntriesController do
       it "includes origin information in ApplicantViewedAgreement event when set" do
         session[:cbv_origin] = "mail"
 
-        allow(EventTrackingJob).to receive(:perform_later)
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantViewedAgreement", anything, hash_including(
+        allow(MixpanelEventTrackingJob).to receive(:perform_later)
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantViewedAgreement", anything, hash_including(
           origin: "mail"
         ))
 
@@ -153,8 +153,8 @@ RSpec.describe Cbv::EntriesController do
       it "includes origin information in ApplicantAgreed event when agreeing" do
         session[:cbv_origin] = "sms"
 
-        allow(EventTrackingJob).to receive(:perform_later)
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantAgreed", anything, hash_including(
+        allow(MixpanelEventTrackingJob).to receive(:perform_later)
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantAgreed", anything, hash_including(
           origin: "sms"
         ))
 

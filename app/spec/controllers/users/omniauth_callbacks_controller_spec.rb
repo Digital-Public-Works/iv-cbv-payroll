@@ -36,7 +36,7 @@ RSpec.describe Users::OmniauthCallbacksController do
       end
 
       it "tracks events" do
-        expect(EventTrackingJob).to receive(:perform_later).with("CaseworkerLoggedIn", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("CaseworkerLoggedIn", anything, hash_including(
           client_agency_id: "sandbox",
           user_id: be_a(Integer)
         ))
@@ -89,7 +89,7 @@ RSpec.describe Users::OmniauthCallbacksController do
     end
 
     it "tracks events" do
-      expect(EventTrackingJob).to receive(:perform_later).with("CaseworkerLoggedIn", anything, hash_including(
+      expect(MixpanelEventTrackingJob).to receive(:perform_later).with("CaseworkerLoggedIn", anything, hash_including(
         client_agency_id: "az_des",
         user_id: be_a(Integer)
       ))
@@ -142,7 +142,7 @@ RSpec.describe Users::OmniauthCallbacksController do
     end
 
     it "tracks events" do
-      expect(EventTrackingJob).to receive(:perform_later).with("CaseworkerLoggedIn", anything, hash_including(
+      expect(MixpanelEventTrackingJob).to receive(:perform_later).with("CaseworkerLoggedIn", anything, hash_including(
         client_agency_id: "pa_dhs",
         user_id: be_a(Integer)
       ))

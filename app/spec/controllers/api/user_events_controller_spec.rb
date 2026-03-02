@@ -32,7 +32,7 @@ RSpec.describe Api::UserEventsController, type: :controller do
       end
 
       it "tracks an event with Mixpanel" do
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantOpenedHelpModal", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantOpenedHelpModal", anything, hash_including(
           time: be_a(Integer),
           source: "banner",
           cbv_flow_id: cbv_flow.id
@@ -94,7 +94,7 @@ RSpec.describe Api::UserEventsController, type: :controller do
         end
 
         it "tracks an event with Mixpanel (with selected_tab = platform)" do
-          expect(EventTrackingJob).to receive(:perform_later).with("ApplicantSelectedEmployerOrPlatformItem", anything, hash_including(
+          expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantSelectedEmployerOrPlatformItem", anything, hash_including(
             time: be_a(Integer),
             cbv_flow_id: cbv_flow.id,
             invitation_id: cbv_flow.cbv_flow_invitation_id,
@@ -120,7 +120,7 @@ RSpec.describe Api::UserEventsController, type: :controller do
         end
 
         it "tracks an event with Mixpanel (with selected_tab = employer)" do
-          expect(EventTrackingJob).to receive(:perform_later).with("ApplicantSelectedEmployerOrPlatformItem", anything, hash_including(
+          expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantSelectedEmployerOrPlatformItem", anything, hash_including(
             time: be_a(Integer),
             cbv_flow_id: cbv_flow.id,
             invitation_id: cbv_flow.cbv_flow_invitation_id,
@@ -147,7 +147,7 @@ RSpec.describe Api::UserEventsController, type: :controller do
       end
 
       it "tracks an event with Mixpanel" do
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantViewedPinwheelLoginPage", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantViewedPinwheelLoginPage", anything, hash_including(
           time: be_a(Integer),
           cbv_flow_id: cbv_flow.id,
           invitation_id: cbv_flow.cbv_flow_invitation_id,
@@ -169,7 +169,7 @@ RSpec.describe Api::UserEventsController, type: :controller do
       end
 
       it "tracks an event with Mixpanel" do
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantManuallySwitchedLanguage", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantManuallySwitchedLanguage", anything, hash_including(
           time: be_a(Integer),
           cbv_flow_id: cbv_flow.id,
           invitation_id: cbv_flow.cbv_flow_invitation_id,
@@ -184,7 +184,7 @@ RSpec.describe Api::UserEventsController, type: :controller do
       let(:event_attributes) { {} }
 
       it "tracks an event with Mixpanel" do
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantConsentedToTerms", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantConsentedToTerms", anything, hash_including(
           time: be_a(Integer),
           cbv_flow_id: cbv_flow.id,
           invitation_id: cbv_flow.cbv_flow_invitation_id
@@ -204,7 +204,7 @@ RSpec.describe Api::UserEventsController, type: :controller do
         end
 
         it "tracks an event with Mixpanel" do
-          expect(EventTrackingJob).to receive(:perform_later).with("ApplicantViewedHelpText", anything, hash_including(
+          expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantViewedHelpText", anything, hash_including(
             time: be_a(Integer),
             cbv_flow_id: cbv_flow.id,
             invitation_id: cbv_flow.cbv_flow_invitation_id,
@@ -222,7 +222,7 @@ RSpec.describe Api::UserEventsController, type: :controller do
         end
 
         it "tracks an event with Mixpanel" do
-          expect(EventTrackingJob).to receive(:perform_later).with("ApplicantViewedHelpText", anything, hash_including(
+          expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantViewedHelpText", anything, hash_including(
             time: be_a(Integer),
             cbv_flow_id: cbv_flow.id,
             invitation_id: cbv_flow.cbv_flow_invitation_id,
