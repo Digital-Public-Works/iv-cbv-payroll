@@ -269,6 +269,7 @@ es:
         header: Revise la información de pago de %{employer_name}
         header_no_employer_name: Su información de pago de su empleador
         hourly_rate: Monto de compensación
+        hourly_rate_not_found: Tarifa de pago no disponible. Consulte los recibos de sueldo a continuación.
         hours:
           one: "%{count} hora"
           other: "%{count} horas"
