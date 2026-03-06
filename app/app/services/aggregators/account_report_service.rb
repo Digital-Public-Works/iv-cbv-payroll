@@ -29,7 +29,7 @@ module Aggregators
       begin
         @cbv_flow = CbvFlow.find(@payroll_account.cbv_flow_id)
         # Track all the attempts so that we can alert on % that fail
-        NewRelic::Agent.record_custom_event(TrackEvent::ApplicantReportAttemptedUsefulRequirements, {
+        NewRelic::EventLogger.track(TrackEvent::ApplicantReportAttemptedUsefulRequirements, {
           time: Time.now.to_i,
           cbv_applicant_id: @cbv_flow&.cbv_applicant_id,
           cbv_flow_id: @payroll_account.cbv_flow_id,
@@ -45,7 +45,7 @@ module Aggregators
       unless valid
         @cbv_flow = CbvFlow.find(@payroll_account.cbv_flow_id) if !@cbv_flow.present?
 
-        NewRelic::Agent.record_custom_event(TrackEvent::ApplicantReportFailedUsefulRequirements, {
+        NewRelic::EventLogger.track(TrackEvent::ApplicantReportFailedUsefulRequirements, {
           time: Time.now.to_i,
           cbv_applicant_id: @cbv_flow&.cbv_applicant_id,
           cbv_flow_id: @payroll_account.cbv_flow_id,

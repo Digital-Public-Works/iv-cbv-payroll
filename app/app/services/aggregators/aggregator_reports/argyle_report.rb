@@ -52,7 +52,7 @@ module Aggregators::AggregatorReports
       check_hours(paystubs_json)
 
       if self.has_warnings?
-        NewRelic::Agent.record_custom_event(TrackEvent::ArgyleDataUnexpectedHours, {
+        NewRelic::EventLogger.track(TrackEvent::ArgyleDataUnexpectedHours, {
           time: Time.now.to_i,
           cbv_flow_id: payroll_account&.cbv_flow_id,
           warnings: self.warnings.full_messages.join(", ")
