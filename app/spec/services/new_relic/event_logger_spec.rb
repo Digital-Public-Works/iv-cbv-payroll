@@ -11,6 +11,12 @@ RSpec.describe NewRelic::EventLogger do
       logger.track(event_type, attributes)
     end
 
+    it "enqueues the NewRelicEventTrackingJob" do
+      expect { logger.track(event_type, attributes) }.to have_enqueued_job(NewRelicEventTrackingJob)
+                                                           .with(event_type, attributes)
+                                                           .on_queue("newrelic_events")
+    end
+
     it "raises an error if it fails to create a tracking job when not in prod" do
       allow(Rails.env).to receive(:production?).and_return(false)
       expect(NewRelicEventTrackingJob).to receive(:perform_later).with(event_type, attributes)
