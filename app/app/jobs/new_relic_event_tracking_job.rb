@@ -5,8 +5,8 @@ class NewRelicEventTrackingJob < ApplicationJob
     event_tracker = NewRelicEventTracker.new
 
     attributes[:timestamp] = self.enqueued_at&.to_datetime.to_i
-    attributes[:enqueued_at] = self.enqueued_at&.to_datetime.to_i
-    attributes[:processed_at] = Time.current.to_datetime.to_i
+    attributes[:enqueued_at] = self.enqueued_at&.utc&.iso8601
+    attributes[:processed_at] = Time.current.utc.iso8601
 
     begin
       event_tracker.track(event_type, attributes)
