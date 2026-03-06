@@ -51,7 +51,7 @@ RSpec.describe WeeklyReportDispatcher, type: :service do
   before do
     travel_to(now)
 
-    allow(NewRelic::Agent).to receive(:record_custom_event)
+    allow(NewRelic::EventLogger).to receive(:track)
     allow(NewRelic::Agent).to receive(:notice_error)
 
     allow(WeeklyReportMailer).to receive(:with).and_return(mailer_chain)
@@ -97,7 +97,7 @@ RSpec.describe WeeklyReportDispatcher, type: :service do
                                       .with(hash_including(client_id: "agency_b", recipient: "b@example.com", report_range: kind_of(Range)))
 
       # verify start event
-      expect(NewRelic::Agent).to have_received(:record_custom_event)
+      expect(NewRelic::EventLogger).to have_received(:track)
                                    .with("WeeklyReportMailerStarted", hash_including(
                                      :time,
                                      target_count: 2,
@@ -105,7 +105,7 @@ RSpec.describe WeeklyReportDispatcher, type: :service do
                                    ))
 
       # verify completed event
-      expect(NewRelic::Agent).to have_received(:record_custom_event)
+      expect(NewRelic::EventLogger).to have_received(:track)
                                    .with("WeeklyReportMailerCompleted", hash_including(
                                      :time,
                                      attempted: 2, successes: 2, failures: 0,
@@ -129,7 +129,7 @@ RSpec.describe WeeklyReportDispatcher, type: :service do
       dispatcher.send_weekly_summary_emails
 
       # agency_a succeeded, agency_b failed; still attempted 2
-      expect(NewRelic::Agent).to have_received(:record_custom_event)
+      expect(NewRelic::EventLogger).to have_received(:track)
                                    .with("WeeklyReportMailerCompleted", hash_including(
                                      attempted: 2, successes: 1, failures: 1,
                                      success_ids: satisfy { |s| s.split(",").include?("agency_a") },
@@ -162,7 +162,7 @@ RSpec.describe WeeklyReportDispatcher, type: :service do
 
       dispatcher.send_weekly_summary_emails
 
-      expect(NewRelic::Agent).to have_received(:record_custom_event)
+      expect(NewRelic::EventLogger).to have_received(:track)
                                    .with("WeeklyReportMailerCompleted", hash_including(
                                      attempted: 2, successes: 0, failures: 2
                                    ))
@@ -178,9 +178,9 @@ RSpec.describe WeeklyReportDispatcher, type: :service do
       dispatcher.send_weekly_summary_emails
 
       expect(WeeklyReportMailer).not_to have_received(:with)
-      expect(NewRelic::Agent).to have_received(:record_custom_event)
+      expect(NewRelic::EventLogger).to have_received(:track)
                                    .with("WeeklyReportMailerStarted", hash_including(target_count: 0, target_ids: ""))
-      expect(NewRelic::Agent).to have_received(:record_custom_event)
+      expect(NewRelic::EventLogger).to have_received(:track)
                                    .with("WeeklyReportMailerCompleted", hash_including(
                                      attempted: 0, successes: 0, failures: 0, success_ids: "", failure_ids: ""
                                    ))
@@ -189,7 +189,7 @@ RSpec.describe WeeklyReportDispatcher, type: :service do
     it "emits deterministic target_ids order" do
       dispatcher.send_weekly_summary_emails
 
-      expect(NewRelic::Agent).to have_received(:record_custom_event)
+      expect(NewRelic::EventLogger).to have_received(:track)
                                    .with("WeeklyReportMailerStarted", hash_including(
                                      target_ids: "agency_a,agency_b"
                                    ))

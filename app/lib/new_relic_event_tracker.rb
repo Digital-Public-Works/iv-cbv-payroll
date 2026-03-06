@@ -4,13 +4,13 @@ class NewRelicEventTracker
   end
 
   def track(event_type, attributes = {})
-    start_time = Time.now
+    start_time = Time.current
     Rails.logger.info "Sending NewRelic event #{event_type} with attributes: #{attributes}"
 
     response = @client.send_event(event_type, attributes)
 
     if response.success?
-      Rails.logger.info "NewRelic event sent in #{Time.now - start_time}"
+      Rails.logger.info "NewRelic event sent in #{Time.current - start_time}"
     end
 
     response

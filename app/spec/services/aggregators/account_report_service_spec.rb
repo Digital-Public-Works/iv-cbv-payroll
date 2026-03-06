@@ -241,7 +241,7 @@ RSpec.describe Aggregators::AccountReportService do
       end
 
       it 'sends events to New Relic' do
-        expect(NewRelic::Agent).to receive(:record_custom_event).with(
+        expect(NewRelic::EventLogger).to receive(:track).with(
           TrackEvent::ApplicantReportAttemptedUsefulRequirements,
           {
             time: anything,
@@ -252,7 +252,7 @@ RSpec.describe Aggregators::AccountReportService do
           }
         )
 
-        expect(NewRelic::Agent).to receive(:record_custom_event).with(
+        expect(NewRelic::EventLogger).to receive(:track).with(
           TrackEvent::ApplicantReportFailedUsefulRequirements,
           {
             time: anything,

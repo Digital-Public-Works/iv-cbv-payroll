@@ -262,7 +262,7 @@ RSpec.describe Cbv::EntriesController do
 
     before do
       allow(CbvFlowInvitation).to receive(:find_by).with(auth_token: invitation.auth_token).and_return(invitation)
-      allow(NewRelic::Agent).to receive(:record_custom_event)
+      allow(NewRelic::EventLogger).to receive(:track)
     end
 
     context 'when invitation has not reached limit' do
@@ -277,7 +277,7 @@ RSpec.describe Cbv::EntriesController do
 
       it 'does not record NewRelic event' do
         get :show, params: { token: invitation.auth_token }
-        expect(NewRelic::Agent).not_to have_received(:record_custom_event).with("InvitationLimitReached", anything)
+        expect(NewRelic::EventLogger).not_to have_received(:track).with("InvitationLimitReached", anything)
       end
     end
 
@@ -296,7 +296,7 @@ RSpec.describe Cbv::EntriesController do
       it 'records NewRelic custom event with correct attributes' do
         get :show, params: { token: invitation.auth_token }
 
-        expect(NewRelic::Agent).to have_received(:record_custom_event).with(
+        expect(NewRelic::EventLogger).to have_received(:track).with(
           "InvitationLimitReached",
           {
             invitation_id: invitation.id,
@@ -327,7 +327,7 @@ RSpec.describe Cbv::EntriesController do
       it 'records NewRelic custom event with actual count' do
         get :show, params: { token: invitation.auth_token }
 
-        expect(NewRelic::Agent).to have_received(:record_custom_event).with(
+        expect(NewRelic::EventLogger).to have_received(:track).with(
           "InvitationLimitReached",
           {
             invitation_id: invitation.id,
@@ -346,7 +346,7 @@ RSpec.describe Cbv::EntriesController do
         get :show, params: { token: invitation.auth_token }
         get :show, params: { token: invitation.auth_token }
 
-        expect(NewRelic::Agent).to have_received(:record_custom_event).with(
+        expect(NewRelic::EventLogger).to have_received(:track).with(
           "InvitationLimitReached",
           anything
         ).twice
