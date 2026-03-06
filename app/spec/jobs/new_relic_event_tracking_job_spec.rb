@@ -12,9 +12,7 @@ RSpec.describe NewRelicEventTrackingJob, type: :job do
   } }
 
   it "passes the right data to NewRelicEventTracker" do
-    expect_any_instance_of(NewRelicEventTracker)
-      .to receive(:track)
-            .with(event_type, attributes)
+    expect_any_instance_of(NewRelicEventTracker).to receive(:track).with(event_type, attributes)
 
     described_class.perform_now(event_type, attributes)
   end

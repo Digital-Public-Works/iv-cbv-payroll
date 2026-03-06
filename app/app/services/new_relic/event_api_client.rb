@@ -5,7 +5,7 @@ require "faraday"
 require "json"
 
 module NewRelic
-  class EventsApiClient
+  class EventApiClient
     BASE_URL = "https://insights-collector.newrelic.com"
     ACCOUNT_ID = ENV["NEWRELIC_ACCOUNT_ID"] || "7001719"
     API_KEY = ENV["NEWRELIC_KEY"]

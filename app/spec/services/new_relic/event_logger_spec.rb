@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe NewRelic::EventsLogger do
+RSpec.describe NewRelic::EventLogger do
   describe ".track" do
     let(:event_type) { "TestEvent" }
     let(:attributes) { { "speak" => "meow", "user_id" => 42 } }

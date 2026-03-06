@@ -11,10 +11,9 @@ RSpec.describe NewRelicEventTracker do
       invitation_id: "9001",
       errors: "error1, error2, error3"
     } }
-    let(:client) { instance_double(NewRelic::EventsApiClient) }
+    let(:client) { instance_double(NewRelic::EventApiClient) }
     let(:tracker) { described_class.new(client: client) }
     let(:success_response) { instance_double(Faraday::Response, success?: true) }
-    let(:requests) { WebMock::RequestRegistry.instance.requested_signatures.hash.keys }
     let(:expected_url) { "https://insights-collector.newrelic.com/v1/accounts/7001719/events" }
 
     before do

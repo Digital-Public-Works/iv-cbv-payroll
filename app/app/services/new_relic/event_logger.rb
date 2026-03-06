@@ -1,5 +1,5 @@
 module NewRelic
-  class EventsLogger
+  class EventLogger
     def self.track(event_type, attributes = {})
       NewRelicEventTrackingJob.perform_later(event_type, attributes)
 

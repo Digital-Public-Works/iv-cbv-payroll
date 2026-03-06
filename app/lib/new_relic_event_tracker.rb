@@ -1,6 +1,6 @@
 class NewRelicEventTracker
   def initialize(client: nil)
-    @client = client || NewRelic::EventsApiClient.new
+    @client = client || NewRelic::EventApiClient.new
   end
 
   def track(event_type, attributes = {})

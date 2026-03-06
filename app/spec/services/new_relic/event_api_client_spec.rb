@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe NewRelic::EventsApiClient do
+RSpec.describe NewRelic::EventApiClient do
   let(:client) { described_class.new }
   let(:account_id) { "7001719" }
   let(:api_key) { "TEST_API_KEY" }
