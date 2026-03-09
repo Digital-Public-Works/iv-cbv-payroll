@@ -1,0 +1,18 @@
+<section class="display-flex margin-top-2">
+  <aside class="margin-right-1" style="padding-left: 0.25rem; padding-top: 0.4rem">
+    <svg class="usa-icon" aria-hidden="true" role="img">
+      <use href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#chat") %>"></use>
+    </svg>
+  </aside>
+  <article class="line-height-sans-6">
+    <header>
+      <strong><%= I18n.t("cbv.submits.show.client_comment_title") %></strong>
+      <div class="text-italic text-gray-50">
+        <%= I18n.t("cbv.submits.show.client_comment_description") %>
+      </div>
+    </header>
+    <div>
+      <%= comment.presence || I18n.t("cbv.submits.show.no_client_comment_found") %>
+    </div>
+  </article>
+</section>
