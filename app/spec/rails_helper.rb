@@ -98,6 +98,77 @@ RSpec.configure do |config|
   # instead of true.
   config.use_transactional_fixtures = true
 
+  # config.before(:suite) do
+  #   #ActiveRecord::FixtureSet.reset_cache
+  #   sandbox = PartnerConfig.find_by(partner_id: 'sandbox') || FactoryBot.create(:partner_config)
+  #   required_attributes = [
+  #     { trait: nil, name: 'first_name' },
+  #     { trait: :middle_name, name: 'xxxmiddle_name' },
+  #     { trait: :last_name, name: 'last_name' },
+  #     { trait: :date_of_birth, name: 'date_of_birth' },
+  #     { trait: :case_number, name: 'case_number' }
+  #   ]
+
+  #   required_attributes.each do |attr|
+  #     unless PartnerApplicationAttribute.exists?(partner_config: sandbox, name: attr[:name])
+  #       if attr[:trait]
+  #         FactoryBot.create(:partner_application_attribute, attr[:trait], partner_config: sandbox)
+  #       else
+  #         FactoryBot.create(:partner_application_attribute, partner_config: sandbox)
+  #       end
+  #     end
+  #   end
+  # end
+
+  config.before(:suite) do
+    partners = [ nil, :az_des, :la_ldh, :pa_dhs ]
+
+    PartnerApplicationAttribute.delete_all
+    PartnerConfig.delete_all
+
+    @sandbox = PartnerConfig.find_by(partner_id: 'sandbox') || FactoryBot.create(:partner_config)
+
+    attributes = [
+      { name: 'first_name', trait: nil },
+      { name: 'middle_name', trait: :middle_name },
+      { name: 'last_name', trait: :last_name },
+      { name: 'date_of_birth', trait: :date_of_birth },
+      { name: 'case_number', trait: :case_number }
+    ]
+
+    partners.each do |partner|
+      p_id = case partner
+             when :az_des then 'az_des'
+             when :la_ldh then 'la_ldh'
+             when :pa_dhs then 'pa_dhs'
+             else 'sandbox'
+             end
+
+      config = PartnerConfig.find_by(partner_id: p_id) ||
+                (partner ? FactoryBot.create(:partner_config, partner) : FactoryBot.create(:partner_config))
+
+      attributes.each do |a_data|
+        unless PartnerApplicationAttribute.exists?(partner_config: config, name: a_data[:name])
+          if a_data[:trait]
+            FactoryBot.create(:partner_application_attribute, a_data[:trait], partner_config: config)
+          else
+            FactoryBot.create(:partner_application_attribute, partner_config: config)
+          end
+        end
+      end
+    end
+
+    ClientAgencyConfig.reset!
+    binding.pry
+  end
+
+
+  # config.include_context "partner setup"
+
+  config.before(:each) do
+    ClientAgencyConfig.reset!
+  end
+
   # You can uncomment this line to turn off ActiveRecord support entirely.
   # config.use_active_record = false
 
@@ -128,6 +199,9 @@ RSpec.configure do |config|
   # activejob helper
   config.include ActiveJob::TestHelper
   config.before(:each) { clear_enqueued_jobs && clear_performed_jobs }
+
+  # config.fixture_paths = [Rails.root.join('test/fixtures')]
+
 
   # Print some helpful debugging info about the last test failure, since
   # sometimes it's a bit hard to tell which page the error is coming from.

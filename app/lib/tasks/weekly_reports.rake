@@ -2,6 +2,7 @@ namespace :weekly_reports do
   desc "Send weekly reports"
   task send_all: :environment do
     client_agency_config = Rails.application.config.client_agencies
+    # TODO: Update this
     config = client_agency_config.client_agency_ids.each_with_object({}) do |id, hash|
       hash[id] = client_agency_config[id]
     end

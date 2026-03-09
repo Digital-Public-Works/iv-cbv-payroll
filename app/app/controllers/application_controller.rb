@@ -29,7 +29,7 @@ class ApplicationController < ActionController::Base
   end
 
   def agency_config
-    Rails.application.config.client_agencies
+    ClientAgencyConfig.instance
   end
 
   private

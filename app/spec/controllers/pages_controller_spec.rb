@@ -52,6 +52,7 @@ RSpec.describe PagesController do
       before do
         stub_client_agency_config_value("sandbox", "agency_domain", "sandbox.verifymyincome.org")
         stub_client_agency_config_value("sandbox", "pilot_ended", false)
+        # TODO: Update
         stub_client_agency_config_value("sandbox", "generic_links_disabled", true)
       end
 

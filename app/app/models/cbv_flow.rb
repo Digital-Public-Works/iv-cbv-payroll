@@ -2,7 +2,7 @@ class CbvFlow < ApplicationRecord
   has_many :payroll_accounts, dependent: :destroy
   belongs_to :cbv_flow_invitation, optional: true
   belongs_to :cbv_applicant, optional: true
-  validates :client_agency_id, inclusion: Rails.application.config.client_agencies.client_agency_ids
+  validates :client_agency_id, inclusion: ClientAgencyConfig.instance.client_agency_ids
 
   accepts_nested_attributes_for :cbv_applicant
 
@@ -49,7 +49,7 @@ class CbvFlow < ApplicationRecord
   end
 
   def to_generic_url(origin: nil)
-    client_agency = Rails.application.config.client_agencies[client_agency_id]
+    client_agency = ClientAgencyConfig.instance[client_agency_id]
     raise ArgumentError.new("Client Agency #{client_agency_id} not found") unless client_agency
 
     url_params = {

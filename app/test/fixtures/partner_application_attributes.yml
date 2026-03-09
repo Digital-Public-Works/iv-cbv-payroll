@@ -1,0 +1,39 @@
+sandbox_first_name:
+  partner_config: :sandbox
+  partner_id: sandbox
+  name: first_name
+  description: Applicant first name
+  required: true
+  data_type: :string
+
+sandbox_middle_name:
+  partner_config: :sandbox
+  partner_id: sandbox
+  name: middle_name
+  description: Applicant middle name
+  required: false
+  data_type: :string
+
+sandbox_last_name:
+  partner_config: :sandbox
+  partner_id: sandbox
+  name: last_name
+  description: Applicant last name
+  required: true
+  data_type: :string
+
+sandbox_date_of_birth:
+  partner_config: :sandbox
+  partner_id: sandbox
+  name: date_of_birth
+  description: "Applicant date of birth"
+  required: true
+  data_type: :date
+
+sandbox_case_number:
+  partner_config: :sandbox
+  partner_id: sandbox
+  name: case_number
+  description: "Case Number"
+  required: true
+  data_type: :string

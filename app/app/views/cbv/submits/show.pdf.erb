@@ -1,5 +1,5 @@
 <% content_for :title, t(".pdf.client.header") %>
-<% current_agency ||= ClientAgencyConfig.client_agencies[@cbv_flow.client_agency_id] %>
+<% current_agency ||= ClientAgencyConfig.instance[@cbv_flow.client_agency_id] %>
 
 <strong>
   <span class="cbv-header__pilot-name font-sans-md text-middle">

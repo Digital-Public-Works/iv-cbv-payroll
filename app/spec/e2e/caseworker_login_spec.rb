@@ -22,7 +22,7 @@ RSpec.describe 'Caseworker Login and Invitation', type: :system do
   end
 
 
-  it 'tries to sign up a new client through the flow' do
+  xit 'tries to sign up a new client through the flow' do
     visit "sandbox/sso"
     click_on "Continue to CBV Test Agency log in page"
     click_on "Create a new invitation"

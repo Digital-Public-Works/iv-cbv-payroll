@@ -7,6 +7,7 @@ RSpec.describe Cbv::GenericLinksController do
   describe '#show' do
     context 'when the hostname matches a client agency domain and the pilot is active' do
       before do
+        # TODO: Update
         stub_client_agency_config_value("sandbox", "generic_links_disabled", false)
         stub_client_agency_config_value("sandbox", "pilot_ended", false)
       end

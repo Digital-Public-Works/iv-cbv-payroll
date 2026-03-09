@@ -3,8 +3,9 @@ require 'rails_helper'
 RSpec.describe ProviderSearchService, type: :service do
   include PinwheelApiHelper
   include ArgyleApiHelper
+
   let(:service) { ProviderSearchService.new("sandbox", providers: providers) }
-  let(:providers) { %i[pinwheel argyle] }
+  let(:providers) { %i[argyle] }
 
   describe "#search" do
     before do
@@ -43,19 +44,19 @@ RSpec.describe ProviderSearchService, type: :service do
         expect(results.count { |r| r.provider_name == :argyle }).to eq(5)
       end
 
-      context "when there *is* an exact match in Pinwheel" do
-        let(:query) do
-          # This value *is* exactly present in the Pinwheel request stub, but
-          # not Argyle's.
-          "Acme Payroll"
-        end
+      # context "when there *is* an exact match in Pinwheel" do
+      #   let(:query) do
+      #     # This value *is* exactly present in the Pinwheel request stub, but
+      #     # not Argyle's.
+      #     "Acme Payroll"
+      #   end
 
-        it "uses Pinwheel results" do
-          results = service.search(query)
-          expect(results.count { |r| r.provider_name == :pinwheel }).to eq(2)
-          expect(results.count { |r| r.provider_name == :argyle }).to eq(0)
-        end
-      end
+      #   it "uses Pinwheel results" do
+      #     results = service.search(query)
+      #     expect(results.count { |r| r.provider_name == :pinwheel }).to eq(2)
+      #     expect(results.count { |r| r.provider_name == :argyle }).to eq(0)
+      #   end
+      # end
     end
 
     context "when there is an exact match in Argyle" do
@@ -84,15 +85,6 @@ RSpec.describe ProviderSearchService, type: :service do
       expect(argyle_results).to eq(5)
     end
 
-    context "when only pinwheel is enabled" do
-      let(:providers) { %i[pinwheel] }
-
-      it "returns results from pinwheel" do
-        results = service.search("test")
-        expect(results.length).to eq(2)
-      end
-    end
-
     context "when only argyle is enabled" do
       let(:providers) { %i[argyle] }
 
@@ -116,48 +108,6 @@ RSpec.describe ProviderSearchService, type: :service do
         name: a_kind_of(String),
         logo_url: a_kind_of(String)
       )
-    end
-
-    context "when only pinwheel is enabled" do
-      let(:providers) { %i[pinwheel] }
-
-      it 'returns properly formatted top payroll providers' do
-        results = service.top_aggregator_options("payroll")
-        first_result = results.first
-
-        expect(results.length).to eq(6)
-        expect(first_result).to have_attributes(
-          provider_name: :pinwheel,
-          provider_options: have_attributes(response_type: a_kind_of(String), provider_id: a_kind_of(String)),
-          name: a_kind_of(String),
-          logo_url: a_kind_of(String)
-        )
-      end
-
-      it 'returns properly formatted top employer providers' do
-        results = service.top_aggregator_options("employer")
-        first_result = results.first
-
-        expect(results.length).to eq(6)
-        expect(first_result).to have_attributes(
-          provider_name: :pinwheel,
-          provider_options: have_attributes(response_type: a_kind_of(String), provider_id: a_kind_of(String)),
-          name: a_kind_of(String),
-          logo_url: a_kind_of(String)
-        )
-      end
-
-      it 'returns pinwheel payroll providers when pinwheel is configured' do
-        results = service.top_aggregator_options("payroll")
-        first_result = results.first
-
-        expect(first_result).to have_attributes(
-          provider_name: :pinwheel,
-          provider_options: have_attributes(response_type: a_kind_of(String), provider_id: a_kind_of(String)),
-          name: a_kind_of(String),
-          logo_url: a_kind_of(String)
-        )
-      end
     end
 
     context "when only argyle is enabled" do

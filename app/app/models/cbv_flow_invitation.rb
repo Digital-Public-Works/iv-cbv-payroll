@@ -23,7 +23,7 @@ class CbvFlowInvitation < ApplicationRecord
   before_create :set_expires_at, if: :new_record?
   before_validation :normalize_language
 
-  validates :client_agency_id, inclusion: Rails.application.config.client_agencies.client_agency_ids
+  validates :client_agency_id, inclusion: ClientAgencyConfig.client_agency_ids
   validates :email_address, format: { with: EMAIL_REGEX, message: :invalid_format }
   validates_associated :cbv_applicant
   validates :language, inclusion: {
@@ -58,7 +58,7 @@ class CbvFlowInvitation < ApplicationRecord
   end
 
   def to_url(origin: nil)
-    client_agency = Rails.application.config.client_agencies[client_agency_id]
+    client_agency = ClientAgencyConfig.instance[client_agency_id]
     raise ArgumentError.new("Client Agency #{client_agency_id} not found") unless client_agency
 
     url_params = {
@@ -102,7 +102,7 @@ class CbvFlowInvitation < ApplicationRecord
   end
 
   def agency_config
-    Rails.application.config.client_agencies[client_agency_id]
+    ClientAgencyConfig.instance[client_agency_id]
   end
 
   def agency_time_zone

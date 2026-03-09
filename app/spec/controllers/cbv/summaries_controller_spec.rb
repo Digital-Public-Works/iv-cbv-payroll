@@ -5,20 +5,36 @@ RSpec.describe Cbv::SummariesController do
   include ArgyleApiHelper
   include_context "gpg_setup"
 
-  let(:supported_jobs) { %w[income paystubs employment identity] }
+  let(:supported_jobs) { %w[accounts identity paystubs employment income] }
   let(:errored_jobs) { [] }
   let(:current_time) { Date.parse('2024-06-18') }
   let(:cbv_applicant) { create(:cbv_applicant, created_at: current_time, case_number: "ABC1234") }
   let(:cbv_flow) do
     create(:cbv_flow,
       :invited,
-      :with_pinwheel_account,
+      :with_argyle_account,
       with_errored_jobs: errored_jobs,
       created_at: current_time,
       supported_jobs: supported_jobs,
       cbv_applicant: cbv_applicant
     )
   end
+
+
+  let(:account_id) { "019571bc-2f60-3955-d972-dbadfe0913a8" }
+
+
+  # let(:payroll_account) do
+  #   create(
+  #     :payroll_account,
+  #     :argyle_fully_synced,
+  #     with_errored_jobs: errored_jobs,
+  #     cbv_flow: cbv_flow,
+  #     aggregator_account_id: account_id,
+  #     supported_jobs: supported_jobs,
+  #   )
+  # end
+
   let(:mock_client_agency) { instance_double(ClientAgencyConfig::ClientAgency) }
 
 
@@ -105,32 +121,49 @@ end
       # end
 
       context "with both Argyle and Pinwheel data" do
-        let!(:argyle_account) do
-          create(:payroll_account, :argyle_bob, cbv_flow: cbv_flow)
-        end
+        # let!(:argyle_account) do
+        #   create(:payroll_account, :argyle_bob, cbv_flow: cbv_flow)
+        # end
 
-        let(:pinwheel_identities_json) { pinwheel_load_relative_json_file('request_identity_response.json') }
-        let(:pinwheel_incomes_json) { pinwheel_load_relative_json_file('request_income_metadata_response.json') }
-        let(:pinwheel_employments_json) { pinwheel_load_relative_json_file('request_employment_info_response.json') }
-        let(:pinwheel_paystubs_json) { pinwheel_load_relative_json_file('request_end_user_paystubs_response.json') }
-        let(:pinwheel_shifts_json) { pinwheel_load_relative_json_file('request_end_user_shifts_response.json') }
-        let(:pinwheel_account_json) { pinwheel_load_relative_json_file('request_end_user_account_response.json') }
-        let(:pinwheel_platform_json) { pinwheel_load_relative_json_file('request_platform_response.json') }
+        # let(:pinwheel_identities_json) { pinwheel_load_relative_json_file('request_identity_response.json') }
+        # let(:pinwheel_incomes_json) { pinwheel_load_relative_json_file('request_income_metadata_response.json') }
+        # let(:pinwheel_employments_json) { pinwheel_load_relative_json_file('request_employment_info_response.json') }
+        # let(:pinwheel_paystubs_json) { pinwheel_load_relative_json_file('request_end_user_paystubs_response.json') }
+        # let(:pinwheel_shifts_json) { pinwheel_load_relative_json_file('request_end_user_shifts_response.json') }
+        # let(:pinwheel_account_json) { pinwheel_load_relative_json_file('request_end_user_account_response.json') }
+        # let(:pinwheel_platform_json) { pinwheel_load_relative_json_file('request_platform_response.json') }
+
+        # allow_any_instance_of(Aggregators::Sdk::ArgyleService)
+        #   .to receive(:fetch_identities_api)
+        #   .and_return(argyle_load_relative_json_file("sarah", "request_identity.json"))
+        # allow_any_instance_of(Aggregators::Sdk::ArgyleService)
+        #   .to receive(:fetch_paystubs_api)
+        #   .and_return(argyle_load_relative_json_file("sarah", "request_paystubs.json"))
+        # allow_any_instance_of(Aggregators::Sdk::ArgyleService)
+        #   .to receive(:fetch_gigs_api)
+        #   .and_return(argyle_load_relative_json_file("bob", "request_gigs.json"))
+        # allow_any_instance_of(Aggregators::Sdk::ArgyleService)
+        #   .to receive(:fetch_account_api)
+        #         .and_return(argyle_load_relative_json_file("bob", "request_account.json"))
 
 
         before do
+          cbv_flow.payroll_accounts.first.update(aggregator_account_id: "019571bc-2f60-3955-d972-dbadfe0913a8")
+
           argyle_stub_request_identities_response('bob')
           argyle_stub_request_paystubs_response('bob')
           argyle_stub_request_gigs_response('bob')
           argyle_stub_request_account_response('bob')
 
+
+
           # Note: there are conflict issues on the regex stubs between argyle and pinwheel.
           # So hardcoding the PinwheelService calls to avoid this conflict.  This is unique to testing the CompositeReport
-          allow_any_instance_of(Aggregators::Sdk::PinwheelService).to receive(:fetch_identity_api).and_return(pinwheel_identities_json)
-          allow_any_instance_of(Aggregators::Sdk::PinwheelService).to receive(:fetch_account).and_return(pinwheel_account_json)
-          allow_any_instance_of(Aggregators::Sdk::PinwheelService).to receive(:fetch_platform).and_return(pinwheel_platform_json)
-          allow_any_instance_of(Aggregators::Sdk::PinwheelService).to receive(:fetch_employment_api).and_return(pinwheel_employments_json)
-          allow_any_instance_of(Aggregators::Sdk::PinwheelService).to receive(:fetch_income_api).and_return(pinwheel_incomes_json)
+          # allow_any_instance_of(Aggregators::Sdk::PinwheelService).to receive(:fetch_identity_api).and_return(pinwheel_identities_json)
+          # allow_any_instance_of(Aggregators::Sdk::PinwheelService).to receive(:fetch_account).and_return(pinwheel_account_json)
+          # allow_any_instance_of(Aggregators::Sdk::PinwheelService).to receive(:fetch_platform).and_return(pinwheel_platform_json)
+          # allow_any_instance_of(Aggregators::Sdk::PinwheelService).to receive(:fetch_employment_api).and_return(pinwheel_employments_json)
+          # allow_any_instance_of(Aggregators::Sdk::PinwheelService).to receive(:fetch_income_api).and_return(pinwheel_incomes_json)
         end
 
         it "renders properly" do
@@ -144,7 +177,7 @@ end
             doc = Nokogiri::HTML(response.body)
 
             expect(doc.css("title").text).to include("Review your income report")
-            expect(doc.at_xpath("//*[@data-testid=\"paystub-table-caption\"]").content).to include("Employer 1: Acme Corporation")
+            expect(doc.at_xpath("//*[@data-testid=\"paystub-table-caption\"]").content).to include("Employer 1: Lyft Driver")
             expect(doc).to have_css("table.usa-table.usa-table--borderless.width-full.usa-table--stacked", count: 1)
             within("table.usa-table.usa-table--borderless.width-full.usa-table--stacked") do
               expect(page).to have_css("tr", count: 2)
@@ -154,9 +187,9 @@ end
         end
 
         context "Argyle with 3 paystubs" do
-          let!(:argyle_account) do
-            create(:payroll_account, :argyle_bob, cbv_flow: cbv_flow)
-          end
+          # let!(:argyle_account) do
+          #   create(:payroll_account, :argyle_bob, cbv_flow: cbv_flow)
+          # end
 
           before do
             argyle_stub_request_identities_response('bob')
@@ -171,7 +204,7 @@ end
 
             expect(response).to be_successful
             expect(doc.css("title").text).to include("Review your income report")
-            expect(doc.at_xpath("//*[@data-testid=\"paystub-table-caption\"]").content).to include("Employer 1: Acme Corporation")
+            expect(doc.at_xpath("//*[@data-testid=\"paystub-table-caption\"]").content).to include("Employer 1: Lyft Driver")
             expect(doc).to have_css("table.usa-table.usa-table--borderless.width-full.usa-table--stacked", count: 1)
             within("table.usa-table.usa-table--borderless.width-full.usa-table--stacked") do
               expect(page).to have_css("tr", count: 3)

@@ -18,7 +18,7 @@ RSpec.describe Users::OmniauthCallbacksController do
   describe "#sandbox" do
     context "when the user is authorized" do
       before do
-        allow(Rails.application.config.client_agencies["sandbox"])
+        allow(ClientAgencyConfig.instance["sandbox"])
           .to receive(:authorized_emails).and_return(test_email)
       end
 

@@ -44,12 +44,6 @@ module IvCbvPayroll
     config.autoload_paths += %W[#{config.root}/app/helpers]
     config.autoload_paths += %W[#{config.root}/app/controllers/concerns]
 
-    # CBV configuration
-    config.client_agencies = ClientAgencyConfig.new(Rails.root.join("config", "client-agency-config"),
-                                                    (Rails.env == "development" || Rails.env == "test"))
-    config.supported_providers = (ENV["SUPPORTED_PROVIDERS"] || "pinwheel")&.split(",")&.map(&:to_sym)
-    config.cbv_session_expires_after = 30.minutes
-
     # Configure allowed hosts
     base = ENV["DOMAIN_NAME"]
     config.hosts << base
@@ -66,5 +60,24 @@ module IvCbvPayroll
     config.active_record.encryption.primary_key = ENV["ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY"]
     config.active_record.encryption.deterministic_key = ENV["ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY"]
     config.active_record.encryption.key_derivation_salt = ENV["ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT"]
+
+    config.supported_providers = (ENV["SUPPORTED_PROVIDERS"] || "pinwheel")&.split(",")&.map(&:to_sym)
+
+    config.after_initialize do
+      begin
+        # CBV configuration
+        config.cbv_session_expires_after = 30.minutes
+
+        Rails.application.config.session_store :cookie_store,
+          key: "_iv_cbv_payroll_session",
+          expires_after: Rails.application.config.cbv_session_expires_after
+        rescue => e
+          puts "after_initialize CRASH: #{e}"
+      end
+    end
+  end
+
+  def self.client_agencies
+    @client_agencies ||= ClientAgencyConfig.instance((Rails.env == "development" || Rails.env == "test"))
   end
 end

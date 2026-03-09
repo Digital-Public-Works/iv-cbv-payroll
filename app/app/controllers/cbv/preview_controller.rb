@@ -148,7 +148,7 @@ class Cbv::PreviewController < ApplicationController
     client_agency_id = params[:client_agency_id] || "sandbox"
 
     # Validate client_agency_id
-    unless Rails.application.config.client_agencies.client_agency_ids.include?(client_agency_id)
+    unless ClientAgencyConfig.client_agency_ids.include?(client_agency_id)
       return render plain: "Invalid client_agency_id", status: :unprocessable_entity
     end
 

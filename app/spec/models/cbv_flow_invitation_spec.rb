@@ -87,10 +87,27 @@ RSpec.describe CbvFlowInvitation, type: :model do
     end
     let(:now) { Time.now }
 
+    let(:partner_app_attributes) do
+      PartnerApplicationAttribute.where(partner_config: client_agency_id).each_with_object({}) do |attr, h|
+        h[attr.name] = attr
+      end.with_indifferent_access
+    end
+
+    let(:client_agency) do
+      double("ClientAgency",
+        invitation_valid_days: invitation_valid_days,
+        applicant_attributes: partner_app_attributes,
+        require_applicant_information_on_invitation: true,
+        timezone: "America/New_York"
+      )
+    end
+
     before do
-      allow(Rails.application.config.client_agencies[client_agency_id])
-        .to receive(:invitation_valid_days)
-        .and_return(invitation_valid_days)
+      ClientAgencyConfig.reset!
+
+      allow(ClientAgencyConfig.instance).to receive(:[])
+            .with(client_agency_id)
+            .and_return(client_agency)
     end
 
     around do |ex|
@@ -144,9 +161,29 @@ RSpec.describe CbvFlowInvitation, type: :model do
     end
     let(:invitation_sent_at) { Time.new(2024, 8,  1, 12, 0, 0, "-04:00") }
 
+    let(:partner_app_attributes) do
+      PartnerApplicationAttribute.where(partner_config: client_agency_id).each_with_object({}) do |attr, h|
+        h[attr.name] = attr
+      end.with_indifferent_access
+    end
+
+    let(:client_agency) do
+      double("ClientAgency",
+        invitation_valid_days: invitation_valid_days,
+        applicant_attributes: partner_app_attributes,
+        require_applicant_information_on_invitation: true,
+        timezone: "America/New_York"
+      )
+    end
+
     before do
-      allow(Rails.application.config.client_agencies[client_agency_id])
-        .to receive(:invitation_valid_days).and_return(invitation_valid_days)
+      ClientAgencyConfig.reset!
+
+      allow(ClientAgencyConfig.instance).to receive(:[])
+            .with(client_agency_id)
+            .and_return(client_agency)
+
+      # stub_client_agency_config_value("sandbox", "applicant_attributes", ClientAgencyConfig.instance.application_attributes)
     end
 
     it "returns the end of the day the 14th day after the invitation was sent" do
@@ -187,6 +224,7 @@ RSpec.describe CbvFlowInvitation, type: :model do
     let(:user) { create(:user) }
     let(:cbv_applicant) { create(:cbv_applicant) }
     let(:invitation) do
+      binding.pry
       create(:cbv_flow_invitation,
              user: user,
              cbv_applicant: cbv_applicant,

@@ -349,7 +349,7 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
 
     context "for a client agency with pay_income_days > 90 days" do
       before do
-        allow(Rails.application.config.client_agencies[cbv_flow.client_agency_id])
+        allow(ClientAgencyConfig.instance[cbv_flow.client_agency_id])
           .to receive(:pay_income_days)
           .and_return({ w2: 182, gig: 182 })
 

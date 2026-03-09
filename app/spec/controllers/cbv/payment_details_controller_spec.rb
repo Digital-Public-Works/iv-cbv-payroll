@@ -16,7 +16,7 @@ RSpec.describe Cbv::PaymentDetailsController do
     let(:cbv_flow) do
       create(:cbv_flow,
         :invited,
-        :with_pinwheel_account,
+        :with_argyle_account,
         with_errored_jobs: errored_jobs,
         created_at: current_time,
         supported_jobs: supported_jobs,
@@ -26,7 +26,7 @@ RSpec.describe Cbv::PaymentDetailsController do
     let!(:payroll_account) do
       create(
         :payroll_account,
-        :pinwheel_fully_synced,
+        :argyle_fully_synced,
         with_errored_jobs: errored_jobs,
         cbv_flow: cbv_flow,
         aggregator_account_id: account_id,
@@ -488,7 +488,7 @@ RSpec.describe Cbv::PaymentDetailsController do
         context "when client agency has report_customization_show_earnings_list enabled" do
           before do
             cbv_flow.update!(client_agency_id: "pa_dhs")
-            allow(ClientAgencyConfig.client_agencies["pa_dhs"]).to receive(:report_customization_show_earnings_list).and_return(true)
+            allow(ClientAgencyConfig.instance["pa_dhs"]).to receive(:report_customization_show_earnings_list).and_return(true)
           end
 
           it "shows gross pay line items section in the rendered HTML" do
@@ -505,7 +505,7 @@ RSpec.describe Cbv::PaymentDetailsController do
         context "when client agency has report_customization_show_earnings_list disabled" do
           before do
             cbv_flow.update!(client_agency_id: "sandbox")
-            allow(ClientAgencyConfig.client_agencies["sandbox"]).to receive(:report_customization_show_earnings_list).and_return(false)
+            allow(ClientAgencyConfig.instance["sandbox"]).to receive(:report_customization_show_earnings_list).and_return(false)
           end
 
           it "does not show gross pay line items section in the rendered HTML" do

@@ -21,6 +21,8 @@ RSpec.describe Api::InvitationsController do
 
     before do
       request.headers["Authorization"] = "Bearer #{api_access_token_instance.access_token}"
+      PartnerApplicationAttribute.where.not(name: 'first_name').update_all(required: false)
+      PartnerApplicationAttribute.where(partner_id: %w[la_ldh az_des pa_dhs]).update_all(required: false)
     end
 
     subject do
@@ -205,7 +207,7 @@ RSpec.describe Api::InvitationsController do
 
       expiration_from_response = Date.parse(parsed_response["expiration_date"].to_s)
 
-      agency_config = ClientAgencyConfig.client_agencies[client_agency_id.to_s]
+      agency_config = ClientAgencyConfig.instance[client_agency_id.to_s]
 
       expected_expiration_date =
         (invitation.created_at.in_time_zone(agency_config.timezone) + agency_config.invitation_valid_days.days).to_date
