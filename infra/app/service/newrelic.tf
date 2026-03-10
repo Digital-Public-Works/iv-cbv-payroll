@@ -22,6 +22,10 @@ resource "aws_iam_role" "newrelic_metrics" {
       }
     ]
   })
+
+  lifecycle {
+    ignore_changes = [tags, tags_all]
+  }
 }
 
 resource "aws_iam_role_policy_attachment" "newrelic_metrics" {
