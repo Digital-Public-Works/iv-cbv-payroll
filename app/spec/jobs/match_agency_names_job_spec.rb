@@ -31,7 +31,20 @@ RSpec.describe MatchAgencyNamesJob do
     let(:cbv_flow) { create(:cbv_flow, :with_argyle_account, cbv_applicant: cbv_applicant) }
 
     it "tracks an event with the name match results" do
-      expect_any_instance_of(GenericEventTracker)
+      tracker_instance = instance_double(GenericEventTracker)
+      allow(GenericEventTracker).to receive(:new).and_return(tracker_instance)
+
+      expect(tracker_instance)
+        .to receive(:track)
+        .with("ArgylePaystubHours", nil, include(
+          time: anything,
+          argyle_total_hours: anything,
+          gross_pay_sum: anything,
+          synthetic_total_hours: anything,
+          argyle_hours_null: anything
+        )).exactly(10).times
+
+      expect(tracker_instance)
         .to receive(:track)
         .with("IncomeSummaryMatchedAgencyNames", nil, include(
           cbv_flow_id: cbv_flow.id,
@@ -41,7 +54,7 @@ RSpec.describe MatchAgencyNamesJob do
           close_match_count: 0,
           approximate_match_count: 0,
           none_match_count: 1,
-        ))
+        )).once
 
       subject
     end

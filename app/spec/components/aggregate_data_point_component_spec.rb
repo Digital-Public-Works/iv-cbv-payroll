@@ -133,6 +133,22 @@ RSpec.describe AggregateDataPointComponent, type: :component do
         "$100.00 Hourly"
       )
     end
+
+    it "renders helpful text when null amount or unit" do
+      expect(render_inline(described_class.new(:hourly_rate, nil, "hourly"))
+      ).to have_text("Rate not available.")
+      expect(render_inline(described_class.new(:hourly_rate, " ", "hourly"))
+      ).to have_text("Rate not available.")
+      expect(render_inline(described_class.new(:hourly_rate, "20.00", ""))
+      ).to have_text("Rate not available.")
+    end
+
+    it "does not replace zero amount with help text" do
+      expect(render_inline(described_class.new(:hourly_rate, "0", "hourly"))
+      ).to have_text("0.00")
+      expect(render_inline(described_class.new(:hourly_rate, "0.00", "annually"))
+      ).to have_text("0 annually")
+    end
   end
 
   describe "#employer_phone" do

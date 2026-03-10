@@ -5,18 +5,20 @@ class Api::InvitationsController < ApplicationController
   before_action :authenticate
 
   def create
-    @cbv_flow_invitation = CbvInvitationService.new(event_logger)
+    cbv_flow_invitation = CbvInvitationService.new(event_logger)
       .invite(cbv_flow_invitation_params, @current_user, delivery_method: nil)
 
-    errors = @cbv_flow_invitation.errors
+    errors = cbv_flow_invitation.errors
     if errors.any?
+      e = errors.full_messages.join(", ")
+      Rails.logger.warn("Error inviting applicant: #{e}")
       return render json: errors_to_json(errors), status: :unprocessable_entity
     end
 
     render json: {
-      tokenized_url: @cbv_flow_invitation.to_url,
-      expiration_date: @cbv_flow_invitation.expires_at_local,
-      language: @cbv_flow_invitation.language
+      tokenized_url: cbv_flow_invitation.to_url,
+      expiration_date: cbv_flow_invitation.expires_at_local,
+      language: cbv_flow_invitation.language
       # TODO: Determine if we actually want to echo this data back, maybe should be config param?
       # agency_partner_metadata: allowed_metadata_params
     }, status: :created
@@ -29,7 +31,7 @@ class Api::InvitationsController < ApplicationController
 
     # Permit top-level params of the invitation itself, while merging back in
     # the allowed applicant attributes.
-    permitted = params.without(:client_agency_id, :agency_partner_metadata).permit(:language, :email_address, :user_id)
+    permitted = params.without(:client_agency_id, :agency_partner_metadata).permit(:language, :email_address, :user_id, :expiration_date, :expiration_days)
     permitted.deep_merge!(
       client_agency_id: client_agency_id,
       email_address: @current_user.email,
