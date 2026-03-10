@@ -176,8 +176,6 @@ RSpec.configure do |config|
   config.include ActiveJob::TestHelper
   config.before(:each) { clear_enqueued_jobs && clear_performed_jobs }
 
-  # config.fixture_paths = [Rails.root.join('test/fixtures')]
-
 
   # Print some helpful debugging info about the last test failure, since
   # sometimes it's a bit hard to tell which page the error is coming from.
