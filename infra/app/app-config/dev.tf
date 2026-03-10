@@ -11,7 +11,8 @@ module "dev_config" {
   has_incident_management_service = local.has_incident_management_service
 
   database_serverless_min_capacity = 0.5
-  database_serverless_max_capacity = 5.0
+  database_serverless_max_capacity = 1.0
+  enable_aws_backup                = true
 
   # These numbers are a starting point based on this article
   # Update the desired instance size and counts based on the project's specific needs

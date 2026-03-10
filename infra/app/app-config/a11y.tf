@@ -16,6 +16,7 @@ module "a11y_config" {
   # https://aws.amazon.com/blogs/database/introducing-scaling-to-0-capacity-with-amazon-aurora-serverless-v2/
   database_serverless_min_capacity = 0.5
   database_serverless_max_capacity = 1.0
+  enable_aws_backup                = true
 
   # These numbers are a starting point based on this article
   # Update the desired instance size and counts based on the project's specific needs
