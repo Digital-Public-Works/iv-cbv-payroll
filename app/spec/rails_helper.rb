@@ -98,28 +98,6 @@ RSpec.configure do |config|
   # instead of true.
   config.use_transactional_fixtures = true
 
-  # config.before(:suite) do
-  #   #ActiveRecord::FixtureSet.reset_cache
-  #   sandbox = PartnerConfig.find_by(partner_id: 'sandbox') || FactoryBot.create(:partner_config)
-  #   required_attributes = [
-  #     { trait: nil, name: 'first_name' },
-  #     { trait: :middle_name, name: 'xxxmiddle_name' },
-  #     { trait: :last_name, name: 'last_name' },
-  #     { trait: :date_of_birth, name: 'date_of_birth' },
-  #     { trait: :case_number, name: 'case_number' }
-  #   ]
-
-  #   required_attributes.each do |attr|
-  #     unless PartnerApplicationAttribute.exists?(partner_config: sandbox, name: attr[:name])
-  #       if attr[:trait]
-  #         FactoryBot.create(:partner_application_attribute, attr[:trait], partner_config: sandbox)
-  #       else
-  #         FactoryBot.create(:partner_application_attribute, partner_config: sandbox)
-  #       end
-  #     end
-  #   end
-  # end
-
   config.before(:suite) do
     partners = [ nil, :az_des, :la_ldh, :pa_dhs ]
 
@@ -162,8 +140,6 @@ RSpec.configure do |config|
     Rails.application.reload_routes!
   end
 
-
-  # config.include_context "partner setup"
 
   config.before(:each) do
     ClientAgencyConfig.reset!
