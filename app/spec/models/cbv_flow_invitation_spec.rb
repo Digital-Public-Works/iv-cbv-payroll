@@ -224,7 +224,6 @@ RSpec.describe CbvFlowInvitation, type: :model do
     let(:user) { create(:user) }
     let(:cbv_applicant) { create(:cbv_applicant) }
     let(:invitation) do
-      binding.pry
       create(:cbv_flow_invitation,
              user: user,
              cbv_applicant: cbv_applicant,

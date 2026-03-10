@@ -23,7 +23,7 @@ class CbvFlowInvitation < ApplicationRecord
   before_create :set_expires_at, if: :new_record?
   before_validation :normalize_language
 
-  validates :client_agency_id, inclusion: ClientAgencyConfig.client_agency_ids
+  validates :client_agency_id, inclusion: { in: ->(_) { ClientAgencyConfig.instance.client_agency_ids } }
   validates :email_address, format: { with: EMAIL_REGEX, message: :invalid_format }
   validates_associated :cbv_applicant
   validates :language, inclusion: {

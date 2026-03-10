@@ -159,7 +159,7 @@ RSpec.configure do |config|
     end
 
     ClientAgencyConfig.reset!
-    binding.pry
+    Rails.application.reload_routes!
   end
 
 

@@ -24,17 +24,6 @@ RSpec.describe Cbv::SummariesController do
   let(:account_id) { "019571bc-2f60-3955-d972-dbadfe0913a8" }
 
 
-  # let(:payroll_account) do
-  #   create(
-  #     :payroll_account,
-  #     :argyle_fully_synced,
-  #     with_errored_jobs: errored_jobs,
-  #     cbv_flow: cbv_flow,
-  #     aggregator_account_id: account_id,
-  #     supported_jobs: supported_jobs,
-  #   )
-  # end
-
   let(:mock_client_agency) { instance_double(ClientAgencyConfig::ClientAgency) }
 
 
@@ -121,9 +110,9 @@ end
       # end
 
       context "with both Argyle and Pinwheel data" do
-        # let!(:argyle_account) do
-        #   create(:payroll_account, :argyle_bob, cbv_flow: cbv_flow)
-        # end
+        let!(:argyle_account) do
+          create(:payroll_account, :argyle_bob, cbv_flow: cbv_flow)
+        end
 
         # let(:pinwheel_identities_json) { pinwheel_load_relative_json_file('request_identity_response.json') }
         # let(:pinwheel_incomes_json) { pinwheel_load_relative_json_file('request_income_metadata_response.json') }
@@ -156,7 +145,6 @@ end
           argyle_stub_request_account_response('bob')
 
 
-
           # Note: there are conflict issues on the regex stubs between argyle and pinwheel.
           # So hardcoding the PinwheelService calls to avoid this conflict.  This is unique to testing the CompositeReport
           # allow_any_instance_of(Aggregators::Sdk::PinwheelService).to receive(:fetch_identity_api).and_return(pinwheel_identities_json)
@@ -187,9 +175,9 @@ end
         end
 
         context "Argyle with 3 paystubs" do
-          # let!(:argyle_account) do
-          #   create(:payroll_account, :argyle_bob, cbv_flow: cbv_flow)
-          # end
+          let!(:argyle_account) do
+            create(:payroll_account, :argyle_bob, cbv_flow: cbv_flow)
+          end
 
           before do
             argyle_stub_request_identities_response('bob')

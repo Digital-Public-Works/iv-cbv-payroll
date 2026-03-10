@@ -141,7 +141,6 @@ class CbvApplicant < ApplicationRecord
     end
   end
 
-  # TODO: Verify this
   def get_required_applicant_attributes
     agency_config&.applicant_attributes&.select { |key, attributes| attributes["required"] }&.keys&.map(&:to_sym) || []
   end

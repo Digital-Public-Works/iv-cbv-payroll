@@ -76,9 +76,6 @@ Rails.application.routes.draw do
       resource :applicant_information, only: %i[show update]
 
       # Generic link
-      # This code runs during every boot of the app, including the migrations necessary top create the partner_configs table.
-      # Skip if the table hasn't been created yet.
-      # The partner application attributes are added last, so if they are not present, the db is missing tables needed to initialize from db configuration.
       begin
         if ActiveRecord::Base.connection.data_source_exists?(:partner_application_attributes)
           scope "links/:client_agency_id", constraints: { client_agency_id: Regexp.union(ClientAgencyConfig.client_agency_ids) } do
@@ -110,7 +107,7 @@ Rails.application.routes.draw do
       end
     end
 
-    # This code runs during every boot of the app, including the migrations necessary top create the partner_configs table.
+    # This code runs during every boot of the app, including the migrations necessary to create the partner_configs table.
     # Skip if the table hasn't been created yet.
     # The partner application attributes are added last, so if they are not present, the db is missing tables needed to initialize from db configuration.
     begin
