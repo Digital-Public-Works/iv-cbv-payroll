@@ -14,7 +14,7 @@ module "a11y_config" {
   # charges when the ECS container is connected.  This saves operational overhead
   # from needed to destroy the DB every time we spin up and down the instance.
   # https://aws.amazon.com/blogs/database/introducing-scaling-to-0-capacity-with-amazon-aurora-serverless-v2/
-  database_serverless_min_capacity = 0.5
+  database_serverless_min_capacity = 0
   database_serverless_max_capacity = 1.0
   enable_aws_backup                = true
 
