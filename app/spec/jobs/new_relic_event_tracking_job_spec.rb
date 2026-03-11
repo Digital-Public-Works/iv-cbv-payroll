@@ -11,19 +11,21 @@ RSpec.describe NewRelicEventTrackingJob, type: :job do
     invitation_id: "9001",
     errors: "error1, error2, error3"
   } }
+  let(:tracker) { instance_double(NewRelicEventTracker) }
+
+  before do
+    allow(NewRelicEventTracker).to receive(:new).and_return(tracker)
+  end
 
   context "#perform" do
     it "passes the attributes to NewRelicEventTracker" do
-      expect_any_instance_of(NewRelicEventTracker).to receive(:track).with(event_type, attributes)
+      expect(tracker).to receive(:track).with(event_type, attributes)
 
       described_class.perform_now(event_type, attributes)
     end
 
     it "attaches the correct timestamps to the tracker" do
       travel_to(reference_time) do
-        tracker = instance_double(NewRelicEventTracker)
-        allow(NewRelicEventTracker).to receive(:new).and_return(tracker)
-
         described_class.perform_later(event_type, attributes)
 
         job = ActiveJob::Base.queue_adapter.enqueued_jobs.last
@@ -41,7 +43,7 @@ RSpec.describe NewRelicEventTrackingJob, type: :job do
     end
 
     it "raises an error when it fails to create a job" do
-      allow_any_instance_of(NewRelicEventTracker).to receive(:track).and_raise(StandardError.new('Test error'))
+      allow(tracker).to receive(:track).and_raise(StandardError.new('Test error'))
       expect { described_class.perform_now(event_type, attributes) }.to raise_error(StandardError, 'Test error')
     end
   end
