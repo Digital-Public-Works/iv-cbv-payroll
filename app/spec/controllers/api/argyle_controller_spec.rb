@@ -39,7 +39,7 @@ RSpec.describe Api::ArgyleController do
       end
 
       it "tracks a Mixpanel event" do
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantBeganLinkingEmployer", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantBeganLinkingEmployer", anything, hash_including(
             cbv_flow_id: cbv_flow.id,
             invitation_id: cbv_flow.cbv_flow_invitation_id,
           ))

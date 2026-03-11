@@ -44,7 +44,7 @@ RSpec.describe Webhooks::Pinwheel::EventsController do
       end
 
       it "creates a PinwheelAccount object and logs events" do
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantCreatedPinwheelAccount", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantCreatedPinwheelAccount", anything, hash_including(
             cbv_flow_id: cbv_flow.id,
             invitation_id: cbv_flow.cbv_flow_invitation_id,
             platform_name: "acme"
@@ -242,8 +242,8 @@ RSpec.describe Webhooks::Pinwheel::EventsController do
             expect(event_logger).to receive(:track).with("ApplicantFinishedPinwheelSync", anything, anything)
             expect(event_logger).to receive(:track).with("ApplicantReportFailedUsefulRequirements", anything, anything)
 
-            expect(NewRelic::Agent).to receive(:record_custom_event).with(TrackEvent::ApplicantReportAttemptedUsefulRequirements, anything)
-            expect(NewRelic::Agent).to receive(:record_custom_event).with(TrackEvent::ApplicantReportFailedUsefulRequirements, anything)
+            expect(NewRelic::EventLogger).to receive(:track).with(TrackEvent::ApplicantReportAttemptedUsefulRequirements, anything)
+            expect(NewRelic::EventLogger).to receive(:track).with(TrackEvent::ApplicantReportFailedUsefulRequirements, anything)
 
             post :create, params: valid_params
           end

@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe EventTrackingJob, type: :job do
+RSpec.describe MixpanelEventTrackingJob, type: :job do
   context "when a request exists" do
     it "passes the right data to mixpanel" do
       request_data = {

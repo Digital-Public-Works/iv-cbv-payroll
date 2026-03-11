@@ -2,7 +2,7 @@ require "rails_helper"
 
 RSpec.describe Cbv::GenericLinksController do
   before do
-    allow(EventTrackingJob).to receive(:perform_later)
+    allow(MixpanelEventTrackingJob).to receive(:perform_later)
   end
   describe '#show' do
     context 'when the hostname matches a client agency domain and the pilot is active' do
@@ -44,7 +44,7 @@ RSpec.describe Cbv::GenericLinksController do
         end
 
         it "tracks ApplicantClickedGenericLink event with is_new_session: true" do
-          expect(EventTrackingJob).to have_received(:perform_later).with(
+          expect(MixpanelEventTrackingJob).to have_received(:perform_later).with(
             "ApplicantClickedGenericLink",
             anything,
             hash_including(
@@ -60,7 +60,7 @@ RSpec.describe Cbv::GenericLinksController do
           let(:headers) { { "User-Agent" => nil } }
 
           it "tracks the ApplicantClickedGenericLink event" do
-            expect(EventTrackingJob).to have_received(:perform_later)
+            expect(MixpanelEventTrackingJob).to have_received(:perform_later)
               .with("ApplicantClickedGenericLink", anything, anything)
           end
         end
@@ -69,7 +69,7 @@ RSpec.describe Cbv::GenericLinksController do
           let(:headers) { { "User-Agent" => "Go-http-client/1.1" } }
 
           it "does not track the ApplicantClickedGenericLink event" do
-            expect(EventTrackingJob).not_to have_received(:perform_later)
+            expect(MixpanelEventTrackingJob).not_to have_received(:perform_later)
               .with("ApplicantClickedGenericLink", anything, anything)
           end
         end
@@ -94,7 +94,7 @@ RSpec.describe Cbv::GenericLinksController do
         end
 
         it "tracks ApplicantClickedGenericLink event with is_new_session: false" do
-          expect(EventTrackingJob).to have_received(:perform_later).with(
+          expect(MixpanelEventTrackingJob).to have_received(:perform_later).with(
             "ApplicantClickedGenericLink",
             anything,
             hash_including(
@@ -117,7 +117,7 @@ RSpec.describe Cbv::GenericLinksController do
         end
 
         it "tracks event with is_new_session: true" do
-          expect(EventTrackingJob).to have_received(:perform_later).with(
+          expect(MixpanelEventTrackingJob).to have_received(:perform_later).with(
             "ApplicantClickedGenericLink",
             anything,
             hash_including(is_new_session: true)
@@ -131,7 +131,7 @@ RSpec.describe Cbv::GenericLinksController do
         end
 
         it "includes origin in tracking event" do
-          expect(EventTrackingJob).to have_received(:perform_later).with(
+          expect(MixpanelEventTrackingJob).to have_received(:perform_later).with(
             "ApplicantClickedGenericLink",
             anything,
             hash_including(origin: "mail")
