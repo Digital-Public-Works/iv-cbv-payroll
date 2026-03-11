@@ -2,7 +2,7 @@
 FactoryBot.define do
   factory :partner_config do
     partner_id { "sandbox" }
-    name { "bbbbCBV Test Agency" }
+    name { "CBV Test Agency" }
     active_demo { true }
     active_prod { true }
     website { "https://www.example.com/contact" }
@@ -10,7 +10,7 @@ FactoryBot.define do
     domain { "sandbox" }
     argyle_environment { "sandbox" }
     logo_path { "" }
-    generic_links_enabled { false }
+    generic_links_enabled { true }
     invitation_links_enabled { true }
     transmission_method { "shared_email" }
     pilot_ended { false }

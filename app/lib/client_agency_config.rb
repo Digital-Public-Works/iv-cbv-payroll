@@ -66,7 +66,6 @@ class ClientAgencyConfig
       agency_contact_website
       agency_domain
       authorized_emails
-      caseworker_feedback_form
       default_origin
       invitation_valid_days
       logo_path
