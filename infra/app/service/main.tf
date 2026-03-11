@@ -225,6 +225,9 @@ module "service" {
   extra_environment_variables = merge(
     {
       BUCKET_NAME = local.storage_config.bucket_name
+      # Queue suffix for SQS queue names. Standard environments (demo, prod) have no suffix.
+      # Non-standard environments (a11y, preview) append "_<environment_name>" to queue names.
+      QUEUE_SUFFIX = var.environment_name != "demo" && var.environment_name != "prod" ? "_${var.environment_name}" : ""
     },
     local.ssm_env_vars,
     local.identity_provider_environment_variables,
