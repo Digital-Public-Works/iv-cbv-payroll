@@ -10,9 +10,20 @@ data "aws_route53_zone" "domain" {
   private_zone = false
 }
 
+# SES Configuration Set "require-tls" is created in standard environments (demo, prod) and shared across all environments.
+# Other environments (a11y, preview) reference it by name.
+resource "aws_ses_configuration_set" "require_tls" {
+  count = var.environment_name == "demo" || var.environment_name == "prod" ? 1 : 0
+  name  = "require-tls"
+
+  delivery_options {
+    tls_policy = "Require"
+  }
+}
+
 resource "aws_sesv2_email_identity" "verified_domain" {
   email_identity         = var.domain
-  configuration_set_name = aws_ses_configuration_set.require_tls.name
+  configuration_set_name = (var.environment_name == "demo" || var.environment_name == "prod") ? aws_ses_configuration_set.require_tls[0].name : "require-tls"
 }
 
 resource "aws_ses_email_identity" "verified_emails" {
@@ -60,12 +71,4 @@ resource "aws_route53_record" "dmarc_record" {
   type    = "TXT"
   ttl     = "300"
   records = ["v=DMARC1; p=none;"]
-}
-
-resource "aws_ses_configuration_set" "require_tls" {
-  name = "require-tls"
-
-  delivery_options {
-    tls_policy = "Require"
-  }
 }

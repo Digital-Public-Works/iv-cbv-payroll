@@ -31,7 +31,7 @@ locals {
 ## SES Configuration
 ############################################################################################
 resource "aws_sesv2_configuration_set_event_destination" "email_notifications" {
-  configuration_set_name = aws_ses_configuration_set.require_tls.name
+  configuration_set_name = (var.environment_name == "demo" || var.environment_name == "prod") ? aws_ses_configuration_set.require_tls[0].name : "require-tls"
   # Use environment-suffixed name only for non-standard environments (a11y, preview)
   # Standard environments (demo, prod) use original name for backward compatibility
   event_destination_name = "eventbridge-email-events${local.suffix}"
