@@ -11,7 +11,7 @@ class ApplicationJob < ActiveJob::Base
     NewRelic::Agent.record_custom_event(TrackEvent::QueueJobFailed, {
       job_class: (self.class.name || "UnknownJob"),
       queue_name: (self.queue_name || "default"),
-      failed_at: Time.now.to_s,
+      failed_at: Time.current.to_s,
       error_class: error.class.name,
       error_message: error.message
     })

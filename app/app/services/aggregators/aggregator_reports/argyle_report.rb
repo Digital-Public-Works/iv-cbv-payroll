@@ -53,7 +53,7 @@ module Aggregators::AggregatorReports
 
       if self.has_warnings?
         NewRelic::EventLogger.track(TrackEvent::ArgyleDataUnexpectedHours, {
-          time: Time.now.to_i,
+          time: Time.current.to_i,
           cbv_flow_id: payroll_account&.cbv_flow_id,
           warnings: self.warnings.full_messages.join(", ")
         })

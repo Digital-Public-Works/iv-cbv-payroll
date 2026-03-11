@@ -54,7 +54,7 @@ class Webhooks::Pinwheel::EventsController < ApplicationController
   def process_webhook_event
     if @webhook_event.event_name == "account.added"
       event_logger.track(TrackEvent::ApplicantCreatedPinwheelAccount, request, {
-        time: Time.now.to_i,
+        time: Time.current.to_i,
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,
         cbv_flow_id: @cbv_flow.id,
         client_agency_id: @cbv_flow.client_agency_id,
@@ -81,14 +81,14 @@ class Webhooks::Pinwheel::EventsController < ApplicationController
       paystub_gross_pay_amounts = report.paystubs.filter_map(&:gross_pay_amount)
 
       event_logger.track(TrackEvent::ApplicantFinishedPinwheelSync, request, {
-        time: Time.now.to_i,
+        time: Time.current.to_i,
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,
         cbv_flow_id: @cbv_flow.id,
         client_agency_id: @cbv_flow.client_agency_id,
         device_id: @cbv_flow.device_id,
         invitation_id: @cbv_flow.cbv_flow_invitation_id,
         pinwheel_environment: agency_config[@cbv_flow.client_agency_id].pinwheel_environment,
-        sync_duration_seconds: Time.now - @payroll_account.created_at,
+        sync_duration_seconds: Time.current - @payroll_account.created_at,
 
         # #####################################################################
         # Add attributes to track provider data quality.
@@ -182,7 +182,7 @@ class Webhooks::Pinwheel::EventsController < ApplicationController
     begin
       # Track all the attempts so that we can alert on % that fail
       NewRelic::EventLogger.track(TrackEvent::ApplicantReportAttemptedUsefulRequirements, {
-        time: Time.now.to_i,
+        time: Time.current.to_i,
         cbv_applicant_id: @cbv_flow&.cbv_applicant_id,
         cbv_flow_id: @cbv_flow&.id,
         device_id: @cbv_flow&.device_id,
@@ -195,7 +195,7 @@ class Webhooks::Pinwheel::EventsController < ApplicationController
     report_is_valid = report.valid?(:useful_report)
     if report_is_valid
       event_logger.track(TrackEvent::ApplicantReportMetUsefulRequirements, request,
-        time: Time.now.to_i,
+        time: Time.current.to_i,
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,
         cbv_flow_id: @cbv_flow.id,
         device_id: @cbv_flow.device_id,
@@ -203,7 +203,7 @@ class Webhooks::Pinwheel::EventsController < ApplicationController
       )
     else
       event_logger.track(TrackEvent::ApplicantReportFailedUsefulRequirements, request,
-        time: Time.now.to_i,
+        time: Time.current.to_i,
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,
         cbv_flow_id: @cbv_flow.id,
         device_id: @cbv_flow.device_id,
@@ -212,7 +212,7 @@ class Webhooks::Pinwheel::EventsController < ApplicationController
       )
 
       NewRelic::EventLogger.track(TrackEvent::ApplicantReportFailedUsefulRequirements, {
-        time: Time.now.to_i,
+        time: Time.current.to_i,
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,
         cbv_flow_id: @cbv_flow.id,
         device_id: @cbv_flow.device_id,
