@@ -27,7 +27,7 @@ RSpec.describe Cbv::BaseController, type: :controller do
 
     context "when no token or session is present" do
       it "redirects to root with cbv_flow_timeout parameter and flash message" do
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantAccessedFlowWithoutCookie", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantAccessedFlowWithoutCookie", anything, hash_including(
           time: kind_of(Integer)
         ))
         get :show
@@ -68,8 +68,8 @@ RSpec.describe Cbv::BaseController, type: :controller do
             member_name: "Dr Venture"
           } ]
         )
-      expect(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
-      expect(EventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
+      expect(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+      expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
           household_member_count: 3
           ))
       get :show, params: { token: cbv_flow.cbv_flow_invitation.auth_token }
@@ -79,8 +79,8 @@ RSpec.describe Cbv::BaseController, type: :controller do
 
     it "identifies one household member if no income changes relevant" do
       create(:cbv_flow, cbv_flow_invitation: cbv_flow.cbv_flow_invitation)
-      expect(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
-      expect(EventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
+      expect(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+      expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
           household_member_count: 1
           ))
       get :show, params: { token: cbv_flow.cbv_flow_invitation.auth_token }
@@ -90,8 +90,8 @@ RSpec.describe Cbv::BaseController, type: :controller do
 
     it "identifies number_links_started from cbv flows generated" do
       create(:cbv_flow, cbv_flow_invitation: cbv_flow.cbv_flow_invitation)
-      expect(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
-      expect(EventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
+      expect(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+      expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
           flows_started_count: 3
           ))
       get :show, params: { token: cbv_flow.cbv_flow_invitation.auth_token }
@@ -106,8 +106,8 @@ RSpec.describe Cbv::BaseController, type: :controller do
       end
 
       it "sets the origin in the clicked invitation event" do
-        expect(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
           origin: "email"
         ))
         get :show, params: { token: cbv_flow.cbv_flow_invitation.auth_token, origin: "email" }
@@ -117,8 +117,8 @@ RSpec.describe Cbv::BaseController, type: :controller do
       end
 
       it "cleans the supplied origin parameter if set" do
-        expect(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
           origin: "mfb_dashboard"
         ))
         get :show, params: { token: cbv_flow.cbv_flow_invitation.auth_token, origin: " MFB dashboard" }
@@ -129,8 +129,8 @@ RSpec.describe Cbv::BaseController, type: :controller do
 
       it "resets the origin if it is already present" do
         session[:cbv_origin] = "test"
-        expect(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
           origin: "email"
         ))
         get :show, params: { token: cbv_flow.cbv_flow_invitation.auth_token, origin: "email" }
@@ -141,8 +141,8 @@ RSpec.describe Cbv::BaseController, type: :controller do
 
       it "does not set an origin if no parameter or agency default are supplied" do
         request.host = nil
-        expect(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
           origin: nil
         ))
         get :show, params: { token: cbv_flow.cbv_flow_invitation.auth_token }
@@ -153,8 +153,8 @@ RSpec.describe Cbv::BaseController, type: :controller do
 
       it "does set an origin if no parameter is supplied but agency default exists" do
         stub_client_agency_config_value("la_ldh", "default_origin", "sms")
-        expect(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
           origin: "sms"
         ))
         get :show, params: { token: cbv_flow.cbv_flow_invitation.auth_token }
