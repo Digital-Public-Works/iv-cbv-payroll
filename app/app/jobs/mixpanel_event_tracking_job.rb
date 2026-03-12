@@ -1,9 +1,7 @@
 class MixpanelEventTrackingJob < ApplicationJob
-  queue_as { queue_name_with_suffix(:mixpanel_events) }
+  queue_as { queue_with_suffix(:mixpanel_events) }
 
   RequestAttributes = Struct.new(:remote_ip, :headers)
-
-
 
   def perform(event_type, request_data, attributes)
     if request_data.present?

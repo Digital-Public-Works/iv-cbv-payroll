@@ -1,5 +1,5 @@
 class NewRelicEventTrackingJob < ApplicationJob
-  queue_as { queue_name_with_suffix(:newrelic_events) }
+  queue_as { queue_with_suffix(:newrelic_events) }
 
   def perform(event_type, attributes)
     event_tracker = NewRelicEventTracker.new

@@ -1,9 +1,7 @@
 class ApplicationJob < ActiveJob::Base
-  retry_on Exception, wait: :polynomially_longer, attempts: 3
+  include Queueable
 
-  def self.queue_name_with_suffix(base_name)
-    "#{base_name}#{ENV.fetch('QUEUE_SUFFIX', '')}"
-  end
+  retry_on Exception, wait: :polynomially_longer, attempts: 3
 
   def event_logger
     @event_logger ||= GenericEventTracker.new
