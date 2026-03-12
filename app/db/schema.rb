@@ -80,11 +80,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_25_160200) do
 
   create_table "partner_application_attributes", force: :cascade do |t|
     t.bigint "partner_config_id", null: false
-    t.string "partner_id", null: false
     t.string "name", null: false
     t.text "description"
-    t.boolean "required"
-    t.integer "data_type"
+    t.boolean "required", default: true, null: false
+    t.integer "data_type", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["partner_config_id"], name: "index_partner_application_attributes_on_partner_config_id"
@@ -92,8 +91,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_25_160200) do
 
   create_table "partner_configs", force: :cascade do |t|
     t.string "partner_id", null: false
-    t.boolean "active_demo"
-    t.boolean "active_prod"
+    t.boolean "active_demo", default: false, null: false
+    t.boolean "active_prod", default: false, null: false
     t.string "timezone"
     t.string "name"
     t.string "website"
@@ -120,9 +119,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_25_160200) do
 
   create_table "partner_transmission_configs", force: :cascade do |t|
     t.bigint "partner_config_id", null: false
-    t.string "partner_id", null: false
     t.string "key", null: false
     t.text "value"
+    t.boolean "is_encrypted", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["partner_config_id"], name: "index_partner_transmission_configs_on_partner_config_id"

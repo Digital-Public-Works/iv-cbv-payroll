@@ -3,8 +3,6 @@ FactoryBot.define do
   factory :partner_application_attribute do
     association :partner_config, factory: :partner_config
 
-    partner_id { partner_config.partner_id }
-
     add_attribute(:name) { "first_name" }
     description { "Applicant first name" }
     required { true }

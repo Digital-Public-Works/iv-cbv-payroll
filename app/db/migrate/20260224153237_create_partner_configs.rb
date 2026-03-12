@@ -2,8 +2,8 @@ class CreatePartnerConfigs < ActiveRecord::Migration[7.2]
   def change
     create_table :partner_configs do |t|
       t.string :partner_id, null: false
-      t.boolean :active_demo
-      t.boolean :active_prod
+      t.boolean :active_demo, null: false, default: false
+      t.boolean :active_prod, null: false, default: false
       t.string :timezone
       t.string :name
       t.string :website

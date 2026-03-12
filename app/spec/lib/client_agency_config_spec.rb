@@ -24,7 +24,6 @@ RSpec.describe ClientAgencyConfig do
   let!(:sample_attr) do
     PartnerApplicationAttribute.create!(
       partner_config: sample_config,
-      partner_id: 'foo',
       name: 'first_name',
       description: 'Applicant First Name',
       required: false,

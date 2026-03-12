@@ -278,6 +278,8 @@ Devise.setup do |config|
   # ==> OmniAuth
   # Add a new OmniAuth provider. Check the wiki for more information on setting
   # up on your models and hooks.
+  # We are disabling SSO for the caseworker portal. However, we are preserving this code for future
+  # caseworker portal reactivation.
   # if Rails.application.config.client_agencies["sandbox"].present?
   #   config.omniauth(
   #     :sandbox,

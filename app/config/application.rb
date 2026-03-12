@@ -61,20 +61,9 @@ module IvCbvPayroll
     config.active_record.encryption.deterministic_key = ENV["ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY"]
     config.active_record.encryption.key_derivation_salt = ENV["ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT"]
 
+    # This is tech debt. Supported providers is a required env variable, but should be configured elsewhere.
     config.supported_providers = (ENV["SUPPORTED_PROVIDERS"] || "pinwheel")&.split(",")&.map(&:to_sym)
-
-    config.after_initialize do
-      begin
-        # CBV configuration
-        config.cbv_session_expires_after = 30.minutes
-
-        Rails.application.config.session_store :cookie_store,
-          key: "_iv_cbv_payroll_session",
-          expires_after: Rails.application.config.cbv_session_expires_after
-        rescue => e
-          puts "after_initialize CRASH: #{e}"
-      end
-    end
+    config.cbv_session_expires_after = 30.minutes
   end
 
   def self.client_agencies

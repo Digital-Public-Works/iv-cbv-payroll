@@ -34,25 +34,26 @@ class BuildDatabasePartnerConfigs < ActiveRecord::Migration[7.2]
       report_customization_show_earnings_list: true
     )
 
+
     pc.partner_transmission_configs.create(
-      partner_id: "pa_dhs",
       key: "user",
-      value: ENV['AZ_DES_SFTP_USER']
+      is_encrypted: true,
+      value: ENV['PA_DHS_SFTP_USER']
     )
     pc.partner_transmission_configs.create(
-      partner_id: "pa_dhs",
       key: "password",
-      value: ENV['AZ_DES_SFTP_PASSWORD']
+      is_encrypted: true,
+      value: ENV['PA_DHS_SFTP_PASSWORD']
     )
     pc.partner_transmission_configs.create(
-      partner_id: "pa_dhs",
       key: "url",
+      is_encrypted: false,
       value: ENV['AZ_DES_SFTP_URL']
     )
     pc.partner_transmission_configs.create(
-      partner_id: "pa_dhs",
-      key: "sftp_directory",
-      value: ENV['AZ_DES_SFTP_DIRECTORY']
+      key: "PA_DHS_SFTP_URL",
+      is_encrypted: false,
+      value: ENV['PA_DHS_SFTP_DIRECTORY']
     )
   end
 
@@ -82,23 +83,23 @@ class BuildDatabasePartnerConfigs < ActiveRecord::Migration[7.2]
     )
 
     pc.partner_transmission_configs.create(
-      partner_id: "az_des",
       key: "user",
+      is_encrypted: true,
       value: ENV['AZ_DES_SFTP_USER']
     )
     pc.partner_transmission_configs.create(
-      partner_id: "az_des",
       key: "password",
+      is_encrypted: true,
       value: ENV['AZ_DES_SFTP_PASSWORD']
     )
     pc.partner_transmission_configs.create(
-      partner_id: "az_des",
       key: "url",
+      is_encrypted: false,
       value: ENV['AZ_DES_SFTP_URL']
     )
     pc.partner_transmission_configs.create(
-      partner_id: "az_des",
       key: "sftp_directory",
+      is_encrypted: false,
       value: ENV['AZ_DES_SFTP_DIRECTORY']
     )
   end
@@ -129,8 +130,8 @@ class BuildDatabasePartnerConfigs < ActiveRecord::Migration[7.2]
     )
 
     pc.partner_transmission_configs.create(
-      partner_id: "sandbox",
       key: "email",
+      is_encrypted: false,
       value: "test@example.com"
     )
   end
