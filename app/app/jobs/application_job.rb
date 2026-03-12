@@ -1,3 +1,5 @@
+require_relative "../concerns/queueable"
+
 class ApplicationJob < ActiveJob::Base
   include Queueable
 

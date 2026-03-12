@@ -4,6 +4,31 @@ RSpec.describe Queueable do
   class TestQueueableJob < ApplicationJob
     include Queueable
   end
+
+  describe "actual job integration" do
+    it "MixpanelEventTrackingJob can be enqueued with correct queue name" do
+      with_env("QUEUE_SUFFIX", "_a11y") do
+        expect {
+          MixpanelEventTrackingJob.perform_later("test_event", nil, {})
+        }.to change(ActiveJob::Base.queue_adapter.enqueued_jobs, :size).by(1)
+
+        job = ActiveJob::Base.queue_adapter.enqueued_jobs.last
+        expect(job[:queue]).to eq("mixpanel_events_a11y")
+      end
+    end
+
+    it "MixpanelEventTrackingJob uses base queue name when QUEUE_SUFFIX is empty" do
+      with_env("QUEUE_SUFFIX", "") do
+        expect {
+          MixpanelEventTrackingJob.perform_later("test_event", nil, {})
+        }.to change(ActiveJob::Base.queue_adapter.enqueued_jobs, :size).by(1)
+
+        job = ActiveJob::Base.queue_adapter.enqueued_jobs.last
+        expect(job[:queue]).to eq("mixpanel_events")
+      end
+    end
+  end
+
   describe ".queue_with_suffix" do
     it "appends QUEUE_SUFFIX when present" do
       with_env("QUEUE_SUFFIX", "_a11y") do
