@@ -79,9 +79,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_25_160200) do
   end
 
   create_table "partner_application_attributes", force: :cascade do |t|
-    t.bigint "partner_config_id"
-    t.string "partner_id"
-    t.string "name"
+    t.bigint "partner_config_id", null: false
+    t.string "partner_id", null: false
+    t.string "name", null: false
     t.text "description"
     t.boolean "required"
     t.integer "data_type"
@@ -91,7 +91,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_25_160200) do
   end
 
   create_table "partner_configs", force: :cascade do |t|
-    t.string "partner_id"
+    t.string "partner_id", null: false
     t.boolean "active_demo"
     t.boolean "active_prod"
     t.string "timezone"
@@ -115,12 +115,13 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_25_160200) do
     t.boolean "report_customization_show_earnings_list"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["partner_id"], name: "index_partner_configs_on_partner_id", unique: true
   end
 
   create_table "partner_transmission_configs", force: :cascade do |t|
-    t.bigint "partner_config_id"
-    t.string "partner_id"
-    t.string "key"
+    t.bigint "partner_config_id", null: false
+    t.string "partner_id", null: false
+    t.string "key", null: false
     t.text "value"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -189,6 +190,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_25_160200) do
 
   add_foreign_key "cbv_flow_invitations", "users"
   add_foreign_key "cbv_flows", "cbv_flow_invitations"
+  add_foreign_key "partner_application_attributes", "partner_configs"
+  add_foreign_key "partner_transmission_configs", "partner_configs"
   add_foreign_key "payroll_accounts", "cbv_flows"
   add_foreign_key "webhook_events", "payroll_accounts"
 end

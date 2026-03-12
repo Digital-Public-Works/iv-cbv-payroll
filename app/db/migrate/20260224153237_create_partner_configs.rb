@@ -1,7 +1,7 @@
 class CreatePartnerConfigs < ActiveRecord::Migration[7.2]
   def change
     create_table :partner_configs do |t|
-      t.string :partner_id
+      t.string :partner_id, null: false
       t.boolean :active_demo
       t.boolean :active_prod
       t.string :timezone
@@ -25,6 +25,8 @@ class CreatePartnerConfigs < ActiveRecord::Migration[7.2]
       t.boolean :report_customization_show_earnings_list
 
       t.timestamps
+
+      t.index :partner_id, unique: true
     end
   end
 end

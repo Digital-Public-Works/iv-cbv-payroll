@@ -1,8 +1,12 @@
 class BuildDatabasePartnerConfigs < ActiveRecord::Migration[7.2]
-  def change
+  def up
     insert_pa_dhs
     insert_az_des
     insert_sandbox
+  end
+
+  def down
+    PartnerConfig.where(partner_id: %(pa_dhs az_des sandbox)).each { |pc| pc.destroy }
   end
 
   def insert_pa_dhs
