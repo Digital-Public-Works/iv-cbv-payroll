@@ -13,12 +13,14 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - name: Verify branch is release-a11y
-        if: github.ref != 'refs/heads/release-a11y'
+      - name: Require release-a11y branch
         run: |
-          echo "Error: This workflow can only be triggered from the release-a11y branch"
-          echo "Current branch: ${{ github.ref }}"
-          exit 1
+          if [ "${{ github.ref }}" != "refs/heads/release-a11y" ]; then
+            echo "❌ Error: This workflow can only be triggered from the release-a11y branch"
+            echo "Current branch: ${{ github.ref }}"
+            exit 1
+          fi
+          echo "✅ Verified: running on release-a11y branch"
 
       - uses: actions/checkout@v4
 
