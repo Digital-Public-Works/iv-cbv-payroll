@@ -70,5 +70,9 @@ jobs:
           # Remove DLQ from state to avoid Terraform errors
           terraform state rm -lock=false 'module.sqs_queues.aws_sqs_queue.dlq' 2>/dev/null || true
 
-          terraform destroy -input=false -auto-approve -var="environment_name=a11y"
+          # Note: image_tag must be provided even during destroy because service module
+          # evaluates it in locals. The actual value doesn't matter since we're destroying.
+          terraform destroy -input=false -auto-approve \
+            -var="environment_name=a11y" \
+            -var="image_tag=deprovision"
           echo "A11y service deprovisioned successfully"
