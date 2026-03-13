@@ -33,7 +33,9 @@ resource "aws_sqs_queue" "dlq" {
   sqs_managed_sse_enabled   = true
 
   lifecycle {
-    prevent_destroy = true
+    # Only protect DLQ for permanent environments (demo, prod).
+    # Temporary/ephemeral environments (a11y, preview) can be destroyed cleanly.
+    prevent_destroy = contains(["demo", "prod"], var.environment_name)
   }
 
   redrive_allow_policy = jsonencode({ redrivePermission = "allowAll" })
