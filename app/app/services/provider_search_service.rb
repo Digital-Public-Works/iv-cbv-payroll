@@ -72,7 +72,7 @@ class ProviderSearchService
   private
 
   def site_config
-    Rails.application.config.client_agencies
+    ClientAgencyConfig.instance
   end
 
   def any_exact_matches?(results, original_query)

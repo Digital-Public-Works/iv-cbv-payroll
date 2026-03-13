@@ -5,6 +5,7 @@ RSpec.describe "users.rake" do
     let(:client_agency_id) { "sandbox" }
 
     it "creates a user and API key" do
+      User.where(client_agency_id: client_agency_id).destroy_all
       expect { Rake::Task['users:create_api_token'].execute(client_agency_id: client_agency_id) }
         .to change { User.where(client_agency_id: client_agency_id).count }.by(1)
         .and change { ApiAccessToken.count }.by(1)

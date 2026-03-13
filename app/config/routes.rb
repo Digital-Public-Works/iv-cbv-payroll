@@ -76,8 +76,14 @@ Rails.application.routes.draw do
       resource :applicant_information, only: %i[show update]
 
       # Generic link
-      scope "links/:client_agency_id", constraints: { client_agency_id: Regexp.union(Rails.application.config.client_agencies.client_agency_ids) } do
-        root to: "generic_links#show", as: :new
+      begin
+        if ActiveRecord::Base.connection.data_source_exists?(:partner_application_attributes)
+          scope "links/:client_agency_id", constraints: { client_agency_id: Regexp.union(ClientAgencyConfig.client_agency_ids) } do
+            root to: "generic_links#show", as: :new
+          end
+        end
+      rescue ActiveRecord::NoDatabaseError, PG::ConnectionBad, ActiveRecord::ConnectionNotEstablished, ArgumentError
+        # The database hasn't been created yet, we are likely in a db task.
       end
 
       # Session management
@@ -101,12 +107,21 @@ Rails.application.routes.draw do
       end
     end
 
-    scope "/:client_agency_id", module: :caseworker, constraints: { client_agency_id: Regexp.union(Rails.application.config.client_agencies.client_agency_ids) } do
-      get "/sso", to: redirect("/%{client_agency_id}") # Temporary: Remove once people get used to going to /:client_agency_id as the login destination.
-      root to: "entries#index", as: :new_user_session
+    # This code runs during every boot of the app, including the migrations necessary to create the partner_configs table.
+    # Skip if the table hasn't been created yet.
+    # The partner application attributes are added last, so if they are not present, the db is missing tables needed to initialize from db configuration.
+    begin
+      if ActiveRecord::Base.connection.data_source_exists?(:partner_application_attributes)
+        scope "/:client_agency_id", module: :caseworker, constraints: { client_agency_id: Regexp.union(ClientAgencyConfig.client_agency_ids) } do
+          get "/sso", to: redirect("/%{client_agency_id}") # Temporary: Remove once people get used to going to /:client_agency_id as the login destination.
+          root to: "entries#index", as: :new_user_session
 
-      resource :dashboard, only: %i[show], as: :caseworker_dashboard
-      resources :cbv_flow_invitations, only: %i[new create], as: :invitations, path: :invitations
+          resource :dashboard, only: %i[show], as: :caseworker_dashboard
+          resources :cbv_flow_invitations, only: %i[new create], as: :invitations, path: :invitations
+        end
+      end
+    rescue ActiveRecord::NoDatabaseError, PG::ConnectionBad, ActiveRecord::ConnectionNotEstablished, ArgumentError
+      # The database hasn't been created yet, we are likely in a db task.
     end
   end
 

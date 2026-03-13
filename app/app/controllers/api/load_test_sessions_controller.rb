@@ -11,7 +11,7 @@ class Api::LoadTestSessionsController < ApplicationController
     scenario = params[:scenario] || "synced"
 
     # Validate client_agency_id
-    unless Rails.application.config.client_agencies.client_agency_ids.include?(client_agency_id)
+    unless ClientAgencyConfig.client_agency_ids.include?(client_agency_id)
       return render json: { error: "Invalid client_agency_id" }, status: :unprocessable_entity
     end
 

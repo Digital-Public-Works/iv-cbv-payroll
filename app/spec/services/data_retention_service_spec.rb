@@ -162,7 +162,7 @@ RSpec.describe DataRetentionService do
         before do
           cbv_flow.update(argyle_user_id: "argyle_123")
 
-          argyle_environment = Rails.application.config.client_agencies[cbv_flow.client_agency_id].argyle_environment
+          argyle_environment = ClientAgencyConfig.instance[cbv_flow.client_agency_id].argyle_environment
           allow(Aggregators::Sdk::ArgyleService)
             .to receive(:new)
                   .with(argyle_environment)
@@ -310,7 +310,7 @@ RSpec.describe DataRetentionService do
         before do
           cbv_flow.update(argyle_user_id: "argyle_123")
 
-          argyle_environment = Rails.application.config.client_agencies[cbv_flow.client_agency_id].argyle_environment
+          argyle_environment = ClientAgencyConfig.instance[cbv_flow.client_agency_id].argyle_environment
           allow(Aggregators::Sdk::ArgyleService)
             .to receive(:new)
                   .with(argyle_environment)
@@ -435,7 +435,7 @@ RSpec.describe DataRetentionService do
         before do
           cbv_flow.update(argyle_user_id: "argyle_123")
 
-          argyle_environment = Rails.application.config.client_agencies[cbv_flow.client_agency_id].argyle_environment
+          argyle_environment = ClientAgencyConfig.instance[cbv_flow.client_agency_id].argyle_environment
           allow(Aggregators::Sdk::ArgyleService)
             .to receive(:new)
                   .with(argyle_environment)
@@ -458,12 +458,13 @@ RSpec.describe DataRetentionService do
     let(:service) { DataRetentionService.new }
     let(:argyle_service) { instance_double(Aggregators::Sdk::ArgyleService) }
     let(:argyle_environment) { "sandbox" }
+    let(:client_agency_double) { instance_double("ClientAgencyConfig::ClientAgency", argyle_environment: argyle_environment) }
 
     before do
       # Mock the config lookup
-      allow(Rails.application.config).to receive_message_chain(:client_agencies, :[]).with(client_agency_id).and_return(
-        double(argyle_environment: argyle_environment)
-      )
+      allow(ClientAgencyConfig.instance).to receive(:[])
+        .with(client_agency_id)
+        .and_return(client_agency_double)
       allow(Aggregators::Sdk::ArgyleService).to receive(:new).with(argyle_environment).and_return(argyle_service)
     end
 

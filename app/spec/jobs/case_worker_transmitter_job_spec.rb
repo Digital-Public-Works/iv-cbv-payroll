@@ -10,14 +10,15 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
   let(:cbv_applicant) { create(:cbv_applicant, created_at: current_time, case_number: "ABC1234") }
   let(:errored_jobs) { [] }
   let(:current_time) { DateTime.parse('2024-06-18 00:00:00') }
-  let(:pinwheel_report) { build(:pinwheel_report, :with_pinwheel_account) }
+  # let(:pinwheel_report) { build(:pinwheel_report, :with_pinwheel_account) }
+  let(:argyle_report) { build(:argyle_report, :with_argyle_account) }
   let(:fake_event_logger) { instance_double(GenericEventTracker, track: nil) }
   let(:mocked_client_logo_path) { "des_logo.png" }
 
   let(:cbv_flow) do
     create(:cbv_flow,
       :invited,
-      :with_pinwheel_account,
+      :with_argyle_account,
       with_errored_jobs: errored_jobs,
       created_at: current_time - 10.minutes,
       cbv_applicant: cbv_applicant
@@ -40,12 +41,13 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
   }
 
   before do
-    pinwheel_stub_request_end_user_accounts_response
-    pinwheel_stub_request_end_user_paystubs_response
-    pinwheel_stub_request_employment_info_response
-    pinwheel_stub_request_income_metadata_response
-    pinwheel_stub_request_identity_response
-    allow(Aggregators::AggregatorReports::PinwheelReport).to receive(:new).and_return(pinwheel_report)
+    # pinwheel_stub_request_end_user_accounts_response
+    # pinwheel_stub_request_end_user_paystubs_response
+    # pinwheel_stub_request_employment_info_response
+    # pinwheel_stub_request_income_metadata_response
+    # pinwheel_stub_request_identity_response
+    # allow(Aggregators::AggregatorReports::PinwheelReport).to receive(:new).and_return(pinwheel_report)
+    allow(Aggregators::AggregatorReports::ArgyleReport).to receive(:new).and_return(argyle_report)
 
     allow_any_instance_of(described_class).to receive(:current_agency).and_return(mock_client_agency)
     allow(mock_client_agency).to receive(:id).and_return(mocked_client_id)
@@ -335,7 +337,7 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
           let(:cbv_flow) do
             create(
               :cbv_flow,
-              :with_pinwheel_account,
+              :with_argyle_account,
               with_errored_jobs: errored_jobs,
               created_at: current_time - 10.minutes,
               cbv_applicant: cbv_applicant

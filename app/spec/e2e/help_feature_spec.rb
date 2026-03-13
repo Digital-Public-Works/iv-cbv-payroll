@@ -103,10 +103,8 @@ RSpec.describe "Help Features", type: :feature, js: true do
         expect(page).to have_link(I18n.t("help.index.provider"))
         expect(page).to have_link(I18n.t("help.index.credentials"))
 
-        # Verify feedback link opens in new tab with correct URL
-        feedback_link = find_link(I18n.t("help.index.feedback"))
-        expect(feedback_link[:href]).to eq("https://forms.gle/Qb7D12kHZymur5jKA")
-        expect(feedback_link[:target]).to eq("_blank")
+        # Caseworker should not see the feedback flow
+        expect(page).not_to have_link(I18n.t("help.index.feedback"))
       end
     end
   end

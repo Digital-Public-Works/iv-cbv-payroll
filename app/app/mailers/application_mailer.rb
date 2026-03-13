@@ -5,7 +5,7 @@ class ApplicationMailer < ActionMailer::Base
   after_deliver :track_delivery
 
   def client_agency_config
-    Rails.application.config.client_agencies
+    ClientAgencyConfig.instance
   end
 
   private

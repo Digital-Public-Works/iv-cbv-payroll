@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_01_22_155857) do
+ActiveRecord::Schema[7.2].define(version: 2026_02_25_160200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -78,6 +78,55 @@ ActiveRecord::Schema[7.2].define(version: 2026_01_22_155857) do
     t.index ["cbv_flow_invitation_id"], name: "index_cbv_flows_on_cbv_flow_invitation_id"
   end
 
+  create_table "partner_application_attributes", force: :cascade do |t|
+    t.bigint "partner_config_id", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.boolean "required", default: true, null: false
+    t.integer "data_type", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["partner_config_id"], name: "index_partner_application_attributes_on_partner_config_id"
+  end
+
+  create_table "partner_configs", force: :cascade do |t|
+    t.string "partner_id", null: false
+    t.boolean "active_demo", default: false, null: false
+    t.boolean "active_prod", default: false, null: false
+    t.string "timezone"
+    t.string "name"
+    t.string "website"
+    t.string "domain"
+    t.string "logo_path"
+    t.string "argyle_environment"
+    t.integer "transmission_method"
+    t.boolean "staff_portal_enabled"
+    t.boolean "pilot_ended"
+    t.string "default_origin"
+    t.boolean "generic_links_enabled"
+    t.boolean "invitation_links_enabled"
+    t.integer "pay_income_days_w2"
+    t.integer "pay_income_days_gig"
+    t.integer "invitation_valid_days_default"
+    t.boolean "weekly_report_enabled"
+    t.text "weekly_report_recipients"
+    t.string "weekly_report_variant"
+    t.boolean "report_customization_show_earnings_list"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["partner_id"], name: "index_partner_configs_on_partner_id", unique: true
+  end
+
+  create_table "partner_transmission_configs", force: :cascade do |t|
+    t.bigint "partner_config_id", null: false
+    t.string "key", null: false
+    t.text "value"
+    t.boolean "is_encrypted", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["partner_config_id"], name: "index_partner_transmission_configs_on_partner_config_id"
+  end
+
   create_table "payroll_accounts", force: :cascade do |t|
     t.bigint "cbv_flow_id", null: false
     t.string "aggregator_account_id"
@@ -140,6 +189,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_01_22_155857) do
 
   add_foreign_key "cbv_flow_invitations", "users"
   add_foreign_key "cbv_flows", "cbv_flow_invitations"
+  add_foreign_key "partner_application_attributes", "partner_configs"
+  add_foreign_key "partner_transmission_configs", "partner_configs"
   add_foreign_key "payroll_accounts", "cbv_flows"
   add_foreign_key "webhook_events", "payroll_accounts"
 end

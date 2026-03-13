@@ -1,7 +1,7 @@
 # TODO: clean this up for sandbox, since it was a direct copy of pa_dhs.
 class ClientAgency::Sandbox::Configuration
   def self.sftp_transmission_configuration
-    Rails.application.config.client_agencies["sandbox"]
+    ClientAgencyConfig.instance.client_agencies["sandbox"]
       .transmission_method_configuration
       .with_indifferent_access
   end

@@ -146,6 +146,6 @@ class CbvApplicant < ApplicationRecord
   end
 
   def agency_config
-    Rails.application.config.client_agencies[client_agency_id]
+    ClientAgencyConfig.instance[client_agency_id]
   end
 end
