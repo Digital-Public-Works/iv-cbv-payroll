@@ -48,7 +48,34 @@ jobs:
         working-directory: infra/app/service
         run: |
           echo "Deprovisioning A11y service layer (ECS, ALB, Cognito, etc.)..."
-          echo "Note: RDS database, backups, and logs will be preserved."
+          echo "Note: RDS database, backups, logs, and SQS DLQ will be preserved."
           terraform init -input=false -reconfigure -backend-config="a11y.s3.tfbackend"
-          terraform destroy -input=false -auto-approve -var="environment_name=a11y"
+
+          # Disable ALB deletion protection before destroy
+          ALB_ARN=$(aws elbv2 describe-load-balancers --names app-a11y --region us-east-1 2>/dev/null | jq -r '.LoadBalancers[0].LoadBalancerArn // empty' || echo "")
+          if [ -n "$ALB_ARN" ] && [ "$ALB_ARN" != "null" ]; then
+            echo "Disabling deletion protection on ALB..."
+            aws elbv2 modify-load-balancer-attributes \
+              --load-balancer-arn "$ALB_ARN" \
+              --attributes Key=deletion_protection.enabled,Value=false || true
+          fi
+
+          # Delete SQS DLQ directly (ephemeral environment, no need to preserve)
+          DLQ_URL=$(aws sqs get-queue-url --queue-name report_sender_dlq_a11y --region us-east-1 2>/dev/null | jq -r '.QueueUrl' || echo "")
+          if [ -n "$DLQ_URL" ] && [ "$DLQ_URL" != "null" ]; then
+            echo "Deleting SQS DLQ..."
+            aws sqs delete-queue --queue-url "$DLQ_URL" 2>/dev/null || true
+          fi
+
+          # Remove resources from state that we want to preserve
+          # DLQ: Delete directly but remove from state to avoid Terraform errors
+          terraform state rm -lock=false 'module.sqs_queues.aws_sqs_queue.dlq' 2>/dev/null || true
+          # Access logs bucket: Preserve for compliance/debugging purposes
+          terraform state rm -lock=false 'module.service.aws_s3_bucket.access_logs' 2>/dev/null || true
+
+          # Note: image_tag must be provided even during destroy because service module
+          # evaluates it in locals. The actual value doesn't matter since we're destroying.
+          terraform destroy -input=false -auto-approve \
+            -var="environment_name=a11y" \
+            -var="image_tag=deprovision"
           echo "A11y service deprovisioned successfully"

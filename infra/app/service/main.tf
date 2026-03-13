@@ -166,6 +166,11 @@ data "aws_route53_zone" "zone" {
 module "sqs_queues" {
   source = "../../modules/sqs-queues"
 
+  environment_name = var.environment_name
+  # Only use environment suffix for non-standard environments (a11y, preview) to avoid
+  # resource name conflicts. Standard environments (demo, prod) keep original names
+  # for backward compatibility and to avoid state migration issues.
+  use_environment_suffix     = var.environment_name != "demo" && var.environment_name != "prod"
   queue_names                = ["report_sender", "mixpanel_events", "newrelic_events"]
   dlq_name                   = "dead_letter_queue"
   visibility_timeout_seconds = 75 # ~30s job → 2x+buffer
@@ -220,6 +225,9 @@ module "service" {
   extra_environment_variables = merge(
     {
       BUCKET_NAME = local.storage_config.bucket_name
+      # Queue suffix for SQS queue names. Standard environments (demo, prod) have no suffix.
+      # Non-standard environments (a11y, preview) append "_<environment_name>" to queue names.
+      QUEUE_SUFFIX = var.environment_name != "demo" && var.environment_name != "prod" ? "_${var.environment_name}" : ""
     },
     local.ssm_env_vars,
     local.identity_provider_environment_variables,
@@ -269,8 +277,13 @@ module "storage" {
 }
 
 module "email" {
-  count                       = !local.is_temporary ? 1 : 0
-  source                      = "../../modules/email"
+  count            = !local.is_temporary ? 1 : 0
+  source           = "../../modules/email"
+  environment_name = var.environment_name
+  # Only use environment suffix for non-standard environments (a11y, preview) to avoid
+  # resource name conflicts. Standard environments (demo, prod) keep original names
+  # for backward compatibility and to avoid state migration issues.
+  use_environment_suffix      = var.environment_name != "demo" && var.environment_name != "prod"
   hosted_zone_domain          = local.network_config.domain_config.hosted_zone
   domain                      = local.service_config.domain_name
   newrelic_account_id         = local.environment_config.newrelic_config.account_id
