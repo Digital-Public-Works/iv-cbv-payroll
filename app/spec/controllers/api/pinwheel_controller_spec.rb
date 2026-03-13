@@ -31,6 +31,14 @@ RSpec.describe Api::PinwheelController do
   #       ))
   #     post :create_token, params: valid_params
   #   end
+  # it "tracks a Mixpanel event" do
+  #   expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantBeganLinkingEmployer", anything, hash_including(
+  #       cbv_flow_id: cbv_flow.id,
+  #       invitation_id: cbv_flow.cbv_flow_invitation_id,
+  #       response_type: "employer",
+  #     ))
+  #   post :create_token, params: valid_params
+  # end
 
   #   describe "when the button is pressed without an employer or ID" do
   #     let(:valid_params) do

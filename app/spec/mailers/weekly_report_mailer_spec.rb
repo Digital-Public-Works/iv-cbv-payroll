@@ -51,7 +51,7 @@ RSpec.describe WeeklyReportMailer, type: :mailer do
   end
 
   it "tracks events" do
-    expect(EventTrackingJob).to receive(:perform_later).with("EmailSent", anything, hash_including(
+    expect(MixpanelEventTrackingJob).to receive(:perform_later).with("EmailSent", anything, hash_including(
         mailer: "WeeklyReportMailer",
         action: "report_email",
         message_id: be_a(String)

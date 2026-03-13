@@ -305,6 +305,8 @@ RSpec.describe Cbv::SubmitsController do
           expect(pdf_text).not_to include("Payments after taxes and deductions (net)")
           expect(pdf_text).not_to include("Deduction")
           expect(pdf_text).not_to include("Base Pay")
+
+          expect(pdf_text).to include("Client Comments")
         end
       end
 

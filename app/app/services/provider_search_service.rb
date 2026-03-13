@@ -84,7 +84,6 @@ class ProviderSearchService
     name.downcase.gsub(/[^0-9a-z]+/, "")
   end
 
-  # TODO: move these to a config file - see FFS-2661
   TOP_PROVIDERS = [
     {
       name: "ADP",
@@ -105,12 +104,11 @@ class ProviderSearchService
       }
     },
     {
-      name: "Paycom",
+      name: "UKG Pro",
       response_type: "platform",
-      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1605726518/partner-logos/paycom.png",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1761652671/partner-logos/UKG%20Pro%20%28UltiPro%29.png",
       provider_ids: {
-        pinwheel: "3f812c04-ac83-495b-99ca-7ec7d56dc68b",
-        argyle: "item_000029935"
+        argyle: "item_000041140"
       }
     },
     {
@@ -132,12 +130,61 @@ class ProviderSearchService
       }
     },
     {
+      name: "Paycom",
+      response_type: "platform",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1605726518/partner-logos/paycom.png",
+      provider_ids: {
+        pinwheel: "3f812c04-ac83-495b-99ca-7ec7d56dc68b",
+        argyle: "item_000029935"
+      }
+    },
+    {
+      name: "isolved",
+      response_type: "platform",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1631708654/partner-logos/isolved_grouping.png",
+      provider_ids: {
+        argyle: "item_000020847"
+      }
+    },
+    {
+      name: "Intuit QuickBooks",
+      response_type: "platform",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1618406825/partner-logos/intuit_quickbooks.png",
+      provider_ids: {
+        argyle: "item_000020670"
+      }
+    },
+    {
+      name: "Dayforce",
+      response_type: "platform",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1734620893/partner-logos/dayforcehcm.png",
+      provider_ids: {
+        argyle: "item_000011367"
+      }
+    },
+    {
+      name: "Gusto",
+      response_type: "platform",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1594718493/partner-logos/gusto_platform.png",
+      provider_ids: {
+        argyle: "item_000017821"
+      }
+    },
+    {
       name: "Paycor",
       response_type: "platform",
       logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1605726518/partner-logos/paycor.png",
       provider_ids: {
         pinwheel: "b0b655f8-4ae6-4d09-a60f-1df9a2a1fd16",
         argyle: "item_000029936"
+      }
+    },
+    {
+      name: "Oracle",
+      response_type: "platform",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1650619947/partner-logos/oracle_peoplesoft_platform.png",
+      provider_ids: {
+        argyle: "item_000029125"
       }
     }
   ]

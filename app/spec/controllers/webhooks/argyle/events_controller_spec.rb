@@ -459,8 +459,8 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
           )
         )
 
-        expect(NewRelic::Agent).to receive(:record_custom_event).with(TrackEvent::ApplicantReportAttemptedUsefulRequirements, anything)
-        expect(NewRelic::Agent).to receive(:record_custom_event).with(TrackEvent::ApplicantReportFailedUsefulRequirements, anything)
+        expect(NewRelic::EventLogger).to receive(:track).with(TrackEvent::ApplicantReportAttemptedUsefulRequirements, anything)
+        expect(NewRelic::EventLogger).to receive(:track).with(TrackEvent::ApplicantReportFailedUsefulRequirements, anything)
 
         process_webhook("paystubs.partially_synced")
 

@@ -54,8 +54,8 @@ RSpec.describe Cbv::PaymentDetailsController do
       # end
 
       # it "tracks events" do
-      #   allow(EventTrackingJob).to receive(:perform_later).with(TrackEvent::CbvPageView, anything, anything)
-      #   expect(EventTrackingJob).to receive(:perform_later).with(TrackEvent::ApplicantViewedPaymentDetails, anything, hash_including(
+      #   allow(MixpanelEventTrackingJob).to receive(:perform_later).with(TrackEvent::CbvPageView, anything, anything)
+      #   expect(MixpanelEventTrackingJob).to receive(:perform_later).with(TrackEvent::ApplicantViewedPaymentDetails, anything, hash_including(
       #       cbv_flow_id: cbv_flow.id,
       #       device_id: cbv_flow.device_id,
       #       invitation_id: cbv_flow.cbv_flow_invitation_id,
@@ -421,9 +421,9 @@ RSpec.describe Cbv::PaymentDetailsController do
         end
 
         it "tracks events" do
-          allow(EventTrackingJob).to receive(:perform_later).with(TrackEvent::CbvPageView, anything, anything)
+          allow(MixpanelEventTrackingJob).to receive(:perform_later).with(TrackEvent::CbvPageView, anything, anything)
 
-          expect(EventTrackingJob).to receive(:perform_later)
+          expect(MixpanelEventTrackingJob).to receive(:perform_later)
             .with("ArgylePaystubHours", anything, hash_including(
               time: be_a(Integer),
               argyle_total_hours: be_a(String),
@@ -433,7 +433,7 @@ RSpec.describe Cbv::PaymentDetailsController do
               argyle_hours_null: false
             )).exactly(10).times
 
-          expect(EventTrackingJob).to receive(:perform_later).with(TrackEvent::ApplicantViewedPaymentDetails, anything, hash_including(
+          expect(MixpanelEventTrackingJob).to receive(:perform_later).with(TrackEvent::ApplicantViewedPaymentDetails, anything, hash_including(
               cbv_flow_id: cbv_flow.id,
               device_id: cbv_flow.device_id,
               invitation_id: cbv_flow.cbv_flow_invitation_id,
@@ -445,7 +445,7 @@ RSpec.describe Cbv::PaymentDetailsController do
             ))
 
           # AggregatorReport::find_account_report is invoked several times during the render of show.
-          expect(EventTrackingJob).to receive(:perform_later)
+          expect(MixpanelEventTrackingJob).to receive(:perform_later)
             .with("ArgyleReportHours", anything, hash_including(
               time: be_a(Integer),
               total_paystubs: 10,
@@ -599,9 +599,9 @@ RSpec.describe Cbv::PaymentDetailsController do
     end
 
     it "tracks events" do
-      allow(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+      allow(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
 
-      expect(EventTrackingJob).to receive(:perform_later).with("ApplicantSavedPaymentDetails", anything, hash_including(
+      expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantSavedPaymentDetails", anything, hash_including(
           cbv_flow_id: cbv_flow.id,
           invitation_id: cbv_flow.cbv_flow_invitation_id,
           additional_information_length: comment.length

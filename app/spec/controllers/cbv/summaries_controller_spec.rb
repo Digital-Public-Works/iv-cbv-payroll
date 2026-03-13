@@ -215,9 +215,9 @@ end
     end
 
     it "tracks events" do
-      allow(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+      allow(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
 
-      expect(EventTrackingJob).to receive(:perform_later).with("ApplicantAccessedIncomeSummary", anything, hash_including(
+      expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantAccessedIncomeSummary", anything, hash_including(
           cbv_flow_id: cbv_flow.id,
           invitation_id: cbv_flow.cbv_flow_invitation_id
         ))

@@ -110,7 +110,10 @@ module TrackEvent
   CaseworkerInvitedApplicantToFlow = "CaseworkerInvitedApplicantToFlow"
   CaseworkerLoggedIn = "CaseworkerLoggedIn"
   CbvPageView = "CbvPageView"
+  CSPViolation = "CSPViolation"
   EmailSent = "EmailSent"
-  WeeklySummaryEmail = "WeeklySummaryEmail"
   IncomeSummaryMatchedAgencyNames = "IncomeSummaryMatchedAgencyNames"
+  InvitationLimitReached = "InvitationLimitReached"
+  QueueJobFailed = "QueueJobFailed"
+  WeeklySummaryEmail = "WeeklySummaryEmail"
 end

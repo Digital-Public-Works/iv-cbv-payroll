@@ -124,6 +124,11 @@ RSpec.describe ProviderSearchService, type: :service do
           logo_url: a_kind_of(String)
         )
       end
+
+      it 'returns 12 top payroll providers' do
+        results = service.top_aggregator_options("payroll")
+        expect(results.length).to eq(12)
+      end
     end
   end
 end
