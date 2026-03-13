@@ -8,10 +8,6 @@ locals {
   suffix         = var.use_environment_suffix ? "_${var.environment_name}" : ""
   resolved_names = [for n in var.queue_names : "${n}${local.suffix}"]
   dlq_resolved   = "${var.dlq_name}${local.suffix}"
-
-  # Only protect DLQ for permanent environments (demo, prod).
-  # Temporary/ephemeral environments (a11y, preview) can be destroyed cleanly.
-  is_permanent_environment = var.environment_name == "demo" || var.environment_name == "prod"
 }
 
 resource "aws_sqs_queue" "dicit_queues" {
@@ -37,7 +33,7 @@ resource "aws_sqs_queue" "dlq" {
   sqs_managed_sse_enabled   = true
 
   lifecycle {
-    prevent_destroy = local.is_permanent_environment
+    prevent_destroy = true
   }
 
   redrive_allow_policy = jsonencode({ redrivePermission = "allowAll" })
