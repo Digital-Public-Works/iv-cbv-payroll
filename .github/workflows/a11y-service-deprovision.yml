@@ -52,12 +52,12 @@ jobs:
           terraform init -input=false -reconfigure -backend-config="a11y.s3.tfbackend"
 
           # Disable ALB deletion protection before destroy
-          ALB_ARN=$(terraform output -raw load_balancer_arn 2>/dev/null || echo "")
-          if [ -n "$ALB_ARN" ]; then
+          ALB_ARN=$(aws elbv2 describe-load-balancers --names app-a11y --region us-east-1 2>/dev/null | jq -r '.LoadBalancers[0].LoadBalancerArn // empty' || echo "")
+          if [ -n "$ALB_ARN" ] && [ "$ALB_ARN" != "null" ]; then
             echo "Disabling deletion protection on ALB..."
             aws elbv2 modify-load-balancer-attributes \
               --load-balancer-arn "$ALB_ARN" \
-              --attributes Key=deletion_protection.enabled,Value=false 2>/dev/null || true
+              --attributes Key=deletion_protection.enabled,Value=false || true
           fi
 
           # Delete SQS DLQ directly (ephemeral environment, no need to preserve)
