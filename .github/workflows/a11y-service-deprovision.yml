@@ -67,8 +67,11 @@ jobs:
             aws sqs delete-queue --queue-url "$DLQ_URL" 2>/dev/null || true
           fi
 
-          # Remove DLQ from state to avoid Terraform errors
+          # Remove resources from state that we want to preserve
+          # DLQ: Delete directly but remove from state to avoid Terraform errors
           terraform state rm -lock=false 'module.sqs_queues.aws_sqs_queue.dlq' 2>/dev/null || true
+          # Access logs bucket: Preserve for compliance/debugging purposes
+          terraform state rm -lock=false 'module.service.aws_s3_bucket.alb_access_logs' 2>/dev/null || true
 
           # Note: image_tag must be provided even during destroy because service module
           # evaluates it in locals. The actual value doesn't matter since we're destroying.
