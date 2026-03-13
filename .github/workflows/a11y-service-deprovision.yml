@@ -33,6 +33,17 @@ jobs:
           app_name: "app"
           environment: "a11y"
 
+      - name: Verify AWS account
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          if [ "$ACCOUNT_ID" != "929368846564" ]; then
+            echo "❌ Error: Wrong AWS account!"
+            echo "Expected: 929368846564"
+            echo "Got: $ACCOUNT_ID"
+            exit 1
+          fi
+          echo "✅ Verified: correct AWS account"
+
       - name: Deprovision service infrastructure
         working-directory: infra/app/service
         run: |
