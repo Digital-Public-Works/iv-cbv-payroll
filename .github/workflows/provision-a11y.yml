@@ -1,0 +1,47 @@
+name: Provision A11y Service
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+
+jobs:
+  provision:
+    name: Provision A11y Service
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - name: Verify branch is release-a11y
+        if: github.ref != 'refs/heads/release-a11y'
+        run: |
+          echo "Error: This workflow can only be triggered from the release-a11y branch"
+          echo "Current branch: ${{ github.ref }}"
+          exit 1
+
+      - uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: ./.github/actions/setup-terraform
+
+      - name: Configure AWS credentials
+        uses: ./.github/actions/configure-aws-credentials
+        with:
+          app_name: "app"
+          environment: "a11y"
+
+      - name: Provision service infrastructure
+        working-directory: .
+        run: |
+          echo "Provisioning A11y service layer..."
+          TF_CLI_ARGS_apply="-input=false -auto-approve" make infra-update-app-service APP_NAME="app" ENVIRONMENT="a11y"
+          echo "A11y service provisioned successfully"
+
+      - name: Verify service is stable
+        run: |
+          cluster_name=$(terraform -chdir="infra/app/service" output -raw service_cluster_name)
+          service_name=$(terraform -chdir="infra/app/service" output -raw service_name)
+          echo "Waiting for service ${service_name} to become stable..."
+          aws ecs wait services-stable --cluster "${cluster_name}" --services "${service_name}"
+          echo "Service is stable"
