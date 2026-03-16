@@ -48,7 +48,7 @@ class BuildDatabasePartnerConfigs < ActiveRecord::Migration[7.2]
     pc.partner_transmission_configs.create(
       key: "url",
       is_encrypted: false,
-      value: ENV['AZ_DES_SFTP_URL']
+      value: ENV['PA_DHS_SFTP_URL']
     )
     pc.partner_transmission_configs.create(
       key: "PA_DHS_SFTP_URL",
