@@ -1,6 +1,6 @@
 class ClientAgency::PaDhs::Configuration
   def self.sftp_transmission_configuration
-    ClientAgencyConfig.instance.client_agencies["pa_dhs"]
+    ClientAgencyConfig.instance["pa_dhs"]
       .transmission_method_configuration
       .with_indifferent_access
   end

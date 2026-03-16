@@ -1,6 +1,6 @@
 class ClientAgency::AzDes::Configuration
   def self.sftp_transmission_configuration
-    ClientAgencyConfig.instance.client_agencies["az_des"]
+    ClientAgencyConfig.instance["az_des"]
       .transmission_method_configuration
       .with_indifferent_access
   end
