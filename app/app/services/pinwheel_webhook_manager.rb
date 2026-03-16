@@ -18,7 +18,7 @@ class PinwheelWebhookManager
   ]
 
   def initialize
-    ClientAgencyConfig.instance.client_agencies["sandbox"]
+    ClientAgencyConfig.instance["sandbox"]
     @pinwheel = Aggregators::Sdk::PinwheelService.new(@sandbox_config.pinwheel_environment)
   end
 
