@@ -212,7 +212,7 @@ class Cbv::PreviewController < ApplicationController
 
   def current_agency
     return unless @cbv_flow.present? && @cbv_flow.client_agency_id.present?
-    @current_agency ||= ClientAgencyConfig.instance.client_agencies[@cbv_flow.client_agency_id]
+    @current_agency ||= ClientAgencyConfig.instance[@cbv_flow.client_agency_id]
   end
 
   def argyle
