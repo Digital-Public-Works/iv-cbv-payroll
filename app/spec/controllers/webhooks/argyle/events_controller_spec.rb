@@ -349,7 +349,7 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
 
     context "for a client agency with pay_income_days > 90 days" do
       before do
-        allow(Rails.application.config.client_agencies[cbv_flow.client_agency_id])
+        allow(ClientAgencyConfig.instance[cbv_flow.client_agency_id])
           .to receive(:pay_income_days)
           .and_return({ w2: 182, gig: 182 })
 
@@ -459,8 +459,8 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
           )
         )
 
-        expect(NewRelic::Agent).to receive(:record_custom_event).with(TrackEvent::ApplicantReportAttemptedUsefulRequirements, anything)
-        expect(NewRelic::Agent).to receive(:record_custom_event).with(TrackEvent::ApplicantReportFailedUsefulRequirements, anything)
+        expect(NewRelic::EventLogger).to receive(:track).with(TrackEvent::ApplicantReportAttemptedUsefulRequirements, anything)
+        expect(NewRelic::EventLogger).to receive(:track).with(TrackEvent::ApplicantReportFailedUsefulRequirements, anything)
 
         process_webhook("paystubs.partially_synced")
 

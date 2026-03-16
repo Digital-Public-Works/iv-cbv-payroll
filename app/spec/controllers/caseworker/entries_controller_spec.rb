@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe Caseworker::EntriesController do
-  let(:client_agency_config) { Rails.application.config.client_agencies }
+  let(:client_agency_config) { ClientAgencyConfig.instance.client_agencies }
 
   describe "#index" do
     render_views

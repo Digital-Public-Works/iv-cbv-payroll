@@ -67,9 +67,9 @@ RSpec.describe Cbv::ApplicantInformationsController, type: :controller do
       end
 
       it "tracks ApplicantSubmittedInformationPage event with identity_age_range_applicant when form is successfully submitted" do
-        allow(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+        allow(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
 
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantSubmittedInformationPage", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantSubmittedInformationPage", anything, hash_including(
           cbv_flow_id: cbv_flow.id,
           cbv_applicant_id: cbv_flow.cbv_applicant_id,
           client_agency_id: cbv_flow.client_agency_id,
@@ -95,9 +95,9 @@ RSpec.describe Cbv::ApplicantInformationsController, type: :controller do
       end
 
       it "does not track ApplicantSubmittedInformationPage event when form submission fails" do
-        allow(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+        allow(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
 
-        expect(EventTrackingJob).not_to receive(:perform_later).with("ApplicantSubmittedInformationPage", anything, anything)
+        expect(MixpanelEventTrackingJob).not_to receive(:perform_later).with("ApplicantSubmittedInformationPage", anything, anything)
 
         post :update, params: {
           cbv_applicant_sandbox: {
@@ -162,9 +162,9 @@ RSpec.describe Cbv::ApplicantInformationsController, type: :controller do
 
     it "tracks ApplicantSubmittedInformationPage event with identity_age_range_applicant for LA LDH DOB submission" do
       travel_to Date.new(2025, 1, 1) do
-        allow(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+        allow(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
 
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantSubmittedInformationPage", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantSubmittedInformationPage", anything, hash_including(
           cbv_flow_id: cbv_flow.id,
           cbv_applicant_id: cbv_flow.cbv_applicant_id,
           client_agency_id: "la_ldh",
