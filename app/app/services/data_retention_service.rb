@@ -110,7 +110,7 @@ class DataRetentionService
   # use Argyle api to delete the user and all associated data.
   # A 404 is expected if the user was already deleted by a previous run.
   def delete_argyle_user(client_agency_id, argyle_user_id)
-    argyle_environment = Rails.application.config.client_agencies[client_agency_id].argyle_environment
+    argyle_environment = ClientAgencyConfig.instance[client_agency_id].argyle_environment
     argyle = Aggregators::Sdk::ArgyleService.new(argyle_environment)
     argyle.delete_user(argyle_user_id: argyle_user_id)
   rescue Faraday::ResourceNotFound

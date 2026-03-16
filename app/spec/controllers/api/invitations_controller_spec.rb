@@ -21,6 +21,10 @@ RSpec.describe Api::InvitationsController do
 
     before do
       request.headers["Authorization"] = "Bearer #{api_access_token_instance.access_token}"
+      PartnerApplicationAttribute.where.not(name: 'first_name').update_all(required: false)
+      PartnerApplicationAttribute.where(
+        partner_config_id: PartnerConfig.where(partner_id: %w[la_ldh az_des pa_dhs]).select(:id)
+      ).update_all(required: false)
     end
 
     subject do
@@ -198,7 +202,7 @@ RSpec.describe Api::InvitationsController do
     context "with optional expiration params" do
       let(:valid_expiration_date) { 30.days.from_now.iso8601 }
       let(:valid_expiration_days) { 21 }
-      let(:agency_config) { ClientAgencyConfig.client_agencies[client_agency_id.to_s] }
+      let(:agency_config) { ClientAgencyConfig.instance[client_agency_id.to_s] }
       let(:expiration_params) { {} }
 
       before do

@@ -59,16 +59,7 @@ module ApplicationHelper
   APPLICANT_SURVEY_FORM = "https://docs.google.com/forms/d/e/1FAIpQLSedCtd9Jnyr41dAAQf3jSyhxqcqRrpaDIUI9DcH300Tg53ygA/viewform"
 
   def feedback_form_url
-    case params[:controller]
-    when %r{^caseworker/}
-      if current_agency && current_agency.caseworker_feedback_form.present?
-        current_agency.caseworker_feedback_form
-      else
-        APPLICANT_FEEDBACK_FORM
-      end
-    else
-      APPLICANT_FEEDBACK_FORM
-    end
+    APPLICANT_FEEDBACK_FORM
   end
 
   def survey_form_url

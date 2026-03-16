@@ -16,7 +16,7 @@ class CaseWorkerTransmitterJob < ApplicationJob
   end
 
   def agency_config
-    Rails.application.config.client_agencies
+    ClientAgencyConfig.instance
   end
 
   def transmitter_class

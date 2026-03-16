@@ -131,8 +131,28 @@ RSpec.describe CbvFlowInvitation, type: :model do
     let(:now) { invitation_sent_at }
     let(:agency_time_zone) { "America/New_York" }
 
+    let(:partner_app_attributes) do
+      PartnerApplicationAttribute.where(partner_config: client_agency_id).each_with_object({}) do |attr, h|
+        h[attr.name] = attr
+      end.with_indifferent_access
+    end
+
+    let(:client_agency) do
+      double("ClientAgency",
+        invitation_valid_days: invitation_valid_days,
+        applicant_attributes: partner_app_attributes,
+        require_applicant_information_on_invitation: true,
+        timezone: "America/New_York"
+      )
+    end
+
     before do
-      agency_config = Rails.application.config.client_agencies[client_agency_id]
+      ClientAgencyConfig.reset!
+
+      allow(ClientAgencyConfig.instance).to receive(:[])
+            .with(client_agency_id)
+            .and_return(client_agency)
+      agency_config = ClientAgencyConfig.instance[client_agency_id]
       allow(agency_config)
         .to receive(:invitation_valid_days)
         .and_return(invitation_valid_days)
@@ -192,11 +212,33 @@ RSpec.describe CbvFlowInvitation, type: :model do
         created_at: invitation_sent_at
       ))
     end
-    let(:agency_time_zone) { Rails.application.config.client_agencies[client_agency_id].timezone }
+    let(:agency_time_zone) { ClientAgencyConfig.instance[client_agency_id].timezone }
     let(:invitation_sent_at) { Time.use_zone(agency_time_zone) { Time.zone.local(2024, 8,  1, 12, 0, 0) } }
 
+    let(:partner_app_attributes) do
+      PartnerApplicationAttribute.where(partner_config: client_agency_id).each_with_object({}) do |attr, h|
+        h[attr.name] = attr
+      end.with_indifferent_access
+    end
+
+    let(:client_agency) do
+      double("ClientAgency",
+        invitation_valid_days: invitation_valid_days,
+        applicant_attributes: partner_app_attributes,
+        require_applicant_information_on_invitation: true,
+        timezone: "America/New_York"
+      )
+    end
+
     before do
-      agency_config = Rails.application.config.client_agencies[client_agency_id]
+      ClientAgencyConfig.reset!
+
+      allow(ClientAgencyConfig.instance).to receive(:[])
+            .with(client_agency_id)
+            .and_return(client_agency)
+
+      # stub_client_agency_config_value("sandbox", "applicant_attributes", ClientAgencyConfig.instance.application_attributes)
+      agency_config = ClientAgencyConfig.instance[client_agency_id]
       allow(agency_config)
         .to receive(:invitation_valid_days).and_return(invitation_valid_days)
 

@@ -189,17 +189,6 @@ Use placeholder values to create the Parameter Store keys.
 | `LA_LDH_PINWHEEL_ENVIRONMENT`     | `/service/app-{env}/la-ldh-pinwheel-environment`     | String | `sandbox` or `production`  |
 | `LA_LDH_WEEKLY_REPORT_RECIPIENTS` | `/service/app-{env}/la-ldh-weekly-report-recipients` | String | Comma-separated email list |
 
-### Azure AD Integration (Deprecated)
-
-Azure AD SSO integration is not currently used by this repo, but these environment variables are still necessary to define to properly launch the ECS task.
-Use placeholder values to create the Parameter Store keys.
-
-| Environment Variable          | Parameter Store Key                              | Type         |
-| ----------------------------- | ------------------------------------------------ | ------------ |
-| `AZURE_SANDBOX_CLIENT_ID`     | `/service/app-{env}/azure-sandbox-client-id`     | SecureString |
-| `AZURE_SANDBOX_CLIENT_SECRET` | `/service/app-{env}/azure-sandbox-client-secret` | SecureString |
-| `AZURE_SANDBOX_TENANT_ID`     | `/service/app-{env}/azure-sandbox-tenant-id`     | SecureString |
-
 ## Configuration Process
 
 ### 1. Create Parameter Store Entries
