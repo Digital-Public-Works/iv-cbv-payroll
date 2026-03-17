@@ -1,26 +1,17 @@
 class SeedPartnerApplicationAttributes < ActiveRecord::Migration[7.2]
   def up
-    attributes = [
-      { name: "first_name", description: "Applicant first name", required: true, data_type: 0 },
-      { name: "middle_name", description: "Applicant middle name", required: false, data_type: 0 },
-      { name: "last_name", description: "Applicant last name", required: true, data_type: 0 },
-      { name: "date_of_birth", description: "Applicant date of birth", required: true, data_type: 0 },
-      { name: "case_number", description: "Case Number", required: true, data_type: 0 }
-    ]
+    sandbox = PartnerConfig.find_by(partner_id: "sandbox")
+    return unless sandbox
 
-    PartnerConfig.find_each do |partner_config|
-      attributes.each do |attr|
-        unless PartnerApplicationAttribute.exists?(partner_config: partner_config, name: attr[:name])
-          PartnerApplicationAttribute.create!(
-            partner_config: partner_config,
-            **attr
-          )
-        end
-      end
-    end
+    PartnerApplicationAttribute.create!(partner_config: sandbox, name: "first_name", description: "Applicant first name", required: true, data_type: 0)
+    PartnerApplicationAttribute.create!(partner_config: sandbox, name: "middle_name", description: "Applicant middle name", required: false, data_type: 0)
+    PartnerApplicationAttribute.create!(partner_config: sandbox, name: "last_name", description: "Applicant last name", required: true, data_type: 0)
+    PartnerApplicationAttribute.create!(partner_config: sandbox, name: "date_of_birth", description: "Applicant date of birth", required: true, data_type: 0)
+    PartnerApplicationAttribute.create!(partner_config: sandbox, name: "case_number", description: "Case Number", required: true, data_type: 0)
   end
 
   def down
-    PartnerApplicationAttribute.delete_all
+    sandbox = PartnerConfig.find_by(partner_id: "sandbox")
+    PartnerApplicationAttribute.where(partner_config: sandbox).delete_all if sandbox
   end
 end
