@@ -55,7 +55,7 @@ jobs:
         working-directory: .
         run: |
           echo "Provisioning A11y service layer..."
-          TF_CLI_ARGS_apply="-input=false -auto-approve" make infra-update-app-service APP_NAME="app" ENVIRONMENT="a11y" image_tag="${{ steps.sha.outputs.sha }}"
+          TF_CLI_ARGS_apply="-input=false -auto-approve -var=image_tag=${{ steps.sha.outputs.sha }}" make infra-update-app-service APP_NAME="app" ENVIRONMENT="a11y"
           echo "A11y service provisioned successfully"
 
       - name: Verify service is stable
