@@ -44,11 +44,18 @@ jobs:
           fi
           echo "✅ Verified: correct AWS account"
 
+      - name: Get latest commit SHA from release-a11y
+        id: sha
+        run: |
+          COMMIT_SHA=$(git rev-parse HEAD)
+          echo "sha=${COMMIT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "Using image tag: ${COMMIT_SHA}"
+
       - name: Provision service infrastructure
         working-directory: .
         run: |
           echo "Provisioning A11y service layer..."
-          TF_CLI_ARGS_apply="-input=false -auto-approve" make infra-update-app-service APP_NAME="app" ENVIRONMENT="a11y"
+          TF_CLI_ARGS_apply="-input=false -auto-approve" make infra-update-app-service APP_NAME="app" ENVIRONMENT="a11y" image_tag="${{ steps.sha.outputs.sha }}"
           echo "A11y service provisioned successfully"
 
       - name: Verify service is stable
