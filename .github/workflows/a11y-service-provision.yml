@@ -7,9 +7,20 @@ permissions:
   id-token: write
 
 jobs:
+  build-and-publish:
+    name: Build and publish image
+    uses: ./.github/workflows/build-and-publish.yml
+    with:
+      app_name: "app"
+      ref: "release-a11y"
+    permissions:
+      contents: read
+      id-token: write
+
   provision:
     name: Provision A11y Service
     runs-on: ubuntu-latest
+    needs: [build-and-publish]
     permissions:
       id-token: write
     steps:
@@ -44,18 +55,11 @@ jobs:
           fi
           echo "✅ Verified: correct AWS account"
 
-      - name: Get latest commit SHA from release-a11y
-        id: sha
-        run: |
-          COMMIT_SHA=$(git rev-parse HEAD)
-          echo "sha=${COMMIT_SHA}" >> "$GITHUB_OUTPUT"
-          echo "Using image tag: ${COMMIT_SHA}"
-
       - name: Provision service infrastructure
         working-directory: .
         run: |
-          echo "Provisioning A11y service layer..."
-          TF_CLI_ARGS_apply="-input=false -auto-approve -var=image_tag=${{ steps.sha.outputs.sha }}" make infra-update-app-service APP_NAME="app" ENVIRONMENT="a11y"
+          echo "Provisioning A11y service layer with image tag: ${{ needs.build-and-publish.outputs.commit_hash }}"
+          TF_CLI_ARGS_apply="-input=false -auto-approve -var=image_tag=${{ needs.build-and-publish.outputs.commit_hash }}" make infra-update-app-service APP_NAME="app" ENVIRONMENT="a11y"
           echo "A11y service provisioned successfully"
 
       - name: Verify service is stable
