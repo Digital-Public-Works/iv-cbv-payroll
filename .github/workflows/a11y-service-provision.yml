@@ -13,6 +13,7 @@ jobs:
     with:
       app_name: "app"
       ref: "release-a11y"
+    secrets: inherit
     permissions:
       contents: read
       id-token: write
