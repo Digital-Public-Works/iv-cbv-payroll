@@ -140,4 +140,72 @@ RSpec.describe Aggregators::FormatMethods::Argyle, type: :service do
       end
     end
   end
+
+  describe ".paystub_implied_base_rate" do
+    it "retrieves the rate_implied if it is present" do
+      paystub_response = {
+        "gross_pay_list_totals" => {
+          "base" => {
+            "rate_implied" => "30.2900"
+          }
+        }
+      }
+
+      expect(described_class.paystub_implied_base_rate_in_dollars(paystub_response)).to eq(30.29)
+    end
+
+    it "returns nil if gross_pay_list_totals is nil" do
+      paystub_response = {
+        "gross_pay_list_totals" => nil
+      }
+
+      expect(described_class.paystub_implied_base_rate_in_dollars(paystub_response)).to be_nil
+    end
+
+    it "returns nil if base is nil" do
+      paystub_response = {
+        "gross_pay_list_totals" => {
+          "base" => nil
+        }
+      }
+
+      expect(described_class.paystub_implied_base_rate_in_dollars(paystub_response)).to be_nil
+    end
+
+    it "returns nil if rate_implied is nil" do
+      paystub_response = {
+        "gross_pay_list_totals" => {
+          "base" => {
+            "rate_implied" => nil
+          }
+        }
+      }
+
+      expect(described_class.paystub_implied_base_rate_in_dollars(paystub_response)).to be_nil
+    end
+
+    it "returns 0 if rate_implied is 0" do
+      paystub_response = {
+        "gross_pay_list_totals" => {
+          "base" => {
+            "rate_implied" => "00.0000"
+          }
+        }
+      }
+
+      expect(described_class.paystub_implied_base_rate_in_dollars(paystub_response)).to be(0.00)
+    end
+
+    it "returns nil if rate_implied is an empty string" do
+      paystub_response = {
+        "gross_pay_list_totals" => {
+          "base" => {
+            "rate_implied" => ""
+          }
+        }
+      }
+
+      expect(described_class.paystub_implied_base_rate_in_dollars(paystub_response)).to be_nil
+    end
+  end
 end
