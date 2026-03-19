@@ -227,6 +227,11 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
       end
     end
 
+    describe "when paystub base pay rates match the employment level rate" do
+      it "does not change any information" do
+        expect(argyle_report.send(:compare_hourly_base_rates, payroll_account)).to be_nil
+      end
+    end
 
     describe '#fetch_gigs' do
       context "for Bob, a Uber driver" do
