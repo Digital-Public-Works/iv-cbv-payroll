@@ -428,6 +428,7 @@ es:
       employment_details_table:
         header:
           your_details: Sus datos
+        variable_base_pay: La tarifa de pago varía. Consulte los recibos de sueldo a continuación.
       monthly_summary_table:
         accrued_gross_earnings: Ganancias brutas acumuladas
         compact:

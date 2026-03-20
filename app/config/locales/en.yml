@@ -547,6 +547,7 @@ en:
       employment_details_table:
         header:
           your_details: Your details
+        variable_base_pay: Rate varies. See paystubs below.
       monthly_summary_table:
         accrued_gross_earnings: Accrued gross earnings
         compact:

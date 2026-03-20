@@ -14,6 +14,7 @@ class Report::EmploymentDetailsTableComponent< ViewComponent::Base
     @employment = account_report&.employment
     @income = account_report&.income
     @identity = account_report&.identity
+    @paystubs = account_report&.paystubs
   end
 
   private
