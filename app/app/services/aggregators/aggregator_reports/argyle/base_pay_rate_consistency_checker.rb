@@ -8,8 +8,8 @@ module Aggregators::AggregatorReports
 
       def match?
         # Consider values compatible if they are in different units or there is nothing to compare
-        return true unless @income.compensation_amount.present?
-        return true unless @income.compensation_unit == "hourly"
+        return true unless @income&.compensation_amount.present?
+        return true unless @income&.compensation_unit == "hourly"
         return true if paystubs_base_rates.none?
 
         return true if paystubs_match && employment_match
@@ -19,7 +19,7 @@ module Aggregators::AggregatorReports
 
       private
       def paystubs_base_rates
-        @paystubs_base_rates ||= @paystubs.map(&:implied_base_rate_in_dollars)
+        @paystubs_base_rates ||= @paystubs&.map(&:implied_base_rate_in_dollars)
       end
 
       def paystubs_base_rates_unique
