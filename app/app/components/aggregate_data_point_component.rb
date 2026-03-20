@@ -109,10 +109,7 @@ class AggregateDataPointComponent < ViewComponent::Base
 
   def hourly_rate(amount, unit)
     label = I18n.t("cbv.payment_details.show.hourly_rate")
-
-    if amount == "variable"
-      return { label: label, value: I18n.t("components.report.employment_details_table.variable_base_pay") }
-    elsif amount.blank? || unit.blank?
+    if amount.blank? || unit.blank?
       return { label: label, value: I18n.t("cbv.payment_details.show.hourly_rate_not_found") }
     end
 
@@ -120,6 +117,13 @@ class AggregateDataPointComponent < ViewComponent::Base
     {
       label: label,
       value: "#{format_money(amount)} #{translated_unit}"
+    }
+  end
+
+  def variable_hourly_rate
+    {
+      label: I18n.t("cbv.payment_details.show.hourly_rate"),
+      value: I18n.t("components.report.employment_details_table.variable_base_pay")
     }
   end
 

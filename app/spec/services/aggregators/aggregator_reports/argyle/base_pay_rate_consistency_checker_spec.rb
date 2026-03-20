@@ -2,12 +2,11 @@ require 'rails_helper'
 
 RSpec.describe Aggregators::AggregatorReports::Argyle::BasePayRateConsistencyChecker, type: :service do
   describe "#match?" do
-    let(:incomes) { [
+    let(:income) {
       Aggregators::ResponseObjects::Income.new(
         compensation_amount: income_base_amount,
         compensation_unit: income_base_unit
-      )
-    ] }
+      ) }
     let(:paystubs) { [ paystub1, paystub2 ] }
     let(:paystub1) { Aggregators::ResponseObjects::Paystub.new(
         implied_base_rate_in_dollars: paystub1_base) }
@@ -18,7 +17,7 @@ RSpec.describe Aggregators::AggregatorReports::Argyle::BasePayRateConsistencyChe
     let(:paystub1_base) { "20.0000" }
     let(:paystub2_base) { "20.0000" }
 
-    subject(:checker) { described_class.new(incomes: incomes, paystubs: paystubs).match? }
+    subject(:checker) { described_class.new(income: income, paystubs: paystubs).match? }
 
     context "when the employment level base rates and all paystub base rates match exactly" do
       it { is_expected.to be true }

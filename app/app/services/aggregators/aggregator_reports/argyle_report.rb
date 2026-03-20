@@ -51,10 +51,6 @@ module Aggregators::AggregatorReports
 
       check_hours(paystubs_json)
 
-      unless Argyle::BasePayRateConsistencyChecker.new(incomes: @incomes, paystubs: @paystubs).match?
-        @incomes.first.compensation_amount = "variable"
-      end
-
       if self.has_warnings?
         NewRelic::EventLogger.track(TrackEvent::ArgyleDataUnexpectedHours, {
           time: Time.current.to_i,
