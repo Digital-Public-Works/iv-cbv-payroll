@@ -50,16 +50,9 @@ module Aggregators::AggregatorReports
       @gigs.append(*transform_gigs(gigs_json))
 
       check_hours(paystubs_json)
-      compare_hourly_base_rates
 
-      if mismatched_base_pay?
-        income = @incomes.first
-        income.compensation_amount = "variable"
-      end
-
-      if mismatched_base_pay?
-        income = @incomes.first
-        income.compensation_amount = "variable"
+      unless Argyle::BasePayRateConsistencyChecker.new(incomes: @incomes, paystubs: @paystubs).match?
+        @incomes.first.compensation_amount = "variable"
       end
 
       if self.has_warnings?
@@ -113,27 +106,6 @@ module Aggregators::AggregatorReports
       gigs_json["results"].map do |gig_json|
         Gig.from_argyle(gig_json)
       end
-    end
-
-    def mismatched_base_pay?
-      income = @incomes.first
-      return false if income.compensation_unit != "hourly"
-
-      paystubs_base_rates = @paystubs.map(&:implied_base_rate_in_dollars)
-      return false if paystubs_base_rates.none?
-
-      paystubs_base_rates_decimal = paystubs_base_rates.compact.map(&:to_d)
-      employment_base_rate_decimal = income.compensation_amount.to_d
-
-      paystub_mismatch = (paystubs_base_rates_decimal.max - paystubs_base_rates_decimal.min).abs >= 0.01
-
-      employment_mismatch = paystubs_base_rates_decimal.any? do |paystub_rate|
-        (employment_base_rate_decimal - paystub_rate).abs >= 0.01
-      end
-
-      return true if paystub_mismatch || employment_mismatch
-
-      false
     end
   end
 end
