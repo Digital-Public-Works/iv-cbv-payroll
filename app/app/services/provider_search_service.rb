@@ -112,7 +112,7 @@ class ProviderSearchService
       }
     },
     {
-      name: "Paychex",
+      name: "Paychex Flex",
       response_type: "platform",
       logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1713528637/partner-logos/Paychex%20Flex.png",
       provider_ids: {
@@ -171,20 +171,20 @@ class ProviderSearchService
       }
     },
     {
+      name: "UKG Ready",
+      response_type: "platform",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1761574859/partner-logos/UKG%20Ready.png",
+      provider_ids: {
+        argyle: "item_000041131"
+      }
+    },
+    {
       name: "Paycor",
       response_type: "platform",
       logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1605726518/partner-logos/paycor.png",
       provider_ids: {
         pinwheel: "b0b655f8-4ae6-4d09-a60f-1df9a2a1fd16",
         argyle: "item_000029936"
-      }
-    },
-    {
-      name: "Oracle",
-      response_type: "platform",
-      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1650619947/partner-logos/oracle_peoplesoft_platform.png",
-      provider_ids: {
-        argyle: "item_000029125"
       }
     }
   ]
