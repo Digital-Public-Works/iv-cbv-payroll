@@ -110,7 +110,7 @@ class BuildDatabasePartnerConfigs < ActiveRecord::Migration[7.2]
       active_demo: true,
       active_prod: true,
       name: "CBV Test Agency",
-      website: "ttps://www.example.com/contact",
+      website: "https://www.example.com/contact",
       timezone: "America/New_York",
       domain: "sandbox",
       argyle_environment: "sandbox",
