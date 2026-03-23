@@ -112,7 +112,7 @@ class ProviderSearchService
       }
     },
     {
-      name: "Paychex Flex",
+      name: "Paychex",
       response_type: "platform",
       logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1713528637/partner-logos/Paychex%20Flex.png",
       provider_ids: {
@@ -159,7 +159,7 @@ class ProviderSearchService
       response_type: "platform",
       logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1734620893/partner-logos/dayforcehcm.png",
       provider_ids: {
-        argyle: "item_000011367"
+        argyle: "item_000011368"
       }
     },
     {
