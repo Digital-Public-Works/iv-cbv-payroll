@@ -30,7 +30,7 @@ class Cbv::BaseController < ApplicationController
       # check backstop of how many times an invitation can be used to prevent runaway costs from a bot or something
       if invitation.at_flow_limit?
         Rails.logger.warn("Invitation #{invitation.id} reached flow limit")
-        NewRelic::Agent.record_custom_event("InvitationLimitReached", {
+        NewRelic::EventLogger.track(TrackEvent::InvitationLimitReached, {
           invitation_id: invitation.id,
           cbv_flow_count: invitation.cbv_flows.count
         })

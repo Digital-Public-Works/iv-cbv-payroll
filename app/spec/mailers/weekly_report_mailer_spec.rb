@@ -11,7 +11,7 @@ RSpec.describe WeeklyReportMailer, type: :mailer do
   let(:cbv_flow_invitation) { nil }
   let(:cbv_flow) do
     create(
-      :cbv_flow, :with_pinwheel_account,
+      :cbv_flow, :with_argyle_account,
       confirmation_code: "00001",
       created_at: invitation_sent_at + 15.minutes,
       client_agency_id: client_agency_id,
@@ -34,6 +34,8 @@ RSpec.describe WeeklyReportMailer, type: :mailer do
 
   before do
     travel_to(now)
+    PartnerApplicationAttribute.update_all(required: false)
+    ClientAgencyConfig.reset!
   end
 
   after do
@@ -49,7 +51,7 @@ RSpec.describe WeeklyReportMailer, type: :mailer do
   end
 
   it "tracks events" do
-    expect(EventTrackingJob).to receive(:perform_later).with("EmailSent", anything, hash_including(
+    expect(MixpanelEventTrackingJob).to receive(:perform_later).with("EmailSent", anything, hash_including(
         mailer: "WeeklyReportMailer",
         action: "report_email",
         message_id: be_a(String)
@@ -67,7 +69,7 @@ RSpec.describe WeeklyReportMailer, type: :mailer do
   end
 
   it "excludes data from outside the report week" do
-    create(:cbv_flow, :with_pinwheel_account,
+    create(:cbv_flow, :with_argyle_account,
            confirmation_code: "00002",
            created_at: now.prev_week.beginning_of_week - 1.minute,
            transmitted_at: now.prev_week.beginning_of_week,
@@ -134,7 +136,7 @@ RSpec.describe WeeklyReportMailer, type: :mailer do
 
       it "includes incomplete flows" do
         incomplete_invitation = create(:cbv_flow_invitation, :az_des, created_at: invitation_sent_at)
-        create(:cbv_flow, :invited, :with_pinwheel_account,
+        create(:cbv_flow, :invited, :with_argyle_account,
                created_at: invitation_sent_at,
                client_agency_id: client_agency_id,
                cbv_flow_invitation: incomplete_invitation)
@@ -153,7 +155,7 @@ RSpec.describe WeeklyReportMailer, type: :mailer do
       end
 
       it "includes multiple flows from the same invitation" do
-        create(:cbv_flow, :with_pinwheel_account,
+        create(:cbv_flow, :with_argyle_account,
                confirmation_code: "00003",
                created_at: invitation_sent_at + 1.hour,
                transmitted_at: invitation_sent_at + 1.hour + 15.minutes,
@@ -202,7 +204,7 @@ RSpec.describe WeeklyReportMailer, type: :mailer do
 
       it "includes incomplete flows" do
         incomplete_invitation = create(:cbv_flow_invitation, :pa_dhs, created_at: invitation_sent_at)
-        create(:cbv_flow, :invited, :with_pinwheel_account,
+        create(:cbv_flow, :invited, :with_argyle_account,
                created_at: invitation_sent_at,
                client_agency_id: client_agency_id,
                cbv_flow_invitation: incomplete_invitation)
@@ -213,6 +215,8 @@ RSpec.describe WeeklyReportMailer, type: :mailer do
       end
 
       it "includes unused invitations" do
+        # check to see if there's an applicant being created somewhere. It's not showing up here, not validating.
+        # ClientAgencyConfig.client_agency_ids
         create(:cbv_flow_invitation, :pa_dhs, created_at: invitation_sent_at)
 
         expect(parsed_csv.length).to eq(2)
@@ -221,7 +225,7 @@ RSpec.describe WeeklyReportMailer, type: :mailer do
       end
 
       it "includes multiple flows from the same invitation" do
-        create(:cbv_flow, :with_pinwheel_account,
+        create(:cbv_flow, :with_argyle_account,
                confirmation_code: "00003",
                created_at: invitation_sent_at + 1.hour,
                transmitted_at: invitation_sent_at + 1.hour + 15.minutes,

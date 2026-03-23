@@ -2,7 +2,7 @@ require 'rails_helper'
 
 RSpec.describe CbvApplicant, type: :model do
   describe "all valid types of agencies" do
-    ClientAgencyConfig.client_agencies.client_agency_ids.each do |client_agency_id|
+    ClientAgencyConfig.instance.client_agency_ids.each do |client_agency_id|
       it "has a list of VALID_ATTRIBUTES for #{client_agency_id}" do
         expect(CbvApplicant.valid_attributes_for_agency(client_agency_id)).to be_present
       end

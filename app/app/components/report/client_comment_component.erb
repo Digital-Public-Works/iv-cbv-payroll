@@ -1,0 +1,29 @@
+<%# This component layout should only be used for pdfs. Flexbox is otherwise preferred.
+See https://wkhtmltopdf.com/wkhtmltopdf-flexbox-css-support/ for more details. %>
+
+<table style="border: 0; width: 95%">
+  <tr>
+    <td style="vertical-align: top;
+      width: 30px;
+      padding-left: 0.25rem;
+      padding-right: 0.1rem;
+      padding-top: 0.2rem;
+      border: 0"
+    >
+      <svg class="usa-icon" aria-hidden="true" role="img" width="24" height="24" viewBox="0 0 24 24">
+        <path d="<%= chat_icon_path %>" ></path>
+      </svg>
+    </td>
+    <td style="vertical-align: top; line-height: 1.62; border: 0; padding: 0">
+      <div>
+        <strong style="display: block;"><%= I18n.t("cbv.submits.show.client_comment_title") %></strong>
+        <div class="text-italic text-gray-50">
+          <%= I18n.t("cbv.submits.show.client_comment_description") %>
+        </div>
+      </div>
+      <div style="margin-top: 4px;">
+        <%= comment.presence || I18n.t("cbv.submits.show.no_client_comment_found") %>
+      </div>
+    </td>
+  </tr>
+</table>

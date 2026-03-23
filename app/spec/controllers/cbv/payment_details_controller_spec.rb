@@ -16,7 +16,7 @@ RSpec.describe Cbv::PaymentDetailsController do
     let(:cbv_flow) do
       create(:cbv_flow,
         :invited,
-        :with_pinwheel_account,
+        :with_argyle_account,
         with_errored_jobs: errored_jobs,
         created_at: current_time,
         supported_jobs: supported_jobs,
@@ -26,7 +26,7 @@ RSpec.describe Cbv::PaymentDetailsController do
     let!(:payroll_account) do
       create(
         :payroll_account,
-        :pinwheel_fully_synced,
+        :argyle_fully_synced,
         with_errored_jobs: errored_jobs,
         cbv_flow: cbv_flow,
         aggregator_account_id: account_id,
@@ -54,8 +54,8 @@ RSpec.describe Cbv::PaymentDetailsController do
       # end
 
       # it "tracks events" do
-      #   allow(EventTrackingJob).to receive(:perform_later).with(TrackEvent::CbvPageView, anything, anything)
-      #   expect(EventTrackingJob).to receive(:perform_later).with(TrackEvent::ApplicantViewedPaymentDetails, anything, hash_including(
+      #   allow(MixpanelEventTrackingJob).to receive(:perform_later).with(TrackEvent::CbvPageView, anything, anything)
+      #   expect(MixpanelEventTrackingJob).to receive(:perform_later).with(TrackEvent::ApplicantViewedPaymentDetails, anything, hash_including(
       #       cbv_flow_id: cbv_flow.id,
       #       device_id: cbv_flow.device_id,
       #       invitation_id: cbv_flow.cbv_flow_invitation_id,
@@ -421,9 +421,9 @@ RSpec.describe Cbv::PaymentDetailsController do
         end
 
         it "tracks events" do
-          allow(EventTrackingJob).to receive(:perform_later).with(TrackEvent::CbvPageView, anything, anything)
+          allow(MixpanelEventTrackingJob).to receive(:perform_later).with(TrackEvent::CbvPageView, anything, anything)
 
-          expect(EventTrackingJob).to receive(:perform_later)
+          expect(MixpanelEventTrackingJob).to receive(:perform_later)
             .with("ArgylePaystubHours", anything, hash_including(
               time: be_a(Integer),
               argyle_total_hours: be_a(String),
@@ -433,7 +433,7 @@ RSpec.describe Cbv::PaymentDetailsController do
               argyle_hours_null: false
             )).exactly(10).times
 
-          expect(EventTrackingJob).to receive(:perform_later).with(TrackEvent::ApplicantViewedPaymentDetails, anything, hash_including(
+          expect(MixpanelEventTrackingJob).to receive(:perform_later).with(TrackEvent::ApplicantViewedPaymentDetails, anything, hash_including(
               cbv_flow_id: cbv_flow.id,
               device_id: cbv_flow.device_id,
               invitation_id: cbv_flow.cbv_flow_invitation_id,
@@ -445,7 +445,7 @@ RSpec.describe Cbv::PaymentDetailsController do
             ))
 
           # AggregatorReport::find_account_report is invoked several times during the render of show.
-          expect(EventTrackingJob).to receive(:perform_later)
+          expect(MixpanelEventTrackingJob).to receive(:perform_later)
             .with("ArgyleReportHours", anything, hash_including(
               time: be_a(Integer),
               total_paystubs: 10,
@@ -507,7 +507,7 @@ RSpec.describe Cbv::PaymentDetailsController do
         context "when client agency has report_customization_show_earnings_list enabled" do
           before do
             cbv_flow.update!(client_agency_id: "pa_dhs")
-            allow(ClientAgencyConfig.client_agencies["pa_dhs"]).to receive(:report_customization_show_earnings_list).and_return(true)
+            allow(ClientAgencyConfig.instance["pa_dhs"]).to receive(:report_customization_show_earnings_list).and_return(true)
           end
 
           it "shows gross pay line items section in the rendered HTML" do
@@ -524,7 +524,7 @@ RSpec.describe Cbv::PaymentDetailsController do
         context "when client agency has report_customization_show_earnings_list disabled" do
           before do
             cbv_flow.update!(client_agency_id: "sandbox")
-            allow(ClientAgencyConfig.client_agencies["sandbox"]).to receive(:report_customization_show_earnings_list).and_return(false)
+            allow(ClientAgencyConfig.instance["sandbox"]).to receive(:report_customization_show_earnings_list).and_return(false)
           end
 
           it "does not show gross pay line items section in the rendered HTML" do
@@ -599,9 +599,9 @@ RSpec.describe Cbv::PaymentDetailsController do
     end
 
     it "tracks events" do
-      allow(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+      allow(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
 
-      expect(EventTrackingJob).to receive(:perform_later).with("ApplicantSavedPaymentDetails", anything, hash_including(
+      expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantSavedPaymentDetails", anything, hash_including(
           cbv_flow_id: cbv_flow.id,
           invitation_id: cbv_flow.cbv_flow_invitation_id,
           additional_information_length: comment.length

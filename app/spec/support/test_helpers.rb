@@ -101,7 +101,7 @@ module TestHelpers
   end
 
   def stub_client_agency_config_value(client_agency_id, key, value)
-    client_agency_config = Rails.application.config.client_agencies[client_agency_id]
+    client_agency_config = ClientAgencyConfig.instance[client_agency_id]
     allow(client_agency_config).to receive(key.to_sym).and_return(value)
   end
 

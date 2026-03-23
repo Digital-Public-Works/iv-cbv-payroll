@@ -2,7 +2,7 @@ require "rails_helper"
 
 RSpec.describe ApplicationHelper do
   describe "#agency_translation" do
-    let(:current_agency) { Rails.application.config.client_agencies["sandbox"] }
+    let(:current_agency) { ClientAgencyConfig.instance["sandbox"] }
     let(:available_translations) { <<~YAML }
         some_prefix:
           sandbox: some string
@@ -31,7 +31,7 @@ RSpec.describe ApplicationHelper do
       end
 
       context "when there is not a translation for that client agency" do
-        let(:current_agency) { Rails.application.config.client_agencies["applesauce"] }
+        let(:current_agency) { ClientAgencyConfig.instance["applesauce"] }
 
         it "uses the translation for the default key" do
           expect(helper.agency_translation("some_prefix")).to eq("default string")
@@ -75,7 +75,7 @@ RSpec.describe ApplicationHelper do
       end
 
       context "when interpolating a variable" do
-        let(:current_agency) { Rails.application.config.client_agencies["sandbox"] }
+        let(:current_agency) { ClientAgencyConfig.instance["sandbox"] }
 
         it "sanitizes input parameters" do
           expect(helper.agency_translation("some_prefix_html", variable: "<strong>bold</strong>"))
@@ -105,7 +105,7 @@ RSpec.describe ApplicationHelper do
 
     context "on a CBV flow application page" do
       let(:params) { { controller: "cbv/summaries" } }
-      let(:current_agency) { Rails.application.config.client_agencies["sandbox"] }
+      let(:current_agency) { ClientAgencyConfig.instance["sandbox"] }
 
       it "shows the applicant-facing Google Form" do
         expect(helper.feedback_form_url).to eq(ApplicationHelper::APPLICANT_FEEDBACK_FORM)

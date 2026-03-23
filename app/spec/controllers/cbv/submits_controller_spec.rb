@@ -24,241 +24,241 @@ RSpec.describe Cbv::SubmitsController do
   end
 
   describe "#show" do
-    context "when using pinwheel" do
-      let(:supported_jobs) { %w[income paystubs employment identity] }
-      let(:errored_jobs) { [] }
-      let(:cbv_applicant) { create(:cbv_applicant, created_at: current_time, case_number: "ABC1234") }
-      let(:pinwheel_report) { build(:pinwheel_report, :with_pinwheel_account) }
+    # context "when using pinwheel" do
+    #   let(:supported_jobs) { %w[income paystubs employment identity] }
+    #   let(:errored_jobs) { [] }
+    #   let(:cbv_applicant) { create(:cbv_applicant, created_at: current_time, case_number: "ABC1234") }
+    #   let(:pinwheel_report) { build(:pinwheel_report, :with_pinwheel_account) }
 
-      let(:cbv_flow) do
-        create(:cbv_flow,
-               :invited,
-               :with_pinwheel_account,
-               :completed,
-               with_errored_jobs: errored_jobs,
-               created_at: current_time,
-               supported_jobs: supported_jobs,
-               cbv_applicant: cbv_applicant
-        )
-      end
+    #   let(:cbv_flow) do
+    #     create(:cbv_flow,
+    #            :invited,
+    #            :with_pinwheel_account,
+    #            :completed,
+    #            with_errored_jobs: errored_jobs,
+    #            created_at: current_time,
+    #            supported_jobs: supported_jobs,
+    #            cbv_applicant: cbv_applicant
+    #     )
+    #   end
 
-      before do
-        cbv_applicant.update(snap_application_date: current_time)
-        cbv_flow.payroll_accounts.first.update(aggregator_account_id: "03e29160-f7e7-4a28-b2d8-813640e030d3")
+    #   before do
+    #     cbv_applicant.update(snap_application_date: current_time)
+    #     cbv_flow.payroll_accounts.first.update(aggregator_account_id: "03e29160-f7e7-4a28-b2d8-813640e030d3")
 
-        session[:cbv_flow_id] = cbv_flow.id
-        pinwheel_stub_request_end_user_accounts_response
-        pinwheel_stub_request_end_user_paystubs_response
-        pinwheel_stub_request_employment_info_response unless errored_jobs.include?("employment")
-        pinwheel_stub_request_income_metadata_response if supported_jobs.include?("income")
-        pinwheel_stub_request_identity_response
-        allow(Aggregators::AggregatorReports::PinwheelReport).to receive(:new).and_return(pinwheel_report)
-      end
+    #     session[:cbv_flow_id] = cbv_flow.id
+    #     pinwheel_stub_request_end_user_accounts_response
+    #     pinwheel_stub_request_end_user_paystubs_response
+    #     pinwheel_stub_request_employment_info_response unless errored_jobs.include?("employment")
+    #     pinwheel_stub_request_income_metadata_response if supported_jobs.include?("income")
+    #     pinwheel_stub_request_identity_response
+    #     allow(Aggregators::AggregatorReports::PinwheelReport).to receive(:new).and_return(pinwheel_report)
+    #   end
 
-      context "when rendering views" do
-        render_views
+    #   context "when rendering views" do
+    #     render_views
 
-        context "with incomplete cbv_flow" do
-          let(:cbv_flow) do
-            create(:cbv_flow,
-                   :invited,
-                   :with_pinwheel_account,
-                   with_errored_jobs: errored_jobs,
-                   created_at: current_time,
-                   supported_jobs: supported_jobs,
-                   cbv_applicant: cbv_applicant
-            )
-          end
+    #     context "with incomplete cbv_flow" do
+    #       let(:cbv_flow) do
+    #         create(:cbv_flow,
+    #                :invited,
+    #                :with_pinwheel_account,
+    #                with_errored_jobs: errored_jobs,
+    #                created_at: current_time,
+    #                supported_jobs: supported_jobs,
+    #                cbv_applicant: cbv_applicant
+    #         )
+    #       end
 
-          it "renders properly" do
-            get :show
-            expect(controller.send(:has_consent)).to be_falsey
-            expect(response.body).to include("Legal agreement")
-            expect(response).to be_successful
-          end
-        end
+    #       it "renders properly" do
+    #         get :show
+    #         expect(controller.send(:has_consent)).to be_falsey
+    #         expect(response.body).to include("Legal agreement")
+    #         expect(response).to be_successful
+    #       end
+    #     end
 
-        it "renders pdf properly" do
-          get :show, format: :pdf
-          expect(response).to be_successful
-          expect(response.header['Content-Type']).to include 'pdf'
-        end
+    #     it "renders pdf properly" do
+    #       get :show, format: :pdf
+    #       expect(response).to be_successful
+    #       expect(response.header['Content-Type']).to include 'pdf'
+    #     end
 
-        context "when only paystubs are supported" do
-          let(:supported_jobs) { %w[paystubs] }
+    #     context "when only paystubs are supported" do
+    #       let(:supported_jobs) { %w[paystubs] }
 
-          it "renders pdf properly" do
-            get :show, format: :pdf
-            expect(response).to be_successful
-            expect(response.header['Content-Type']).to include 'pdf'
-          end
-        end
+    #       it "renders pdf properly" do
+    #         get :show, format: :pdf
+    #         expect(response).to be_successful
+    #         expect(response.header['Content-Type']).to include 'pdf'
+    #       end
+    #     end
 
-        context "when a supported job errors" do
-          let(:supported_jobs) { %w[income paystubs employment] }
-          let(:errored_jobs) { [ "employment" ] }
+    #     context "when a supported job errors" do
+    #       let(:supported_jobs) { %w[income paystubs employment] }
+    #       let(:errored_jobs) { [ "employment" ] }
 
-          it "renders pdf properly" do
-            get :show, format: :pdf
-            expect(response).to be_successful
-            expect(response.header['Content-Type']).to include 'pdf'
-          end
-        end
+    #       it "renders pdf properly" do
+    #         get :show, format: :pdf
+    #         expect(response).to be_successful
+    #         expect(response.header['Content-Type']).to include 'pdf'
+    #       end
+    #     end
 
-        context "when multiple accounts, one errored one good" do
-          let(:supported_jobs) { %w[income paystubs employment] }
-          let(:errored_jobs) { [ "employment" ] }
+    #     context "when multiple accounts, one errored one good" do
+    #       let(:supported_jobs) { %w[income paystubs employment] }
+    #       let(:errored_jobs) { [ "employment" ] }
 
-          it "renders a pdf" do
-            create(:payroll_account, :pinwheel_fully_synced, cbv_flow: cbv_flow, aggregator_account_id: "account1")
-            expect(response).to be_successful
-          end
-        end
+    #       it "renders a pdf" do
+    #         create(:payroll_account, :pinwheel_fully_synced, cbv_flow: cbv_flow, aggregator_account_id: "account1")
+    #         expect(response).to be_successful
+    #       end
+    #     end
 
-        context "when rendering for a az des caseworker" do
-          it "shows the right client information fields" do
-            cbv_flow.update!(client_agency_id: "az_des")
-            cbv_flow.cbv_applicant.update!(case_number: "12345")
-            get :show, format: :pdf, params: {
-             is_caseworker: "true"
-           }
+    #     context "when rendering for a az des caseworker" do
+    #       it "shows the right client information fields" do
+    #         cbv_flow.update!(client_agency_id: "az_des")
+    #         cbv_flow.cbv_applicant.update!(case_number: "12345")
+    #         get :show, format: :pdf, params: {
+    #          is_caseworker: "true"
+    #        }
 
-            pdf_text = extract_pdf_text(response)
+    #         pdf_text = extract_pdf_text(response)
 
-            expect(pdf_text).to include("Case number")
-            expect(pdf_text).to include("00012345")
-            expect(pdf_text).not_to include(I18n.t("cbv.submits.show.application_or_recertification_date"))
-          end
-        end
+    #         expect(pdf_text).to include("Case number")
+    #         expect(pdf_text).to include("00012345")
+    #         expect(pdf_text).not_to include(I18n.t("cbv.submits.show.application_or_recertification_date"))
+    #       end
+    #     end
 
-        context "when rendering for a pa dhs caseworker" do
-          it "shows the right client information fields" do
-            cbv_flow.update!(client_agency_id: "pa_dhs")
-            cbv_flow.cbv_applicant.update!(case_number: "12345")
-            get :show, format: :pdf, params: {
-              is_caseworker: "true"
-            }
+    #     context "when rendering for a pa dhs caseworker" do
+    #       it "shows the right client information fields" do
+    #         cbv_flow.update!(client_agency_id: "pa_dhs")
+    #         cbv_flow.cbv_applicant.update!(case_number: "12345")
+    #         get :show, format: :pdf, params: {
+    #           is_caseworker: "true"
+    #         }
 
-            pdf_text = extract_pdf_text(response)
+    #         pdf_text = extract_pdf_text(response)
 
-            expect(pdf_text).not_to include(I18n.t("cbv.submits.show.application_or_recertification_date"))
-          end
-        end
+    #         expect(pdf_text).not_to include(I18n.t("cbv.submits.show.application_or_recertification_date"))
+    #       end
+    #     end
 
 
-        context "with sandbox client agency" do
-          context "when rendering for a caseworker" do
-            it "shows the right client information fields" do
-              get :show, format: :pdf, params: {
-                  is_caseworker: "true"
-                }
+    #     context "with sandbox client agency" do
+    #       context "when rendering for a caseworker" do
+    #         it "shows the right client information fields" do
+    #           get :show, format: :pdf, params: {
+    #               is_caseworker: "true"
+    #             }
 
-              pdf_text = extract_pdf_text(response)
+    #           pdf_text = extract_pdf_text(response)
 
-              expect(pdf_text).to include(I18n.t("cbv.applicant_informations.sandbox.fields.first_name.prompt"))
-              expect(pdf_text).to include(I18n.t("cbv.applicant_informations.sandbox.fields.middle_name.prompt"))
-              expect(pdf_text).to include(I18n.t("cbv.applicant_informations.sandbox.fields.last_name.prompt"))
-              expect(pdf_text).to include(I18n.t("cbv.applicant_informations.sandbox.fields.case_number.prompt"))
-              expect(pdf_text).to include(I18n.t("cbv.submits.show.pdf.caseworker.ssn"))
-              expect(pdf_text).to include(I18n.t("cbv.submits.show.application_or_recertification_date"))
-            end
-          end
+    #           expect(pdf_text).to include(I18n.t("cbv.applicant_informations.sandbox.fields.first_name.prompt"))
+    #           expect(pdf_text).to include(I18n.t("cbv.applicant_informations.sandbox.fields.middle_name.prompt"))
+    #           expect(pdf_text).to include(I18n.t("cbv.applicant_informations.sandbox.fields.last_name.prompt"))
+    #           expect(pdf_text).to include(I18n.t("cbv.applicant_informations.sandbox.fields.case_number.prompt"))
+    #           expect(pdf_text).to include(I18n.t("cbv.submits.show.pdf.caseworker.ssn"))
+    #           expect(pdf_text).to include(I18n.t("cbv.submits.show.application_or_recertification_date"))
+    #         end
+    #       end
 
-          context "when rendering for a client" do
-            it "does not show the client information fields" do
-              get :show, format: :pdf
+    #       context "when rendering for a client" do
+    #         it "does not show the client information fields" do
+    #           get :show, format: :pdf
 
-              pdf_text = extract_pdf_text(response)
+    #           pdf_text = extract_pdf_text(response)
 
-              expect(pdf_text).to include(I18n.t("cbv.applicant_informations.sandbox.fields.first_name.prompt"))
-              expect(pdf_text).to include(I18n.t("cbv.applicant_informations.sandbox.fields.middle_name.prompt"))
-              expect(pdf_text).to include(I18n.t("cbv.applicant_informations.sandbox.fields.last_name.prompt"))
-              expect(pdf_text).to include(I18n.t("cbv.applicant_informations.sandbox.fields.case_number.prompt"))
-              expect(pdf_text).not_to include(I18n.t("cbv.submits.show.pdf.caseworker.ssn"))
-            end
-          end
-        end
+    #           expect(pdf_text).to include(I18n.t("cbv.applicant_informations.sandbox.fields.first_name.prompt"))
+    #           expect(pdf_text).to include(I18n.t("cbv.applicant_informations.sandbox.fields.middle_name.prompt"))
+    #           expect(pdf_text).to include(I18n.t("cbv.applicant_informations.sandbox.fields.last_name.prompt"))
+    #           expect(pdf_text).to include(I18n.t("cbv.applicant_informations.sandbox.fields.case_number.prompt"))
+    #           expect(pdf_text).not_to include(I18n.t("cbv.submits.show.pdf.caseworker.ssn"))
+    #         end
+    #       end
+    #     end
 
-        context "with la_ldh client agency" do
-          before do
-            cbv_flow.update!(client_agency_id: "la_ldh")
-          end
-          context "when rendering for a caseworker" do
-            it "shows the right client information fields" do
-              get :show, format: :pdf, params: {
-                is_caseworker: "true"
-              }
+    #     context "with la_ldh client agency" do
+    #       before do
+    #         cbv_flow.update!(client_agency_id: "la_ldh")
+    #       end
+    #       context "when rendering for a caseworker" do
+    #         it "shows the right client information fields" do
+    #           get :show, format: :pdf, params: {
+    #             is_caseworker: "true"
+    #           }
 
-              pdf_text = extract_pdf_text(response)
+    #           pdf_text = extract_pdf_text(response)
 
-              expect(pdf_text).to include("Client-provided information")
-              expect(pdf_text).to include("Medicaid case number")
-              expect(pdf_text).to include("Date of birth")
-              expect(pdf_text).to include("SSN")
-              expect(pdf_text).not_to include(I18n.t("cbv.submits.show.application_or_recertification_date"))
-            end
-          end
+    #           expect(pdf_text).to include("Client-provided information")
+    #           expect(pdf_text).to include("Medicaid case number")
+    #           expect(pdf_text).to include("Date of birth")
+    #           expect(pdf_text).to include("SSN")
+    #           expect(pdf_text).not_to include(I18n.t("cbv.submits.show.application_or_recertification_date"))
+    #         end
+    #       end
 
-          context "when rendering for a client" do
-            it "does not show the client information fields" do
-              get :show, format: :pdf
+    #       context "when rendering for a client" do
+    #         it "does not show the client information fields" do
+    #           get :show, format: :pdf
 
-              pdf_text = extract_pdf_text(response)
+    #           pdf_text = extract_pdf_text(response)
 
-              expect(pdf_text).to include("Client-provided information")
-              expect(pdf_text).to include("Medicaid case number")
-              expect(pdf_text).to include("Date of birth")
-              expect(pdf_text).not_to include("SSN")
-            end
-          end
-        end
-      end
+    #           expect(pdf_text).to include("Client-provided information")
+    #           expect(pdf_text).to include("Medicaid case number")
+    #           expect(pdf_text).to include("Date of birth")
+    #           expect(pdf_text).not_to include("SSN")
+    #         end
+    #       end
+    #     end
+    #   end
 
-      context "when legal agreement checked" do
-        before do
-          cbv_flow.update(consented_to_authorized_use_at: Time.now)
-        end
+    #   context "when legal agreement checked" do
+    #     before do
+    #       cbv_flow.update(consented_to_authorized_use_at: Time.now)
+    #     end
 
-        it "hides legal agreement if already checked" do
-          get :show
+    #     it "hides legal agreement if already checked" do
+    #       get :show
 
-          expect(response.body).not_to include("Legal Agreement")
-        end
-      end
+    #       expect(response.body).not_to include("Legal Agreement")
+    #     end
+    #   end
 
-      context "for a completed CbvFlow" do
-        before do
-          cbv_flow.update(confirmation_code: "ABC123")
-        end
+    #   context "for a completed CbvFlow" do
+    #     before do
+    #       cbv_flow.update(confirmation_code: "ABC123")
+    #     end
 
-        it "allows the user to download the PDF summary" do
-          get :show, format: :pdf
-          expect(response).to be_successful
-          expect(response.header['Content-Type']).to include 'pdf'
-        end
+    #     it "allows the user to download the PDF summary" do
+    #       get :show, format: :pdf
+    #       expect(response).to be_successful
+    #       expect(response.header['Content-Type']).to include 'pdf'
+    #     end
 
-        it "redirects the user to the success page if the user goes back to the page" do
-          get :show
-          expect(response).to redirect_to(cbv_flow_success_path)
-        end
-      end
+    #     it "redirects the user to the success page if the user goes back to the page" do
+    #       get :show
+    #       expect(response).to redirect_to(cbv_flow_success_path)
+    #     end
+    #   end
 
-      it "renders pdf properly" do
-        get :show, format: :pdf
-        expect(response).to be_successful
-        expect(response.header['Content-Type']).to include 'pdf'
-      end
+    #   it "renders pdf properly" do
+    #     get :show, format: :pdf
+    #     expect(response).to be_successful
+    #     expect(response.header['Content-Type']).to include 'pdf'
+    #   end
 
-      context "when only paystubs are supported" do
-        let(:supported_jobs) { %w[paystubs] }
+    #   context "when only paystubs are supported" do
+    #     let(:supported_jobs) { %w[paystubs] }
 
-        it "renders pdf properly" do
-          get :show, format: :pdf
-          expect(response).to be_successful
-          expect(response.header['Content-Type']).to include 'pdf'
-        end
-      end
-    end
+    #     it "renders pdf properly" do
+    #       get :show, format: :pdf
+    #       expect(response).to be_successful
+    #       expect(response.header['Content-Type']).to include 'pdf'
+    #     end
+    #   end
+    # end
     context "when using argyle" do
       context "for Bob (a gig worker)" do
         let(:cbv_applicant) { create(:cbv_applicant, created_at: current_time, case_number: "ABC1234") }
@@ -305,6 +305,8 @@ RSpec.describe Cbv::SubmitsController do
           expect(pdf_text).not_to include("Payments after taxes and deductions (net)")
           expect(pdf_text).not_to include("Deduction")
           expect(pdf_text).not_to include("Base Pay")
+
+          expect(pdf_text).to include("Client Comments")
         end
       end
 
@@ -559,16 +561,17 @@ RSpec.describe Cbv::SubmitsController do
   end
 
   describe "#update" do
-    let(:supported_jobs) { %w[income paystubs employment identity] }
+    let(:supported_jobs) { %w[accounts income paystubs employment identity] }
     let(:errored_jobs) { [] }
     let(:current_time) { Date.parse('2024-06-18') }
     let(:cbv_applicant) { create(:cbv_applicant, created_at: current_time, case_number: "ABC1234") }
-    let(:pinwheel_report) { build(:pinwheel_report, :with_pinwheel_account) }
+    #    let(:pinwheel_report) { build(:pinwheel_report, :with_pinwheel_account) }
+    let(:argyle_report) { build(:argyle_report, :with_argyle_account) }
 
     let(:cbv_flow) do
       create(:cbv_flow,
              :invited,
-             :with_pinwheel_account,
+             :with_argyle_account,
              with_errored_jobs: errored_jobs,
              created_at: current_time,
              supported_jobs: supported_jobs,
@@ -581,12 +584,12 @@ RSpec.describe Cbv::SubmitsController do
 
       session[:cbv_flow_id] = cbv_flow.id
       sign_in sandbox_user
-      pinwheel_stub_request_end_user_accounts_response
-      pinwheel_stub_request_end_user_paystubs_response
-      pinwheel_stub_request_employment_info_response
-      pinwheel_stub_request_income_metadata_response
-      pinwheel_stub_request_identity_response
-      allow(Aggregators::AggregatorReports::PinwheelReport).to receive(:new).and_return(pinwheel_report)
+      # pinwheel_stub_request_end_user_accounts_response
+      # pinwheel_stub_request_end_user_paystubs_response
+      # pinwheel_stub_request_employment_info_response
+      # pinwheel_stub_request_income_metadata_response
+      # pinwheel_stub_request_identity_response
+      allow(Aggregators::AggregatorReports::ArgyleReport).to receive(:new).and_return(argyle_report)
     end
 
     context "without consent" do

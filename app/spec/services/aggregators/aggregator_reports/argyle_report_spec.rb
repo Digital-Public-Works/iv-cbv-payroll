@@ -169,7 +169,7 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
             allow(argyle_service).to receive(:fetch_paystubs_api)
               .and_return(argyle_load_relative_json_file("invalid_hours", fixture))
 
-            allow(NewRelic::Agent).to receive(:record_custom_event)
+            allow(NewRelic::EventLogger).to receive(:track)
             argyle_report.send(:fetch_report_data)
           end
 
@@ -183,7 +183,7 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
           end
 
           it "sends a warning to New Relic" do
-            expect(NewRelic::Agent).to have_received(:record_custom_event).with(
+            expect(NewRelic::EventLogger).to have_received(:track).with(
               TrackEvent::ArgyleDataUnexpectedHours,
               hash_including(
                 time: anything,
@@ -209,7 +209,7 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
             allow(argyle_service).to receive(:fetch_paystubs_api)
               .and_return(argyle_load_relative_json_file("invalid_hours", fixture))
 
-            allow(NewRelic::Agent).to receive(:record_custom_event)
+            allow(NewRelic::EventLogger).to receive(:track)
             argyle_report.send(:fetch_report_data)
           end
 
@@ -218,7 +218,7 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
           end
 
           it "does not send a warning to New Relic" do
-            expect(NewRelic::Agent).not_to have_received(:record_custom_event).with(
+            expect(NewRelic::EventLogger).not_to have_received(:track).with(
               anything,
               anything
             )

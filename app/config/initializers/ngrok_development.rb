@@ -1,4 +1,4 @@
-Rails.application.config.to_prepare do
+Rails.application.config.after_initialize do
   Rails.application.config.webhooks_initialization_error = nil
 
   # Only run this when running the Rails server in development

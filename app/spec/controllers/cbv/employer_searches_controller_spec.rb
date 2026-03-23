@@ -23,8 +23,8 @@ RSpec.describe Cbv::EmployerSearchesController do
       end
 
       it "tracks an event" do
-        allow(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantAccessedSearchPage", anything, hash_including(
+        allow(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantAccessedSearchPage", anything, hash_including(
           time: be_a(Integer),
           cbv_applicant_id: cbv_flow.cbv_applicant_id,
           cbv_flow_id: cbv_flow.id,
@@ -34,33 +34,33 @@ RSpec.describe Cbv::EmployerSearchesController do
       end
 
       it "tracks event when clicking popular payroll providers" do
-        allow(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantClickedPopularPayrollProviders", anything, hash_including(
+        allow(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantClickedPopularPayrollProviders", anything, hash_including(
             time: be_a(Integer),
             cbv_applicant_id: cbv_flow.cbv_applicant_id,
             cbv_flow_id: cbv_flow.id,
             invitation_id: cbv_flow.cbv_flow_invitation_id
           ))
-        allow(EventTrackingJob).to receive(:perform_later).with("ApplicantAccessedSearchPage", anything, anything)
+        allow(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantAccessedSearchPage", anything, anything)
         get :show, params: { type: "payroll" }
       end
 
       it "tracks a Mixpanel event when clicking popular app employers" do
-        allow(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantClickedPopularAppEmployers", anything, hash_including(
+        allow(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantClickedPopularAppEmployers", anything, hash_including(
           time: be_a(Integer),
           cbv_applicant_id: cbv_flow.cbv_applicant_id,
           cbv_flow_id: cbv_flow.id,
           invitation_id: cbv_flow.cbv_flow_invitation_id
         ))
-        allow(EventTrackingJob).to receive(:perform_later).with("ApplicantAccessedSearchPage", anything, anything)
+        allow(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantAccessedSearchPage", anything, anything)
         get :show, params: { type: "employer" }
       end
     end
 
     context "when there are no employer search results" do
       before do
-        pinwheel_stub_request_items_no_items_response
+        argyle_stub_request_employer_search_response('bob')
       end
 
       render_views
@@ -76,7 +76,7 @@ RSpec.describe Cbv::EmployerSearchesController do
 
     context "when there are search results" do
       before do
-        pinwheel_stub_request_items_response
+        argyle_stub_request_employer_search_response('bob')
       end
 
       render_views
@@ -87,24 +87,24 @@ RSpec.describe Cbv::EmployerSearchesController do
       end
 
       it "tracks a Mixpanel event" do
-        allow(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
-        expect(EventTrackingJob).to receive(:perform_later).with(
+        allow(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with(
           "ApplicantSearchedForEmployer", anything, hash_including(
           cbv_applicant_id: cbv_flow.cbv_applicant_id,
           cbv_flow_id: cbv_flow.id,
           invitation_id: cbv_flow.cbv_flow_invitation_id,
-          num_results: 2,
+          num_results: 5,
           has_payroll_account: false,
-          pinwheel_result_count: 2,
-          argyle_result_count: 0
+          pinwheel_result_count: 0,
+          argyle_result_count: 5
         ))
         get :show, params: { query: "results" }
       end
 
       context "when some results should be blocked" do
         before do
-          pinwheel_stub_request_items_response
-          stub_const("ProviderSearchService::BLOCKED_PINWHEEL_EMPLOYERS", [ "fce3eee0-285b-496f-9b36-30e976194736" ])
+          argyle_stub_request_employer_search_response('bob')
+          stub_const("ProviderSearchService::BLOCKED_ARGYLE_EMPLOYERS", [ "item_000017502" ])
         end
 
         render_views
@@ -112,16 +112,16 @@ RSpec.describe Cbv::EmployerSearchesController do
         it "renders successfully without those results" do
           get :show, params: { query: "results" }
           expect(response).to be_successful
-          expect(response.body).not_to include("Acme Payroll")
-          expect(response.body).to include("Lumon")
+          expect(response.body).not_to include("Greens Group")
+          expect(response.body).to include("Mr Greens")
         end
       end
 
       context "when the user enters a mixed-case query" do
         it "sends the query content to mixpanel as lowercase" do
-          allow(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+          allow(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
 
-          expect(EventTrackingJob).to receive(:perform_later).with(
+          expect(MixpanelEventTrackingJob).to receive(:perform_later).with(
             "ApplicantSearchedForEmployer",
             anything,
             hash_including(
