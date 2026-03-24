@@ -118,7 +118,7 @@
     <% end %>
     <% if summary[:income]&.pay_frequency && is_w2_worker %>
       <%= table.with_data_point(:pay_frequency, summary[:income].pay_frequency&.humanize) %>
-      <% if Aggregators::AggregatorReports::Argyle::BasePayRateConsistencyChecker.new(income: summary[:income], paystubs: summary[:paystubs]).match? %>
+      <% if @aggregator_report.base_pay_match %>
         <%= table.with_data_point(:hourly_rate, summary[:income].compensation_amount, summary[:income].compensation_unit) %>
       <% else %>
         <%= table.with_data_point(:variable_hourly_rate) %>

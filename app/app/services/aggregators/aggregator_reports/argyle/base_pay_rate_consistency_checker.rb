@@ -11,6 +11,8 @@ module Aggregators::AggregatorReports
         return true unless @income&.compensation_amount.present?
         return true unless @income&.compensation_unit == "hourly"
         return true if paystubs_base_rates.none?
+        # Pinwheel will always match implicitly since paystubs_base_rates are always nil for pinwheel accounts.
+
 
         return true if paystubs_match && employment_match
 
@@ -19,23 +21,25 @@ module Aggregators::AggregatorReports
 
       private
       def paystubs_base_rates
-        @paystubs_base_rates ||= @paystubs&.map(&:implied_base_rate_in_dollars)
+        @paystubs_base_rates ||= @paystubs&.map(&:implied_base_rate_in_dollars).compact
       end
 
-      def paystubs_base_rates_unique
-        @paystubs_base_rates_unique ||= paystubs_base_rates.compact.map { |rate| rate.to_d * 100 }
+      def paystubs_base_rates_in_cents
+        # Convert paystub rates from dollars to cents to compare to income.compensation_amount (which is in cents)
+        @paystubs_base_rates_in_cents ||= paystubs_base_rates.map { |rate| rate.to_d * 100 }
       end
 
       def paystubs_match
         return true if paystubs_base_rates.count == 1
 
-        within_one_cent(paystubs_base_rates_unique.max, paystubs_base_rates_unique.min)
+        within_one_cent(paystubs_base_rates_in_cents.max, paystubs_base_rates_in_cents.min)
       end
 
       def employment_match
         employment_base_rate = @income.compensation_amount.to_d
+        # income.compensation_amount is in cents
 
-        paystubs_base_rates_unique.all? do |paystub_rate|
+        paystubs_base_rates_in_cents.all? do |paystub_rate|
           within_one_cent(employment_base_rate, paystub_rate)
         end
       end
