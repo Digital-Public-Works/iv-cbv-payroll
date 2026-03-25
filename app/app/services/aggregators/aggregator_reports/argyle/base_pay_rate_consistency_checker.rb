@@ -36,8 +36,8 @@ module Aggregators::AggregatorReports
       end
 
       def employment_match
+        # income.compensation_amount is stored in cents
         employment_base_rate = @income.compensation_amount.to_d
-        # income.compensation_amount is in cents
 
         paystubs_base_rates_in_cents.all? do |paystub_rate|
           within_one_cent(employment_base_rate, paystub_rate)
