@@ -120,6 +120,13 @@ class AggregateDataPointComponent < ViewComponent::Base
     }
   end
 
+  def variable_hourly_rate
+    {
+      label: I18n.t("cbv.payment_details.show.hourly_rate"),
+      value: I18n.t("components.report.employment_details_table.variable_base_pay")
+    }
+  end
+
   def employer_phone(phone_number)
     {
       label: I18n.t("cbv.summaries.show.phone_number"),

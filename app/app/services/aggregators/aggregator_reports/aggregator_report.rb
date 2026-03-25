@@ -224,6 +224,10 @@ module Aggregators::AggregatorReports
       end
     end
 
+    def base_pay_match
+      Argyle::BasePayRateConsistencyChecker.new(income: @incomes.first, paystubs: @paystubs).match?
+    end
+
     private
 
     def employment_filter_for(account_id, employment_matching_id)
