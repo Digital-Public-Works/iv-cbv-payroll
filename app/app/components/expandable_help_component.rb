@@ -3,7 +3,7 @@
 class ExpandableHelpComponent < ViewComponent::Base
   attr_reader :id, :trigger_label, :heading, :element_name, :track_event, :margin_class
 
-  def initialize(id:, trigger_label:, heading:, element_name:, track_event: nil, margin_class: "margin-top-2")
+  def initialize(id:, trigger_label:, heading: nil, element_name:, track_event: nil, margin_class: "margin-top-2")
     @id = id
     @trigger_label = trigger_label
     @heading = heading
