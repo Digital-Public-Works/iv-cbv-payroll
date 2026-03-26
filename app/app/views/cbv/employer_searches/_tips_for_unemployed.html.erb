@@ -1,8 +1,14 @@
-<div data-controller="unemployment-tips">
+<div data-controller="unemployed-tips"
+  data-action="turbo:before-fetch-request@document->unemployed-tips#closeTipsExternal
+               click@document->unemployed-tips#closeTipsExternal"
+>
   <%= render ExpandableHelpComponent.new(
-    id: "unemployment-tips",
+    id: "unemployed-tips",
     trigger_label: t("cbv.employer_searches.show.unemployment_tips.link_text"),
-    element_name: "unemployment_tips_help"
+    element_name: "unemployed_tips_help",
+    html_options: {
+      data: { "unemployed-tips-target" => "tipsAccordion" }
+    }
   ) do %>
     <p><%= t("cbv.employer_searches.show.unemployment_tips.tip1_heading") %></p>
     <p><%= t("cbv.employer_searches.show.unemployment_tips.tip1_description") %></p>
@@ -12,7 +18,11 @@
     <p><%= t("cbv.employer_searches.show.unemployment_tips.tip3_heading") %></p>
     <p><%= t("cbv.employer_searches.show.unemployment_tips.tip3_description", agency_full_name: agency_translation("shared.agency_full_name")) %></p>
 
-    <%= t("cbv.employer_searches.show.unemployment_tips.close_message") %>
-
+    <div data-unemployed-tips-target="closeLink"
+         data-action="click->unemployed-tips#closeTips"
+         class="usa-link"
+    >
+      <%= t("cbv.employer_searches.show.unemployment_tips.close_message") %>
+    </div>
   <% end %>
 </div>
