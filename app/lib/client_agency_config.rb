@@ -132,5 +132,24 @@ class ClientAgencyConfig
       raise ArgumentError.new("Client Agency #{@id} invalid value for pay_income_days.gig") unless VALID_PAY_INCOME_DAYS.include?(@pay_income_days[:gig])
       raise ArgumentError.new("Client Agency #{@id} missing required attribute `transmission_method`") if @transmission_method.blank?
     end
+
+    def self.case_number(cbv_flow)
+      cbv_flow.cbv_applicant.case_number.rjust(8, "0")
+    end
+
+    def pdf_filename(cbv_flow, time)
+      time = time.in_time_zone(timezone)
+
+      padded_case_number = cbv_flow.cbv_applicant.case_number.rjust(8, "0")
+      "CBVPilot_#{padded_case_number}_" \
+        "#{time.strftime('%Y%m%d')}_" \
+        "Conf#{cbv_flow.confirmation_code}"
+    end
+
+    def format_timestamp(time)
+      return nil if time.nil?
+
+      time.in_time_zone(timezone).strftime("%m/%d/%Y %H:%M:%S")
+    end
   end
 end

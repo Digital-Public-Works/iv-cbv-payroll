@@ -12,13 +12,13 @@ locals {
 
     # AZ daily summary report
     send_az_reports = {
-      task_command        = ["bin/rails", "az_des:deliver_csv_reports"]
+      task_command        = ["bin/rails", "partner:deliver_csv_reports[az_des]"]
       schedule_expression = "cron(0 15 ? * * *)" # Every day at 3pm UTC (8am MST / 10am EST / 9am EDT)
     }
 
     # PA daily summary reports
     send_pa_reports = {
-      task_command        = ["bin/rails", "pa_dhs:deliver_csv_reports"]
+      task_command        = ["bin/rails", "partner:deliver_csv_reports[pa_dhs]"]
       schedule_expression = "cron(0 15 ? * * *)" # Every day at 3pm UTC (8am MST / 10am EST / 9am EDT)
     }
 
