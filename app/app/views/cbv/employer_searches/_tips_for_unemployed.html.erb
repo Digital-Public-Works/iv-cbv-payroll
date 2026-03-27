@@ -10,19 +10,39 @@
       data: { "unemployed-tips-target" => "tipsAccordion" }
     }
   ) do %>
-    <p><%= t("cbv.employer_searches.show.unemployment_tips.tip1_heading") %></p>
-    <p><%= t("cbv.employer_searches.show.unemployment_tips.tip1_description") %></p>
-    <p><%= t("cbv.employer_searches.show.unemployment_tips.tip2_heading") %></p>
-    <p><%= t("cbv.employer_searches.show.unemployment_tips.tip2_description", agency_full_name: agency_translation("shared.agency_full_name")) %></p>
-    <p><%= t("cbv.employer_searches.show.unemployment_tips.tip2_tip") %></p>
-    <p><%= t("cbv.employer_searches.show.unemployment_tips.tip3_heading") %></p>
-    <p><%= t("cbv.employer_searches.show.unemployment_tips.tip3_description", agency_full_name: agency_translation("shared.agency_full_name")) %></p>
 
-    <div data-unemployed-tips-target="closeLink"
-         data-action="click->unemployed-tips#closeTips"
-         class="usa-link"
-    >
-      <%= t("cbv.employer_searches.show.unemployment_tips.close_message") %>
+    <h5>
+      <%= t("cbv.employer_searches.show.unemployment_tips.tip1_heading") %>
+    </h5>
+    <p>
+      <%= t("cbv.employer_searches.show.unemployment_tips.tip1_description") %>
+    </p>
+
+    <h5>
+      <%= t("cbv.employer_searches.show.unemployment_tips.tip2_heading") %>
+    </h5>
+    <p>
+      <%= t("cbv.employer_searches.show.unemployment_tips.tip2_description", agency_full_name: agency_translation("shared.agency_full_name")) %>
+    </p>
+    <p class="text-italic">
+      <%= t("cbv.employer_searches.show.unemployment_tips.tip2_tip") %>
+    </p>
+
+    <h5>
+      <%= t("cbv.employer_searches.show.unemployment_tips.tip3_heading") %>
+    </h5>
+    <p>
+      <%= t("cbv.employer_searches.show.unemployment_tips.tip3_description") %>
+    </p>
+
+    <div>
+      <button type="button"
+              data-unemployed-tips-target="closeLink"
+              data-action="click->unemployed-tips#closeTips"
+              class="usa-button--unstyled usa-link"
+      >
+        <%= t("cbv.employer_searches.show.unemployment_tips.close_message") %>
+      </button>
     </div>
   <% end %>
 </div>

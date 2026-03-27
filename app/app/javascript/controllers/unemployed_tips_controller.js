@@ -5,7 +5,8 @@ export default class extends Controller {
   static values = { open: Boolean }
 
   closeTipsExternal(event) {
-    const isSearchRequest = event.target.classList.contains("usa-search")
+    const isSearchRequest =
+      event.type === "turbo:before-fetch-request" && event.target.classList.contains("usa-search")
     const isEmployerButtonClick =
       event.type === "click" &&
       event.target.closest('[data-cbv-employer-search-target="employerButton"]')
@@ -16,34 +17,20 @@ export default class extends Controller {
   }
 
   closeTips() {
-    const accordion = this.application.getControllerForElementAndIdentifier(
-      this.tipsAccordionTarget,
-      "accordion"
-    )
-    if (accordion) {
-      accordion.collapseContent()
-    }
+    this.accordion?.collapseContent()
   }
 
   openTips() {
-    const accordion = this.application.getControllerForElementAndIdentifier(
-      this.tipsAccordionTarget,
-      "accordion"
-    )
-    if (accordion) {
-      accordion.expandContent()
-    }
+    this.accordion?.expandContent()
   }
   tipsAccordionTargetConnected(element) {
     element.addEventListener("accordion:opened", () => {
       this.openValue = true
       sessionStorage.setItem("unemployed_tips_open", this.openValue)
-      console.log(this.openValue)
     })
     element.addEventListener("accordion:closed", () => {
       this.openValue = false
       sessionStorage.setItem("unemployed_tips_open", this.openValue)
-      console.log(this.openValue)
     })
     element.addEventListener("accordion:connected", () => {
       this.checkTips()
@@ -53,6 +40,13 @@ export default class extends Controller {
     if (sessionStorage.getItem("unemployed_tips_open") === "true") {
       this.openTips()
     }
-    this.closeTips()
+  }
+
+  get accordion() {
+    if (!this.hasTipsAccordionTarget) return null
+    return this.application.getControllerForElementAndIdentifier(
+      this.tipsAccordionTarget,
+      "accordion"
+    )
   }
 }
