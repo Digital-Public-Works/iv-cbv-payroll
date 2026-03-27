@@ -136,8 +136,8 @@ class CbvFlowToJson
         number_of_paychecks: month_data[:paystubs].size,
         gross_income: cents_to_dollars(month_data[:accrued_gross_earnings]),
         partial_month: partial&.dig(:is_partial_month) || false,
-        partial_month_start: partial&.dig(:included_range_start)&.to_s,
-        partial_month_end: partial&.dig(:included_range_end)&.to_s
+        partial_month_start: partial&.dig(:included_range_start)&.to_s&.presence,
+        partial_month_end: partial&.dig(:included_range_end)&.to_s&.presence
       }
     end
   end
@@ -147,7 +147,7 @@ class CbvFlowToJson
       month_date = Date.strptime(month_string, "%Y-%m")
 
       {
-        month: MONTH_ABBREVIATIONS[month_date.month],
+        month: month_date.month,
         year: month_date.year.to_s,
         total_hours: month_data[:total_gig_hours],
         gross_earnings: cents_to_dollars(month_data[:accrued_gross_earnings]),
