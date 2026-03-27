@@ -136,6 +136,38 @@ RSpec.configure do |config|
       end
     end
 
+    # LA LDH needs to set case_number to optional and needs a doc_id PAA
+    la_ldh_config = PartnerConfig.find_by(partner_id: 'la_ldh')
+    PartnerApplicationAttribute.where(partner_config: la_ldh_config, name: 'case_number')
+      .update_all(required: false)
+
+    # LA LDH needs doc_id
+    FactoryBot.create(:partner_application_attribute,
+      partner_config: la_ldh_config,
+      name: 'doc_id',
+      description: 'Document ID',
+      required: false,
+      data_type: 'string',
+      redactable: false
+    )
+
+    # AZ DES and PA DHS need income_changes
+    az_des_config = PartnerConfig.find_by(partner_id: 'az_des')
+    pa_dhs_config = PartnerConfig.find_by(partner_id: 'pa_dhs')
+    PartnerApplicationAttribute.where(partner_config: az_des_config, name: 'case_number')
+      .update_all(required: true, show_on_caseworker_report: true)
+
+    [ az_des_config, pa_dhs_config ].each do |config|
+      FactoryBot.create(:partner_application_attribute,
+        partner_config: config,
+        name: 'income_changes',
+        description: 'income changes',
+        required: false,
+        data_type: 'string',
+        redactable: false
+      )
+    end
+
     ClientAgencyConfig.reset!
     Rails.application.reload_routes!
   end

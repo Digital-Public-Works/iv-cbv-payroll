@@ -162,7 +162,7 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
           allow(SftpGateway).to receive(:new).and_return(sftp_double)
           allow(sftp_double).to receive(:upload_data)
           allow(mock_client_agency).to receive(:pdf_filename) do |flow, t|
-            ClientAgency::AzDes::Configuration.pdf_filename(flow, t)
+            ClientAgencyConfig.instance[mocked_client_id].pdf_filename(flow, t)
           end
 
           travel_to now
@@ -188,7 +188,7 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
           allow(SftpGateway).to receive(:new).and_return(sftp_double)
           allow(sftp_double).to receive(:upload_data)
           allow(mock_client_agency).to receive(:pdf_filename) do |flow, t|
-            ClientAgency::PaDhs::Configuration.pdf_filename(flow, t)
+            ClientAgencyConfig.instance[mocked_client_id].pdf_filename(flow, t)
           end
 
           travel_to now

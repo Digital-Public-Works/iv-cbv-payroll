@@ -5,30 +5,9 @@ class CbvApplicant < ApplicationRecord
   after_initialize :set_applicant_attributes
   attr_reader :applicant_attributes, :required_applicant_attributes
 
-  # We use Single-Table Inheritance (STI) to create subclasses of this table
-  # logic to process subsets of the columns of this model relevant to each
-  # partner agency.
-  #
-  # The subclass is automatically instantiated by setting `client_agency_id`.
-  # For example, `client_agency_id = "sandbox"` will result in instantiating an
-  # instance of the CbvApplicant::Sandbox subclass, which contains all of its
-  # indexing data validations.
-  self.inheritance_column = "client_agency_id"
-
-  def self.sti_name
-    # "CbvApplicant::AzDes" => "az_des"
-    name.demodulize.underscore
-  end
-
-  def self.sti_class_for(type_name)
-    # technically user input, sanitize just in case. Also get github vulnerability checker to stop complaining
-    sanitized_input = ActionController::Base.helpers.sanitize(type_name)
-    # "sandbox" => CbvApplicant::Sandbox
-    CbvApplicant.const_get(sanitized_input.camelize)
-  end
-
   def self.valid_attributes_for_agency(client_agency_id)
-    sti_class_for(client_agency_id).const_get(:VALID_ATTRIBUTES)
+    agency = ClientAgencyConfig.instance[client_agency_id]
+    agency.applicant_attributes.keys.map(&:to_sym)
   end
 
   def self.build_agency_partner_metadata(client_agency_id, &value_provider)
@@ -57,6 +36,29 @@ class CbvApplicant < ApplicationRecord
   validates :snap_application_date, presence: {
     message: :invalid_date
   }
+
+  def agency_expected_names
+    return [] if redacted_at?
+    return [] unless income_changes.present?
+
+    Array(income_changes).map { |c| c["member_name"] }.uniq
+  end
+
+  def redact!(fields = nil)
+    fields_to_redact = fields || redactable_fields_from_config
+    raise "No fields to redact for #{client_agency_id}" unless fields_to_redact.present?
+
+    fields_to_redact.each do |field, type|
+      self[field] = Redactable::REDACTION_REPLACEMENTS[type]
+    end
+
+    if income_changes.present?
+      self[:income_changes] = redact_member_names_in_json(income_changes)
+    end
+
+    self[Redactable::REDACTED_TIMESTAMP_COLUMN] = Time.now
+    save(validate: false)
+  end
 
   def date_of_birth=(value)
     if value.is_a?(Hash)
@@ -119,14 +121,6 @@ class CbvApplicant < ApplicationRecord
     .include?(attribute)
   end
 
-  # Override this in a subclass based on the indexing data.
-  #
-  # This returns an array of names the agency gave us expecting to need
-  # income verification.
-  def agency_expected_names
-    []
-  end
-
   private
 
   def parse_date(value)
@@ -137,6 +131,26 @@ class CbvApplicant < ApplicationRecord
         Date.strptime(value, "%m/%d/%Y")
       rescue ArgumentError
         nil
+      end
+    end
+  end
+
+  def redactable_fields_from_config
+    return {} unless agency_config
+
+    agency_config.applicant_attributes
+      .select { |_name, attr| attr.redactable }
+      .each_with_object({}) { |(name, attr), h| h[name.to_sym] = attr.redact_type.to_sym }
+  end
+
+  def redact_member_names_in_json(json_array)
+    return json_array unless json_array.is_a?(Array)
+
+    json_array.map do |income_change|
+      next income_change unless income_change.is_a?(Hash)
+
+      income_change.with_indifferent_access.tap do |record|
+        record["member_name"] = Redactable::REDACTION_REPLACEMENTS[:string] if record.key?("member_name")
       end
     end
   end

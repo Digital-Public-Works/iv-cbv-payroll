@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_03_17_000000) do
+ActiveRecord::Schema[7.2].define(version: 2026_03_23_150515) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -86,6 +86,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_03_17_000000) do
     t.integer "data_type", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "show_on_caseworker_report", default: false, null: false
+    t.boolean "redactable", default: false, null: false
+    t.string "redact_type"
     t.index ["partner_config_id"], name: "index_partner_application_attributes_on_partner_config_id"
   end
 
