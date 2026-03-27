@@ -53,7 +53,6 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
     end
 
     it "sends a valid JSON payload with expected top-level keys" do
-      # Capture the request body by wrapping Net::HTTP
       sent_body = nil
       allow(Net::HTTP).to receive(:start).and_wrap_original do |original, *args, **kwargs, &block|
         original.call(*args, **kwargs) do |http|
@@ -71,6 +70,83 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
       expect(payload).to have_key("report_metadata")
       expect(payload).to have_key("client_information")
       expect(payload).to have_key("employment_records")
+    end
+  end
+
+  describe "pay_frequency nullable" do
+    let(:argyle_report) { build(:argyle_report, :with_argyle_account) }
+
+    before do
+      # Override the Argyle income to have nil pay_frequency (as real Argyle API returns for gig workers)
+      allow(argyle_report).to receive(:incomes).and_return([
+        Aggregators::ResponseObjects::Income.new(
+          account_id: "argyle_report1",
+          pay_frequency: nil,
+          compensation_amount: 500.00,
+          compensation_unit: "hourly"
+        )
+      ])
+    end
+
+    let(:aggregator_report) do
+      Aggregators::AggregatorReports::CompositeReport.new(
+        [ argyle_report ],
+        days_to_fetch_for_w2: 90,
+        days_to_fetch_for_gig: 90
+      )
+    end
+
+    it "accepts a payload with pay_frequency null" do
+      result = subject.deliver
+      expect(result).to eq("ok")
+    end
+  end
+
+  describe "server rejects invalid pay_frequency" do
+    it "returns an error for an invalid pay_frequency value" do
+      uri = URI(webhook_url)
+      payload = CbvFlowToJson.new(cbv_flow, mock_client_agency, aggregator_report).to_h
+      payload[:employment_records][0][:pay_frequency] = "INVALID_FREQUENCY"
+      body = payload.to_json
+
+      req = Net::HTTP::Post.new(uri)
+      req.content_type = "application/json"
+      req.body = body
+      timestamp = Time.now.to_i.to_s
+      req["X-VMI-Timestamp"] = timestamp
+      req["X-VMI-Signature"] = JsonApiSignature.generate(body, timestamp, api_key)
+      req["X-VMI-API-Key"] = api_key
+      req["X-VMI-Confirmation-Code"] = cbv_flow.confirmation_code
+
+      res = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(req) }
+
+      expect(res.code).to eq("400")
+      error_body = JSON.parse(res.body)
+      expect(error_body["error_code"]).to eq("VALIDATION_ERROR")
+    end
+  end
+
+  describe "server rejects wrong API key" do
+    it "returns 401 for an incorrect API key" do
+      uri = URI(webhook_url)
+      payload = CbvFlowToJson.new(cbv_flow, mock_client_agency, aggregator_report).to_h
+      body = payload.to_json
+      wrong_key = "wrong-api-key-value"
+
+      req = Net::HTTP::Post.new(uri)
+      req.content_type = "application/json"
+      req.body = body
+      timestamp = Time.now.to_i.to_s
+      req["X-VMI-Timestamp"] = timestamp
+      req["X-VMI-Signature"] = JsonApiSignature.generate(body, timestamp, wrong_key)
+      req["X-VMI-API-Key"] = wrong_key
+      req["X-VMI-Confirmation-Code"] = cbv_flow.confirmation_code
+
+      res = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(req) }
+
+      expect(res.code).to eq("401")
+      error_body = JSON.parse(res.body)
+      expect(error_body["error_code"]).to eq("AUTHENTICATION_ERROR")
     end
   end
 end
