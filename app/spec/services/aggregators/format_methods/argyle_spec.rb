@@ -208,4 +208,31 @@ RSpec.describe Aggregators::FormatMethods::Argyle, type: :service do
       expect(described_class.paystub_implied_base_rate_in_dollars(paystub_response)).to be_nil
     end
   end
+
+  describe ".total_hours_match?" do
+    let(:response_body_hours) { "80.00" }
+    let(:synthetic_total_hours) { "80.0000" }
+
+    context "when the response body hours and synthetic total hours are equal" do
+      it "returns true" do
+        expect(described_class.total_hours_match?(response_body_hours, synthetic_total_hours)).to be true
+      end
+    end
+
+    context "when the response body hours and synthetic total hours are within 0.01" do
+      let(:synthetic_total_hours) { "79.9905" }
+
+      it "returns true" do
+        expect(described_class.total_hours_match?(response_body_hours, synthetic_total_hours)).to be true
+      end
+    end
+
+    context "when the response body hours and synthetic total hours are not within 0.01" do
+      let(:synthetic_total_hours) { "79.9900" }
+
+      it "returns false" do
+        expect(described_class.total_hours_match?(response_body_hours, synthetic_total_hours)).to be false
+      end
+    end
+  end
 end
