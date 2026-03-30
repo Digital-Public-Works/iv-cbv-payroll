@@ -77,13 +77,14 @@ module Aggregators::ResponseObjects
     def self.log_paystub_to_mixpanel(response_body)
       gross_pay_total = response_body["gross_pay_list"]&.map { |item| item["hours"] || 0 }&.map(&:to_f)&.sum
       synthetic_total_hours = Aggregators::FormatMethods::Argyle.hours_by_earning_category(response_body["gross_pay_list"]).map { |_category, hours| hours.to_f }&.max
+      total_hours_match = (synthetic_total_hours - response_body["hours"]).abs < 0.01
 
       GenericEventTracker.new.track(TrackEvent::ArgylePaystubHours, nil, {
         time: Time.now.to_i,
         argyle_total_hours: response_body["hours"],
         gross_pay_sum: gross_pay_total,
         synthetic_total_hours: synthetic_total_hours,
-        argyle_total_hours_matches_synthetic: synthetic_total_hours == response_body["hours"],
+        argyle_total_hours_matches_synthetic: total_hours_match,
         argyle_hours_null: response_body["hours"].nil?
       })
     end
