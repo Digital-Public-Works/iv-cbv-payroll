@@ -84,4 +84,8 @@ module Aggregators::FormatMethods::Argyle
 
     rate_implied.presence&.to_f
   end
+
+  def self.total_hours_match?(hours1, hours2)
+    (hours1.to_f - hours2.to_f).abs < 0.01
+  end
 end
