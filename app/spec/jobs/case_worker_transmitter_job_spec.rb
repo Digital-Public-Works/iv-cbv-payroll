@@ -358,6 +358,26 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
       end
     end
 
+    context "when transmission method is webhook" do
+      let(:transmission_method) { "webhook" }
+      let(:webhook_url) { "http://fake-state.api.gov/api/v1/webhook" }
+      let(:transmission_method_configuration) { {
+        "webhook_url" => webhook_url,
+        "api_key" => "test-webhook-api-key"
+      } }
+
+      before do
+        expect_any_instance_of(Transmitters::WebhookTransmitter).to receive(:deliver).and_return("ok")
+      end
+
+      it "is handled by the job" do
+        expect { described_class.new.perform(cbv_flow.id) }.to_not raise_error
+      end
+
+      it_behaves_like "tracks an ApplicantSharedIncomeSummary event"
+      it_behaves_like "enqueues match agency names job for agency with expected names"
+    end
+
     context "when transmission method is unsupported" do
       let(:transmission_method) { "smoke_signal" }
 

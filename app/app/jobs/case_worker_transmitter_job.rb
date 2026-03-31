@@ -29,6 +29,8 @@ class CaseWorkerTransmitterJob < ApplicationJob
       Transmitters::EncryptedS3Transmitter
     when "json"
       Transmitters::JsonTransmitter
+    when "webhook"
+      Transmitters::WebhookTransmitter
     else
       raise "Unsupported transmission method: #{@current_agency.transmission_method}"
     end
