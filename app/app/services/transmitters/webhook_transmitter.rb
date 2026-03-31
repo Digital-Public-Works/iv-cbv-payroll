@@ -20,7 +20,7 @@ class Transmitters::WebhookTransmitter
     end
 
     case res
-    when Net::HTTPSuccess, Net::HTTPRedirection
+    when Net::HTTPSuccess
       "ok"
     else
       Rails.logger.error "Unexpected response: #{res.code} #{res.message}"
