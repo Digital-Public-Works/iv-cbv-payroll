@@ -305,8 +305,35 @@ RSpec.describe Cbv::SubmitsController do
           expect(pdf_text).not_to include("Payments after taxes and deductions (net)")
           expect(pdf_text).not_to include("Deduction")
           expect(pdf_text).not_to include("Base Pay")
+        end
 
-          expect(pdf_text).to include("Client Comments")
+        context "when the client has added a comment" do
+          let(:cbv_flow) do
+            create(:cbv_flow,
+                   :completed,
+                   :invited,
+                   created_at: current_time,
+                   cbv_applicant: cbv_applicant,
+                   additional_information: { account_id => { "comment" => "My hours vary seasonally" } }
+            )
+          end
+
+          it "renders the client comment block" do
+            get :show, format: :pdf
+            pdf_text = extract_pdf_text(response)
+
+            expect(pdf_text).to include("Client Comments")
+            expect(pdf_text).to include("My hours vary seasonally")
+          end
+        end
+
+        context "when the client has not added a comment" do
+          it "does not render the client comment block" do
+            get :show, format: :pdf
+            pdf_text = extract_pdf_text(response)
+
+            expect(pdf_text).not_to include("Client Comments")
+          end
         end
       end
 
