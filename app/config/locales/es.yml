@@ -157,7 +157,7 @@ es:
         type_the_full_name_tooltip: Escribe el nombre completo usando letras o números
         unemployment_tips:
           close_message: Cerrar este mensaje
-          link_text: I am currently unemployed (placeholder)
+          link_text: Estoy desempleado
           tip1_description: Sus recibos de sueldo muestran la última vez que le pagaron. Si su trabajo utilizó una empresa de nómina, puede usar esos registros para verificar que su trabajo terminó.
           tip1_heading: Si su trabajo terminó recientemente
           tip2_description: Use Verify My Income para iniciar sesión en el sistema de nómina de su último trabajo y enviar su información de pago a %{agency_full_name}.

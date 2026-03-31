@@ -3,28 +3,7 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = ["trigger", "content"]
 
-  connect() {
-    this.dispatch("connected")
-  }
-
-  disconnect() {}
-
-  expandContent() {
-    this.contentTarget.hidden = false
-    this.contentTarget.classList.remove("hidden")
-    this.triggerTarget.setAttribute("aria-expanded", "true")
-    this.dispatch("opened")
-  }
-
-  collapseContent() {
-    this.contentTarget.hidden = true
-    this.contentTarget.classList.add("hidden")
-    this.triggerTarget.setAttribute("aria-expanded", "false")
-    this.dispatch("closed")
-  }
-
   setContentExpansion(event) {
-    event.preventDefault()
     event.stopImmediatePropagation()
     const isExpanded = this.triggerTarget.getAttribute("aria-expanded") === "true"
 
@@ -33,5 +12,16 @@ export default class extends Controller {
     } else {
       this.expandContent()
     }
+  }
+  expandContent() {
+    this.contentTarget.hidden = false
+    this.triggerTarget.setAttribute("aria-expanded", "true")
+    this.triggerTarget.setAttribute("data-context-clicked-to-open", "true")
+  }
+
+  collapseContent() {
+    this.contentTarget.hidden = true
+    this.triggerTarget.setAttribute("aria-expanded", "false")
+    this.triggerTarget.setAttribute("data-context-clicked-to-open", "false")
   }
 }
