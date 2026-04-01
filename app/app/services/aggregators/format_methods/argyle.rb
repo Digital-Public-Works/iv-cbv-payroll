@@ -42,18 +42,21 @@ module Aggregators::FormatMethods::Argyle
     if response_hours.present? && response_hours.to_f > 0
       response_hours.to_f
     else
-      hours_by_category = hours_by_earning_category(response_gross_pay_list)
-
-      base_hours = hours_by_category
-        .reject { |category, _| category == "overtime" }
-        .map { |_, hours| hours.to_f }
-        .max
-
-      return base_hours unless base_hours
-
-      overtime_hours = overtime_worked_hours(response_gross_pay_list)
-      base_hours + overtime_hours
+      synthetic_hours(response_gross_pay_list)
     end
+  end
+
+  def self.synthetic_hours(gross_pay_list)
+    hours_by_category = hours_by_earning_category(gross_pay_list)
+
+    base_hours = hours_by_category
+      .reject { |category, _| category == "overtime" }
+      .map { |_, hours| hours.to_f }
+      .max
+
+    return base_hours unless base_hours
+
+    base_hours + overtime_worked_hours(gross_pay_list)
   end
 
   # Determines how many overtime hours represent actual additional hours worked

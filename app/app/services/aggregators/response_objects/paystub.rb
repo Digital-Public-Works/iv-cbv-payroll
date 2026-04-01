@@ -76,7 +76,7 @@ module Aggregators::ResponseObjects
     # is complete and we are operating on an internal model instead of regenerating the synthetic hours as part of the view
     def self.log_paystub_to_mixpanel(response_body)
       gross_pay_total = response_body["gross_pay_list"]&.map { |item| item["hours"] || 0 }&.map(&:to_f)&.sum
-      synthetic_total_hours = Aggregators::FormatMethods::Argyle.hours_computed(nil, response_body["gross_pay_list"])
+      synthetic_total_hours = Aggregators::FormatMethods::Argyle.synthetic_hours(response_body["gross_pay_list"])
 
       GenericEventTracker.new.track(TrackEvent::ArgylePaystubHours, nil, {
         time: Time.now.to_i,
