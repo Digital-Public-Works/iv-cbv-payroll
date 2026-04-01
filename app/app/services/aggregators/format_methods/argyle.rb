@@ -36,12 +36,61 @@ module Aggregators::FormatMethods::Argyle
     (dollars * 100) + cents
   end
 
+  FEDERAL_MINIMUM_WAGE = 7.25
+
   def self.hours_computed(response_hours, response_gross_pay_list)
     if response_hours.present? && response_hours.to_f > 0
       response_hours.to_f
     else
-      hours_by_earning_category(response_gross_pay_list).map { |_category, hours| hours.to_f }.max
+      hours_by_category = hours_by_earning_category(response_gross_pay_list)
+
+      base_hours = hours_by_category
+        .reject { |category, _| category == "overtime" }
+        .map { |_, hours| hours.to_f }
+        .max
+
+      return base_hours unless base_hours
+
+      overtime_hours = overtime_worked_hours(response_gross_pay_list)
+      base_hours + overtime_hours
     end
+  end
+
+  # Determines how many overtime hours represent actual additional hours worked
+  # (as opposed to supplemental pay on top of already-counted hours).
+  #
+  # An overtime item's hours are "worked" if its effective rate exceeds the
+  # lowest base pay rate (or the federal minimum wage, whichever is higher).
+  # A rate above that threshold indicates a true overtime multiplier (e.g. 1.5x),
+  # meaning those hours are separate from base hours. A rate at or below the
+  # threshold suggests a supplemental bonus (e.g. +$1/hr for holiday work)
+  # where the hours are already counted in another category.
+  def self.overtime_worked_hours(gross_pay_list)
+    base_items = gross_pay_list.select { |e| e["type"] != "overtime" }
+    overtime_items = gross_pay_list.select { |e| e["type"] == "overtime" }
+
+    return 0.0 if overtime_items.empty?
+
+    lowest_base_rate = base_items
+      .map { |e| effective_rate(e) }
+      .compact
+      .min
+
+    rate_threshold = [ lowest_base_rate || 0, FEDERAL_MINIMUM_WAGE ].max
+
+    overtime_items
+      .select { |e| (effective_rate(e) || 0) > rate_threshold }
+      .sum { |e| (e["hours"].presence || 0).to_f }
+  end
+
+  def self.effective_rate(pay_item)
+    return pay_item["rate"].to_f if pay_item["rate"].present?
+
+    hours = pay_item["hours"].presence&.to_f
+    amount = pay_item["amount"].presence&.to_f
+    return nil unless hours && hours > 0 && amount
+
+    amount / hours
   end
 
   def self.hours_by_earning_category(gross_pay_list)
