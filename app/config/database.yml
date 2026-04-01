@@ -16,9 +16,7 @@
 #
 default: &default
   adapter: postgresql
-  <% unless ENV.fetch("DISABLE_RDS_IAM", "false") == "true" %>
-  aws_rds_iam_auth_token_generator: default
-  <% end %>
+  aws_rds_iam_auth_token_generator: <%= ENV["DISABLE_RDS_IAM"] ? nil : "default" %>
   encoding: unicode
   # For details on connection pooling, see Rails configuration guide
   # https://guides.rubyonrails.org/configuring.html#database-pooling
