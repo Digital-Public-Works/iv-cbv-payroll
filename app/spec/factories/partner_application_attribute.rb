@@ -25,7 +25,8 @@ FactoryBot.define do
       add_attribute(:name) { "date_of_birth" }
       description { "Applicant date of birth" }
       required { true }
-      data_type { "string" }
+      data_type { "date" }
+      form_field_type { "memorable_date" }
       redactable { true }
       redact_type { "date" }
     end

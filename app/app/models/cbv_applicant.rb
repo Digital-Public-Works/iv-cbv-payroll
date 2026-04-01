@@ -92,7 +92,8 @@ class CbvApplicant < ApplicationRecord
 
     if missing_attrs.any?
       missing_attrs.each do |attr|
-        errors.add(attr, I18n.t("cbv.applicant_informations.#{client_agency_id}.fields.#{attr}.blank"))
+        errors.add(attr, I18n.t("cbv.applicant_informations.#{client_agency_id}.fields.#{attr}.blank",
+          default: I18n.t("cbv.applicant_informations.default.fields.#{attr}.blank", default: "is required")))
       end
     end
 
@@ -111,8 +112,11 @@ class CbvApplicant < ApplicationRecord
 
   # Reset the applicant attributes to nil by removing any non-symbol keys i.e. { date_of_birth: [ :day, :month, :year ] }
   # and then setting the attributes to nil.
+  # Need to skip snap_application_date because this class has a vlaidation on it.
   def reset_applicant_attributes
-    clear_attributes = applicant_attributes.reject { |key| !key.is_a?(Symbol) }.index_with(nil)
+    clear_attributes = applicant_attributes
+      .reject { |key| !key.is_a?(Symbol) || key == :snap_application_date }
+      .index_with(nil)
     update!(clear_attributes)
   end
 

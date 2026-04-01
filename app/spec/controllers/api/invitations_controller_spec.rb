@@ -156,8 +156,8 @@ RSpec.describe Api::InvitationsController do
 
     context "params not included in the agency's valid attributes" do
       let(:params_with_invalid_attributes) do
-        # client_id_number is only valid for certain agencies
-        valid_params[:agency_partner_metadata][:client_id_number] = "1234567"
+        # doc_id is not valid for sandbox
+        valid_params[:agency_partner_metadata][:doc_id] = "1234567"
         valid_params
       end
 
@@ -167,7 +167,7 @@ RSpec.describe Api::InvitationsController do
         end.to change(CbvFlowInvitation, :count).by(1)
 
         invitation = CbvFlowInvitation.last
-        expect(invitation.cbv_applicant.client_id_number).to be_nil
+        expect(invitation.cbv_applicant.doc_id).to be_nil
       end
     end
 

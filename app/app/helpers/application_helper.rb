@@ -19,13 +19,18 @@ module ApplicationHelper
   # is either missing or there is no current client agency, it will attempt to render a
   # "default" key.
   def agency_translation(i18n_base_key, **options)
-    default_key = "#{i18n_base_key}.default"
-    i18n_key =
-      if current_agency
-        "#{i18n_base_key}.#{current_agency.id}"
-      else
-        default_key
-      end
+    if i18n_base_key.include?("{agency}")
+      i18n_key = current_agency ? i18n_base_key.gsub("{agency}", current_agency.id) : nil
+      default_key = i18n_base_key.gsub("{agency}", "default")
+    else
+      default_key = "#{i18n_base_key}.default"
+      i18n_key =
+        if current_agency
+          "#{i18n_base_key}.#{current_agency.id}"
+        else
+          default_key
+        end
+    end
     is_html_key = /(?:_|\b)html\z/.match?(i18n_base_key)
     if is_html_key
       options.each do |name, value|

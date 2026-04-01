@@ -51,12 +51,31 @@ class ClientAgencyConfig
         (config.active_prod? && Rails.env.production?)
       h[config.partner_id] = ClientAgency.new(config)
     end
+
+    validate_partner_application_attributes
   end
 
   # TODO: Possibly remove, this appears unused.
   # def self.client_agencies(load_all_agency_configs = false)
   #   self.client_agency_ids(load_all_agency_configs)
   # end
+
+  private
+
+  def validate_partner_application_attributes
+    return unless @client_agencies.present?
+
+    @client_agencies.each do |partner_id, agency|
+      if agency.applicant_attributes.empty?
+        message = "Partner #{partner_id} has no partner_application_attributes configured. " \
+          "API metadata will be silently dropped and data retention will fail."
+        Rails.logger.error(message)
+        NewRelic::Agent.notice_error(StandardError.new(message)) if defined?(NewRelic::Agent)
+      end
+    end
+  end
+
+  public
 
   class ClientAgency
     attr_reader(*%i[
@@ -84,6 +103,7 @@ class ClientAgencyConfig
       generic_links_disabled
       report_customization_show_earnings_list
       require_applicant_information_on_invitation
+      include_invitation_details_on_weekly_report
     ])
 
     def initialize(partner_config)
@@ -124,6 +144,8 @@ class ClientAgencyConfig
       @invitation_links_enabled = partner_config.invitation_links_enabled
 
       @require_applicant_information_on_invitation = partner_config.partner_application_attributes.exists?(required: true)
+      @include_invitation_details_on_weekly_report = partner_config.respond_to?(:include_invitation_details_on_weekly_report) &&
+        partner_config.include_invitation_details_on_weekly_report
 
       raise ArgumentError.new("Client Agency missing id") if @id.blank?
       raise ArgumentError.new("Client Agency #{@id} missing required attribute `timezone`") if @timezone.blank?

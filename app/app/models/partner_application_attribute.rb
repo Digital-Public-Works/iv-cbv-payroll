@@ -5,5 +5,5 @@ class PartnerApplicationAttribute < ApplicationRecord
     { scope: :partner_config_id,
       message: "should be unique per partner" }
 
-  enum :data_type, { string: 0, integer: 1, float: 2 }
+  enum :data_type, { string: 0, integer: 1, float: 2, date: 3 }
 end

@@ -11,7 +11,11 @@
 
     <% if current_agency&.logo_path.present? %>
       <div class="display-inline-block text-middle">
-        <%= image_tag wicked_pdf_asset_base64(current_agency.logo_path), class: "cbv-header__agency-logo--#{current_agency.id}" %>
+        <% if current_agency.logo_path.start_with?("http", "data:") %>
+          <%= image_tag current_agency.logo_path, class: "cbv-header__agency-logo--#{current_agency.id}" %>
+        <% else %>
+          <%= image_tag wicked_pdf_asset_base64(current_agency.logo_path), class: "cbv-header__agency-logo--#{current_agency.id}" %>
+        <% end %>
       </div>
     <% else %>
       <span class="text-middle font-sans-md text-no-wrap"><%= agency_translation(".pdf.agency_header_name") %></span>
@@ -43,12 +47,14 @@
   <%= table.with_header do %>
     <h3 class="margin-0"><%= t(".pdf.shared.client_information") %></h3>
   <% end %>
-  <% @cbv_flow.cbv_applicant.applicant_attributes.each do |item| %>
+  <% agency = ClientAgencyConfig.instance[@cbv_flow.client_agency_id] %>
+  <% agency.applicant_attributes.select { |_, attr| attr.show_on_applicant_form }.each_key do |item| %>
+    <% item = item.to_sym %>
     <% if @cbv_flow.cbv_applicant[item].present? %>
       <% if item == :date_of_birth %>
-        <%= table.with_row(t("cbv.applicant_informations.#{@cbv_flow.client_agency_id}.fields.#{item}.super_one_html"), format_date(@cbv_flow.cbv_applicant[item])) %>
+        <%= table.with_row(agency_translation("cbv.applicant_informations.{agency}.fields.#{item}.super_one_html"), format_date(@cbv_flow.cbv_applicant[item])) %>
       <% else %>
-        <%= table.with_row(t("cbv.applicant_informations.#{@cbv_flow.client_agency_id}.fields.#{item}.super_one_html"), @cbv_flow.cbv_applicant[item]) %>
+        <%= table.with_row(agency_translation("cbv.applicant_informations.{agency}.fields.#{item}.super_one_html"), @cbv_flow.cbv_applicant[item]) %>
       <% end %>
     <% end %>
   <% end %>

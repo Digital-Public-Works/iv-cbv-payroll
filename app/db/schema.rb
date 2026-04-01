@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_03_23_150515) do
+ActiveRecord::Schema[7.2].define(version: 2026_04_01_145055) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -89,6 +89,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_03_23_150515) do
     t.boolean "show_on_caseworker_report", default: false, null: false
     t.boolean "redactable", default: false, null: false
     t.string "redact_type"
+    t.string "form_field_type", default: "text_field"
+    t.boolean "show_on_applicant_form", default: true, null: false
+    t.boolean "show_on_caseworker_form", default: true, null: false
     t.index ["partner_config_id"], name: "index_partner_application_attributes_on_partner_config_id"
   end
 
@@ -117,6 +120,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_03_23_150515) do
     t.boolean "report_customization_show_earnings_list", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "include_invitation_details_on_weekly_report", default: false, null: false
     t.index ["partner_id"], name: "index_partner_configs_on_partner_id", unique: true
   end
 

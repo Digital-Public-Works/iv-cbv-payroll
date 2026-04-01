@@ -64,7 +64,7 @@ RSpec.describe CbvApplicant, type: :model do
 
         expect(missing).to include(:case_number)
         expect(applicant.errors[:case_number]).to include(
-          I18n.t("cbv.applicant_informations.az_des.fields.case_number.blank")
+          I18n.t("cbv.applicant_informations.default.fields.case_number.blank")
         )
       end
     end

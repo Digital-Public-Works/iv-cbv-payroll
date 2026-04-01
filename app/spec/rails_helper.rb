@@ -168,6 +168,27 @@ RSpec.configure do |config|
       )
     end
 
+    # Sandbox caseworker-only fields
+    sandbox_config = PartnerConfig.find_by(partner_id: 'sandbox')
+    [
+      { name: 'beacon_id', description: "Your WELID", form_field_type: 'text_field' },
+      { name: 'agency_id_number', description: "Client's agency ID number", form_field_type: 'text_field' },
+      { name: 'client_id_number', description: "CIN", form_field_type: 'text_field' },
+      { name: 'snap_application_date', description: "SNAP application or recertification interview date", form_field_type: 'date_picker', data_type: 'date' }
+    ].each do |attrs|
+      FactoryBot.create(:partner_application_attribute,
+        partner_config: sandbox_config,
+        name: attrs[:name],
+        description: attrs[:description],
+        required: false,
+        data_type: attrs[:data_type] || 'string',
+        form_field_type: attrs[:form_field_type],
+        redactable: false,
+        show_on_applicant_form: false,
+        show_on_caseworker_form: true
+      )
+    end
+
     ClientAgencyConfig.reset!
     Rails.application.reload_routes!
   end
