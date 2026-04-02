@@ -127,6 +127,9 @@ RSpec.describe Aggregators::FormatMethods::Argyle, type: :service do
         expect(described_class.hours_computed(nil, gross_pay_list)).to eq(44.0)
       end
 
+      # NOTE: Using max of non-OT category hours as the base may need product review.
+      # E.g., if someone has 30 hours holiday and 8 hours base, max would pick 30.
+      # This matches pre-existing behavior from hours_computed before this feature.
       it 'handles multiple base types and uses the lowest rate as threshold' do
         gross_pay_list = [
           { "type" => "base", "hours" => "30", "rate" => "20.00", "amount" => "600.00" },
@@ -157,6 +160,8 @@ RSpec.describe Aggregators::FormatMethods::Argyle, type: :service do
         expect(described_class.hours_computed(nil, gross_pay_list)).to eq(40.0)
       end
 
+      # NOTE: Product requirements question — when there are only overtime items
+      # and no base hours, we return nil (no total hours). This may need review.
       it 'returns nil when no base hours exist' do
         gross_pay_list = [
           { "type" => "overtime", "hours" => "5", "rate" => "15.00", "amount" => "75.00" }
@@ -183,6 +188,8 @@ RSpec.describe Aggregators::FormatMethods::Argyle, type: :service do
       expect(described_class.overtime_worked_hours(gross_pay_list)).to eq(0.0)
     end
 
+    # When no base items exist, the federal minimum wage is used as the rate threshold.
+    # OT items below that threshold are assumed to be supplemental, even without base hours.
     it 'returns 0.0 when no base items exist to compare against and OT rate is below min wage' do
       gross_pay_list = [
         { "type" => "overtime", "hours" => "5", "rate" => "5.00", "amount" => "25.00" }
@@ -198,25 +205,25 @@ RSpec.describe Aggregators::FormatMethods::Argyle, type: :service do
     end
   end
 
-  describe '.effective_rate' do
+  describe '.implied_rate' do
     it 'returns the explicit rate when present' do
       pay_item = { "rate" => "15.50", "hours" => "40", "amount" => "500.00" }
-      expect(described_class.effective_rate(pay_item)).to eq(15.50)
+      expect(described_class.implied_rate(pay_item)).to eq(15.50)
     end
 
     it 'calculates rate from amount/hours when rate is missing' do
       pay_item = { "rate" => nil, "hours" => "40", "amount" => "600.00" }
-      expect(described_class.effective_rate(pay_item)).to eq(15.0)
+      expect(described_class.implied_rate(pay_item)).to eq(15.0)
     end
 
     it 'returns nil when rate, hours, and amount are all missing' do
       pay_item = { "rate" => nil, "hours" => nil, "amount" => nil }
-      expect(described_class.effective_rate(pay_item)).to be_nil
+      expect(described_class.implied_rate(pay_item)).to be_nil
     end
 
     it 'returns nil when hours is zero (avoid division by zero)' do
       pay_item = { "rate" => nil, "hours" => "0", "amount" => "100.00" }
-      expect(described_class.effective_rate(pay_item)).to be_nil
+      expect(described_class.implied_rate(pay_item)).to be_nil
     end
   end
 

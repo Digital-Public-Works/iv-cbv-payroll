@@ -36,8 +36,6 @@ module Aggregators::FormatMethods::Argyle
     (dollars * 100) + cents
   end
 
-  FEDERAL_MINIMUM_WAGE = 7.25
-
   def self.hours_computed(response_hours, response_gross_pay_list)
     if response_hours.present? && response_hours.to_f > 0
       response_hours.to_f
@@ -46,6 +44,7 @@ module Aggregators::FormatMethods::Argyle
     end
   end
 
+  # Calculates total hours when Argyle does not provide a total hours value.
   def self.synthetic_hours(gross_pay_list)
     hours_by_category = hours_by_earning_category(gross_pay_list)
 
@@ -67,24 +66,26 @@ module Aggregators::FormatMethods::Argyle
   # threshold suggests a supplemental bonus (e.g. +$1/hr for holiday work)
   # where the hours are already counted in another category.
   def self.overtime_worked_hours(gross_pay_list)
-    base_items = gross_pay_list.select { |e| e["type"] != "overtime" }
+    base_items = gross_pay_list.reject { |e| e["type"] == "overtime" }
     overtime_items = gross_pay_list.select { |e| e["type"] == "overtime" }
 
     return 0.0 if overtime_items.empty?
 
     lowest_base_rate = base_items
-      .map { |e| effective_rate(e) }
+      .map { |e| implied_rate(e) }
       .compact
       .min
 
-    rate_threshold = [ lowest_base_rate || 0, FEDERAL_MINIMUM_WAGE ].max
+    rate_threshold = [ lowest_base_rate, ReportViewHelper::FEDERAL_MINIMUM_WAGE_DOLLARS ].compact.max
 
     overtime_items
-      .select { |e| (effective_rate(e) || 0) > rate_threshold }
+      .select { |e| (implied_rate(e) || 0) > rate_threshold }
       .sum { |e| (e["hours"].presence || 0).to_f }
   end
 
-  def self.effective_rate(pay_item)
+  # Returns the per-hour rate for a pay item. Uses the explicit rate field
+  # if present, otherwise calculates it as amount / hours.
+  def self.implied_rate(pay_item)
     return pay_item["rate"].to_f if pay_item["rate"].present?
 
     hours = pay_item["hours"].presence&.to_f

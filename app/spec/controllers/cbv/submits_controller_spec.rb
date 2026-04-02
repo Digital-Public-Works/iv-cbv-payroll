@@ -407,18 +407,14 @@ RSpec.describe Cbv::SubmitsController do
           pdf_text = extract_pdf_text(response)
           expect(response).to be_successful
 
-          # Verify by parts to avoid CI environment PDF text extraction inconsistencies
-          # (see comment above about GH Actions environment issues with full-string matching)
-          expect(pdf_text).to include("Employer 1")
-          expect(pdf_text).to include("Lyft Driver")
-          expect(pdf_text).to include("Payments from")
-          expect(pdf_text).to include("Employer 2")
-          expect(pdf_text).to include("Nava")
-          expect(pdf_text).to include("Self-employment")
+          expect(pdf_text.scan("Employer 1: Lyft Driver Self-employment").size).to eq(1)
+          expect(pdf_text.scan("Payments from Lyft Driver Self-employment").size).to eq(1)
+          expect(pdf_text.scan("Employer 2: Nava Self-employment").size).to eq(1)
+          expect(pdf_text.scan("Payments from Nava Self-employment").size).to eq(1)
 
-          expect(pdf_text).to include("Monthly summary")
+          expect(pdf_text.scan("Monthly summary Self-employment").size).to eq(2)
 
-          expect(pdf_text).to include("What does the information in the ‘Monthly Summary’ table mean?")
+          expect(pdf_text.scan("What does the information in the ‘Monthly Summary’ table mean? Self-employment").size).to eq(1)
         end
       end
 
