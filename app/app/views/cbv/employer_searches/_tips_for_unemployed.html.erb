@@ -7,7 +7,7 @@
     id: "unemployed-tips",
     trigger_label: t("cbv.employer_searches.show.unemployment_tips.link_text"),
     element_name: "unemployed_tips_help",
-    track_event: TrackEvent::ApplicantClickedUnemployedHelp,
+    track_event: TrackEvent::ApplicantAccessedUnemployedHelp,
     data_options: { "unemployed-tips-target": "tipsAccordion" }
   ) do %>
 
@@ -42,7 +42,7 @@
               data-action="click->unemployed-tips#closeTips
                            click->click-tracker#track"
               data-element-type=<%= ClickTracker::ElementType::Button %>
-              data-element-name="close_unemployment_tips"
+              data-element-name="close_unemployed_tips"
               data-context-unemployed-links-source="link"
               data-track-event="<%= TrackEvent::ApplicantClosedUnemployedHelp %>"
       >

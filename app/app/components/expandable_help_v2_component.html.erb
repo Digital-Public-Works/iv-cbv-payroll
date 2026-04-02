@@ -7,7 +7,7 @@
       class="usa-accordion__button padding-y-1 bg-white border position-relative z-100"
       aria-expanded="false"
       aria-controls="<%= content_id %>"
-      data-action="click->click-tracker#track click->accordion#setContentExpansion"
+      data-action="click->accordion#setContentExpansion click->click-tracker#track"
       data-element-type="<%= ClickTracker::ElementType::ExpandableHelpAccordion %>"
       data-element-name="<%= element_name %>"
       data-accordion-target="trigger"

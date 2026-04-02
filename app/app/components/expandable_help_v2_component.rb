@@ -22,22 +22,13 @@ class ExpandableHelpV2Component < ViewComponent::Base
   end
 
   def combined_data_attributes
-    combined_options = default_data_options
+    combined_options = { controller: "accordion" }
 
-    # These keys need to not be overwritten by merge with the inputted data options.
-    additive_keys = [ :controller ]
-    additive_keys.each do |key|
-      if @data_options[:controller].present?
-        combined_options[:controller] = "#{combined_options[:controller]} #{@data_options[:controller]}"
-      end
+    # If a controller is passed in, append to the accordion controller
+    if @data_options[:controller].present?
+      combined_options[:controller] += " #{@data_options[:controller]}"
     end
 
-    combined_options.merge!(@data_options.except(*(additive_keys)))
-  end
-
-  private
-  def default_data_options
-    # Add keys for any other default data attributes to the additive_keys line above.
-    { controller: "accordion" }
+    combined_options.merge(@data_options.except(:controller))
   end
 end

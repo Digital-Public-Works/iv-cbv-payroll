@@ -67,7 +67,11 @@ RSpec.describe Cbv::EmployerSearchesController do
         tips_button = html.find("button[data-element-name='unemployed_tips_help']")
         expect(tips_button.text).to include("I am currently unemployed")
         expect(tips_button["data-action"]).to include("click->click-tracker#track")
-        expect(tips_button["data-track-event"]).to eq("ApplicantClickedUnemployedHelp")
+        expect(tips_button["data-track-event"]).to eq("ApplicantAccessedUnemployedHelp")
+
+        close_link = html.find("[data-element-name='close_unemployed_tips']", visible: false)
+        expect(close_link.text).to include("Close this message")
+        expect(close_link["data-track-event"]).to eq("ApplicantClosedUnemployedHelp")
       end
     end
 
