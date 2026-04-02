@@ -41,12 +41,13 @@ module ApplicationHelper
       end
     end
 
-    translated =
-      if I18n.exists?(scope_key_by_partial(i18n_key))
-        t(i18n_key, **options)
-      elsif I18n.exists?(scope_key_by_partial(default_key))
-        t(default_key, **options)
-      end
+    translated = db_translation(i18n_key, **options) if i18n_key
+
+    translated ||= if I18n.exists?(scope_key_by_partial(i18n_key))
+                     t(i18n_key, **options)
+                   elsif I18n.exists?(scope_key_by_partial(default_key))
+                     t(default_key, **options)
+                   end
 
     # Mark as html_safe if the base key ends with `_html`.
     #
@@ -59,6 +60,29 @@ module ApplicationHelper
       translated
     end
   end
+
+  private
+
+  def db_translation(key, **options)
+    return nil unless current_agency && ActiveRecord::Base.connection.data_source_exists?(:partner_translations)
+
+    partner_config = PartnerConfig.find_by(partner_id: current_agency.id)
+    return nil unless partner_config
+
+    translation = PartnerTranslation.find_by(
+      partner_config: partner_config,
+      locale: I18n.locale.to_s,
+      key: key
+    )
+    return nil unless translation
+
+    value = translation.value
+
+    options.each { |k, v| value = value.gsub("%{#{k}}", v.to_s) } if options.any?
+    value
+  end
+
+  public
 
   APPLICANT_FEEDBACK_FORM = "https://docs.google.com/forms/d/e/1FAIpQLSedCtd9Jnyr41dAAQf3jSyhxqcqRrpaDIUI9DcH300Tg53ygA/viewform"
   APPLICANT_SURVEY_FORM = "https://docs.google.com/forms/d/e/1FAIpQLSedCtd9Jnyr41dAAQf3jSyhxqcqRrpaDIUI9DcH300Tg53ygA/viewform"

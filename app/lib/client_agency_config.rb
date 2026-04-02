@@ -73,6 +73,46 @@ class ClientAgencyConfig
         NewRelic::Agent.notice_error(StandardError.new(message)) if defined?(NewRelic::Agent)
       end
     end
+
+    validate_partner_translations if ActiveRecord::Base.connection.data_source_exists?(:partner_translations)
+  end
+
+  REQUIRED_TRANSLATION_KEYS = %w[
+      shared.agency_acronym
+      shared.agency_full_name
+      shared.header.cbv_flow_title
+      shared.header.preheader
+      shared.benefit
+      shared.reporting_purpose
+    ].freeze
+
+  def validate_partner_translations
+    return unless @client_agencies.present?
+
+    @client_agencies.each do |partner_id, _agency|
+      config = PartnerConfig.find_by(partner_id: partner_id)
+      next unless config
+
+      %w[en es].each do |locale|
+        REQUIRED_TRANSLATION_KEYS.each do |base_key|
+          full_key = "#{base_key}.#{partner_id}"
+          has_db = PartnerTranslation.exists?(partner_config: config, locale: locale, key: full_key)
+          has_locale = I18n.exists?(full_key, locale.to_sym)
+
+          unless has_db || has_locale
+            default_key = "#{base_key}.default"
+            has_db_default = PartnerTranslation.exists?(partner_config: config, locale: locale, key: default_key)
+            has_locale_default = I18n.exists?(default_key, locale.to_sym)
+
+            unless has_db_default || has_locale_default
+              message = "Partner #{partner_id} missing translation: #{full_key} (#{locale}) with no default fallback"
+              Rails.logger.warn(message)
+              NewRelic::Agent.notice_error(StandardError.new(message)) if defined?(NewRelic::Agent)
+            end
+          end
+        end
+      end
+    end
   end
 
   public
@@ -104,6 +144,7 @@ class ClientAgencyConfig
       report_customization_show_earnings_list
       require_applicant_information_on_invitation
       include_invitation_details_on_weekly_report
+      state_name
     ])
 
     def initialize(partner_config)
@@ -146,6 +187,7 @@ class ClientAgencyConfig
       @require_applicant_information_on_invitation = partner_config.partner_application_attributes.exists?(required: true)
       @include_invitation_details_on_weekly_report = partner_config.respond_to?(:include_invitation_details_on_weekly_report) &&
         partner_config.include_invitation_details_on_weekly_report
+      @state_name = partner_config.respond_to?(:state_name) ? partner_config.state_name : nil
 
       raise ArgumentError.new("Client Agency missing id") if @id.blank?
       raise ArgumentError.new("Client Agency #{@id} missing required attribute `timezone`") if @timezone.blank?
