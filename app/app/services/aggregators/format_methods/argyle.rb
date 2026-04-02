@@ -54,9 +54,7 @@ module Aggregators::FormatMethods::Argyle
       .map { |_, hours| hours.to_f }
       .max
 
-    return base_hours unless base_hours
-
-    base_hours + overtime_worked_hours(gross_pay_list)
+    base_hours + overtime_worked_hours(gross_pay_list) unless base_hours.nil?
   end
 
   # Determines how many overtime hours represent actual additional hours worked
