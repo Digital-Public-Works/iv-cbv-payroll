@@ -53,9 +53,13 @@ describe("UnemployedTipsController", () => {
       </div>
 
       <form class="usa-search" id="mock-search-form"></form>
-      <button id="mock-employer-button" data-cbv-employer-search-target="employerButton">
-        Payment Provider
-      </button>
+
+      <div id="popular">
+        <button id="mock-employer-button" data-cbv-employer-search-target="employerButton">
+          Payment Provider
+        </button>
+      </div>
+
     `
     container = document.getElementById("unemployed-tips-section")
     tipsAccordion = container.querySelector('[data-unemployed-tips-target="tipsAccordion"]')
@@ -73,7 +77,7 @@ describe("UnemployedTipsController", () => {
     vi.restoreAllMocks()
   })
 
-  it("closes the tips when a search request is initiated via Turbo", () => {
+  it("closes the tips when a search request is initiated", () => {
     expect(accordionTrigger.getAttribute("aria-expanded")).toBe("true")
 
     const searchForm = document.getElementById("mock-search-form")
@@ -83,6 +87,22 @@ describe("UnemployedTipsController", () => {
     })
 
     Object.defineProperty(turboEvent, "target", { value: searchForm, enumerable: true })
+
+    document.dispatchEvent(turboEvent)
+
+    expect(accordionTrigger.getAttribute("aria-expanded")).toBe("false")
+  })
+
+  it("closes the tips when a turbo frame is loaded when switching from payroll providers to app-based employers", () => {
+    expect(accordionTrigger.getAttribute("aria-expanded")).toBe("true")
+
+    const popular_providers = document.getElementById("popular")
+    const turboEvent = new CustomEvent("turbo:before-fetch-request", {
+      bubbles: true,
+      cancelable: true,
+    })
+
+    Object.defineProperty(turboEvent, "target", { value: popular_providers, enumerable: true })
 
     document.dispatchEvent(turboEvent)
 

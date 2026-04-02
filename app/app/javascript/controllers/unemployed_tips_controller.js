@@ -8,14 +8,17 @@ export default class extends Controller {
       this.setUnemployedTipSource()
     })
   }
+
   closeTipsExternal(event) {
     const isSearchRequest =
       event.type === "turbo:before-fetch-request" && event.target.classList.contains("usa-search")
+    const isPopularPayrollAppSwitch =
+      event.type === "turbo:before-fetch-request" && event.target.id === "popular"
     const isEmployerButtonClick =
       event.type === "click" &&
       event.target.closest('[data-cbv-employer-search-target="employerButton"]')
 
-    if (isSearchRequest || isEmployerButtonClick) {
+    if (isSearchRequest || isPopularPayrollAppSwitch || isEmployerButtonClick) {
       this.closeTips()
     }
   }
