@@ -36,6 +36,9 @@
     "vitest": "^4.0.16"
   },
   "overrides": {
-    "semver": ">= 7.5.2"
+    "semver": ">= 7.5.2",
+    "picomatch": ">=4.0.4",
+    "serialize-javascript": ">=7.0.5",
+    "yaml": ">=2.8.3"
   }
 }

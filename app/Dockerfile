@@ -215,6 +215,9 @@ COPY --from=release-build /rails /rails
 # Clean up any unused gems (no need to reinstall, artifacts already copied)
 RUN bundle clean --force
 
+# Remove node_modules from the release image — assets are already precompiled
+RUN rm -rf /rails/node_modules
+
 # Ensure all necessary directories exist
 RUN mkdir -p /rails/tmp/pids /rails/log /rails/db
 
