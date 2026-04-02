@@ -116,27 +116,27 @@ RSpec.describe Aggregators::FormatMethods::Argyle, type: :service do
         expect(described_class.hours_computed(nil, gross_pay_list)).to eq(45.0)
       end
 
-      it 'calculates effective rate from amount/hours when rate is missing' do
+      it 'calculates implied rate from amount/hours when rate is missing' do
         gross_pay_list = [
           { "type" => "base", "hours" => "40", "rate" => nil, "amount" => "400.00" },
           { "type" => "overtime", "hours" => "4", "rate" => nil, "amount" => "60.00" }
         ]
-        # Base effective rate = 400/40 = $10/hr
-        # OT effective rate = 60/4 = $15/hr
+        # Base implied rate = 400/40 = $10/hr
+        # OT implied rate = 60/4 = $15/hr
         # $15 > $10, so OT hours are real worked hours
         expect(described_class.hours_computed(nil, gross_pay_list)).to eq(44.0)
       end
 
-      # NOTE: Using max of non-OT category hours as the base may need product review.
-      # E.g., if someone has 30 hours holiday and 8 hours base, max would pick 30.
-      # This matches pre-existing behavior from hours_computed before this feature.
+      # NOTE: Using max of non-OT category hours as base is not ideal, but Argyle's
+      # type labeling is inconsistent, so we cannot reliably identify a single "base"
+      # category. Taking the max is the safest heuristic given messy provider data.
       it 'handles multiple base types and uses the lowest rate as threshold' do
         gross_pay_list = [
           { "type" => "base", "hours" => "30", "rate" => "20.00", "amount" => "600.00" },
-          { "type" => "holiday", "hours" => "8", "rate" => "10.00", "amount" => "80.00" },
+          { "type" => "pto", "hours" => "8", "rate" => "10.00", "amount" => "80.00" },
           { "type" => "overtime", "hours" => "5", "rate" => "15.00", "amount" => "75.00" }
         ]
-        # Lowest base rate is $10 (holiday), OT rate is $15 > $10, so OT hours included
+        # Lowest base rate is $10 (pto), OT rate is $15 > $10, so OT hours included
         # Base hours = max(30, 8) = 30
         expect(described_class.hours_computed(nil, gross_pay_list)).to eq(35.0)
       end

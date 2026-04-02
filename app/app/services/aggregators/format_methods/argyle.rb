@@ -48,6 +48,8 @@ module Aggregators::FormatMethods::Argyle
   def self.synthetic_hours(gross_pay_list)
     hours_by_category = hours_by_earning_category(gross_pay_list)
 
+    # Because Argyle labeling is imperfect, we have determined that
+    # the base pay is likely whatever category has the most hours worked.
     base_hours = hours_by_category
       .reject { |category, _| category == "overtime" }
       .map { |_, hours| hours.to_f }
