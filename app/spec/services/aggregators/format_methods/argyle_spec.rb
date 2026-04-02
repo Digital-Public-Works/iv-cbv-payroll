@@ -160,12 +160,21 @@ RSpec.describe Aggregators::FormatMethods::Argyle, type: :service do
         expect(described_class.hours_computed(nil, gross_pay_list)).to eq(40.0)
       end
 
-      # NOTE: Product requirements question — when there are only overtime items
-      # and no base hours, we return nil (no total hours). This may need review.
-      it 'returns nil when no base hours exist' do
+      # Unusual but possible: a paystub with only overtime items and no base hours.
+      # Qualifying OT hours are returned as the total.
+      it 'returns qualifying OT hours when no base hours exist' do
         gross_pay_list = [
           { "type" => "overtime", "hours" => "5", "rate" => "15.00", "amount" => "75.00" }
         ]
+        # OT rate ($15) > federal min wage ($7.25), so hours are real worked hours
+        expect(described_class.hours_computed(nil, gross_pay_list)).to eq(5.0)
+      end
+
+      it 'returns nil when no base hours exist and OT rate is below threshold' do
+        gross_pay_list = [
+          { "type" => "overtime", "hours" => "5", "rate" => "5.00", "amount" => "25.00" }
+        ]
+        # OT rate ($5) < federal min wage ($7.25), so hours are supplemental
         expect(described_class.hours_computed(nil, gross_pay_list)).to be_nil
       end
 

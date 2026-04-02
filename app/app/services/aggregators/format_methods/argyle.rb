@@ -55,7 +55,9 @@ module Aggregators::FormatMethods::Argyle
       .map { |_, hours| hours.to_f }
       .max
 
-    base_hours + overtime_worked_hours(gross_pay_list) unless base_hours.nil?
+    overtime_hours = overtime_worked_hours(gross_pay_list)
+    total = (base_hours || 0) + overtime_hours
+    total > 0 ? total : nil
   end
 
   # Determines how many overtime hours represent actual additional hours worked
@@ -81,8 +83,14 @@ module Aggregators::FormatMethods::Argyle
     rate_threshold = [ lowest_base_rate, ReportViewHelper::FEDERAL_MINIMUM_WAGE_DOLLARS ].compact.max
 
     overtime_items
-      .select { |e| (implied_rate(e) || 0) > rate_threshold }
-      .sum { |e| (e["hours"].presence || 0).to_f }
+      .select { |e| overtime_hours_are_worked?(e, rate_threshold) }
+      .sum { |e| e["hours"].to_f }
+  end
+
+  # Returns true if an overtime item represents actual hours worked
+  # (has hours and its rate exceeds the threshold).
+  def self.overtime_hours_are_worked?(overtime_item, rate_threshold)
+    overtime_item["hours"].to_f > 0 && (implied_rate(overtime_item) || 0) > rate_threshold
   end
 
   # Returns the per-hour rate for a pay item. Uses the explicit rate field
