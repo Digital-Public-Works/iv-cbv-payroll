@@ -9,6 +9,8 @@ export default class extends Controller {
   }
 
   expandedValueChanged(value) {
+    if (!this.hasTriggerTarget || !this.hasContentTarget) return
+
     this.clickedToOpenValue = !this.clickedToOpenValue
     this.triggerTarget.setAttribute("data-context-clicked-to-open", this.clickedToOpenValue)
   }

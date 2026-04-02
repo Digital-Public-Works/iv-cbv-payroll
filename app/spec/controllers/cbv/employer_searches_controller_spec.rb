@@ -56,6 +56,19 @@ RSpec.describe Cbv::EmployerSearchesController do
         allow(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantAccessedSearchPage", anything, anything)
         get :show, params: { type: "employer" }
       end
+
+      it "renders the expandable unemployed tips box with tracking attributes" do
+        get :show
+
+        html = Capybara.string(response.body)
+        expect(html).to have_css("div[data-controller~='unemployed-tips'][data-controller~='click-tracker']")
+        expect(html).to have_css("#unemployed-tips-section")
+
+        tips_button = html.find("button[data-element-name='unemployed_tips_help']")
+        expect(tips_button.text).to include("I am currently unemployed")
+        expect(tips_button["data-action"]).to include("click->click-tracker#track")
+        expect(tips_button["data-track-event"]).to eq("ApplicantClickedUnemployedHelp")
+      end
     end
 
     context "when there are no employer search results" do

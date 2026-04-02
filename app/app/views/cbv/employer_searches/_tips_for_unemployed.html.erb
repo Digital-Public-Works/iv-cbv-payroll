@@ -1,6 +1,7 @@
 <div data-controller="unemployed-tips click-tracker"
-  data-action="turbo:before-fetch-request@document->unemployed-tips#closeTipsExternal
+     data-action="turbo:before-fetch-request@document->unemployed-tips#closeTipsExternal
                click@document->unemployed-tips#closeTipsExternal"
+     id="unemployed-tips-section"
 >
   <%= render ExpandableHelpV2Component.new(
     id: "unemployed-tips",

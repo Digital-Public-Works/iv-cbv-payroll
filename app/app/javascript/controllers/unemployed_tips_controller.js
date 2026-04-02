@@ -2,7 +2,6 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static targets = ["tipsAccordion", "closeLink"]
-  static values = { open: Boolean }
 
   closeTipsExternal(event) {
     const isSearchRequest =
