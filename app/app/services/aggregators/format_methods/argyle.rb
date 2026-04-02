@@ -90,7 +90,8 @@ module Aggregators::FormatMethods::Argyle
   # Returns true if an overtime item represents actual hours worked
   # (has hours and its rate exceeds the threshold).
   def self.overtime_hours_are_worked?(overtime_item, rate_threshold)
-    overtime_item["hours"].to_f > 0 && (implied_rate(overtime_item) || 0) > rate_threshold
+    rate = implied_rate(overtime_item)
+    overtime_item["hours"].to_f > 0 && rate.present? && rate > rate_threshold
   end
 
   # Returns the per-hour rate for a pay item. Uses the explicit rate field
