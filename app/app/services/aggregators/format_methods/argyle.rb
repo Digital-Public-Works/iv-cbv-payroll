@@ -78,4 +78,14 @@ module Aggregators::FormatMethods::Argyle
     return unless full_ssn
     "XXX-XX-#{full_ssn.last(4).to_s.rjust(4, "X")}"
   end
+
+  def self.paystub_implied_base_rate_in_dollars(paystub_response_body)
+    rate_implied = paystub_response_body.dig("gross_pay_list_totals", "base", "rate_implied")
+
+    rate_implied.presence&.to_f
+  end
+
+  def self.total_hours_match?(hours1, hours2)
+    (hours1.to_f - hours2.to_f).abs < 0.01
+  end
 end

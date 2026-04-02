@@ -227,7 +227,6 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
       end
     end
 
-
     describe '#fetch_gigs' do
       context "for Bob, a Uber driver" do
         before do
