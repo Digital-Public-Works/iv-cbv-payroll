@@ -3,6 +3,11 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = ["tipsAccordion", "closeLink"]
 
+  connect() {
+    Promise.resolve().then(() => {
+      this.setUnemployedTipSource()
+    })
+  }
   closeTipsExternal(event) {
     const isSearchRequest =
       event.type === "turbo:before-fetch-request" && event.target.classList.contains("usa-search")
@@ -17,6 +22,10 @@ export default class extends Controller {
 
   closeTips() {
     this.accordion?.collapseContent()
+  }
+
+  setUnemployedTipSource() {
+    this.accordion?.triggerTarget.setAttribute("data-context-unemployed-links-source", "link")
   }
 
   get accordion() {
