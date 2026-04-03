@@ -586,6 +586,7 @@ RSpec.describe Cbv::SubmitsController do
       end
 
       context "for GPL Bethany whose income base compensation does not match the implied base rate in a paystub" do
+        let(:current_time) { Date.parse('2025-04-01') }
         let(:cbv_applicant) { create(:cbv_applicant, created_at: current_time, case_number: "ABC1234") }
         let(:account_id) { "01956d5f-cb8d-af2f-9232-38bce8531f58" }
         let(:supported_jobs) { %w[accounts identity paystubs employment income] }
