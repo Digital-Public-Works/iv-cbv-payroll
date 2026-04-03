@@ -96,7 +96,8 @@ class ClientAgencyConfig
       %w[en es].each do |locale|
         REQUIRED_TRANSLATION_KEYS.each do |base_key|
           full_key = "#{base_key}.#{partner_id}"
-          has_db = PartnerTranslation.exists?(partner_config: config, locale: locale, key: full_key)
+          has_db = PartnerTranslation.exists?(partner_config: config, locale: locale, key: base_key) ||
+            PartnerTranslation.exists?(partner_config: config, locale: locale, key: full_key)
           has_locale = I18n.exists?(full_key, locale.to_sym)
 
           unless has_db || has_locale
