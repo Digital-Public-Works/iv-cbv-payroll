@@ -97,6 +97,8 @@ module Aggregators::AggregatorReports
         report[:employments] = summarize_by_employer.map do |_, summary|
           cbv_flow = payroll_accounts.first.cbv_flow
           {
+            applicant_first_name: summary[:identity].first_name,
+            applicant_last_name: summary[:identity].last_name,
             applicant_full_name: summary[:identity].full_name,
             applicant_ssn: summary[:identity].ssn,
             applicant_extra_comments: cbv_flow.additional_information["comment"],

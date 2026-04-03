@@ -66,6 +66,11 @@ RSpec.describe CbvFlowToJson do
         expect(payload[:employment_records]).not_to be_empty
       end
 
+      it "includes first_name and last_name in employee_information" do
+        record = payload[:employment_records].first
+        expect(record[:employee_information]).to include(:first_name, :last_name, :full_name)
+      end
+
       it "converts currency values from cents to dollars" do
         record = payload[:employment_records].first
         payments = record[:w2_payments]
