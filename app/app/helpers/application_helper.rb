@@ -41,13 +41,17 @@ module ApplicationHelper
       end
     end
 
-    translated = db_translation(i18n_key, **options) if i18n_key
+    translated = db_translation(i18n_key, **options) || db_translation(i18n_base_key, **options)
 
     translated ||= if I18n.exists?(scope_key_by_partial(i18n_key))
                      t(i18n_key, **options)
                    elsif I18n.exists?(scope_key_by_partial(default_key))
                      t(default_key, **options)
                    end
+
+    if translated.blank? && Rails.env.development?
+      raise "Missing agency translation: #{i18n_key} (base: #{i18n_base_key}, default: #{default_key})"
+    end
 
     # Mark as html_safe if the base key ends with `_html`.
     #
@@ -63,8 +67,10 @@ module ApplicationHelper
 
   private
 
-  def db_translation(key, **options)
+  def db_translation(base_key, **options)
     return nil unless current_agency && ActiveRecord::Base.connection.data_source_exists?(:partner_translations)
+
+    #    expanded_key = scope_key_by_partial(key)
 
     partner_config = PartnerConfig.find_by(partner_id: current_agency.id)
     return nil unless partner_config
@@ -72,8 +78,25 @@ module ApplicationHelper
     translation = PartnerTranslation.find_by(
       partner_config: partner_config,
       locale: I18n.locale.to_s,
-      key: key
+      key: base_key
     )
+
+    if translation.nil? && base_key.end_with?(".#{partner_config.partner_id}")
+      translation = PartnerTranslation.find_by(
+        partner_config: partner_config,
+        locale: I18n.locale.to_s,
+        key: base_key.delete_suffix(".#{partner_config.partner_id}")
+      )
+    end
+
+    if translation.nil? && base_key.end_with?(".default")
+      translation = PartnerTranslation.find_by(
+        partner_config: partner_config,
+        locale: I18n.locale.to_s,
+        key: base_key.delete_suffix(".default")
+      )
+    end
+
     return nil unless translation
 
     value = translation.value

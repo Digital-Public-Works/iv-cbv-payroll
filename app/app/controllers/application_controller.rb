@@ -83,9 +83,11 @@ class ApplicationController < ActionController::Base
   def detect_client_agency_from_domain
     return nil unless request.host.present?
 
+    subdomain = request.host.split(".").first
+
     agency_config.client_agency_ids.find do |agency_id|
       agency = agency_config[agency_id]
-      agency.agency_domain == request.host
+      agency.agency_domain == subdomain
     end
   end
 

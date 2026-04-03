@@ -1,6 +1,6 @@
 namespace :partner do
   desc "create API production user for a partner"
-  task :create_api_access_token, [:partner_id] => :environment do |_t, args|
+  task :create_api_access_token, [ :partner_id ] => :environment do |_t, args|
     partner_id = args.fetch(:partner_id)
     user = User.find_or_create_by(
       email: "ffs-eng+#{partner_id}@digitalpublicworks.org",
@@ -14,7 +14,7 @@ namespace :partner do
   end
 
   desc "deliver csv summary of cases sent to a partner"
-  task :deliver_csv_reports, [:partner_id] => :environment do |_t, args|
+  task :deliver_csv_reports, [ :partner_id ] => :environment do |_t, args|
     partner_id = args.fetch(:partner_id)
     agency = ClientAgencyConfig.instance[partner_id]
     config = agency.transmission_method_configuration.with_indifferent_access
@@ -30,7 +30,7 @@ namespace :partner do
   end
 
   desc "backfill agency name matches for a partner"
-  task :backfill_agency_name_matches, [:partner_id] => :environment do |_t, args|
+  task :backfill_agency_name_matches, [ :partner_id ] => :environment do |_t, args|
     partner_id = args.fetch(:partner_id)
     Rails.logger.info "Backfilling agency name matches for #{partner_id}:"
     CbvFlow
@@ -44,7 +44,7 @@ namespace :partner do
   end
 
   desc "redact case numbers for a partner"
-  task :redact_case_numbers, [:partner_id] => :environment do |_t, args|
+  task :redact_case_numbers, [ :partner_id ] => :environment do |_t, args|
     partner_id = args.fetch(:partner_id)
     Rails.logger.info "Redacting case-numbers for #{partner_id}..."
     DataRetentionService.redact_case_numbers_by_agency(partner_id)
