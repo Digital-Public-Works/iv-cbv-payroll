@@ -7,6 +7,9 @@ module Aggregators::AggregatorReports
       end
 
       def match?
+        # do not check for 'match' if there are no paystubs
+        return true if @paystubs.nil? || @paystubs.empty?
+
         # Consider values compatible if they are in different units or there is nothing to compare
         return true unless @income&.compensation_amount.present?
         return true unless @income&.compensation_unit == "hourly"
