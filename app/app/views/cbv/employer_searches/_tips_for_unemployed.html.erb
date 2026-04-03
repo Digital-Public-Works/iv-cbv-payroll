@@ -1,0 +1,53 @@
+<div data-controller="unemployed-tips click-tracker"
+     data-action="turbo:before-fetch-request@document->unemployed-tips#closeTipsExternal
+               click@document->unemployed-tips#closeTipsExternal"
+     id="unemployed-tips-section"
+>
+  <%= render ExpandableHelpV2Component.new(
+    id: "unemployed-tips",
+    trigger_label: t("cbv.employer_searches.show.unemployment_tips.link_text"),
+    element_name: "unemployed_tips_help",
+    track_event: TrackEvent::ApplicantAccessedUnemployedHelp,
+    data_options: { "unemployed-tips-target": "tipsAccordion" }
+  ) do %>
+
+    <h5>
+      <%= t("cbv.employer_searches.show.unemployment_tips.tip1_heading") %>
+    </h5>
+    <p>
+      <%= t("cbv.employer_searches.show.unemployment_tips.tip1_description") %>
+    </p>
+
+    <h5>
+      <%= t("cbv.employer_searches.show.unemployment_tips.tip2_heading") %>
+    </h5>
+    <p>
+      <%= t("cbv.employer_searches.show.unemployment_tips.tip2_description", agency_full_name: agency_translation("shared.agency_full_name")) %>
+    </p>
+    <p class="text-italic">
+      <%= t("cbv.employer_searches.show.unemployment_tips.tip2_tip") %>
+    </p>
+
+    <h5>
+      <%= t("cbv.employer_searches.show.unemployment_tips.tip3_heading") %>
+    </h5>
+    <p>
+      <%= t("cbv.employer_searches.show.unemployment_tips.tip3_description", agency_full_name: agency_translation("shared.agency_full_name")) %>
+    </p>
+
+    <div>
+      <button type="button"
+              class="usa-button--unstyled usa-link"
+              data-unemployed-tips-target="closeLink"
+              data-action="click->unemployed-tips#closeTips
+                           click->click-tracker#track"
+              data-element-type=<%= ClickTracker::ElementType::Button %>
+              data-element-name="close_unemployed_tips"
+              data-context-unemployed-links-source="link"
+              data-track-event="<%= TrackEvent::ApplicantClosedUnemployedHelp %>"
+      >
+        <%= t("cbv.employer_searches.show.unemployment_tips.close_message") %>
+      </button>
+    </div>
+  <% end %>
+</div>
