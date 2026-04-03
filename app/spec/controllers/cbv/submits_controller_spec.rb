@@ -305,8 +305,35 @@ RSpec.describe Cbv::SubmitsController do
           expect(pdf_text).not_to include("Payments after taxes and deductions (net)")
           expect(pdf_text).not_to include("Deduction")
           expect(pdf_text).not_to include("Base Pay")
+        end
 
-          expect(pdf_text).to include("Client Comments")
+        context "when the client has added a comment" do
+          let(:cbv_flow) do
+            create(:cbv_flow,
+                   :completed,
+                   :invited,
+                   created_at: current_time,
+                   cbv_applicant: cbv_applicant,
+                   additional_information: { account_id => { "comment" => "My hours vary seasonally" } }
+            )
+          end
+
+          it "renders the client comment block" do
+            get :show, format: :pdf
+            pdf_text = extract_pdf_text(response)
+
+            expect(pdf_text).to include("Client Comments")
+            expect(pdf_text).to include("My hours vary seasonally")
+          end
+        end
+
+        context "when the client has not added a comment" do
+          it "does not render the client comment block" do
+            get :show, format: :pdf
+            pdf_text = extract_pdf_text(response)
+
+            expect(pdf_text).not_to include("Client Comments")
+          end
         end
       end
 
@@ -555,6 +582,51 @@ RSpec.describe Cbv::SubmitsController do
 
           expect(response).to be_successful
           expect(pdf_text).to include("Rate not available.")
+        end
+      end
+
+      context "for GPL Bethany whose income base compensation does not match the implied base rate in a paystub" do
+        let(:current_time) { Date.parse('2025-04-01') }
+        let(:cbv_applicant) { create(:cbv_applicant, created_at: current_time, case_number: "ABC1234") }
+        let(:account_id) { "01956d5f-cb8d-af2f-9232-38bce8531f58" }
+        let(:supported_jobs) { %w[accounts identity paystubs employment income] }
+        let(:errored_jobs) { [] }
+        let(:cbv_flow) do
+          create(:cbv_flow,
+                 :completed,
+                 :invited,
+                 created_at: current_time,
+                 cbv_applicant: cbv_applicant
+          )
+        end
+        let!(:payroll_account) do
+          create(
+            :payroll_account,
+            :argyle_fully_synced,
+            with_errored_jobs: errored_jobs,
+            cbv_flow: cbv_flow,
+            aggregator_account_id: account_id,
+            supported_jobs: supported_jobs,
+            )
+        end
+
+        before do
+          session[:cbv_flow_id] = cbv_flow.id
+          argyle_stub_request_identities_response("gpl_bethany")
+          argyle_stub_request_paystubs_response("gpl_bethany")
+          argyle_stub_request_gigs_response("gpl_bethany")
+          argyle_stub_request_account_response("gpl_bethany")
+          Timecop.freeze(Time.local(2025, 04, 1, 0, 0))
+        end
+
+        render_views
+
+        it "renders properly" do
+          get :show, format: :pdf
+          pdf_text = extract_pdf_text(response)
+
+          expect(response).to be_successful
+          expect(pdf_text).to include("Rate varies. See paystubs below.")
         end
       end
     end

@@ -13,6 +13,7 @@ module Aggregators::ResponseObjects
     hours
     earnings
     employment_id
+    implied_base_rate_in_dollars
   ]
 
   Paystub = Struct.new(*PAYSTUB_FIELDS, keyword_init: true) do
@@ -66,7 +67,8 @@ module Aggregators::ResponseObjects
             amount: Aggregators::FormatMethods::Argyle.format_currency(deduction["amount"]),
           )
         end,
-        employment_id: response_body["employment"]
+        employment_id: response_body["employment"],
+        implied_base_rate_in_dollars: Aggregators::FormatMethods::Argyle.paystub_implied_base_rate_in_dollars(response_body)
       )
     end
 
@@ -81,7 +83,8 @@ module Aggregators::ResponseObjects
         argyle_total_hours: response_body["hours"],
         gross_pay_sum: gross_pay_total,
         synthetic_total_hours: synthetic_total_hours,
-        argyle_total_hours_matches_synthetic: synthetic_total_hours == response_body["hours"],
+        argyle_total_hours_matches_synthetic:
+          Aggregators::FormatMethods::Argyle.total_hours_match?(synthetic_total_hours, response_body["hours"]),
         argyle_hours_null: response_body["hours"].nil?
       })
     end

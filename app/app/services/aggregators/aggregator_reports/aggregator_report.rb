@@ -224,6 +224,12 @@ module Aggregators::AggregatorReports
       end
     end
 
+    def base_pay_match
+      # only include paystubs that would be shown on the report anyway, to avoid 'see paystubs below' when there are no paystubs shown
+      paystubs_in_range = @paystubs.select { |paystub| parse_date_safely(paystub.pay_date)&.between?(from_date, to_date) }
+      Argyle::BasePayRateConsistencyChecker.new(income: @incomes.first, paystubs: paystubs_in_range).match?
+    end
+
     private
 
     def employment_filter_for(account_id, employment_matching_id)

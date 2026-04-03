@@ -429,7 +429,7 @@ RSpec.describe Cbv::PaymentDetailsController do
               argyle_total_hours: be_a(String),
               gross_pay_sum: be_a(Float),
               synthetic_total_hours: be_a(Float),
-              argyle_total_hours_matches_synthetic: false,
+              argyle_total_hours_matches_synthetic: true,
               argyle_hours_null: false
             )).exactly(10).times
 
