@@ -99,6 +99,8 @@ class CbvFlowToJson
       employment_start_date: employment&.start_date,
       employment_end_date: employment&.termination_date,
       employee_information: {
+        first_name: identity&.first_name,
+        last_name: identity&.last_name,
         full_name: identity&.full_name,
         ssn: identity&.ssn
       },
