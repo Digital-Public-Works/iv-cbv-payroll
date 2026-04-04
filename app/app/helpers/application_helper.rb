@@ -19,13 +19,18 @@ module ApplicationHelper
   # is either missing or there is no current client agency, it will attempt to render a
   # "default" key.
   def agency_translation(i18n_base_key, **options)
-    default_key = "#{i18n_base_key}.default"
-    i18n_key =
-      if current_agency
-        "#{i18n_base_key}.#{current_agency.id}"
-      else
-        default_key
-      end
+    if i18n_base_key.include?("{agency}")
+      i18n_key = current_agency ? i18n_base_key.gsub("{agency}", current_agency.id) : nil
+      default_key = i18n_base_key.gsub("{agency}", "default")
+    else
+      default_key = "#{i18n_base_key}.default"
+      i18n_key =
+        if current_agency
+          "#{i18n_base_key}.#{current_agency.id}"
+        else
+          default_key
+        end
+    end
     is_html_key = /(?:_|\b)html\z/.match?(i18n_base_key)
     if is_html_key
       options.each do |name, value|
@@ -36,12 +41,17 @@ module ApplicationHelper
       end
     end
 
-    translated =
-      if I18n.exists?(scope_key_by_partial(i18n_key))
-        t(i18n_key, **options)
-      elsif I18n.exists?(scope_key_by_partial(default_key))
-        t(default_key, **options)
-      end
+    translated = db_translation(i18n_key, **options) || db_translation(i18n_base_key, **options)
+
+    translated ||= if I18n.exists?(scope_key_by_partial(i18n_key))
+                     t(i18n_key, **options)
+                   elsif I18n.exists?(scope_key_by_partial(default_key))
+                     t(default_key, **options)
+                   end
+
+    if translated.blank? && Rails.env.development?
+      raise "Missing agency translation: #{i18n_key} (base: #{i18n_base_key}, default: #{default_key})"
+    end
 
     # Mark as html_safe if the base key ends with `_html`.
     #
@@ -54,6 +64,48 @@ module ApplicationHelper
       translated
     end
   end
+
+  private
+
+  def db_translation(base_key, **options)
+    return nil unless current_agency && ActiveRecord::Base.connection.data_source_exists?(:partner_translations)
+
+    #    expanded_key = scope_key_by_partial(key)
+
+    partner_config = PartnerConfig.find_by(partner_id: current_agency.id)
+    return nil unless partner_config
+
+    translation = PartnerTranslation.find_by(
+      partner_config: partner_config,
+      locale: I18n.locale.to_s,
+      key: base_key
+    )
+
+    if translation.nil? && base_key.end_with?(".#{partner_config.partner_id}")
+      translation = PartnerTranslation.find_by(
+        partner_config: partner_config,
+        locale: I18n.locale.to_s,
+        key: base_key.delete_suffix(".#{partner_config.partner_id}")
+      )
+    end
+
+    if translation.nil? && base_key.end_with?(".default")
+      translation = PartnerTranslation.find_by(
+        partner_config: partner_config,
+        locale: I18n.locale.to_s,
+        key: base_key.delete_suffix(".default")
+      )
+    end
+
+    return nil unless translation
+
+    value = translation.value
+
+    options.each { |k, v| value = value.gsub("%{#{k}}", v.to_s) } if options.any?
+    value
+  end
+
+  public
 
   APPLICANT_FEEDBACK_FORM = "https://docs.google.com/forms/d/e/1FAIpQLSedCtd9Jnyr41dAAQf3jSyhxqcqRrpaDIUI9DcH300Tg53ygA/viewform"
   APPLICANT_SURVEY_FORM = "https://docs.google.com/forms/d/e/1FAIpQLSedCtd9Jnyr41dAAQf3jSyhxqcqRrpaDIUI9DcH300Tg53ygA/viewform"

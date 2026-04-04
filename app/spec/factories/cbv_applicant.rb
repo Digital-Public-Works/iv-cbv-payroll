@@ -10,7 +10,7 @@ FactoryBot.define do
 
     # Instantiate the proper subclass:
     # @see https://stackoverflow.com/questions/57504422/how-to-make-factorybot-return-the-right-sti-sub-class
-    initialize_with { CbvApplicant.sti_class_for(client_agency_id).new }
+    initialize_with { new(**attributes) }
 
     trait :sandbox do
       client_agency_id { "sandbox" }

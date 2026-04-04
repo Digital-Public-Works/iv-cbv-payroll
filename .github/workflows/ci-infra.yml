@@ -93,3 +93,5 @@ jobs:
         uses: aquasecurity/tfsec-pr-commenter-action@v1.3.1
         with:
           github_token: ${{ github.token }}
+          tfsec_version: v1.28.1
+          commenter_version: v1.3.1

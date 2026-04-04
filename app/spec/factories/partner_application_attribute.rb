@@ -7,6 +7,8 @@ FactoryBot.define do
     description { "Applicant first name" }
     required { true }
     data_type { "string" }
+    redactable { true }
+    redact_type { "string" }
 
     trait :middle_name do
       add_attribute(:name) { "middle_name" }
@@ -23,13 +25,18 @@ FactoryBot.define do
       add_attribute(:name) { "date_of_birth" }
       description { "Applicant date of birth" }
       required { true }
-      data_type { "string" }
+      data_type { "date" }
+      form_field_type { "memorable_date" }
+      redactable { true }
+      redact_type { "date" }
     end
 
     trait :case_number do
       add_attribute(:name) { "case_number" }
       description { "Case Number" }
       required { true }
+      redactable { false }
+      redact_type { nil }
     end
   end
 end
