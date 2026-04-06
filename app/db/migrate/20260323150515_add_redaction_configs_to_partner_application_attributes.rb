@@ -1,5 +1,5 @@
 class AddRedactionConfigsToPartnerApplicationAttributes < ActiveRecord::Migration[7.2]
-  def change
+  def up
     add_column :partner_application_attributes, :redactable, :boolean, null: false, default: false
     add_column :partner_application_attributes, :redact_type, :string
 
