@@ -3,6 +3,9 @@ locals {
   # Schedule expression defines the frequency at which the job should run.
   # The syntax for `schedule_expression` is explained in the following documentation:
   # https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-scheduled-rule-pattern.html
+
+
+  # TODO: These need to be moved to a data-driven orchestrator so the partners are not hardcocded here.
   scheduled_jobs = {
     # send weekly reports to all configured partners
     send_weekly_reports = {
