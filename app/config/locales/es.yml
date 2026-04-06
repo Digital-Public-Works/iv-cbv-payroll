@@ -165,6 +165,9 @@ es:
           tip2_tip: 'Consejo: Es posible que Recursos Humanos le haya enviado un email sobre cómo iniciar sesión en el sistema de nómina cuando su trabajo terminó.'
           tip3_description: Pida a un(a) gerente o supervisor(a) de su trabajo anterior que escriba una carta que muestre cuándo terminó su trabajo y cuándo le pagaron por última vez. Envíe esa carta a %{agency_full_name}.
           tip3_heading: Si no puede iniciar sesión en el sistema de nómina
+        unemployment_search_tips:
+          heading: "¿Está desempleado?"
+          go_back: Volver a la búsqueda
     entries:
       create:
         error: Debe marcar la casilla de «acuerdo» para proceder.

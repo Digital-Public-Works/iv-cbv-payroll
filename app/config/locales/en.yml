@@ -272,6 +272,9 @@ en:
           tip2_tip: 'Tip: HR may have emailed you about how to log into the payroll system when your job ended.'
           tip3_description: Ask a manager or supervisor from your previous job to write a letter that shows when your job ended and when you were last paid. Submit that letter to %{agency_full_name}.
           tip3_heading: If you can’t log into the payroll system
+        unemployment_search_tips:
+          heading: Are you unemployed?
+          go_back: Go back to search
     entries:
       create:
         error: You must check the agreement checkbox to proceed.
