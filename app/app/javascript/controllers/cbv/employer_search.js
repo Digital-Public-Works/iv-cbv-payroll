@@ -36,11 +36,18 @@ export default class extends Controller {
   }
 
   async select(event) {
-    this.disableButtons()
-    const { responseType, id, name, isDefaultOption, providerName } = event.target.dataset
+    const { responseType, id, name, isDefaultOption, providerName } = event.currentTarget.dataset
 
-    this.adapter = createModalAdapter(providerName)
-    this.adapter.init({
+    const adapter = createModalAdapter(providerName)
+
+    if (!adapter) {
+      console.error(`Could not find adapter for provider: ${providerName}`)
+      return
+    }
+
+    this.disableButtons()
+
+    adapter.init({
       requestData: {
         responseType,
         id,
@@ -51,7 +58,7 @@ export default class extends Controller {
       onSuccess: this.onSuccess.bind(this),
       onExit: this.onExit.bind(this),
     })
-    await this.adapter.open()
+    await adapter.open()
   }
 
   disableButtons() {
