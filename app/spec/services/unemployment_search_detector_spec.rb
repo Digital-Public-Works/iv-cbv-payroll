@@ -11,7 +11,7 @@ RSpec.describe UnemploymentSearchDetector do
     end
 
     context "with English exact terms" do
-      ["terminated", "Terminated", "TERMINATED", "fired", "Fired", "let go", "Let Go", "LET GO"].each do |term|
+      [ "terminated", "Terminated", "TERMINATED", "fired", "Fired", "let go", "Let Go", "LET GO" ].each do |term|
         it "matches '#{term}'" do
           expect(described_class.match?(term)).to be true
         end
@@ -27,7 +27,7 @@ RSpec.describe UnemploymentSearchDetector do
     end
 
     context "with Spanish exact terms" do
-      ["despedido", "Despedida", "DESPIDO", "terminado", "Terminada", "me echaron", "Me Echaron"].each do |term|
+      [ "despedido", "Despedida", "DESPIDO", "terminado", "Terminada", "me echaron", "Me Echaron" ].each do |term|
         it "matches '#{term}'" do
           expect(described_class.match?(term)).to be true
         end
