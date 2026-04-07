@@ -18,7 +18,7 @@ RSpec.describe "partner.rake" do
         )
 
         expect { Rake::Task["partner:deliver_csv_reports"].invoke(partner_id) }.
-          not_to have_enqueued_job(ReportDelivererJob)
+          not_to have_enqueued_job(CsvToSftpReportDelivererJob)
       end
 
       it "enqueues the job when csv_summary_reports_enabled is true" do
@@ -28,7 +28,7 @@ RSpec.describe "partner.rake" do
         )
 
         expect { Rake::Task["partner:deliver_csv_reports"].invoke(partner_id) }.
-          to have_enqueued_job(ReportDelivererJob)
+          to have_enqueued_job(CsvToSftpReportDelivererJob)
       end
     end
   end

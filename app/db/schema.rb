@@ -87,11 +87,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_01_210743) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "show_on_caseworker_report", default: false, null: false
+    t.boolean "show_on_applicant_form", default: true, null: false
+    t.boolean "show_on_caseworker_form", default: true, null: false
     t.boolean "redactable", default: false, null: false
     t.string "redact_type"
     t.string "form_field_type", default: "text_field"
-    t.boolean "show_on_applicant_form", default: true, null: false
-    t.boolean "show_on_caseworker_form", default: true, null: false
     t.index ["partner_config_id"], name: "index_partner_application_attributes_on_partner_config_id"
   end
 

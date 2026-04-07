@@ -67,42 +67,61 @@ module ApplicationHelper
 
   private
 
+  # db translations should be forgiving on the keys used.
+  # For example, we should be able to find a value under shared.agency_portal_name or shared.agency_portal_name.default or shared.agency_portal_name.{partner_id}.
+  # This means that in the relevant value columns, values can be entered naturally, or with a suffix that would be added by agency_translation.
+  # The options argument allows the caller to specify a hash for replacing values into %{key} placeholders in the translation string.
   def db_translation(base_key, **options)
-    return nil unless current_agency && ActiveRecord::Base.connection.data_source_exists?(:partner_translations)
+    return nil unless current_agency && partner_translations_table_exists?
 
-    #    expanded_key = scope_key_by_partial(key)
-
-    partner_config = PartnerConfig.find_by(partner_id: current_agency.id)
+    partner_config = cached_partner_config(current_agency.id)
     return nil unless partner_config
 
-    translation = PartnerTranslation.find_by(
-      partner_config: partner_config,
-      locale: I18n.locale.to_s,
-      key: base_key
-    )
+    locale = I18n.locale.to_s
+    cache_key = PartnerTranslation.cache_key_for(partner_config.id, locale, base_key)
 
-    if translation.nil? && base_key.end_with?(".#{partner_config.partner_id}")
+    value = Rails.cache.fetch(cache_key, expires_in: 10.minutes) do
       translation = PartnerTranslation.find_by(
         partner_config: partner_config,
-        locale: I18n.locale.to_s,
-        key: base_key.delete_suffix(".#{partner_config.partner_id}")
+        locale: locale,
+        key: base_key
       )
+
+      if translation.nil? && base_key.end_with?(".#{partner_config.partner_id}")
+        translation = PartnerTranslation.find_by(
+          partner_config: partner_config,
+          locale: locale,
+          key: base_key.delete_suffix(".#{partner_config.partner_id}")
+        )
+      end
+
+      if translation.nil? && base_key.end_with?(".default")
+        translation = PartnerTranslation.find_by(
+          partner_config: partner_config,
+          locale: locale,
+          key: base_key.delete_suffix(".default")
+        )
+      end
+
+      translation&.value
     end
 
-    if translation.nil? && base_key.end_with?(".default")
-      translation = PartnerTranslation.find_by(
-        partner_config: partner_config,
-        locale: I18n.locale.to_s,
-        key: base_key.delete_suffix(".default")
-      )
-    end
+    return nil unless value
 
-    return nil unless translation
-
-    value = translation.value
+    value = value.dup
 
     options.each { |k, v| value = value.gsub("%{#{k}}", v.to_s) } if options.any?
     value
+  end
+
+  def partner_translations_table_exists?
+    @@partner_translations_table_exists ||= ActiveRecord::Base.connection.data_source_exists?(:partner_translations)
+  end
+
+  def cached_partner_config(partner_id)
+    Rails.cache.fetch("partner_config/#{partner_id}", expires_in: 10.minutes) do
+      PartnerConfig.find_by(partner_id: partner_id)
+    end
   end
 
   public

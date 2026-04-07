@@ -26,7 +26,7 @@ namespace :partner do
     now = Time.find_zone(agency.timezone).now
     start_time = now.yesterday.change(hour: 8)
     end_time = now.change(hour: 8)
-    ReportDelivererJob.perform_later(partner_id, start_time, end_time)
+    CsvToSftpReportDelivererJob.perform_later(partner_id, start_time, end_time)
   end
 
   desc "backfill agency name matches for a partner"
