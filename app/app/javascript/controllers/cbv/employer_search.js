@@ -19,7 +19,6 @@ export default class extends Controller {
 
   disconnect() {
     this.element.removeEventListener("turbo:frame-missing", this.errorHandler)
-    delete this.ModalAdapter
   }
 
   onTurboError(event) {
@@ -36,6 +35,7 @@ export default class extends Controller {
   }
 
   async select(event) {
+    this.disableButtons()
     const { responseType, id, name, isDefaultOption, providerName } = event.currentTarget.dataset
 
     const adapter = createModalAdapter(providerName)
@@ -44,8 +44,6 @@ export default class extends Controller {
       console.error(`Could not find adapter for provider: ${providerName}`)
       return
     }
-
-    this.disableButtons()
 
     adapter.init({
       requestData: {
