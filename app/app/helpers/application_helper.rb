@@ -41,6 +41,7 @@ module ApplicationHelper
       end
     end
 
+    # Look for the translation in the database first; if not found there, look in the locale files.
     translated = db_translation(i18n_key, **options) || db_translation(i18n_base_key, **options)
 
     translated ||= if I18n.exists?(scope_key_by_partial(i18n_key))

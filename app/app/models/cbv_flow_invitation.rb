@@ -84,11 +84,15 @@ class CbvFlowInvitation < ApplicationRecord
   end
 
   def applicant_information
-    return unless !!agency_config.require_applicant_information_on_invitation
+    return unless cbv_applicant.present?
 
-    errors.add(:'cbv_applicant.first_name', I18n.t("activerecord.errors.models.cbv_applicant.attributes.first_name.blank")) if cbv_applicant.first_name.blank?
-    errors.add(:'cbv_applicant.last_name', I18n.t("activerecord.errors.models.cbv_applicant.attributes.last_name.blank")) if cbv_applicant.last_name.blank?
-    errors.add(:'cbv_applicant.snap_application_date', I18n.t("activerecord.errors.models.cbv_applicant.attributes.snap_application_date.invalid_date")) if cbv_applicant.snap_application_date.blank?
+    cbv_applicant.required_applicant_attributes.each do |attr|
+      next if cbv_applicant.send(attr).present?
+
+      errors.add(:"cbv_applicant.#{attr}",
+        I18n.t("activerecord.errors.models.cbv_applicant.attributes.#[attr}.blank",
+          default: I18n.t("cbv.applicant_informations.default.fields.#[attr}.blank", default: "is required")))
+    end
   end
 
   def validate_expiration_params
