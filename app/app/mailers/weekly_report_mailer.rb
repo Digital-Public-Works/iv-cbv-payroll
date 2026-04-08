@@ -41,9 +41,9 @@ class WeeklyReportMailer < ApplicationMailer
                        .includes(:cbv_flows, :cbv_applicant)
                        .flat_map do |invitation|
         if invitation.cbv_flows.any?
-          invitation.cbv_flows.map { |flow| build_record(flow, invitation.cbv_applicant, invitation, client_agency_id) }
+          invitation.cbv_flows.map { |flow| build_record(flow, invitation.cbv_applicant, invitation, current_agency) }
         else
-          [ build_record(nil, invitation.cbv_applicant, invitation, client_agency_id) ]
+          [ build_record(nil, invitation.cbv_applicant, invitation, current_agency) ]
         end
       end
     when "flows"
@@ -51,38 +51,29 @@ class WeeklyReportMailer < ApplicationMailer
              .completed
              .includes(:cbv_applicant, :cbv_flow_invitation)
              .map do |flow|
-        build_record(flow, flow.cbv_applicant, flow.cbv_flow_invitation, client_agency_id)
+        build_record(flow, flow.cbv_applicant, flow.cbv_flow_invitation, current_agency)
       end
     else
       raise "Unknown report variant: #{report_variant}"
     end
   end
 
-  def build_record(flow, applicant, invitation, client_agency_id)
+  def build_record(flow, applicant, invitation, agency)
     base_fields = {
       started_at: flow&.created_at,
       transmitted_at: flow&.transmitted_at,
       completed_at: flow&.consented_to_authorized_use_at
     }
 
-    case client_agency_id
-    when "la_ldh"
-      base_fields.merge(case_number: applicant.case_number)
-    when "az_des"
-      base_fields.merge(
-        case_number: applicant.case_number,
-        email_address: invitation&.email_address,
-        invited_at: invitation&.created_at
-      )
-    when "pa_dhs"
-      base_fields.merge(
-        case_number: applicant.case_number,
-        email_address: invitation&.email_address,
-        invited_at: invitation&.created_at
-      )
-    else
-      base_fields
+    # Add case_number if the agency has it as an applicant attribute
+    base_fields[:case_number] = applicant.case_number if agency.applicant_attributes.key?("case_number")
+
+    if agency.include_invitation_details_on_weekly_report
+      base_fields[:email_address] = invitation&.email_address
+      base_fields[:invited_at] = invitation&.created_at
     end
+
+    base_fields
   end
 
   def generate_csv(rows)

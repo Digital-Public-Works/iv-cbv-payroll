@@ -56,10 +56,7 @@ class FeedbacksController < ApplicationController
   end
 
   def state_value
-    case @cbv_flow&.client_agency_id
-    when "az_des" then "Arizona"
-    when "pa_dhs" then "Pennsylvania"
-    else nil
-    end
+    agency = ClientAgencyConfig.instance[@cbv_flow&.client_agency_id]
+    agency&.state_name
   end
 end
