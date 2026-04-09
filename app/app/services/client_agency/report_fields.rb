@@ -1,11 +1,14 @@
 class ClientAgency::ReportFields
   extend ReportViewHelper
 
-  def self.caseworker_fields_for(_cbv_flow)
-    []
+  def self.caseworker_specific_fields(cbv_flow)
+    agency = ClientAgencyConfig.instance[cbv_flow.client_agency_id]
+    agency.applicant_attributes
+      .select { |_name, attr| attr.show_on_caseworker_report }
+      .map { |name, _attr| [ ".pdf.caseworker.#{name}", cbv_flow.cbv_applicant.send(name) ] }
   end
 
-  def self.applicant_fields_for(cbv_flow)
+  def self.applicant_specific_fields(cbv_flow)
     [
       [ additional_jobs_to_report_string(cbv_flow), format_boolean(cbv_flow.has_other_jobs) ]
     ]

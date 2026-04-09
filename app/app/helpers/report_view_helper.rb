@@ -1,4 +1,7 @@
 module ReportViewHelper
+  # Federal rates used in report calculations
+  FEDERAL_MINIMUM_WAGE_DOLLARS = 7.25
+
   def format_hours(hour)
     return hour unless Float(hour, exception: false).present?
     hour.to_f.round(2)

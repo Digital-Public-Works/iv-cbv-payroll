@@ -201,6 +201,29 @@ en:
         radio_no: No, I don’t have another job that meets one of these criteria
         radio_yes: Yes, I have another job that meets one of these criteria
     applicant_informations:
+      default:
+        fields:
+          case_number:
+            blank: Enter your case number.
+            prompt: Case number
+            super_one_html: Case number<sup>1</sup>
+          date_of_birth:
+            blank: Enter your date of birth.
+            help_text: 'For example: January 19 2000'
+            prompt: Date of birth
+            super_one_html: Date of birth<sup>1</sup>
+          first_name:
+            blank: Enter your first name.
+            prompt: First name
+            super_one_html: First name<sup>1</sup>
+          last_name:
+            blank: Enter your last name.
+            prompt: Last name
+            super_one_html: Last name<sup>1</sup>
+          middle_name:
+            blank: Enter your middle name.
+            prompt: Middle name
+            super_one_html: Middle name<sup>1</sup>
       la_ldh:
         fields:
           case_number:
@@ -262,6 +285,16 @@ en:
         search: Search
         select: Select
         type_the_full_name_tooltip: Type the full name using letters or numbers
+        unemployment_tips:
+          close_message: Close this message
+          link_text: I am currently unemployed
+          tip1_description: Payroll records show the last time you were paid. If your job used a payroll company you can use those records to prove your job ended.
+          tip1_heading: If your job ended recently
+          tip2_description: Use Verify My Income to log into the payroll system of your last job to send your pay information to %{agency_full_name}.
+          tip2_heading: How to prove your job ended
+          tip2_tip: 'Tip: HR may have emailed you about how to log into the payroll system when your job ended.'
+          tip3_description: Ask a manager or supervisor from your previous job to write a letter that shows when your job ended and when you were last paid. Submit that letter to %{agency_full_name}.
+          tip3_heading: If you can’t log into the payroll system
     entries:
       create:
         error: You must check the agreement checkbox to proceed.
@@ -796,6 +829,3 @@ en:
     date_picker_format: 'Format: mm/dd/yyyy'
     optional: Optional
     tax_id_format: 'Format: 123456789'
-  users:
-    omniauth_callbacks:
-      authentication_successful: You are signed in.

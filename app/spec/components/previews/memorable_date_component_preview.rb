@@ -4,7 +4,7 @@ class MemorableDateComponentPreview < ApplicationPreview
   def default
     render(MemorableDateComponent.new(
       form: UswdsFormBuilder.new(:applicant,
-        CbvApplicant::Sandbox.new(date_of_birth: nil),
+        CbvApplicant.new(client_agency_id: "sandbox", date_of_birth: nil),
         view_context,
         {}
       ),
@@ -17,7 +17,7 @@ class MemorableDateComponentPreview < ApplicationPreview
   def with_existing_date
     render(MemorableDateComponent.new(
       form: UswdsFormBuilder.new(:applicant,
-        CbvApplicant::Sandbox.new(date_of_birth: Date.new(1985, 3, 15)),
+        CbvApplicant.new(client_agency_id: "sandbox", date_of_birth: Date.new(1985, 3, 15)),
         view_context,
         {}
       ),
@@ -28,7 +28,7 @@ class MemorableDateComponentPreview < ApplicationPreview
   end
 
   def with_errors
-    applicant = CbvApplicant::Sandbox.new(date_of_birth: nil)
+    applicant = CbvApplicant.new(client_agency_id: "sandbox", date_of_birth: nil)
     applicant.errors.add(:date_of_birth, I18n.t("cbv.applicant_informations.sandbox.fields.date_of_birth.blank"))
 
     render(MemorableDateComponent.new(

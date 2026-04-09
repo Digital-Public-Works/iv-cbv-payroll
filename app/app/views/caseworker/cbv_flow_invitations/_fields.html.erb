@@ -1,0 +1,42 @@
+<% cbv_applicant = @cbv_flow_invitation.cbv_applicant ||
+     @cbv_flow_invitation.build_cbv_applicant(client_agency_id: @cbv_flow_invitation.client_agency_id) %>
+<% agency = ClientAgencyConfig.instance[@cbv_flow_invitation.client_agency_id] %>
+<%= f.fields_for :cbv_applicant, cbv_applicant do |f2| %>
+  <% agency.applicant_attributes.select { |_, attr| attr.show_on_caseworker_form }.each do |name, attr| %>
+    <% case attr.form_field_type %>
+    <% when "memorable_date" %>
+      <%= f2.memorable_date name.to_sym,
+          legend: agency_translation("caseworker.cbv_flow_invitations.{agency}.invite.#{name}") %>
+    <% when "date_picker" %>
+      <%= f2.date_picker name.to_sym,
+          label: agency_translation("caseworker.cbv_flow_invitations.{agency}.invite.#{name}") %>
+    <% else %>
+      <%= f2.text_field name.to_sym,
+          label: agency_translation("caseworker.cbv_flow_invitations.{agency}.invite.#{name}") %>
+    <% end %>
+  <% end %>
+
+  <%= f.email_field :email_address, label: agency_translation("caseworker.cbv_flow_invitations.{agency}.invite.email_address") %>
+
+  <div class="usa-form-group <%= "usa-form-group--error" if f.field_error(:language).present? %>">
+    <legend class="usa-legend"><%= agency_translation("caseworker.cbv_flow_invitations.{agency}.invite.language_label") %></legend>
+    <%= f.field_error :language %>
+    <div class="usa-radio-group">
+      <% language_options.each_with_index do |(value, label), index| %>
+        <div class="usa-radio usa-radio--tile">
+          <input
+            class="usa-radio__input usa-radio__input--tile"
+            id="language-<%= value %>-<%= index %>"
+            type="radio"
+            name="<%= f.object_name %>[language]"
+            value="<%= value %>"
+            <%= 'checked="checked"' if f.object.language == value %>
+          >
+          <label class="usa-radio__label" for="language-<%= value %>-<%= index %>">
+            <%= label %>
+          </label>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

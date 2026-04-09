@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_03_17_000000) do
+ActiveRecord::Schema[7.2].define(version: 2026_04_01_210743) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -86,6 +86,12 @@ ActiveRecord::Schema[7.2].define(version: 2026_03_17_000000) do
     t.integer "data_type", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "show_on_caseworker_report", default: false, null: false
+    t.boolean "show_on_applicant_form", default: true, null: false
+    t.boolean "show_on_caseworker_form", default: true, null: false
+    t.boolean "redactable", default: false, null: false
+    t.string "redact_type"
+    t.string "form_field_type", default: "text_field"
     t.index ["partner_config_id"], name: "index_partner_application_attributes_on_partner_config_id"
   end
 
@@ -114,7 +120,19 @@ ActiveRecord::Schema[7.2].define(version: 2026_03_17_000000) do
     t.boolean "report_customization_show_earnings_list", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "include_invitation_details_on_weekly_report", default: false, null: false
+    t.string "state_name"
     t.index ["partner_id"], name: "index_partner_configs_on_partner_id", unique: true
+  end
+
+  create_table "partner_translations", force: :cascade do |t|
+    t.bigint "partner_config_id", null: false
+    t.string "locale"
+    t.string "key"
+    t.text "value"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["partner_config_id"], name: "index_partner_translations_on_partner_config_id"
   end
 
   create_table "partner_transmission_configs", force: :cascade do |t|
@@ -190,6 +208,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_03_17_000000) do
   add_foreign_key "cbv_flow_invitations", "users"
   add_foreign_key "cbv_flows", "cbv_flow_invitations"
   add_foreign_key "partner_application_attributes", "partner_configs"
+  add_foreign_key "partner_translations", "partner_configs"
   add_foreign_key "partner_transmission_configs", "partner_configs"
   add_foreign_key "payroll_accounts", "cbv_flows"
   add_foreign_key "webhook_events", "payroll_accounts"
