@@ -94,6 +94,29 @@ es:
         radio_no: No, no tengo otro trabajo que cumpla con uno de estos criterios
         radio_yes: Sí, tengo otro trabajo que cumple con uno de estos criterios
     applicant_informations:
+      default:
+        fields:
+          case_number:
+            blank: Escriba su número de caso.
+            prompt: Número de caso
+            super_one_html: Número de caso<sup>1</sup>
+          date_of_birth:
+            blank: Escriba su fecha de nacimiento.
+            help_text: 'Por ejemplo: 19 de enero de 2000'
+            prompt: Fecha de nacimiento
+            super_one_html: Fecha de nacimiento<sup>1</sup>
+          first_name:
+            blank: Escriba su nombre.
+            prompt: Nombre
+            super_one_html: Nombre<sup>1</sup>
+          last_name:
+            blank: Escriba su apellido.
+            prompt: Apellido
+            super_one_html: Apellido<sup>1</sup>
+          middle_name:
+            blank: Escriba su segundo nombre.
+            prompt: Segundo nombre
+            super_one_html: Segundo nombre<sup>1</sup>
       la_ldh:
         fields:
           case_number:
@@ -155,6 +178,16 @@ es:
         search: Buscar
         select: Seleccione
         type_the_full_name_tooltip: Escribe el nombre completo usando letras o números
+        unemployment_tips:
+          close_message: Cerrar este mensaje
+          link_text: Estoy desempleado
+          tip1_description: Sus recibos de sueldo muestran la última vez que le pagaron. Si su trabajo utilizó una empresa de nómina, puede usar esos registros para verificar que su trabajo terminó.
+          tip1_heading: Si su trabajo terminó recientemente
+          tip2_description: Use Verify My Income para iniciar sesión en el sistema de nómina de su último trabajo y enviar su información de pago a %{agency_full_name}.
+          tip2_heading: Cómo verificar que su trabajo terminó
+          tip2_tip: 'Consejo: Es posible que Recursos Humanos le haya enviado un email sobre cómo iniciar sesión en el sistema de nómina cuando su trabajo terminó.'
+          tip3_description: Pida a un(a) gerente o supervisor(a) de su trabajo anterior que escriba una carta que muestre cuándo terminó su trabajo y cuándo le pagaron por última vez. Envíe esa carta a %{agency_full_name}.
+          tip3_heading: Si no puede iniciar sesión en el sistema de nómina
     entries:
       create:
         error: Debe marcar la casilla de «acuerdo» para proceder.
@@ -722,6 +755,3 @@ es:
     date_picker_format: 'Formato: mm/dd/aaaa'
     optional: Opcional
     tax_id_format: 'Formato: 123456789'
-  users:
-    omniauth_callbacks:
-      authentication_successful: Ha iniciado sesión.

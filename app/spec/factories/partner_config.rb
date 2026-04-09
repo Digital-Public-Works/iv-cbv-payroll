@@ -30,6 +30,7 @@ FactoryBot.define do
       timezone { "America/Phoenix" }
       domain { "az" }
       logo_path { "des_logo.png" }
+      state_name { "Arizona" }
     end
 
     trait :la_ldh do
@@ -54,6 +55,7 @@ FactoryBot.define do
       logo_path { "pa_compass_logo.svg" }
       transmission_method { "sftp" }
       staff_portal_enabled { false }
+      state_name { "Pennsylvania" }
     end
   end
 end

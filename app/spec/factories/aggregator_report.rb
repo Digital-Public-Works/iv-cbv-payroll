@@ -12,6 +12,8 @@ FactoryBot.define do
       [
         Aggregators::ResponseObjects::Identity.new(
           account_id: "account1",
+          first_name: "John",
+          last_name: "Smith",
           full_name: "John Smith."
         )
       ]
@@ -106,6 +108,8 @@ FactoryBot.define do
       identities { [
         Aggregators::ResponseObjects::Identity.new(
           account_id: account_name,
+          first_name: "Cool",
+          last_name: "Guy",
           full_name: full_name,
           ssn: ssn,
         )
@@ -158,6 +162,8 @@ FactoryBot.define do
     identities { [
       Aggregators::ResponseObjects::Identity.new(
         account_id: "argyle_report1",
+        first_name: "John",
+        last_name: "Smith",
         full_name: "John Smith."
       ) ] }
     incomes { [

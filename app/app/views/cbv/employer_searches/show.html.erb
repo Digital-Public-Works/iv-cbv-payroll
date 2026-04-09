@@ -66,6 +66,7 @@
             data-name="<%= provider.name %>"
             data-response-type="<%= provider.provider_options.response_type %>"
             data-provider-name="<%= provider.provider_name %>"
+            aria-label="<%= provider.name %>"
             data-is-default-option="true"
             data-cbv-employer-search-target="employerButton"
             type="button"
@@ -84,4 +85,6 @@
       <% end %>
     </div>
   <% end %>
+
+  <%= render partial: "tips_for_unemployed" %>
 </div>

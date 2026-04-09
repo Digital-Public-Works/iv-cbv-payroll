@@ -51,12 +51,72 @@ class ClientAgencyConfig
         (config.active_prod? && Rails.env.production?)
       h[config.partner_id] = ClientAgency.new(config)
     end
+
+    validate_partner_application_attributes
   end
 
   # TODO: Possibly remove, this appears unused.
   # def self.client_agencies(load_all_agency_configs = false)
   #   self.client_agency_ids(load_all_agency_configs)
   # end
+
+  private
+
+  def validate_partner_application_attributes
+    return unless @client_agencies.present?
+
+    @client_agencies.each do |partner_id, agency|
+      if agency.applicant_attributes.empty?
+        message = "Partner #{partner_id} has no partner_application_attributes configured. " \
+          "API metadata will be silently dropped and data retention will fail."
+        Rails.logger.error(message)
+        NewRelic::Agent.notice_error(StandardError.new(message)) if defined?(NewRelic::Agent)
+      end
+    end
+
+    validate_partner_translations if ActiveRecord::Base.connection.data_source_exists?(:partner_translations)
+  end
+
+  REQUIRED_TRANSLATION_KEYS = %w[
+      shared.agency_acronym
+      shared.agency_full_name
+      shared.header.cbv_flow_title
+      shared.header.preheader
+      shared.benefit
+      shared.reporting_purpose
+    ].freeze
+
+  def validate_partner_translations
+    return unless @client_agencies.present?
+
+    @client_agencies.each do |partner_id, _agency|
+      config = PartnerConfig.find_by(partner_id: partner_id)
+      next unless config
+
+      %w[en es].each do |locale|
+        REQUIRED_TRANSLATION_KEYS.each do |base_key|
+          full_key = "#{base_key}.#{partner_id}"
+          has_db = PartnerTranslation.exists?(partner_config: config, locale: locale, key: base_key) ||
+            PartnerTranslation.exists?(partner_config: config, locale: locale, key: full_key)
+          has_locale = I18n.exists?(full_key, locale.to_sym)
+
+          unless has_db || has_locale
+            default_key = "#{base_key}.default"
+            has_db_default = PartnerTranslation.exists?(partner_config: config, locale: locale, key: default_key)
+            has_locale_default = I18n.exists?(default_key, locale.to_sym)
+
+            unless has_db_default || has_locale_default
+              message = "Partner #{partner_id} missing translation: #{full_key} (#{locale}) with no default fallback"
+              Rails.logger.warn(message)
+              NewRelic::Agent.notice_error(StandardError.new(message)) if defined?(NewRelic::Agent)
+            end
+          end
+        end
+      end
+    end
+  end
+
+  public
 
   class ClientAgency
     attr_reader(*%i[
@@ -84,6 +144,8 @@ class ClientAgencyConfig
       generic_links_disabled
       report_customization_show_earnings_list
       require_applicant_information_on_invitation
+      include_invitation_details_on_weekly_report
+      state_name
     ])
 
     def initialize(partner_config)
@@ -124,6 +186,9 @@ class ClientAgencyConfig
       @invitation_links_enabled = partner_config.invitation_links_enabled
 
       @require_applicant_information_on_invitation = partner_config.partner_application_attributes.exists?(required: true)
+      @include_invitation_details_on_weekly_report = partner_config.respond_to?(:include_invitation_details_on_weekly_report) &&
+        partner_config.include_invitation_details_on_weekly_report
+      @state_name = partner_config.respond_to?(:state_name) ? partner_config.state_name : nil
 
       raise ArgumentError.new("Client Agency missing id") if @id.blank?
       raise ArgumentError.new("Client Agency #{@id} missing required attribute `timezone`") if @timezone.blank?
@@ -131,6 +196,25 @@ class ClientAgencyConfig
       raise ArgumentError.new("Client Agency #{@id} invalid value for pay_income_days.w2") unless VALID_PAY_INCOME_DAYS.include?(@pay_income_days[:w2])
       raise ArgumentError.new("Client Agency #{@id} invalid value for pay_income_days.gig") unless VALID_PAY_INCOME_DAYS.include?(@pay_income_days[:gig])
       raise ArgumentError.new("Client Agency #{@id} missing required attribute `transmission_method`") if @transmission_method.blank?
+    end
+
+    def self.case_number(cbv_flow)
+      cbv_flow.cbv_applicant.case_number.rjust(8, "0")
+    end
+
+    def pdf_filename(cbv_flow, time)
+      time = time.in_time_zone(timezone)
+
+      padded_case_number = cbv_flow.cbv_applicant.case_number.rjust(8, "0")
+      "CBVPilot_#{padded_case_number}_" \
+        "#{time.strftime('%Y%m%d')}_" \
+        "Conf#{cbv_flow.confirmation_code}"
+    end
+
+    def format_timestamp(time)
+      return nil if time.nil?
+
+      time.in_time_zone(timezone).strftime("%m/%d/%Y %H:%M:%S")
     end
   end
 end

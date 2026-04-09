@@ -116,6 +116,14 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
           summary = argyle_report.summarize_by_employer
           expect(summary[account][:identity].employment_id).to eq(summary[account][:employment].employment_matching_id)
         end
+
+        it 'includes first_name and last_name from the identity' do
+          summary = argyle_report.summarize_by_employer
+          identity = summary[account][:identity]
+          expect(identity.first_name).to eq("Joe")
+          expect(identity.last_name).to eq("Burnam")
+          expect(identity.full_name).to eq("Joe Burnam")
+        end
       end
     end
   end
@@ -134,6 +142,8 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
         has_other_jobs: false,
         employments: [
           {
+            applicant_first_name: "Cool",
+            applicant_last_name: "Guy",
             applicant_full_name: "Cool Guy",
             applicant_ssn: "XXX-XX-1234",
             applicant_extra_comments: "cool stuff",
