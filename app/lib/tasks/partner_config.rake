@@ -72,7 +72,6 @@ namespace :partner_config do
   rescue ActiveRecord::RecordNotFound
     abort "Partner '#{partner_id}' not found in database."
   end
-
 end
 
 def print_apply_summary(partner_id, changes)
