@@ -1,0 +1,19 @@
+<div class="margin-bottom-4" data-controller="click-tracker">
+  <%= render Uswds::Alert.new(type: :info, heading: t("cbv.employer_searches.show.unemployment_search_tips.heading")) do %>
+    <%= render partial: "unemployment_tip_content" %>
+
+    <div>
+      <%= link_to t("cbv.employer_searches.show.unemployment_search_tips.go_back"),
+          cbv_flow_employer_search_path,
+          class: "usa-button usa-button--outline margin-top-2",
+          data: {
+            turbo_frame: "_top",
+            action: "click->click-tracker#track",
+            element_type: ClickTracker::ElementType::InternalLink,
+            element_name: "go_back_to_search_from_unemployment_tips",
+            context_unemployed_tips_source: "search",
+            track_event: TrackEvent::ApplicantClosedUnemployedHelp
+          } %>
+    </div>
+  <% end %>
+</div>
