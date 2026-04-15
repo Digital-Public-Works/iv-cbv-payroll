@@ -102,6 +102,8 @@ RSpec.configure do |config|
     partners = [ nil, :az_des, :la_ldh, :pa_dhs ]
 
     PartnerApplicationAttribute.delete_all
+    PartnerTransmissionConfig.delete_all
+    PartnerTransmissionMethod.delete_all
     PartnerConfig.delete_all
 
     @sandbox = PartnerConfig.find_by(partner_id: 'sandbox') || FactoryBot.create(:partner_config)

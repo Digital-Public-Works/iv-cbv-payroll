@@ -77,7 +77,7 @@ def print_apply_summary(partner_id, changes)
   puts "\n=== Applied #{partner_id} ==="
   puts "  Config: #{changes[:config]}"
 
-  [ :transmission_configs, :application_attributes, :translations ].each do |section|
+  [ :transmission_methods, :application_attributes, :translations ].each do |section|
     c = changes[section]
     puts "  #{section}: #{c[:created]} created, #{c[:updated]} updated, #{c[:deleted]} deleted"
   end
