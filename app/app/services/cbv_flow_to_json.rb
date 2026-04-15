@@ -192,7 +192,7 @@ class CbvFlowToJson
   end
 
   def build_earnings(earnings)
-    earnings.map do |earning|
+    earnings.filter { |earning| earning.amount.present? }.map do |earning|
       {
         name: earning.name,
         amount: cents_to_dollars(earning.amount)

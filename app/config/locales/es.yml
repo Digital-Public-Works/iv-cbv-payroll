@@ -717,6 +717,7 @@ es:
       aria_label: Menú principal
       cbv_flow_title:
         az_des: Departamento de Seguridad Económica
+        default: Agencia de pruebas CBV
         la_ldh: Departamento de Salud
         pa_dhs: Departamento de Servicios Humanos
         sandbox: Agencia de pruebas CBV
