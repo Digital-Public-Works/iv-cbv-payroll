@@ -285,6 +285,9 @@ en:
         search: Search
         select: Select
         type_the_full_name_tooltip: Type the full name using letters or numbers
+        unemployment_search_tips:
+          go_back: Go back to search
+          heading: Are you unemployed?
         unemployment_tips:
           close_message: Close this message
           link_text: I am currently unemployed
