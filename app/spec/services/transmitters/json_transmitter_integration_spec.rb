@@ -17,7 +17,7 @@ RSpec.describe Transmitters::JsonTransmitter, integration: true do
   let(:argyle_report) { build(:argyle_report, :with_argyle_account) }
   let(:aggregator_report) do
     Aggregators::AggregatorReports::CompositeReport.new(
-      [argyle_report],
+      [ argyle_report ],
       days_to_fetch_for_w2: 90,
       days_to_fetch_for_gig: 90
     )
@@ -38,7 +38,7 @@ RSpec.describe Transmitters::JsonTransmitter, integration: true do
     allow(mock_client_agency).to receive(:logo_path).and_return("")
     allow(mock_client_agency).to receive(:report_customization_show_earnings_list).and_return(true)
     allow(User).to receive(:api_key_for_agency).with("sandbox").and_return(api_key)
-    allow(CbvApplicant).to receive(:valid_attributes_for_agency).with("sandbox").and_return(["case_number"])
+    allow(CbvApplicant).to receive(:valid_attributes_for_agency).with("sandbox").and_return([ "case_number" ])
 
     # Stub PDF generation — we're testing JSON transmission, not PDF rendering
     allow_any_instance_of(PdfService).to receive(:generate)

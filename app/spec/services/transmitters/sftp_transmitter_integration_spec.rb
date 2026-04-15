@@ -17,7 +17,7 @@ RSpec.describe Transmitters::SftpTransmitter, integration: true do
   let(:argyle_report) { build(:argyle_report, :with_argyle_account) }
   let(:aggregator_report) do
     Aggregators::AggregatorReports::CompositeReport.new(
-      [argyle_report],
+      [ argyle_report ],
       days_to_fetch_for_w2: 90,
       days_to_fetch_for_gig: 90
     )
