@@ -75,7 +75,8 @@ class ClientAgencyConfig
       end
     end
 
-    validate_partner_translations if ActiveRecord::Base.connection.data_source_exists?(:partner_translations)
+    validate_partner_translations if defined?(::PartnerTranslation) &&
+      ActiveRecord::Base.connection.data_source_exists?(:partner_translations)
   end
 
   REQUIRED_TRANSLATION_KEYS = %w[
