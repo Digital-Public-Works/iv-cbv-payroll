@@ -131,7 +131,7 @@ RSpec.describe PartnerConfigLoader do
     end
 
     it "errors on invalid transmission method_type" do
-      valid_yaml["transmission_methods"] = [{ "method_type" => "vibes", "configs" => [] }]
+      valid_yaml["transmission_methods"] = [ { "method_type" => "vibes", "configs" => [] } ]
       yaml_file.reopen(yaml_file.path, "w")
       yaml_file.write(valid_yaml.to_yaml)
       yaml_file.rewind
