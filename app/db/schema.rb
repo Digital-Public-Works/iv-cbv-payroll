@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_04_01_210743) do
+ActiveRecord::Schema[7.2].define(version: 2026_04_10_190636) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -125,6 +125,15 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_01_210743) do
     t.index ["partner_id"], name: "index_partner_configs_on_partner_id", unique: true
   end
 
+  create_table "partner_output_configurations", force: :cascade do |t|
+    t.bigint "partner_config_id", null: false
+    t.boolean "include_direct_deposit_last_4", default: false, null: false
+    t.boolean "include_full_ssn", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["partner_config_id"], name: "index_partner_output_configurations_on_partner_config_id"
+  end
+
   create_table "partner_translations", force: :cascade do |t|
     t.bigint "partner_config_id", null: false
     t.string "locale"
@@ -208,6 +217,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_01_210743) do
   add_foreign_key "cbv_flow_invitations", "users"
   add_foreign_key "cbv_flows", "cbv_flow_invitations"
   add_foreign_key "partner_application_attributes", "partner_configs"
+  add_foreign_key "partner_output_configurations", "partner_configs"
   add_foreign_key "partner_translations", "partner_configs"
   add_foreign_key "partner_transmission_configs", "partner_configs"
   add_foreign_key "payroll_accounts", "cbv_flows"

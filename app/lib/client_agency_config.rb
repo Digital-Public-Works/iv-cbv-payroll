@@ -127,6 +127,8 @@ class ClientAgencyConfig
       agency_domain
       authorized_emails
       default_origin
+      include_full_ssn
+      include_direct_deposit_last_4
       invitation_valid_days
       logo_path
       logo_square_path
@@ -184,6 +186,9 @@ class ClientAgencyConfig
       @report_customization_show_earnings_list = partner_config.report_customization_show_earnings_list
       @generic_links_disabled = !partner_config.generic_links_enabled
       @invitation_links_enabled = partner_config.invitation_links_enabled
+      @include_full_ssn = partner_config.partner_output_configuration&.include_full_ssn || false
+      @include_direct_deposit_last_4 = partner_config.partner_output_configuration&.include_direct_deposit_last_4 || false
+
 
       @require_applicant_information_on_invitation = partner_config.partner_application_attributes.exists?(required: true)
       @include_invitation_details_on_weekly_report = partner_config.respond_to?(:include_invitation_details_on_weekly_report) &&

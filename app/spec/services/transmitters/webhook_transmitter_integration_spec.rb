@@ -22,7 +22,10 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
     }
   end
 
-  let(:mock_client_agency) { instance_double(ClientAgencyConfig::ClientAgency) }
+  let(:mock_client_agency) do
+    instance_double(ClientAgencyConfig::ClientAgency, include_full_ssn: false, include_direct_deposit_last_4: false)
+  end
+
   let(:pinwheel_report) { build(:pinwheel_report, :with_pinwheel_account) }
   let(:aggregator_report) do
     Aggregators::AggregatorReports::CompositeReport.new(
