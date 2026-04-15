@@ -176,7 +176,7 @@ RSpec.configure do |config|
       { name: 'beacon_id', description: "Your WELID", form_field_type: 'text_field' },
       { name: 'agency_id_number', description: "Client's agency ID number", form_field_type: 'text_field' },
       { name: 'client_id_number', description: "CIN", form_field_type: 'text_field' },
-      { name: 'snap_application_date', description: "SNAP application or recertification interview date", form_field_type: 'date_picker', data_type: 'date' }
+      { name: 'snap_application_date', description: "SNAP application or recertification interview date", form_field_type: 'date_picker' }
     ].each do |attrs|
       FactoryBot.create(:partner_application_attribute,
         partner_config: sandbox_config,
