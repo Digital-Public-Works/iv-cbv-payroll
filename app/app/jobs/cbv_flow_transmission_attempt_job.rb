@@ -79,5 +79,4 @@ class CbvFlowTransmissionAttemptJob < ApplicationJob
       raise "Unsupported transmission method: #{method_type}"
     end
   end
-
 end
