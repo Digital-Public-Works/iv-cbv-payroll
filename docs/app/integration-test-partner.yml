@@ -1,6 +1,6 @@
 # ==========================================
 # INTEGRATION TEST PARTNER CONFIGURATION
-# Purpose: Multi-transmit partner for local e2e testing against Docker services.
+# Purpose: Partner for local e2e testing against Docker services.
 # Requires docker-compose.integration.yml services to be running.
 #
 # Setup:
@@ -10,9 +10,7 @@
 #   2. Run the integration setup rake task:
 #      bundle exec rake integration:setup
 #
-#      This generates a GPG keypair, applies this config, and creates a test user.
-#
-#   3. Start the Rails server and log in at /integration_test
+#   3. Start the Rails server and visit /cbv/links/integration_test
 # ==========================================
 
 ---
@@ -37,7 +35,6 @@ report_customization_show_earnings_list: true
 weekly_report_enabled: false
 
 transmission_methods:
-# 1. Webhook — hits the dicit-webhook-api-ref-impl on port 9292
 - method_type: webhook
   configs:
   - key: webhook_url
@@ -46,52 +43,6 @@ transmission_methods:
   - key: api_key
     encrypted: false
     value: "my-secure-guid"
-
-# 2. Encrypted S3 — disabled for now (outdated/inactive)
-# - method_type: encrypted_s3
-#   configs:
-#   - key: bucket
-#     encrypted: false
-#     value: "test-bucket"
-#   - key: public_key
-#     encrypted: false
-#     value: "GENERATED_BY_RAKE_TASK"
-
-# 3. SFTP — uploads to Docker SFTP on port 2222
-- method_type: sftp
-  configs:
-  - key: user
-    encrypted: false
-    value: "testuser"
-  - key: password
-    encrypted: false
-    value: "testpass"
-  - key: url
-    encrypted: false
-    value: "localhost"
-  - key: port
-    encrypted: false
-    value: "2222"
-  - key: sftp_directory
-    encrypted: false
-    value: "upload"
-
-# 4. JSON API — disabled for now (outdated/inactive)
-# - method_type: json
-#   configs:
-#   - key: url
-#     encrypted: false
-#     value: "http://localhost:4567/api/v1/transmissions"
-#   - key: include_report_pdf
-#     encrypted: false
-#     value: "true"
-
-# 5. Shared email — disabled for now (outdated/inactive)
-# - method_type: shared_email
-#   configs:
-#   - key: email
-#     encrypted: false
-#     value: "caseworker@integration-test.local"
 
 application_attributes:
 - name: case_number
@@ -129,30 +80,27 @@ translations:
     shared.agency_acronym: 'INTTEST'
     shared.agency_full_name: 'Integration Test Partner'
     shared.header.cbv_flow_title: 'Integration Test'
-    shared.header.preheader: 'Multi-transmit integration test partner.'
+    shared.header.preheader: 'Integration test partner for verifying transmitters against Docker services.'
     shared.benefit: 'Test Benefits'
     shared.reporting_purpose: 'integration testing'
     shared.agency_portal_name: 'Integration Test Portal'
     shared.app_name: 'Integration Test App'
-    # Caseworker login/entries page (partial keys — db_translation strips partner suffix)
-    .header: 'Integration Test Partner — Multi-Transmit Testing'
-    .description: 'This partner is configured to transmit results to webhook and SFTP.'
+    .header: 'Integration Test Partner'
+    .description: 'This partner is configured for integration testing.'
     .continue_to_login: 'Continue to log in page'
-    # Invitation email
     applicant_mailer.invitation_email.header: 'Integration Test Partner has sent you an invitation to verify your income'
-    # PDF report
     cbv.submits.show.pdf.agency_header_name: 'Integration Test Partner'
   es:
     shared.agency_acronym: 'INTTEST'
     shared.agency_full_name: 'Socio de Prueba'
     shared.header.cbv_flow_title: 'Prueba de Integracion'
-    shared.header.preheader: 'Socio de prueba multi-transmision.'
+    shared.header.preheader: 'Socio de prueba para verificar transmisores contra servicios Docker.'
     shared.benefit: 'Beneficios de Prueba'
     shared.reporting_purpose: 'prueba de integracion'
     shared.agency_portal_name: 'Portal de Prueba'
     shared.app_name: 'Aplicacion de Prueba'
-    .header: 'Socio de Prueba — Prueba de Multi-Transmision'
-    .description: 'Este socio esta configurado para transmitir resultados por webhook y SFTP.'
+    .header: 'Socio de Prueba'
+    .description: 'Este socio esta configurado para pruebas de integracion.'
     .continue_to_login: 'Continuar a la pagina de inicio de sesion'
     applicant_mailer.invitation_email.header: 'Socio de Prueba le ha enviado una invitacion para verificar sus ingresos'
     cbv.submits.show.pdf.agency_header_name: 'Socio de Prueba'
