@@ -94,6 +94,29 @@ es:
         radio_no: No, no tengo otro trabajo que cumpla con uno de estos criterios
         radio_yes: Sí, tengo otro trabajo que cumple con uno de estos criterios
     applicant_informations:
+      default:
+        fields:
+          case_number:
+            blank: Escriba su número de caso.
+            prompt: Número de caso
+            super_one_html: Número de caso<sup>1</sup>
+          date_of_birth:
+            blank: Escriba su fecha de nacimiento.
+            help_text: 'Por ejemplo: 19 de enero de 2000'
+            prompt: Fecha de nacimiento
+            super_one_html: Fecha de nacimiento<sup>1</sup>
+          first_name:
+            blank: Escriba su nombre.
+            prompt: Nombre
+            super_one_html: Nombre<sup>1</sup>
+          last_name:
+            blank: Escriba su apellido.
+            prompt: Apellido
+            super_one_html: Apellido<sup>1</sup>
+          middle_name:
+            blank: Escriba su segundo nombre.
+            prompt: Segundo nombre
+            super_one_html: Segundo nombre<sup>1</sup>
       la_ldh:
         fields:
           case_number:
@@ -155,6 +178,16 @@ es:
         search: Buscar
         select: Seleccione
         type_the_full_name_tooltip: Escribe el nombre completo usando letras o números
+        unemployment_tips:
+          close_message: Cerrar este mensaje
+          link_text: Estoy desempleado
+          tip1_description: Sus recibos de sueldo muestran la última vez que le pagaron. Si su trabajo utilizó una empresa de nómina, puede usar esos registros para verificar que su trabajo terminó.
+          tip1_heading: Si su trabajo terminó recientemente
+          tip2_description: Use Verify My Income para iniciar sesión en el sistema de nómina de su último trabajo y enviar su información de pago a %{agency_full_name}.
+          tip2_heading: Cómo verificar que su trabajo terminó
+          tip2_tip: 'Consejo: Es posible que Recursos Humanos le haya enviado un email sobre cómo iniciar sesión en el sistema de nómina cuando su trabajo terminó.'
+          tip3_description: Pida a un(a) gerente o supervisor(a) de su trabajo anterior que escriba una carta que muestre cuándo terminó su trabajo y cuándo le pagaron por última vez. Envíe esa carta a %{agency_full_name}.
+          tip3_heading: Si no puede iniciar sesión en el sistema de nómina
     entries:
       create:
         error: Debe marcar la casilla de «acuerdo» para proceder.
@@ -298,7 +331,6 @@ es:
           default: 'Marque esta casilla para confirmar lo siguiente: <ul class="margin-y-2"><li>La información proporcionada es, a su leal saber y entender, verdadera y está completa.</li><li>Se compromete a informar a %{agency_full_name} (%{agency_acronym}) de cualquier otro ingreso que no esté incluido en este informe o cualquier discrepancia que haya detectado en la información recopilada con esta herramienta.</li><li>Comprende que usted es el único responsable de proporcionar información precisa y completa. Por este motivo, cualquier información falsa o que no conste en el informe puede acarrear consecuencias legales.</li></ul> Al enviar este informe, autoriza su uso para fines de verificación de ingresos por parte del personal autorizado de %{agency_acronym}.'
           pa_dhs: "<strong>Acepto y confirmo que:</strong><br><strong>Compartiré información precisa.</strong> La información que proporcioné es verdadera y completa a mi leal saber y entender. No compartiré el informe si algo en el mismo es incorrecto.<p><strong>Compartiré cualquier información faltante.</strong> Acepto informarle al Departamento de Servicios Humanos de PA sobre los ingresos que no estén en este informe. <p><strong>No compartiré información falsa.</strong> Entiendo que debo compartir información honesta. Entiendo que podría tener problemas legales si omito información.<p><strong>Compartiré la información de mis ingresos.</strong> Autorizo que la información sobre ingresos que me ha mostrado esta página web se comparta con el Departamento de Servicios Humanos de PA."
         legal_header: Acuerdo Legal
-        no_client_comment_found: Ningún
         none_found: No encontramos ningún pago de este empleador.
         none_found_confirmed: Hemos confirmado que no hay pagos recientes de este empleador. Esto sucede cuando el cliente no ha recibido ingresos de este trabajo.
         page_header: Envíe su reporte de ingresos
@@ -681,6 +713,7 @@ es:
     header:
       aria_label: Menú principal
       cbv_flow_title:
+        default: Agencia de pruebas CBV
         az_des: Departamento de Seguridad Económica
         la_ldh: Departamento de Salud
         pa_dhs: Departamento de Servicios Humanos
@@ -723,6 +756,3 @@ es:
     date_picker_format: 'Formato: mm/dd/aaaa'
     optional: Opcional
     tax_id_format: 'Formato: 123456789'
-  users:
-    omniauth_callbacks:
-      authentication_successful: Ha iniciado sesión.

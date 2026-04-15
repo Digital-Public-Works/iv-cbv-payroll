@@ -5,7 +5,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 ruby "3.4.5"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails", "~> 7.2.2"
+gem "rails", "~> 7.2.3", ">= 7.2.3.1"
 
 # The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]
 gem "sprockets-rails"
@@ -53,12 +53,12 @@ gem "bootsnap", require: false
 
 gem "device_detector"
 # Use Sass to process CSS
-# gem "sassc-rails"
+gem "sassc-rails"
 
 gem "mixpanel-ruby"
 gem "newrelic_rpm"
 
-gem "faraday", "~> 2.13.4"
+gem "faraday", "~> 2.13"
 
 gem "wicked_pdf"
 gem "actioncable-enhanced-postgresql-adapter"
@@ -137,9 +137,6 @@ gem "wkhtmltopdf-binary"
 gem "net-sftp"
 gem "net-ssh"
 
-# Sinatra for JSON API reference implementation
-gem "sinatra", "~> 4.2"
-
 # AWS SQS
 gem "aws-sdk-sqs"
 # Shoryuken for SQS
@@ -147,3 +144,4 @@ gem "shoryuken"
 
 # Discard for soft deletes
 gem "discard", "~> 1.4"
+

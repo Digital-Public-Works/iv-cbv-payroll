@@ -1,4 +1,6 @@
 module ApplicationHelper
+  class MissingAgencyTranslation < RuntimeError; end
+
   def current_agency?(client_agency_id)
     return false if current_agency.nil?
 
@@ -18,14 +20,27 @@ module ApplicationHelper
   # `current_agency` method defined by your controller/mailer. If the translation
   # is either missing or there is no current client agency, it will attempt to render a
   # "default" key.
+  # Like agency_translation but returns nil instead of raising when the translation is missing.
+  # Use for optional translations like help_text that may not exist for every field.
+  def agency_translation_if_exists(i18n_base_key, **options)
+    agency_translation(i18n_base_key, **options)
+  rescue MissingAgencyTranslation
+    nil
+  end
+
   def agency_translation(i18n_base_key, **options)
-    default_key = "#{i18n_base_key}.default"
-    i18n_key =
-      if current_agency
-        "#{i18n_base_key}.#{current_agency.id}"
-      else
-        default_key
-      end
+    if i18n_base_key.include?("{agency}")
+      i18n_key = current_agency ? i18n_base_key.gsub("{agency}", current_agency.id) : nil
+      default_key = i18n_base_key.gsub("{agency}", "default")
+    else
+      default_key = "#{i18n_base_key}.default"
+      i18n_key =
+        if current_agency
+          "#{i18n_base_key}.#{current_agency.id}"
+        else
+          default_key
+        end
+    end
     is_html_key = /(?:_|\b)html\z/.match?(i18n_base_key)
     if is_html_key
       options.each do |name, value|
@@ -36,12 +51,18 @@ module ApplicationHelper
       end
     end
 
-    translated =
-      if I18n.exists?(scope_key_by_partial(i18n_key))
-        t(i18n_key, **options)
-      elsif I18n.exists?(scope_key_by_partial(default_key))
-        t(default_key, **options)
-      end
+    # Look for the translation in the database first; if not found there, look in the locale files.
+    translated = db_translation(i18n_key, **options) || db_translation(i18n_base_key, **options)
+
+    translated ||= if I18n.exists?(scope_key_by_partial(i18n_key))
+                     t(i18n_key, **options)
+                   elsif I18n.exists?(scope_key_by_partial(default_key))
+                     t(default_key, **options)
+                   end
+
+    if translated.blank? && Rails.env.development?
+      raise MissingAgencyTranslation, "Missing agency translation: #{i18n_key} (base: #{i18n_base_key}, default: #{default_key})"
+    end
 
     # Mark as html_safe if the base key ends with `_html`.
     #
@@ -54,6 +75,67 @@ module ApplicationHelper
       translated
     end
   end
+
+  private
+
+  # db translations should be forgiving on the keys used.
+  # For example, we should be able to find a value under shared.agency_portal_name or shared.agency_portal_name.default or shared.agency_portal_name.{partner_id}.
+  # This means that in the relevant value columns, values can be entered naturally, or with a suffix that would be added by agency_translation.
+  # The options argument allows the caller to specify a hash for replacing values into %{key} placeholders in the translation string.
+  def db_translation(base_key, **options)
+    return nil unless current_agency && partner_translations_table_exists?
+
+    partner_config = cached_partner_config(current_agency.id)
+    return nil unless partner_config
+
+    locale = I18n.locale.to_s
+    cache_key = PartnerTranslation.cache_key_for(partner_config.id, locale, base_key)
+
+    value = Rails.cache.fetch(cache_key, expires_in: 10.minutes) do
+      translation = PartnerTranslation.find_by(
+        partner_config: partner_config,
+        locale: locale,
+        key: base_key
+      )
+
+      if translation.nil? && base_key.end_with?(".#{partner_config.partner_id}")
+        translation = PartnerTranslation.find_by(
+          partner_config: partner_config,
+          locale: locale,
+          key: base_key.delete_suffix(".#{partner_config.partner_id}")
+        )
+      end
+
+      if translation.nil? && base_key.end_with?(".default")
+        translation = PartnerTranslation.find_by(
+          partner_config: partner_config,
+          locale: locale,
+          key: base_key.delete_suffix(".default")
+        )
+      end
+
+      translation&.value
+    end
+
+    return nil unless value
+
+    value = value.dup
+
+    options.each { |k, v| value = value.gsub("%{#{k}}", v.to_s) } if options.any?
+    value
+  end
+
+  def partner_translations_table_exists?
+    @@partner_translations_table_exists ||= ActiveRecord::Base.connection.data_source_exists?(:partner_translations)
+  end
+
+  def cached_partner_config(partner_id)
+    Rails.cache.fetch("partner_config/#{partner_id}", expires_in: 10.minutes) do
+      PartnerConfig.find_by(partner_id: partner_id)
+    end
+  end
+
+  public
 
   APPLICANT_FEEDBACK_FORM = "https://docs.google.com/forms/d/e/1FAIpQLSedCtd9Jnyr41dAAQf3jSyhxqcqRrpaDIUI9DcH300Tg53ygA/viewform"
   APPLICANT_SURVEY_FORM = "https://docs.google.com/forms/d/e/1FAIpQLSedCtd9Jnyr41dAAQf3jSyhxqcqRrpaDIUI9DcH300Tg53ygA/viewform"

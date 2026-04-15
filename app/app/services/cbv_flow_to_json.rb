@@ -99,6 +99,8 @@ class CbvFlowToJson
       employment_start_date: employment&.start_date,
       employment_end_date: employment&.termination_date,
       employee_information: {
+        first_name: identity&.first_name,
+        last_name: identity&.last_name,
         full_name: identity&.full_name,
         ssn: identity&.ssn
       },
@@ -190,7 +192,7 @@ class CbvFlowToJson
   end
 
   def build_earnings(earnings)
-    earnings.map do |earning|
+    earnings.filter { |earning| earning.amount.present? }.map do |earning|
       {
         name: earning.name,
         amount: cents_to_dollars(earning.amount)
