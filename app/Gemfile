@@ -144,4 +144,3 @@ gem "shoryuken"
 
 # Discard for soft deletes
 gem "discard", "~> 1.4"
-
