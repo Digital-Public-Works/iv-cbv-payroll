@@ -1,5 +1,6 @@
 class CbvFlow < ApplicationRecord
   has_many :payroll_accounts, dependent: :destroy
+  has_one :cbv_flow_transmission, dependent: :destroy
   belongs_to :cbv_flow_invitation, optional: true
   belongs_to :cbv_applicant, optional: true
   validates :client_agency_id, inclusion: { in: ->(_) { ClientAgencyConfig.instance.client_agency_ids } }

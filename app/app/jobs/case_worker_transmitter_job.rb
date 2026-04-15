@@ -1,67 +1,55 @@
 class CaseWorkerTransmitterJob < ApplicationJob
-  include Cbv::AggregatorDataHelper
-
-  attr_reader :cbv_flow
-
   queue_as :report_sender
 
   def perform(cbv_flow_id)
-    @cbv_flow = CbvFlow.find(cbv_flow_id)
-    @current_agency = current_agency(@cbv_flow)
+    cbv_flow = CbvFlow.find(cbv_flow_id)
+    current_agency = current_agency(cbv_flow)
+    raise "Client agency #{cbv_flow.client_agency_id} not found for CbvFlow #{cbv_flow.id}" unless current_agency
 
-    transmitter_class.new(@cbv_flow, @current_agency, set_aggregator_report).deliver
-    @cbv_flow.touch(:transmitted_at)
-    track_transmitted_event(CbvFlow.find(cbv_flow_id), set_aggregator_report.paystubs)
-    enqueue_agency_name_matching_job(CbvFlow.find(cbv_flow_id))
-  end
+    transmission = CbvFlowTransmission.find_or_create_by!(cbv_flow: cbv_flow)
+    synchronize_attempts!(transmission, current_agency)
 
-  def agency_config
-    ClientAgencyConfig.instance
-  end
+    attempts = transmission.cbv_flow_transmission_attempts.where.not(status: :succeeded)
+    return if attempts.empty?
 
-  def transmitter_class
-    case @current_agency.transmission_method
-    when "shared_email"
-      Transmitters::SharedEmailTransmitter
-    when "sftp"
-      Transmitters::SftpTransmitter
-    when "encrypted_s3"
-      Transmitters::EncryptedS3Transmitter
-    when "json"
-      Transmitters::JsonTransmitter
-    when "webhook"
-      Transmitters::WebhookTransmitter
-    else
-      raise "Unsupported transmission method: #{@current_agency.transmission_method}"
+    transmission.update!(status: :pending, completed_at: nil)
+    attempts.find_each do |attempt|
+      enqueue_attempt_job(attempt.id)
     end
   end
 
-  def enqueue_agency_name_matching_job(cbv_flow)
-    return unless cbv_flow.cbv_applicant.agency_expected_names.any?
+  private
 
-    MatchAgencyNamesJob.perform_later(cbv_flow.id)
+  def synchronize_attempts!(transmission, current_agency)
+    configured_methods = current_agency.transmission_methods.index_by { |entry| entry.method.to_s }
+
+    transmission.cbv_flow_transmission_attempts.where.not(method_type: configured_methods.keys).destroy_all
+
+    configured_methods.each do |method_type, entry|
+      validate_method_type!(method_type)
+
+      attempt = transmission.cbv_flow_transmission_attempts.find_or_initialize_by(method_type: method_type)
+      attempt.configuration = entry.configuration
+      attempt.status = :pending if attempt.failed?
+      attempt.save! if attempt.new_record? || attempt.changed?
+    end
   end
 
-  def track_transmitted_event(cbv_flow, payments)
-    event_logger.track(TrackEvent::ApplicantSharedIncomeSummary, nil, {
-      time: Time.current.to_i,
-      client_agency_id: cbv_flow.client_agency_id,
-      cbv_applicant_id: cbv_flow.cbv_applicant_id,
-      cbv_flow_id: cbv_flow.id,
-      device_id: cbv_flow.device_id,
-      invitation_id: cbv_flow.cbv_flow_invitation_id,
-      account_count: cbv_flow.fully_synced_payroll_accounts.count,
-      time_since_invite_seconds: cbv_flow.cbv_flow_invitation&.created_at &&
-        Time.current - cbv_flow.cbv_flow_invitation.created_at,
-      paystub_count: payments.count,
-      account_count_with_additional_information:
-        cbv_flow.additional_information.values.count { |info| info["comment"].present? },
-      flow_started_seconds_ago: (cbv_flow.consented_to_authorized_use_at - cbv_flow.created_at).to_i,
-      locale: I18n.locale
-    })
+  def enqueue_attempt_job(attempt_id)
+    if test_queue_adapter?
+      CbvFlowTransmissionAttemptJob.perform_now(attempt_id)
+    else
+      CbvFlowTransmissionAttemptJob.perform_later(attempt_id)
+    end
   end
 
   def current_agency(cbv_flow)
-    agency_config[cbv_flow.client_agency_id]
+    ClientAgencyConfig.instance[cbv_flow.client_agency_id]
+  end
+
+  def validate_method_type!(method_type)
+    return if CbvFlowTransmissionAttempt.method_types.key?(method_type.to_s)
+
+    raise "Unsupported transmission method: #{method_type}"
   end
 end

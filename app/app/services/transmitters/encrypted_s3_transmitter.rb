@@ -5,8 +5,7 @@ class Transmitters::EncryptedS3Transmitter
   include CsvHelper
 
   def deliver
-    config = @current_agency.transmission_method_configuration
-    public_key = config["public_key"]
+    public_key = @transmission_config["public_key"]
 
     if public_key.blank?
       Rails.logger.error("Public key is missing from transmission_method_configuration")
@@ -44,7 +43,7 @@ class Transmitters::EncryptedS3Transmitter
       end
 
       # Upload the encrypted gzipped tar file to S3
-      s3_service = S3Service.new(config.except("public_key"))
+      s3_service = S3Service.new(@transmission_config.except("public_key"))
       s3_service.upload_file(tmp_encrypted_tar.path, "outfiles/#{@file_name}.tar.gz.gpg")
     rescue => ex
       Rails.logger.error "Failed to transmit to caseworker: #{ex.message}"
@@ -69,7 +68,7 @@ class Transmitters::EncryptedS3Transmitter
       first_name: @cbv_flow.cbv_applicant.first_name,
       last_name: @cbv_flow.cbv_applicant.last_name,
       middle_name: @cbv_flow.cbv_applicant.middle_name,
-      client_email_address: @cbv_flow.cbv_flow_invitation.email_address,
+      client_email_address: @cbv_flow.cbv_flow_invitation&.email_address,
       beacon_userid: @cbv_flow.cbv_applicant.beacon_id,
       app_date: @cbv_flow.cbv_applicant.snap_application_date.strftime("%m/%d/%Y"),
       report_date_created: payroll_account.created_at.strftime("%m/%d/%Y"),

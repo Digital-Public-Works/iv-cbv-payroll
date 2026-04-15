@@ -102,6 +102,8 @@ RSpec.configure do |config|
     partners = [ nil, :az_des, :la_ldh, :pa_dhs ]
 
     PartnerApplicationAttribute.delete_all
+    PartnerTransmissionConfig.delete_all
+    PartnerTransmissionMethod.delete_all
     PartnerConfig.delete_all
 
     @sandbox = PartnerConfig.find_by(partner_id: 'sandbox') || FactoryBot.create(:partner_config)
@@ -134,6 +136,59 @@ RSpec.configure do |config|
           end
         end
       end
+    end
+
+    # LA LDH needs to set case_number to optional and needs a doc_id PAA
+    la_ldh_config = PartnerConfig.find_by(partner_id: 'la_ldh')
+    PartnerApplicationAttribute.where(partner_config: la_ldh_config, name: 'case_number')
+      .update_all(required: false)
+
+    # LA LDH needs doc_id
+    FactoryBot.create(:partner_application_attribute,
+      partner_config: la_ldh_config,
+      name: 'doc_id',
+      description: 'Document ID',
+      required: false,
+      data_type: 'string',
+      redactable: false
+    )
+
+    # AZ DES and PA DHS need income_changes
+    az_des_config = PartnerConfig.find_by(partner_id: 'az_des')
+    pa_dhs_config = PartnerConfig.find_by(partner_id: 'pa_dhs')
+    PartnerApplicationAttribute.where(partner_config: az_des_config, name: 'case_number')
+      .update_all(required: true, show_on_caseworker_report: true)
+
+    [ az_des_config, pa_dhs_config ].each do |config|
+      FactoryBot.create(:partner_application_attribute,
+        partner_config: config,
+        name: 'income_changes',
+        description: 'income changes',
+        required: false,
+        data_type: 'string',
+        redactable: false
+      )
+    end
+
+    # Sandbox caseworker-only fields
+    sandbox_config = PartnerConfig.find_by(partner_id: 'sandbox')
+    [
+      { name: 'beacon_id', description: "Your WELID", form_field_type: 'text_field' },
+      { name: 'agency_id_number', description: "Client's agency ID number", form_field_type: 'text_field' },
+      { name: 'client_id_number', description: "CIN", form_field_type: 'text_field' },
+      { name: 'snap_application_date', description: "SNAP application or recertification interview date", form_field_type: 'date_picker', data_type: 'date' }
+    ].each do |attrs|
+      FactoryBot.create(:partner_application_attribute,
+        partner_config: sandbox_config,
+        name: attrs[:name],
+        description: attrs[:description],
+        required: false,
+        data_type: attrs[:data_type] || 'string',
+        form_field_type: attrs[:form_field_type],
+        redactable: false,
+        show_on_applicant_form: false,
+        show_on_caseworker_form: true
+      )
     end
 
     ClientAgencyConfig.reset!

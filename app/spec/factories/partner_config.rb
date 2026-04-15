@@ -12,7 +12,6 @@ FactoryBot.define do
     logo_path { "" }
     generic_links_enabled { true }
     invitation_links_enabled { true }
-    transmission_method { "shared_email" }
     pilot_ended { false }
     pay_income_days_w2 { 90 }
     pay_income_days_gig { 90 }
@@ -23,6 +22,12 @@ FactoryBot.define do
     invitation_valid_days_default { 14 }
     report_customization_show_earnings_list { true }
 
+    after(:create) do |partner_config, evaluator|
+      if partner_config.partner_transmission_methods.empty?
+        partner_config.partner_transmission_methods.create!(method_type: :shared_email)
+      end
+    end
+
     trait :az_des do
       partner_id { "az_des" }
       name { "Department of Economic Security/Family Assistance Administration" }
@@ -30,6 +35,7 @@ FactoryBot.define do
       timezone { "America/Phoenix" }
       domain { "az" }
       logo_path { "des_logo.png" }
+      state_name { "Arizona" }
     end
 
     trait :la_ldh do
@@ -52,8 +58,13 @@ FactoryBot.define do
       timezone { "America/New_York" }
       domain { "pa" }
       logo_path { "pa_compass_logo.svg" }
-      transmission_method { "sftp" }
       staff_portal_enabled { false }
+      state_name { "Pennsylvania" }
+
+      after(:create) do |partner_config|
+        partner_config.partner_transmission_methods.destroy_all
+        partner_config.partner_transmission_methods.create!(method_type: :sftp)
+      end
     end
   end
 end
