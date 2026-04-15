@@ -1,0 +1,111 @@
+# ==========================================
+# DEMO PARTNER CONFIGURATION FILE
+# Purpose: Defines environment settings and application attributes for a partner.
+# Use the rake
+# ==========================================
+
+---
+partner_id: demo
+name: Demo Partner
+state_name: Georgia
+timezone: America/New_York
+domain: demo-partner
+website: https://demo-partner.example.org/
+logo_path: des_logo.png
+argyle_environment: sandbox
+active_demo: true
+active_prod: true
+pilot_ended: false
+staff_portal_enabled: false
+generic_links_enabled: false
+invitation_links_enabled: true
+invitation_valid_days_default: 10
+pay_income_days_w2: 90
+pay_income_days_gig: 90
+report_customization_show_earnings_list: true
+weekly_report_enabled: true
+weekly_report_recipients: test@example.com
+weekly_report_variant: invitations
+include_invitation_details_on_weekly_report: true
+transmission_method: sftp
+transmission_configs:
+- key: user
+  encrypted: false
+  value: "demo_user"
+- key: password
+  encrypted: false
+  value: "demo_pass"
+- key: url
+  encrypted: false
+  value:
+- key: sftp_directory
+  encrypted: false
+  value:
+application_attributes:
+- name: first_name
+  description: Applicant first name
+  required: false
+  data_type: string
+  form_field_type: text_field
+  show_on_applicant_form: false
+  show_on_caseworker_form: true
+  show_on_caseworker_report: false
+  redactable: true
+  redact_type: string
+- name: middle_name
+  description: Applicant middle name
+  required: false
+  data_type: string
+  form_field_type: text_field
+  show_on_applicant_form: false
+  show_on_caseworker_form: true
+  show_on_caseworker_report: false
+  redactable: true
+  redact_type: string
+- name: last_name
+  description: Applicant last name
+  required: false
+  data_type: string
+  form_field_type: text_field
+  show_on_applicant_form: false
+  show_on_caseworker_form: true
+  show_on_caseworker_report: false
+  redactable: true
+  redact_type: string
+- name: case_number
+  description: Case number
+  required: true
+  data_type: string
+  form_field_type: text_field
+  show_on_applicant_form: false
+  show_on_caseworker_form: true
+  show_on_caseworker_report: true
+  redactable: false
+- name: income_changes
+  description: Income changes
+  required: false
+  data_type: string
+  form_field_type: text_field
+  show_on_applicant_form: false
+  show_on_caseworker_form: false
+  show_on_caseworker_report: false
+  redactable: false
+translations:
+  en:
+    shared.agency_acronym: 'DEMO'
+    shared.agency_full_name: 'Demo Partner'
+    shared.header.cbv_flow_title: 'Department of Demo'
+    shared.header.preheader: 'This is a demo site.'
+    shared.benefit: 'Demo Assistance'
+    shared.reporting_purpose: 'Demo'
+    shared.agency_portal_name: 'Demo Partner Portal'
+    cbv.expired_invitations.show.cta_button_html: 'Expired Invitation'
+  es:
+    shared.agency_acronym: 'DEMO'
+    shared.agency_full_name: 'Demo'
+    shared.header.cbv_flow_title: 'Departamento de Demo'
+    shared.header.preheader: 'Un sitio de demo.'
+    shared.benefit: 'Asistencia Demo'
+    shared.reporting_purpose: 'Demo'
+    shared.agency_portal_name: 'Demo'
+    cbv.expired_invitations.show.cta_button_html: 'Su invitación para verificar ingresos ha expirado'
