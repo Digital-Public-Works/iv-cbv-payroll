@@ -1,6 +1,4 @@
 module ApplicationHelper
-  class MissingAgencyTranslation < RuntimeError; end
-
   def current_agency?(client_agency_id)
     return false if current_agency.nil?
 
@@ -20,14 +18,6 @@ module ApplicationHelper
   # `current_agency` method defined by your controller/mailer. If the translation
   # is either missing or there is no current client agency, it will attempt to render a
   # "default" key.
-  # Like agency_translation but returns nil instead of raising when the translation is missing.
-  # Use for optional translations like help_text that may not exist for every field.
-  def agency_translation_if_exists(i18n_base_key, **options)
-    agency_translation(i18n_base_key, **options)
-  rescue MissingAgencyTranslation
-    nil
-  end
-
   def agency_translation(i18n_base_key, **options)
     if i18n_base_key.include?("{agency}")
       i18n_key = current_agency ? i18n_base_key.gsub("{agency}", current_agency.id) : nil
@@ -61,7 +51,7 @@ module ApplicationHelper
                    end
 
     if translated.blank? && Rails.env.development?
-      raise MissingAgencyTranslation, "Missing agency translation: #{i18n_key} (base: #{i18n_base_key}, default: #{default_key})"
+      raise "Missing agency translation: #{i18n_key} (base: #{i18n_base_key}, default: #{default_key})"
     end
 
     # Mark as html_safe if the base key ends with `_html`.

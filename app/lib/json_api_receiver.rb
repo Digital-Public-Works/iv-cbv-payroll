@@ -12,7 +12,6 @@
 require "sinatra"
 require "json"
 require "openssl"
-require "fileutils"
 
 class JsonApiSignature
   def self.generate(body, timestamp, api_key)
@@ -62,25 +61,12 @@ class JsonApiReceiver < Sinatra::Base
     end
 
     begin
-      parsed = JSON.parse(body)
-      dump_payload(parsed)
+      JSON.parse(body)
       { status: "success" }.to_json
     rescue JSON::ParserError
       status 400
       { error: "Invalid JSON" }.to_json
     end
-  end
-
-  private
-
-  def dump_payload(parsed)
-    dump_dir = ENV.fetch("PAYLOAD_DIR", "/data/received")
-    FileUtils.mkdir_p(dump_dir)
-    confirmation = parsed.dig("confirmation_code") || "unknown"
-    timestamp = Time.now.strftime("%Y%m%dT%H%M%S")
-    filename = "#{timestamp}_#{confirmation}.json"
-    File.write(File.join(dump_dir, filename), JSON.pretty_generate(parsed))
-    puts "📁 Dumped payload to #{dump_dir}/#{filename}"
   end
 
   run! if __FILE__ == $0

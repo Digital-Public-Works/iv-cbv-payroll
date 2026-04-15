@@ -62,9 +62,7 @@ services:
       - "4567:4567"
     volumes:
       - ./lib/json_api_receiver.rb:/app/json_api_receiver.rb
-      - ./tmp/integration_transmissions/json_api:/data/received
     environment:
       JSON_API_KEY: test-json-api-key
-      PAYLOAD_DIR: /data/received
     command: >
       sh -c "gem install sinatra rackup webrick && ruby /app/json_api_receiver.rb"
