@@ -10,6 +10,14 @@ RSpec.describe UnemploymentSearchDetector do
       end
     end
 
+    context "with Department of Labor wildcard terms" do
+      [ "Department of Labor", "department of labor", "AZ Department of Labor" ].each do |term|
+        it "matches '#{term}'" do
+          expect(described_class.match?(term)).to be true
+        end
+      end
+    end
+
     context "with English exact terms" do
       [ "terminated", "Terminated", "TERMINATED", "fired", "Fired", "let go", "Let Go", "LET GO" ].each do |term|
         it "matches '#{term}'" do

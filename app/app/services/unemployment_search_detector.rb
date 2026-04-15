@@ -2,7 +2,7 @@
 
 module UnemploymentSearchDetector
   # Wildcard patterns: any query containing these substrings matches
-  WILDCARD_PATTERNS = %w[unemp desemp].freeze
+  WILDCARD_PATTERNS = [ "unemp", "desemp", "department of labor" ].freeze
 
   # Exact terms: query must match one of these exactly (after strip + downcase)
   EXACT_TERMS = [
