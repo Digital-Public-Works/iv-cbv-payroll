@@ -55,26 +55,64 @@ namespace :integration do
       puts "  API access token: #{access_token.access_token}"
       puts
 
+      # 3. Generate a ready-to-use invitation so the user has an immediate URL to open
+      puts "Creating a convenience invitation..."
+      invitation_params = {
+        language: "en",
+        client_agency_id: "integration_test",
+        email_address: user.email,
+        cbv_applicant_attributes: {
+          client_agency_id: "integration_test",
+          case_number: "ABC1234",
+          first_name: "Jane",
+          last_name: "Doe"
+        }
+      }
+      # No-op event logger to avoid SQS connection attempts during rake setup.
+      noop_logger = Object.new.tap { |o| def o.track(*) = nil }
+      invitation = CbvInvitationService.new(noop_logger)
+        .invite(invitation_params, user, delivery_method: nil)
+
+      if invitation.persisted?
+        puts "  Tokenized URL: #{invitation.to_url}"
+      else
+        puts "  Failed to create invitation: #{invitation.errors.full_messages.join(', ')}"
+      end
+      puts
+
       puts "=== Setup Complete ==="
       puts
-      puts "Next steps:"
-      puts "  1. Make sure Docker services are running:"
-      puts "     docker compose -f #{COMPOSE_FILE} up -d"
-      puts "  2. Start the Rails server:"
-      puts "     bin/rails server"
-      puts "  3. Create a CBV invitation via the API:"
+      puts "Quick start: open the Tokenized URL above in your browser and complete the CBV flow."
       puts
-      puts "     curl -X POST http://localhost:3000/api/v1/invitations \\"
-      puts "       -H 'Authorization: Bearer #{access_token.access_token}' \\"
-      puts "       -H 'Content-Type: application/json' \\"
-      puts "       -d '{\"language\":\"en\",\"agency_partner_metadata\":{\"case_number\":\"ABC1234\",\"first_name\":\"Jane\",\"last_name\":\"Doe\"}}'"
+      puts "To create additional invitations via the API, start the Rails server"
+      puts "(bin/rails server) and run:"
       puts
-      puts "     The response will include a `tokenized_url` — open that in your browser."
+      puts "  curl -X POST http://localhost:3000/api/v1/invitations \\"
+      puts "    -H 'Authorization: Bearer #{access_token.access_token}' \\"
+      puts "    -H 'Content-Type: application/json' \\"
+      puts "    -d '{\"language\":\"en\",\"agency_partner_metadata\":{\"case_number\":\"ABC1234\",\"first_name\":\"Jane\",\"last_name\":\"Doe\"}}'"
+      puts
+      puts "The response will include a `tokenized_url` — open that in your browser."
     end
 
     desc "Remove the integration_test partner and service account"
     task teardown: :environment do
       puts "=== Integration Test Partner Teardown ==="
+
+      # Destroy flows, invitations, and applicants for the integration_test
+      # agency first so FK constraints don't block the user/partner deletion.
+      # Order matters: webhook_events -> payroll_accounts -> cbv_flows ->
+      # cbv_flow_invitations -> cbv_applicants.
+      flow_ids = CbvFlow.where(client_agency_id: "integration_test").pluck(:id)
+      payroll_account_ids = PayrollAccount.where(cbv_flow_id: flow_ids).pluck(:id)
+      WebhookEvent.where(payroll_account_id: payroll_account_ids).delete_all
+
+      flows_count = CbvFlow.where(client_agency_id: "integration_test").destroy_all.size
+      invitations_count = CbvFlowInvitation.where(client_agency_id: "integration_test").destroy_all.size
+      applicants_count = CbvApplicant.where(client_agency_id: "integration_test").destroy_all.size
+      if (flows_count + invitations_count + applicants_count) > 0
+        puts "  Removed #{flows_count} flow(s), #{invitations_count} invitation(s), #{applicants_count} applicant(s)"
+      end
 
       pc = PartnerConfig.find_by(partner_id: "integration_test")
       if pc
