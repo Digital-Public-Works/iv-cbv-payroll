@@ -61,10 +61,12 @@ namespace :integration do
       puts "  API access token: #{access_token.access_token}"
       puts
 
-      # 3. Generate a ready-to-use invitation so the user has an immediate URL to open
+      # 3. Generate a ready-to-use invitation with a long expiration (just
+      # under the 1-year cap) so it remains usable across dev sessions.
       puts "Creating a convenience invitation..."
       invitation_params = {
         language: "en",
+        expiration_days: 364,
         client_agency_id: "integration_test",
         email_address: user.email,
         cbv_applicant_attributes: {
@@ -79,6 +81,7 @@ namespace :integration do
 
       if invitation.persisted?
         puts "  Tokenized URL: #{invitation.to_url}"
+        puts "  Expires: #{invitation.expires_at_local}"
       else
         puts "  Failed to create invitation: #{invitation.errors.full_messages.join(', ')}"
       end
@@ -86,17 +89,7 @@ namespace :integration do
 
       puts "=== Setup Complete ==="
       puts
-      puts "Quick start: open the Tokenized URL above in your browser and complete the CBV flow."
-      puts
-      puts "To create additional invitations via the API, start the Rails server"
-      puts "(bin/rails server) and run:"
-      puts
-      puts "  curl -X POST http://localhost:3000/api/v1/invitations \\"
-      puts "    -H 'Authorization: Bearer #{access_token.access_token}' \\"
-      puts "    -H 'Content-Type: application/json' \\"
-      puts "    -d '{\"language\":\"en\",\"agency_partner_metadata\":{\"case_number\":\"ABC1234\",\"first_name\":\"Jane\",\"last_name\":\"Doe\"}}'"
-      puts
-      puts "The response will include a `tokenized_url` — open that in your browser."
+      puts "Open the Tokenized URL above in your browser to start the CBV flow."
     end
 
     desc "Remove the integration_test partner and service account"
