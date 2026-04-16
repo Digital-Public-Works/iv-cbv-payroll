@@ -70,7 +70,7 @@ module Aggregators::ResponseObjects
         end,
         employment_id: response_body["employment"],
         implied_base_rate_in_dollars: Aggregators::FormatMethods::Argyle.paystub_implied_base_rate_in_dollars(response_body),
-        direct_deposit_accounts: Aggregators::FormatMethods::Argyle.direct_deposit_accounts(response_body["destinations"]) # TODO: Move to formatMethods?
+        direct_deposit_accounts: Aggregators::FormatMethods::Argyle.direct_deposit_accounts(response_body["destinations"])
       )
     end
 
