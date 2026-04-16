@@ -1,3 +1,5 @@
+require "rspec/core/rake_task"
+
 namespace :integration do
   # Spec files tagged `integration: true`. Add new integration specs here so
   # they get picked up by `integration:rspec:*` convenience tasks.
@@ -97,16 +99,16 @@ namespace :integration do
 
   namespace :rspec do
     desc "Run all integration specs (requires Docker services — see integration:docker:up)"
-    task all: :environment do
-      verify_docker_services_running!
-      run_rspec(INTEGRATION_SPECS.values)
+    RSpec::Core::RakeTask.new(:all) do |t|
+      t.pattern = INTEGRATION_SPECS.values
+      t.rspec_opts = "--tag integration"
     end
 
     INTEGRATION_SPECS.each do |name, path|
       desc "Run #{name} transmitter integration spec"
-      task name => :environment do
-        verify_docker_services_running!
-        run_rspec([ path ])
+      RSpec::Core::RakeTask.new(name) do |t|
+        t.pattern = path
+        t.rspec_opts = "--tag integration"
       end
     end
   end
@@ -126,29 +128,5 @@ namespace :integration do
     task :ps do
       sh "docker compose -f #{COMPOSE_FILE} ps"
     end
-  end
-
-  def run_rspec(spec_paths)
-    cmd = [ "bundle", "exec", "rspec", "--tag", "integration", *spec_paths ]
-    puts "Running: #{cmd.join(' ')}"
-    sh(*cmd)
-  end
-
-  def verify_docker_services_running!
-    status = `docker compose -f #{COMPOSE_FILE} ps --status running --format '{{.Service}}' 2>/dev/null`.split("\n")
-    required = %w[sftp webhook-api]
-    missing = required - status
-
-    return if missing.empty?
-
-    abort <<~MSG
-      Docker services not running: #{missing.join(', ')}
-
-      Start them with:
-        bundle exec rake integration:docker:up
-
-      Or check status with:
-        bundle exec rake integration:docker:ps
-    MSG
   end
 end

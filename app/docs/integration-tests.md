@@ -116,4 +116,4 @@ curl http://localhost:9292/health
 
 **Port already allocated** — A previous Docker run may still be holding a port. Run `bundle exec rake integration:docker:down` and try again.
 
-**`Docker services not running`** — The `integration:rspec:*` tasks check that the `sftp` and `webhook-api` containers are both running. If any are missing, run `integration:docker:up` first.
+**Connection refused from specs** — The `integration:rspec:*` tasks require the Docker services to be running. If you see `Errno::ECONNREFUSED` or SFTP timeouts, run `bundle exec rake integration:docker:ps` to check status and `bundle exec rake integration:docker:up` to start them.
