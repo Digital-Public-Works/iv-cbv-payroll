@@ -30,13 +30,11 @@ class JsonApiSignature
 end
 
 class JsonApiReceiver < Sinatra::Base
-  set :server, :webrick
-  set :bind, "0.0.0.0"
-
   post "/" do
     content_type :json
 
-    body = request.body.is_a?(String) ? request.body : request.body.read
+    request.body.rewind
+    body = request.body.read
     signature = request.env["HTTP_X_IVAAS_SIGNATURE"]
     timestamp = request.env["HTTP_X_IVAAS_TIMESTAMP"]
 

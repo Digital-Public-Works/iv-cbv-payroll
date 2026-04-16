@@ -2,10 +2,8 @@ namespace :integration do
   # Spec files tagged `integration: true`. Add new integration specs here so
   # they get picked up by `integration:rspec:*` convenience tasks.
   INTEGRATION_SPECS = {
-    webhook:      "spec/services/transmitters/webhook_transmitter_integration_spec.rb",
-    sftp:         "spec/services/transmitters/sftp_transmitter_integration_spec.rb",
-    encrypted_s3: "spec/services/transmitters/encrypted_s3_transmitter_integration_spec.rb",
-    json:         "spec/services/transmitters/json_transmitter_integration_spec.rb"
+    webhook: "spec/services/transmitters/webhook_transmitter_integration_spec.rb",
+    sftp:    "spec/services/transmitters/sftp_transmitter_integration_spec.rb"
   }.freeze
 
   COMPOSE_FILE = ENV.fetch("INTEGRATION_COMPOSE_FILE", "docker-compose.integration.yml").freeze
@@ -138,7 +136,7 @@ namespace :integration do
 
   def verify_docker_services_running!
     status = `docker compose -f #{COMPOSE_FILE} ps --status running --format '{{.Service}}' 2>/dev/null`.split("\n")
-    required = %w[sftp minio webhook-api json-api]
+    required = %w[sftp webhook-api]
     missing = required - status
 
     return if missing.empty?

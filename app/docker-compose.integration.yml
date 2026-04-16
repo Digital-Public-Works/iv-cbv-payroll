@@ -9,38 +9,6 @@ services:
     volumes:
       - ./tmp/integration_transmissions/sftp:/home/testuser/upload
 
-  # MinIO (S3-compatible) for testing EncryptedS3Transmitter
-  # Console available at http://localhost:9001
-  minio:
-    image: minio/minio:latest
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    command: server /data --console-address ":9001"
-    volumes:
-      - ./tmp/integration_transmissions/encrypted_s3:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  # Create the test bucket on startup
-  minio-setup:
-    image: minio/mc:latest
-    depends_on:
-      minio:
-        condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      mc alias set local http://minio:9000 minioadmin minioadmin;
-      mc mb --ignore-existing local/test-bucket;
-      exit 0;
-      "
-
   # Webhook API reference implementation
   # https://github.com/Digital-Public-Works/dicit-webhook-api-ref-impl
   # Validates payload schema, API key auth, and HMAC signatures.
@@ -53,16 +21,3 @@ services:
       PAYLOAD_DIR: /data/received
     volumes:
       - ./tmp/integration_transmissions/webhook:/data/received
-
-  # JSON API receiver for testing JsonTransmitter (X-IVAAS-* headers)
-  # Uses the in-repo Sinatra-based receiver at lib/json_api_receiver.rb
-  json-api:
-    image: ruby:3.4-alpine
-    ports:
-      - "4567:4567"
-    volumes:
-      - ./lib/json_api_receiver.rb:/app/json_api_receiver.rb
-    environment:
-      JSON_API_KEY: test-json-api-key
-    command: >
-      sh -c "gem install sinatra rackup webrick && ruby /app/json_api_receiver.rb"

@@ -53,7 +53,7 @@ gem "bootsnap", require: false
 
 gem "device_detector"
 # Use Sass to process CSS
-gem "sassc-rails"
+# gem "sassc-rails"
 
 gem "mixpanel-ruby"
 gem "newrelic_rpm"
@@ -136,6 +136,9 @@ gem "wkhtmltopdf-binary"
 
 gem "net-sftp"
 gem "net-ssh"
+
+# Sinatra for JSON API reference implementation
+gem "sinatra", "~> 4.2"
 
 # AWS SQS
 gem "aws-sdk-sqs"
