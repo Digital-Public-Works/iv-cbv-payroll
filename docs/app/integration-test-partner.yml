@@ -26,9 +26,9 @@ argyle_environment: sandbox
 active_demo: true
 active_prod: false
 pilot_ended: false
-staff_portal_enabled: false
-generic_links_enabled: true
-invitation_links_enabled: false
+staff_portal_enabled: true
+generic_links_enabled: false
+invitation_links_enabled: true
 invitation_valid_days_default: 10
 pay_income_days_w2: 90
 pay_income_days_gig: 90

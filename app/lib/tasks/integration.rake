@@ -50,8 +50,8 @@ namespace :integration do
     puts "  2. Start the Rails server:"
     puts "     bin/rails server"
     puts "  3. Restart the Rails server (so the new route constraint is loaded)"
-    puts "  4. Go to http://localhost:3000/cbv/links/integration_test"
-    puts "     (generic link — no login required, goes straight to CBV flow)"
+    puts "  4. Log in as test@integration.local and create a CBV invitation"
+    puts "     for the integration_test agency."
   end
 
   desc "Tear down the integration_test partner"
