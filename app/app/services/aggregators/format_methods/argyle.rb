@@ -130,7 +130,7 @@ module Aggregators::FormatMethods::Argyle
       account = destination["ach_deposit_account"]
       next if account.blank?
 
-      account["account_number"].to_s.gsub(/\D/, "").last(4).presence
+      account["account_number"].to_s&.gsub(/\D/, "")&.last(4)&.presence
     end
   end
 
