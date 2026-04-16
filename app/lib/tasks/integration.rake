@@ -1,5 +1,11 @@
 require "rspec/core/rake_task"
 
+# No-op event logger used by rake tasks to avoid attempting a real SQS
+# connection during local CLI invocations.
+class NoopEventLogger
+  def track(*) = nil
+end
+
 namespace :integration do
   # Spec files tagged `integration: true`. Add new integration specs here so
   # they get picked up by `integration:rspec:*` convenience tasks.
@@ -68,9 +74,7 @@ namespace :integration do
           last_name: "Doe"
         }
       }
-      # No-op event logger to avoid SQS connection attempts during rake setup.
-      noop_logger = Object.new.tap { |o| def o.track(*) = nil }
-      invitation = CbvInvitationService.new(noop_logger)
+      invitation = CbvInvitationService.new(NoopEventLogger.new)
         .invite(invitation_params, user, delivery_method: nil)
 
       if invitation.persisted?
