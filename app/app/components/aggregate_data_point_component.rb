@@ -154,4 +154,11 @@ class AggregateDataPointComponent < ViewComponent::Base
       value: ssn
     }
   end
+
+  def direct_deposit_account(last_four)
+    {
+      label: I18n.t("cbv.payment_details.show.direct_deposit_account_label"),
+      value: I18n.t("cbv.payment_details.show.direct_deposit_account_value", last_four: last_four)
+    }
+  end
 end

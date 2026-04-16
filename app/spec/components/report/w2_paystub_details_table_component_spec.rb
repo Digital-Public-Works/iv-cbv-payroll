@@ -556,5 +556,82 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
         expect(subject.to_html).not_to include "Gross Pay Item: Regular Pay"
       end
     end
+
+    context "when show_direct_deposit_accounts is true" do
+      let(:paystub) do
+        build_paystub(
+          direct_deposit_accounts: [ "1111", "2222" ],
+          deductions: [
+            OpenStruct.new(category: "Tax", tax: "pre-tax", amount: 10000)
+          ]
+        )
+      end
+
+      subject do
+        render_inline(
+          described_class.new(
+            paystub,
+            income: income,
+            show_direct_deposit_accounts: true
+          )
+        )
+      end
+
+      it "renders the direct deposit account label" do
+        expect(subject.to_html).to include I18n.t("cbv.payment_details.show.direct_deposit_account_label")
+      end
+
+      it "renders a row for each last-four" do
+        expect(subject.to_html).to include "1111"
+        expect(subject.to_html).to include "2222"
+      end
+
+      it "preserves the order of accounts" do
+        html = subject.to_html
+        expect(html.index("1111")).to be < html.index("2222")
+      end
+
+      it "places direct deposit rows between net pay and deductions" do
+        html = subject.to_html
+        net_pay_pos = html.index("$1,140.39") # from build_paystub default net_pay
+        dda_pos     = html.index("1111")
+        deduct_pos  = html.index("Deduction: Tax")
+
+        expect(net_pay_pos).to be < dda_pos
+        expect(dda_pos).to be < deduct_pos
+      end
+
+      context "when the paystub has nil direct_deposit_accounts" do
+        let(:paystub) { build_paystub(direct_deposit_accounts: nil) }
+
+        it "does not render the direct deposit label" do
+          expect(subject.to_html).not_to include I18n.t("cbv.payment_details.show.direct_deposit_account_label")
+        end
+      end
+
+      context "when the paystub has an empty direct_deposit_accounts array" do
+        let(:paystub) { build_paystub(direct_deposit_accounts: []) }
+
+        it "does not render the direct deposit label" do
+          expect(subject.to_html).not_to include I18n.t("cbv.payment_details.show.direct_deposit_account_label")
+        end
+      end
+    end
+
+    context "when show_direct_deposit_accounts is false (default)" do
+      let(:paystub) { build_paystub(direct_deposit_accounts: [ "1111", "2222" ]) }
+
+      subject do
+        render_inline(
+          described_class.new(paystub, income: income)
+        )
+      end
+
+      it "does not render direct deposit info even when the paystub has accounts" do
+        expect(subject.to_html).not_to include "1111"
+        expect(subject.to_html).not_to include "2222"
+        expect(subject.to_html).not_to include I18n.t("cbv.payment_details.show.direct_deposit_account_label")
+      end
+    end
   end
 end
