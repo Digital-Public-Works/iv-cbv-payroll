@@ -30,16 +30,17 @@ namespace :integration do
     puts "  Translations: #{changes[:translations][:created]} created, #{changes[:translations][:updated]} updated, #{changes[:translations][:deleted]} deleted"
     puts
 
-    # 2. Create a test user
-    puts "Ensuring test user exists..."
-    user = User.find_or_initialize_by(email: "test@integration.local")
-    if user.new_record?
-      user.client_agency_id = "integration_test"
-      user.save!
-      puts "  Created user: test@integration.local"
-    else
-      puts "  User already exists: test@integration.local"
-    end
+    # 2. Create a service account user with an API access token
+    puts "Ensuring service account user exists..."
+    user = User.find_or_create_by!(
+      email: "ffs-eng+integration_test@digitalpublicworks.org",
+      client_agency_id: "integration_test"
+    )
+    user.update!(is_service_account: true)
+
+    access_token = user.api_access_tokens.first || user.api_access_tokens.create!
+    puts "  Service account: #{user.email}"
+    puts "  API access token: #{access_token.access_token}"
     puts
 
     puts "=== Setup Complete ==="
@@ -49,9 +50,14 @@ namespace :integration do
     puts "     docker compose -f docker-compose.integration.yml up -d"
     puts "  2. Start the Rails server:"
     puts "     bin/rails server"
-    puts "  3. Restart the Rails server (so the new route constraint is loaded)"
-    puts "  4. Log in as test@integration.local and create a CBV invitation"
-    puts "     for the integration_test agency."
+    puts "  3. Create a CBV invitation via the API:"
+    puts
+    puts "     curl -X POST http://localhost:3000/api/v1/invitations \\"
+    puts "       -H 'Authorization: Bearer #{access_token.access_token}' \\"
+    puts "       -H 'Content-Type: application/json' \\"
+    puts "       -d '{\"language\":\"en\",\"agency_partner_metadata\":{\"case_number\":\"ABC1234\",\"first_name\":\"Jane\",\"last_name\":\"Doe\"}}'"
+    puts
+    puts "     The response will include a `tokenized_url` — open that in your browser."
   end
 
   desc "Tear down the integration_test partner"
@@ -66,12 +72,12 @@ namespace :integration do
       puts "  No integration_test partner found"
     end
 
-    user = User.find_by(email: "test@integration.local")
+    user = User.find_by(email: "ffs-eng+integration_test@digitalpublicworks.org")
     if user
       user.destroy!
-      puts "  Removed test user"
+      puts "  Removed service account user"
     else
-      puts "  No test user found"
+      puts "  No service account user found"
     end
 
     ClientAgencyConfig.reset!

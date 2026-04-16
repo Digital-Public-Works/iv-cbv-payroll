@@ -26,7 +26,7 @@ argyle_environment: sandbox
 active_demo: true
 active_prod: false
 pilot_ended: false
-staff_portal_enabled: true
+staff_portal_enabled: false
 generic_links_enabled: false
 invitation_links_enabled: true
 invitation_valid_days_default: 10
