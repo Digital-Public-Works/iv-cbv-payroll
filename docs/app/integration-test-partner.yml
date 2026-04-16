@@ -20,7 +20,8 @@ state_name: Testonia
 timezone: America/New_York
 domain: integration-test
 website: https://integration-test.example.org/
-logo_path: des_logo.png
+# Inline SVG "INTTEST" badge — dev-only placeholder, no external asset dependency
+logo_path: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 80'><rect width='200' height='80' fill='%231B5E8C' rx='8'/><text x='100' y='50' text-anchor='middle' fill='white' font-family='Helvetica,Arial,sans-serif' font-weight='bold' font-size='28' letter-spacing='2'>INTTEST</text></svg>"
 argyle_environment: sandbox
 active_demo: true
 active_prod: false
