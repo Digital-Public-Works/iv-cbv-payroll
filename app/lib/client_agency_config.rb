@@ -221,7 +221,6 @@ class ClientAgencyConfig
       entry&.configuration || {}.with_indifferent_access
     end
 
-
     def self.case_number(cbv_flow)
       cbv_flow.cbv_applicant.case_number.rjust(8, "0")
     end

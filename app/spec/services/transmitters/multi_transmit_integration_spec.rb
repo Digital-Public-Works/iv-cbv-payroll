@@ -1,8 +1,6 @@
 require "rails_helper"
 
 RSpec.describe "Multi-transmission delivery", integration: true do
-  include_context "gpg_setup"
-
   let(:cbv_applicant) do
     create(:cbv_applicant,
       case_number: "MULTI001",
@@ -31,14 +29,21 @@ RSpec.describe "Multi-transmission delivery", integration: true do
     { "webhook_url" => "http://localhost:9292/api/v1/income-report", "api_key" => "my-secure-guid" }
   end
 
-  let(:s3_config) do
-    { "bucket" => "test-bucket", "public_key" => @public_key }
+  let(:sftp_config) do
+    {
+      "user" => "testuser",
+      "password" => "testpass",
+      "url" => "localhost",
+      "port" => "2222",
+      "sftp_directory" => "upload"
+    }
   end
 
   let(:mock_client_agency) do
     instance_double(ClientAgencyConfig::ClientAgency,
       id: "sandbox",
       logo_path: "",
+      timezone: "America/New_York",
       report_customization_show_earnings_list: true,
       transmission_methods: [
         ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(
@@ -46,8 +51,8 @@ RSpec.describe "Multi-transmission delivery", integration: true do
           configuration: webhook_config.with_indifferent_access
         ),
         ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(
-          method: "encrypted_s3",
-          configuration: s3_config.with_indifferent_access
+          method: "sftp",
+          configuration: sftp_config.with_indifferent_access
         )
       ]
     )
@@ -56,31 +61,21 @@ RSpec.describe "Multi-transmission delivery", integration: true do
   before do
     allow(Aggregators::AggregatorReports::ArgyleReport).to receive(:new).and_return(argyle_report)
 
-    allow_any_instance_of(CaseWorkerTransmitterJob).to receive(:current_agency).and_return(mock_client_agency)
-    allow_any_instance_of(CaseWorkerTransmitterJob)
-      .to receive(:event_logger)
-      .and_return(instance_double(GenericEventTracker, track: nil))
+    allow(ClientAgencyConfig.instance).to receive(:[]).and_call_original
+    allow(ClientAgencyConfig.instance).to receive(:[]).with("sandbox").and_return(mock_client_agency)
 
     # Stub PDF generation — we're testing transmission, not PDF rendering
     allow_any_instance_of(PdfService).to receive(:generate)
       .and_return(OpenStruct.new(content: "fake-pdf-content"))
 
-    # Disable local AWS SSO config so MinIO credentials take effect
-    stub_const("ENV", ENV.to_h.merge(
-      "AWS_ACCESS_KEY_ID" => "minioadmin",
-      "AWS_SECRET_ACCESS_KEY" => "minioadmin",
-      "AWS_REGION" => "us-east-1",
-      "AWS_CONFIG_FILE" => "/dev/null",
-      "AWS_SHARED_CREDENTIALS_FILE" => "/dev/null"
-    ))
+    allow(mock_client_agency).to receive(:pdf_filename).and_return("IncomeReport_#{cbv_flow.confirmation_code}")
 
-    # Point AWS SDK at MinIO
-    allow(Aws::S3::Client).to receive(:new).and_wrap_original do |original, **opts|
-      original.call(**opts.merge(
-        endpoint: "http://localhost:9000",
-        force_path_style: true,
-        credentials: Aws::Credentials.new("minioadmin", "minioadmin"),
-        region: "us-east-1"
+    # Use password-only SSH auth so Net::SSH does not scan local keys.
+    allow(Net::SSH).to receive(:start).and_wrap_original do |original, host, user, **opts|
+      original.call(host, user, **opts.merge(
+        verify_host_key: :never,
+        keys: [],
+        auth_methods: %w[password]
       ))
     end
 
@@ -91,23 +86,15 @@ RSpec.describe "Multi-transmission delivery", integration: true do
     WebMock.disable_net_connect!
   end
 
-  it "delivers to both webhook and S3 in a single job run" do
+  it "fans out to both webhook and SFTP in a single job run" do
     expect { CaseWorkerTransmitterJob.new.perform(cbv_flow.id) }.not_to raise_error
 
-    # Verify transmitted_at was set
+    transmission = CbvFlowTransmission.find_by!(cbv_flow: cbv_flow)
+    attempts = transmission.cbv_flow_transmission_attempts
+
+    expect(attempts.pluck(:method_type)).to contain_exactly("webhook", "sftp")
+    expect(attempts.all? { |a| a.succeeded? }).to be(true), "all attempts should succeed; got: #{attempts.map(&:status)}"
+    expect(transmission.reload.succeeded?).to be(true)
     expect(cbv_flow.reload.transmitted_at).to be_present
-
-    # Verify the S3 upload happened
-    s3 = Aws::S3::Client.new(
-      endpoint: "http://localhost:9000",
-      force_path_style: true,
-      access_key_id: "minioadmin",
-      secret_access_key: "minioadmin",
-      region: "us-east-1"
-    )
-
-    objects = s3.list_objects_v2(bucket: "test-bucket", prefix: "outfiles/").contents
-    uploaded = objects.find { |o| o.key.include?("MULTI001") && o.key.end_with?(".tar.gz.gpg") }
-    expect(uploaded).to be_present
   end
 end
