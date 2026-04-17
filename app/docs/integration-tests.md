@@ -63,12 +63,6 @@ Integration specs carry the tag `integration: true` and are excluded from the de
 | `sftp_transmitter_integration_spec.rb` | `SftpTransmitter` | SFTP container |
 | `webhook_transmitter_integration_spec.rb` | `WebhookTransmitter` | Webhook ref impl (port 9292) |
 
-## How Each Test Connects to Its Service
-
-**SFTP** — The spec passes `port: 2222` in the transmission config, which `SftpGateway` uses instead of the default port 22. The spec also overrides `Net::SSH.start` to use password-only auth (avoiding ed25519 key scanning).
-
-**Webhook** — The spec calls `WebMock.allow_net_connect!` in a `before` block and restores the default in `after`, so real HTTP connections to `localhost:9292` are permitted only during these tests. The reference server validates the `X-VMI-*` headers (Timestamp, Signature, API-Key, Confirmation-Code), verifies the HMAC signature, and validates the JSON payload schema.
-
 ## End-to-End Browser Testing (optional)
 
 The `integration:partner:setup` task creates an `integration_test` partner and a service-account user with an API access token. This lets you exercise the full CBV flow end-to-end through a browser, with real webhook delivery to the Docker services.
@@ -91,23 +85,8 @@ Open the **Tokenized URL** from step 2 in your browser and complete the CBV flow
 
 ### Creating additional invitations via the API
 
-The setup task creates one invitation automatically. To create more, use the API token printed by step 2:
+The setup task creates one invitation automatically. To create more, use the API token printed by step 2.
 
-```bash
-curl -X POST http://localhost:3000/api/v1/invitations \
-  -H 'Authorization: Bearer <YOUR_API_ACCESS_TOKEN>' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "language": "en",
-    "agency_partner_metadata": {
-      "case_number": "ABC1234",
-      "first_name": "Jane",
-      "last_name": "Doe"
-    }
-  }'
-```
-
-The response includes a `tokenized_url`.
 
 ```bash
 # Verify the webhook container received the payload:
