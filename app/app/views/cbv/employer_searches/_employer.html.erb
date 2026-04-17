@@ -1,4 +1,8 @@
 <%= turbo_frame_tag "employers" do %>
+  <% if @show_unemployment_tips %>
+    <%= render partial: "unemployment_search_tips" %>
+  <% end %>
+
   <% if @query.present? %>
     <h2 class="site-preview-heading margin-bottom-2">
       <%= t("cbv.employer_searches.show.results") %> (<%= @employers.count %>)

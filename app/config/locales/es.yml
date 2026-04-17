@@ -178,6 +178,9 @@ es:
         search: Buscar
         select: Seleccione
         type_the_full_name_tooltip: Escribe el nombre completo usando letras o números
+        unemployment_search_tips:
+          go_back: Volver a la búsqueda
+          heading: "¿Está desempleado?"
         unemployment_tips:
           close_message: Cerrar este mensaje
           link_text: Estoy desempleado
