@@ -79,15 +79,19 @@ The `integration_test` partner is configured with a single webhook transmission 
 # 1. Start Docker services
 bundle exec rake integration:docker:up
 
-# 2. Create the integration_test partner + API token
+# 2. Create the integration_test partner + API token + a ready-to-use invitation
 bundle exec rake integration:partner:setup
-# Note the API access token printed by this task.
+# The task prints an API access token and a Tokenized URL.
 
 # 3. Start the Rails server
 bin/rails server
 ```
 
-Then create an invitation using the API token from step 2:
+Open the **Tokenized URL** from step 2 in your browser and complete the CBV flow. When the caseworker submits the report, the webhook transmitter fires.
+
+### Creating additional invitations via the API
+
+The setup task creates one invitation automatically. To create more, use the API token printed by step 2:
 
 ```bash
 curl -X POST http://localhost:3000/api/v1/invitations \
@@ -103,7 +107,7 @@ curl -X POST http://localhost:3000/api/v1/invitations \
   }'
 ```
 
-The response includes a `tokenized_url` — open it in your browser and complete the CBV flow. When the caseworker submits the report, the webhook transmitter fires.
+The response includes a `tokenized_url`.
 
 ```bash
 # Verify the webhook container received the payload:

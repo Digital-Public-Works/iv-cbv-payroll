@@ -53,9 +53,32 @@ namespace :integration do
       puts "  API access token: #{access_token.access_token}"
       puts
 
+      # 3. Generate a ready-to-use invitation with a long expiration (just
+      # under the 1-year cap) so it remains usable across dev sessions.
+      # We create directly via the model to bypass CbvInvitationService's
+      # event tracking (which tries to hit SQS).
+      puts "Creating a convenience invitation..."
+      invitation = CbvFlowInvitation.create!(
+        language: "en",
+        expiration_days: 364,
+        client_agency_id: "integration_test",
+        email_address: user.email,
+        user: user,
+        cbv_applicant_attributes: {
+          client_agency_id: "integration_test",
+          case_number: "ABC1234",
+          first_name: "Jane",
+          last_name: "Doe"
+        }
+      )
+      puts "  Tokenized URL: #{invitation.to_url}"
+      puts "  Expires: #{invitation.expires_at_local}"
+      puts
+
       puts "=== Setup Complete ==="
       puts
-      puts "See docs/integration-tests.md for next steps."
+      puts "Open the Tokenized URL above in your browser to start the CBV flow."
+      puts "To create additional invitations via the API, see docs/integration-tests.md."
     end
 
     desc "Remove the integration_test partner and service account"
