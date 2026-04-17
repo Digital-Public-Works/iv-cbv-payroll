@@ -145,50 +145,6 @@ The CBV application serves multiple government agencies. Configure each tenant:
 | `SANDBOX_PINWHEEL_ENVIRONMENT` | `/service/app-{env}/sandbox-pinwheel-environment` | String | `sandbox` or `production`    |
 | `AGENCY_DEFAULT_ACTIVE`        | `/service/app-{env}/agency-default-active`        | String | `false` (disable by default) |
 
-### Arizona DES Tenant
-
-
-| Environment Variable              | Parameter Store Key                                  | Type         | Description                         |
-| --------------------------------- | ---------------------------------------------------- | ------------ | ----------------------------------- |
-| `AZ_DES_DOMAIN_NAME`              | `/service/app-{env}/az-des-domain-name`              | String       | Agency-specific domain              |
-| `AZ_DES_SFTP_USER`                | `/service/app-{env}/az-des-sftp-user`                | SecureString | SFTP username for file transmission |
-| `AZ_DES_SFTP_PASSWORD`            | `/service/app-{env}/az-des-sftp-password`            | SecureString | SFTP password                       |
-| `AZ_DES_SFTP_URL`                 | `/service/app-{env}/az-des-sftp-url`                 | String       | SFTP server URL                     |
-| `AZ_DES_SFTP_DIRECTORY`           | `/service/app-{env}/az-des-sftp-directory`           | String       | Target directory path               |
-| `AZ_DES_ARGYLE_ENVIRONMENT`       | `/service/app-{env}/az-des-argyle-environment`       | String       | `sandbox` or `production`           |
-| `AZ_DES_PINWHEEL_ENVIRONMENT`     | `/service/app-{env}/az-des-pinwheel-environment`     | String       | `sandbox` or `production`           |
-| `AZ_DES_WEEKLY_REPORT_RECIPIENTS` | `/service/app-{env}/az-des-weekly-report-recipients` | String       | Comma-separated email list          |
-| `AGENCY_AZ_DES_ACTIVE`            | `/service/app-{env}/agency-az-des-active`            | String       | `true` to enable tenant             |
-
-### PA DHS Tenant
-
-| Environment Variable              | Parameter Store Key                                  | Type         | Description                         |
-|-----------------------------------| ---------------------------------------------------- | ------------ | ----------------------------------- |
-| `PA_DHS_DOMAIN_NAME`              | `/service/app-{env}/pa-dhs-domain-name`              | String       | Agency-specific domain              |
-| `PA_DHS_SFTP_USER`                | `/service/app-{env}/pa-dhs-sftp-user`                | SecureString | SFTP username for file transmission |
-| `PA_DHS_SFTP_PASSWORD`            | `/service/app-{env}/pa-dhs-sftp-password`            | SecureString | SFTP password                       |
-| `PA_DHS_SFTP_URL`                 | `/service/app-{env}/pa-dhs-sftp-url`                 | String       | SFTP server URL                     |
-| `PA_DHS_SFTP_DIRECTORY`           | `/service/app-{env}/pa-dhs-sftp-directory`           | String       | Target directory path               |
-| `PA_DHS_ARGYLE_ENVIRONMENT`       | `/service/app-{env}/pa-dhs-argyle-environment`       | String       | `sandbox` or `production`           |
-| `PA_DHS_PINWHEEL_ENVIRONMENT`     | `/service/app-{env}/pa-dhs-pinwheel-environment`     | String       | `sandbox` or `production`           |
-| `PA_DHS_WEEKLY_REPORT_RECIPIENTS` | `/service/app-{env}/pa-dhs-weekly-report-recipients` | String       | Comma-separated email list          |
-| `AGENCY_PA_DHS_ACTIVE`             | `/service/app-{env}/agency-pa-dhs-active`            | String       | `true` to enable tenant             |
-
-
-### Louisiana LDH Tenant (Deprecated)
-
-Louisiana LDH is not currently used by this repo, but these environment variables are still necessary to define to properly launch the ECS task.
-Use placeholder values to create the Parameter Store keys.
-
-| Environment Variable              | Parameter Store Key                                  | Type   | Description                |
-| --------------------------------- | ---------------------------------------------------- | ------ | -------------------------- |
-| `LA_LDH_DOMAIN_NAME`              | `/service/app-{env}/la-ldh-domain-name`              | String | Agency-specific domain     |
-| `LA_LDH_EMAIL`                    | `/service/app-{env}/la-ldh-email`                    | String | Contact email for agency   |
-| `LA_LDH_PILOT_ENABLED`            | `/service/app-{env}/la-ldh-pilot-enabled`            | String | `true` if pilot is active  |
-| `LA_LDH_ARGYLE_ENVIRONMENT`       | `/service/app-{env}/la-ldh-argyle-environment`       | String | `sandbox` or `production`  |
-| `LA_LDH_PINWHEEL_ENVIRONMENT`     | `/service/app-{env}/la-ldh-pinwheel-environment`     | String | `sandbox` or `production`  |
-| `LA_LDH_WEEKLY_REPORT_RECIPIENTS` | `/service/app-{env}/la-ldh-weekly-report-recipients` | String | Comma-separated email list |
-
 ## Configuration Process
 
 ### 1. Create Parameter Store Entries
