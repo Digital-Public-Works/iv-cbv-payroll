@@ -73,29 +73,46 @@ Integration specs carry the tag `integration: true` and are excluded from the de
 
 The `integration:partner:setup` task creates an `integration_test` partner and a service-account user with an API access token. This lets you exercise the full CBV flow end-to-end through a browser, with real webhook delivery to the Docker services.
 
+The `integration_test` partner is configured with a single webhook transmission method (see `docs/app/integration-test-partner.yml`). Authentication uses API tokens — there is no caseworker UI or generic link.
+
 ```bash
 # 1. Start Docker services
 bundle exec rake integration:docker:up
 
 # 2. Create the integration_test partner + API token
 bundle exec rake integration:partner:setup
+# Note the API access token printed by this task.
 
 # 3. Start the Rails server
 bin/rails server
+```
 
-# 4. The setup task prints a curl command — run it to create an invitation.
-#    The response includes a `tokenized_url`; open it in your browser and
-#    complete the CBV flow. The webhook transmitter will fire at the end.
+Then create an invitation using the API token from step 2:
 
-# 5. Verify the webhook container received the payload:
+```bash
+curl -X POST http://localhost:3000/api/v1/invitations \
+  -H 'Authorization: Bearer <YOUR_API_ACCESS_TOKEN>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "language": "en",
+    "agency_partner_metadata": {
+      "case_number": "ABC1234",
+      "first_name": "Jane",
+      "last_name": "Doe"
+    }
+  }'
+```
+
+The response includes a `tokenized_url` — open it in your browser and complete the CBV flow. When the caseworker submits the report, the webhook transmitter fires.
+
+```bash
+# Verify the webhook container received the payload:
 docker compose -f docker-compose.integration.yml logs webhook-api
 
-# 6. Clean up
+# Clean up
 bundle exec rake integration:partner:teardown
 bundle exec rake integration:docker:down
 ```
-
-The `integration_test` partner is configured with a single webhook transmission method (see `docs/app/integration-test-partner.yml`). Authentication uses API tokens — there is no caseworker UI or generic link.
 
 ## Verifying Services Manually
 

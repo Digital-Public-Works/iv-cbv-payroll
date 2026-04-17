@@ -1,9 +1,3 @@
-# No-op event logger used by rake tasks to avoid attempting a real SQS
-# connection during local CLI invocations.
-class NoopEventLogger
-  def track(*) = nil
-end
-
 namespace :integration do
   # Spec files tagged `integration: true`. Add new integration specs here so
   # they get picked up by `integration:rspec:*` convenience tasks.
@@ -15,7 +9,7 @@ namespace :integration do
   COMPOSE_FILE = ENV.fetch("INTEGRATION_COMPOSE_FILE", "docker-compose.integration.yml").freeze
 
   namespace :partner do
-    desc "Create the integration_test partner, service account, and API access token"
+    desc "Create the integration_test partner and service account with API access token"
     task setup: :environment do
       puts "=== Integration Test Partner Setup ==="
       puts
@@ -59,35 +53,9 @@ namespace :integration do
       puts "  API access token: #{access_token.access_token}"
       puts
 
-      # 3. Generate a ready-to-use invitation with a long expiration (just
-      # under the 1-year cap) so it remains usable across dev sessions.
-      puts "Creating a convenience invitation..."
-      invitation_params = {
-        language: "en",
-        expiration_days: 364,
-        client_agency_id: "integration_test",
-        email_address: user.email,
-        cbv_applicant_attributes: {
-          client_agency_id: "integration_test",
-          case_number: "ABC1234",
-          first_name: "Jane",
-          last_name: "Doe"
-        }
-      }
-      invitation = CbvInvitationService.new(NoopEventLogger.new)
-        .invite(invitation_params, user, delivery_method: nil)
-
-      if invitation.persisted?
-        puts "  Tokenized URL: #{invitation.to_url}"
-        puts "  Expires: #{invitation.expires_at_local}"
-      else
-        puts "  Failed to create invitation: #{invitation.errors.full_messages.join(', ')}"
-      end
-      puts
-
       puts "=== Setup Complete ==="
       puts
-      puts "Open the Tokenized URL above in your browser to start the CBV flow."
+      puts "See docs/integration-tests.md for next steps."
     end
 
     desc "Remove the integration_test partner and service account"
