@@ -1,5 +1,3 @@
-require "rspec/core/rake_task"
-
 # No-op event logger used by rake tasks to avoid attempting a real SQS
 # connection during local CLI invocations.
 class NoopEventLogger
@@ -132,20 +130,29 @@ namespace :integration do
     end
   end
 
-  namespace :rspec do
-    desc "Run all integration specs (requires Docker services — see integration:docker:up)"
-    RSpec::Core::RakeTask.new(:all) do |t|
-      t.pattern = INTEGRATION_SPECS.values
-      t.rspec_opts = "--tag integration"
-    end
+  # rspec-core is only available in development/test — guard so the rake
+  # file can still be loaded in the production Docker image during
+  # assets:precompile without exploding.
+  begin
+    require "rspec/core/rake_task"
 
-    INTEGRATION_SPECS.each do |name, path|
-      desc "Run #{name} transmitter integration spec"
-      RSpec::Core::RakeTask.new(name) do |t|
-        t.pattern = path
+    namespace :rspec do
+      desc "Run all integration specs (requires Docker services — see integration:docker:up)"
+      RSpec::Core::RakeTask.new(:all) do |t|
+        t.pattern = INTEGRATION_SPECS.values
         t.rspec_opts = "--tag integration"
       end
+
+      INTEGRATION_SPECS.each do |name, path|
+        desc "Run #{name} transmitter integration spec"
+        RSpec::Core::RakeTask.new(name) do |t|
+          t.pattern = path
+          t.rspec_opts = "--tag integration"
+        end
+      end
     end
+  rescue LoadError
+    # rspec not available (production image) — skip rspec task definitions
   end
 
   namespace :docker do
