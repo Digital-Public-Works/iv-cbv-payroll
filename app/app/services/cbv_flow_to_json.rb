@@ -102,7 +102,7 @@ class CbvFlowToJson
         first_name: identity&.first_name,
         last_name: identity&.last_name,
         full_name: identity&.full_name,
-        ssn: identity&.ssn
+        ssn: computed_ssn(account_id, identity)
       },
       pay_frequency: PAY_FREQUENCY_MAP[income&.pay_frequency],
       base_compensation: {
@@ -124,6 +124,25 @@ class CbvFlowToJson
     end
 
     record
+  end
+
+  def computed_ssn(account_id, identity)
+    return nil if identity.nil?
+    return identity.ssn unless @current_agency&.include_full_ssn
+
+    full_ssn = full_ssn_fetcher.fetch(
+      account_id: account_id,
+      cbv_flow_id: @cbv_flow.id,
+      client_agency_id: @cbv_flow.client_agency_id
+    )
+
+    full_ssn || identity.ssn
+  end
+
+  def full_ssn_fetcher
+    @full_ssn_fetcher ||= Aggregators::Argyle::FullSsnFetcher.new(
+      argyle_service: @aggregator_report.argyle_service
+    )
   end
 
   def build_w2_monthly_summaries(account_monthly_summaries)
@@ -177,9 +196,16 @@ class CbvFlowToJson
         base_hours_paid: paystub.hours,
         gross_pay_ytd: cents_to_dollars(paystub.gross_pay_ytd) || 0,
         gross_pay_line_items: build_earnings(paystub.earnings || []),
-        deductions: build_deductions(paystub.deductions || [])
+        deductions: build_deductions(paystub.deductions || []),
+        direct_deposit_accounts: direct_deposit_accounts_for(paystub)
       }
     end
+  end
+
+  def direct_deposit_accounts_for(paystub)
+    return [] unless @current_agency.include_direct_deposit_last_4
+
+    paystub.direct_deposit_accounts || []
   end
 
   def build_gig_payments(gigs)

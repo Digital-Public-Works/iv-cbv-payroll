@@ -25,7 +25,13 @@
       <%= t(".none_found_description", report_data_range: report_data_range(@aggregator_report, params[:user][:account_id])) %>
     <% end %>
   <% end %>
-  <%= render(Report::PaymentsDeductionsMonthlySummaryComponent.new(@aggregator_report, @payroll_account, is_w2_worker: @is_w2_worker, income: @payroll_account_report.income, show_earnings_items: !!current_agency&.report_customization_show_earnings_list)) %>
+
+  <%= render(Report::PaymentsDeductionsMonthlySummaryComponent.new(@aggregator_report,
+        @payroll_account,
+        is_w2_worker: @is_w2_worker,
+        income: @payroll_account_report.income,
+        show_earnings_items: !!current_agency&.report_customization_show_earnings_list,
+        show_direct_deposit_accounts: !!current_agency&.include_direct_deposit_last_4)) %>
 <% else %>
   <%= render(Report::GigMonthlySummaryTableComponent.new(@aggregator_report, @payroll_account)) %>
 <% end %>

@@ -298,6 +298,8 @@ es:
         additional_information_placeholder: Introduzca hasta 1000 caracteres
         continue: Continuar
         deductions: 'Deducción: %{category} (%{tax})'
+        direct_deposit_account_label: Cuenta(s) de depósito directo
+        direct_deposit_account_value: que termina en %{last_four}
         employment_end_date: Fecha de finalización de la relación laboral
         employment_information_table_header: Información sobre el empleo
         employment_start_date: Fecha de inicio del empleo

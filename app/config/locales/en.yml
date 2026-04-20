@@ -405,6 +405,8 @@ en:
         additional_information_placeholder: Enter up to 1000 characters
         continue: Continue
         deductions: 'Deduction: %{category} (%{tax})'
+        direct_deposit_account_label: Direct deposit account(s)
+        direct_deposit_account_value: ending in %{last_four}
         employment_end_date: Employment end date
         employment_information_table_header: Employment information
         employment_start_date: Employment start date

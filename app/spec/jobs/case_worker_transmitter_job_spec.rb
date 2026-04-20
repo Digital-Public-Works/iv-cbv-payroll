@@ -6,7 +6,12 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
   include PinwheelApiHelper
   include ActiveSupport::Testing::TimeHelpers
 
-  let(:mock_client_agency) { double(ClientAgencyConfig::ClientAgency) }
+  let(:mock_client_agency) do
+    instance_double(ClientAgencyConfig::ClientAgency,
+      include_full_ssn: false,
+      include_direct_deposit_last_4: false)
+  end
+
   let(:cbv_applicant) { create(:cbv_applicant, created_at: current_time, case_number: "ABC1234") }
   let(:errored_jobs) { [] }
   let(:current_time) { DateTime.parse('2024-06-18 00:00:00') }

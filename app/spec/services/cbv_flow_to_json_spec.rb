@@ -13,7 +13,14 @@ RSpec.describe CbvFlowToJson do
     )
   end
 
-  let(:mock_client_agency) { instance_double(ClientAgencyConfig::ClientAgency) }
+  let(:mock_client_agency) do
+    instance_double(ClientAgencyConfig::ClientAgency,
+      id: "sandbox",
+      include_full_ssn: false,
+      include_direct_deposit_last_4: false
+    )
+  end
+
   let(:pinwheel_report) { build(:pinwheel_report, :with_pinwheel_account) }
   let(:argyle_report) { build(:argyle_report, :with_argyle_account) }
   let(:aggregator_report) do
@@ -25,7 +32,6 @@ RSpec.describe CbvFlowToJson do
   end
 
   before do
-    allow(mock_client_agency).to receive(:id).and_return("sandbox")
     allow(CbvApplicant).to receive(:valid_attributes_for_agency).with("sandbox").and_return([ "case_number" ])
   end
 
@@ -153,6 +159,115 @@ RSpec.describe CbvFlowToJson do
           gig_record[:gig_monthly_summaries]&.each do |summary|
             expect(summary[:mileage_expenses]).to be_an(Array)
           end
+        end
+      end
+    end
+
+    describe "SSN handling" do
+      let(:masked_ssn) { "XXX-XX-1234" }
+      let(:full_ssn) { "123-45-6789" }
+
+      let(:argyle_report) do
+        report = build(:argyle_report, :with_argyle_account)
+        report.identities.first.ssn = masked_ssn
+        report
+      end
+      let(:aggregator_report) { argyle_report }
+
+      let(:stub_fetcher) { instance_double(Aggregators::Argyle::FullSsnFetcher) }
+
+      before do
+        allow(Aggregators::Argyle::FullSsnFetcher).to receive(:new).and_return(stub_fetcher)
+      end
+
+      context "when the partner flag is off" do
+        it "returns the masked SSN from the identity response object" do
+          payload[:employment_records].each do |record|
+            expect(record[:employee_information][:ssn]).to eq(masked_ssn)
+          end
+        end
+
+        it "never calls the FullSsnFetcher" do
+          expect(stub_fetcher).not_to receive(:fetch)
+          payload
+        end
+      end
+
+      context "when the partner flag is on and the fetcher returns a full SSN" do
+        before do
+          allow(mock_client_agency).to receive(:include_full_ssn).and_return(true)
+          allow(stub_fetcher).to receive(:fetch).and_return(full_ssn)
+        end
+
+        it "uses the unmasked SSN in employee_information" do
+          payload[:employment_records].each do |record|
+            expect(record[:employee_information][:ssn]).to eq(full_ssn)
+          end
+        end
+
+        it "calls the fetcher with the correct arguments" do
+          payload
+
+          expect(stub_fetcher).to have_received(:fetch).with(
+            account_id: kind_of(String),
+            cbv_flow_id: cbv_flow.id,
+            client_agency_id: cbv_flow.client_agency_id
+          ).at_least(:once)
+        end
+
+        it "calls the fetcher exactly once per W2 employment record" do
+          w2_record_count = payload[:employment_records].count { |r| r[:employment_type] == "W2" }
+          expect(stub_fetcher).to have_received(:fetch).exactly(w2_record_count).times
+        end
+      end
+
+      context "when the partner flag is on but the fetcher returns nil" do
+        before do
+          allow(mock_client_agency).to receive(:include_full_ssn).and_return(true)
+          allow(stub_fetcher).to receive(:fetch).and_return(nil)
+        end
+
+        it "falls back to the masked ssn" do
+          payload[:employment_records].each do |record|
+            expect(record[:employee_information][:ssn]).to eq(masked_ssn)
+          end
+        end
+      end
+    end
+
+    describe "direct deposit accounts" do
+      let(:dda_argyle_report) do
+        report = build(:argyle_report, :with_argyle_account)
+        report.paystubs.first.direct_deposit_accounts = [ "1111", "2222" ]
+        report
+      end
+
+      let(:aggregator_report) { dda_argyle_report }
+      let(:w2_record) { payload[:employment_records].find { |r| r[:employment_type] == "W2" } }
+
+      context "when include_direct_deposit_last_4 is true" do
+        before do
+          allow(mock_client_agency).to receive(:include_direct_deposit_last_4).and_return(true)
+        end
+
+        it "gets direct_deposit_accounts as an array on each W-2 payment" do
+          expect(w2_record[:w2_payments].first[:direct_deposit_accounts]).to eq([ "1111", "2222" ])
+        end
+
+        it "emits an empty array when a paystub has no direct deposit accounts" do
+          dda_argyle_report.paystubs.first.direct_deposit_accounts = nil
+
+          expect(w2_record[:w2_payments].first[:direct_deposit_accounts]).to eq([])
+        end
+      end
+
+      context "when include_direct_deposit_last_4 is false" do
+        before do
+          allow(mock_client_agency).to receive(:include_direct_deposit_last_4).and_return(false)
+        end
+
+        it "gets an empty array when the paystub has direct deposit accounts" do
+          expect(w2_record[:w2_payments].first[:direct_deposit_accounts]).to eq([])
         end
       end
     end

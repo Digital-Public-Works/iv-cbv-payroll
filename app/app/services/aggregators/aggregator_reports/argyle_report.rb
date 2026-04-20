@@ -7,6 +7,8 @@ module Aggregators::AggregatorReports
 
     validates_with Aggregators::Validators::UsefulReportValidator, on: :useful_report
 
+    attr_reader :argyle_service
+
     def initialize(argyle_service: nil, **params)
       super(**params)
       @argyle_service = argyle_service

@@ -93,14 +93,17 @@ module Aggregators::AggregatorReports
 
     def income_report
       {}.tap do |report|
+        cbv_flow = payroll_accounts.first.cbv_flow
+        current_agency = ClientAgencyConfig.instance[cbv_flow.client_agency_id]
+        fetcher = full_ssn_fetcher_for(current_agency)
+
         report[:has_other_jobs] = payroll_accounts.first.cbv_flow.has_other_jobs
-        report[:employments] = summarize_by_employer.map do |_, summary|
-          cbv_flow = payroll_accounts.first.cbv_flow
+        report[:employments] = summarize_by_employer.map do |account_id, summary|
           {
             applicant_first_name: summary[:identity].first_name,
             applicant_last_name: summary[:identity].last_name,
             applicant_full_name: summary[:identity].full_name,
-            applicant_ssn: summary[:identity].ssn,
+            applicant_ssn: computed_ssn(account_id, summary[:identity], current_agency, fetcher, cbv_flow),
             applicant_extra_comments: cbv_flow.additional_information["comment"],
             employer_name: summary[:employment].employer_name,
             employer_phone: summary[:employment].employer_phone_number,
@@ -120,7 +123,8 @@ module Aggregators::AggregatorReports
                 pay_gross: paystub.gross_pay_amount,
                 pay_gross_ytd: paystub.gross_pay_ytd,
                 pay_net: paystub.net_pay_amount,
-                hours_paid: paystub.hours
+                hours_paid: paystub.hours,
+                direct_deposit_accounts: direct_deposit_accounts_for(paystub, current_agency) || []
               }
             end
           }
@@ -274,6 +278,32 @@ module Aggregators::AggregatorReports
 
         dates.compact.max
       end
+    end
+
+    def full_ssn_fetcher_for(current_agency)
+      return nil unless current_agency&.include_full_ssn
+
+      Aggregators::Argyle::FullSsnFetcher.new(argyle_service: argyle_service)
+    end
+
+    def computed_ssn(account_id, identity, current_agency, fetcher, cbv_flow)
+      return nil if identity.nil?
+      return identity.ssn unless current_agency&.include_full_ssn
+      return identity.ssn unless fetcher.present?
+
+      full_ssn = fetcher.fetch(
+        account_id: account_id,
+        cbv_flow_id: cbv_flow.id,
+        client_agency_id: cbv_flow.client_agency_id
+      )
+
+      full_ssn || identity.ssn
+    end
+
+    def direct_deposit_accounts_for(paystub, current_agency)
+      return [] unless current_agency&.include_direct_deposit_last_4
+
+      paystub.direct_deposit_accounts || []
     end
   end
 end
