@@ -47,7 +47,7 @@ RSpec.describe CbvFlowTransmissionJob, type: :job do
     )
   end
 
-  it "does not overwrite transmitted_at or re-track when another method already succeeded, but still runs agency name matching" do
+  it "still tracks the event but does not overwrite transmitted_at or re-enqueue name matching when another method already succeeded" do
     original_time = 1.hour.ago
     cbv_flow.update!(transmitted_at: original_time)
     allow_any_instance_of(CbvApplicant).to receive(:agency_expected_names).and_return([ "SomeName" ])
@@ -55,8 +55,12 @@ RSpec.describe CbvFlowTransmissionJob, type: :job do
     described_class.new.perform(transmission.id)
 
     expect(cbv_flow.reload.transmitted_at).to be_within(1.second).of(original_time)
-    expect(fake_event_logger).not_to have_received(:track)
-    expect(MatchAgencyNamesJob).to have_received(:perform_later).with(cbv_flow.id)
+    expect(fake_event_logger).to have_received(:track).with(
+      "ApplicantSharedIncomeSummary",
+      nil,
+      hash_including(cbv_flow_id: cbv_flow.id)
+    )
+    expect(MatchAgencyNamesJob).not_to have_received(:perform_later)
   end
 
   it "marks the transmission failed and re-raises so Shoryuken can retry" do

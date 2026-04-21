@@ -43,11 +43,11 @@ class CbvFlowTransmissionJob < ApplicationJob
     now = Time.current
     transmission.update!(status: :succeeded, succeeded_at: now, last_error: nil)
 
-    enqueue_agency_name_matching_job(cbv_flow)
+    track_transmitted_event(cbv_flow, transmission, aggregator_report&.paystubs&.count || 0)
 
     return unless record_first_transmission_success!(cbv_flow, now)
 
-    track_transmitted_event(cbv_flow, transmission, aggregator_report&.paystubs&.count || 0)
+    enqueue_agency_name_matching_job(cbv_flow)
   end
 
   # Stamp cbv_flow.transmitted_at with the timestamp of the first successful
