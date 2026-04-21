@@ -63,6 +63,17 @@ RSpec.describe CbvFlowTransmissionJob, type: :job do
     expect(MatchAgencyNamesJob).not_to have_received(:perform_later)
   end
 
+  it "rolls back the transmission update if stamping cbv_flow.transmitted_at fails" do
+    allow_any_instance_of(CbvFlow).to receive(:update!).and_raise(ActiveRecord::StatementInvalid.new("boom"))
+
+    expect {
+      described_class.new.perform(transmission.id)
+    }.to raise_error(ActiveRecord::StatementInvalid)
+
+    expect(transmission.reload.succeeded?).to be(false)
+    expect(cbv_flow.reload.transmitted_at).to be_nil
+  end
+
   it "marks the transmission failed and re-raises so Shoryuken can retry" do
     allow(transmitter).to receive(:deliver).and_raise("wrong password")
 

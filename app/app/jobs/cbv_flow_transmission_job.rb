@@ -41,11 +41,16 @@ class CbvFlowTransmissionJob < ApplicationJob
 
   def record_success!(transmission, cbv_flow, aggregator_report)
     now = Time.current
-    transmission.update!(status: :succeeded, succeeded_at: now, last_error: nil)
+    first_success = false
+
+    ActiveRecord::Base.transaction do
+      transmission.update!(status: :succeeded, succeeded_at: now, last_error: nil)
+      first_success = record_first_transmission_success!(cbv_flow, now)
+    end
 
     track_transmitted_event(cbv_flow, transmission, aggregator_report&.paystubs&.count || 0)
 
-    return unless record_first_transmission_success!(cbv_flow, now)
+    return unless first_success
 
     enqueue_agency_name_matching_job(cbv_flow)
   end
