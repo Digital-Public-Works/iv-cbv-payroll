@@ -1,3 +1,8 @@
+# Per-method transmission worker. CaseWorkerTransmitterJob orchestrates which
+# methods need to run for a given CbvFlow and enqueues one of these jobs per
+# method (sftp, webhook, shared_email, etc.); this job delivers a single method
+# and records the outcome on its CbvFlowTransmission row. Shoryuken handles
+# retries on failure.
 class CbvFlowTransmissionJob < ApplicationJob
   include Cbv::AggregatorDataHelper
 
@@ -38,19 +43,27 @@ class CbvFlowTransmissionJob < ApplicationJob
     now = Time.current
     transmission.update!(status: :succeeded, succeeded_at: now, last_error: nil)
 
-    first_success = false
+    return unless record_first_transmission_success!(cbv_flow, now)
+
+    track_transmitted_event(cbv_flow, transmission, aggregator_report&.paystubs&.count || 0)
+    enqueue_agency_name_matching_job(cbv_flow)
+  end
+
+  # Stamp cbv_flow.transmitted_at with the timestamp of the first successful
+  # per-method delivery. Later successes do NOT overwrite it — transmitted_at
+  # represents "when this applicant's data first reached the agency" and is
+  # what the weekly summary reports read. Returns true iff this call performed
+  # the stamp (so callers can gate one-time side-effects like event tracking).
+  def record_first_transmission_success!(cbv_flow, now)
+    first = false
     cbv_flow.with_lock do
       cbv_flow.reload
       if cbv_flow.transmitted_at.blank?
         cbv_flow.update!(transmitted_at: now)
-        first_success = true
+        first = true
       end
     end
-
-    return unless first_success
-
-    track_transmitted_event(cbv_flow, aggregator_report&.paystubs&.count || 0)
-    enqueue_agency_name_matching_job(cbv_flow)
+    first
   end
 
   def enqueue_agency_name_matching_job(cbv_flow)
@@ -59,12 +72,14 @@ class CbvFlowTransmissionJob < ApplicationJob
     MatchAgencyNamesJob.perform_later(cbv_flow.id)
   end
 
-  def track_transmitted_event(cbv_flow, paystub_count)
+  def track_transmitted_event(cbv_flow, transmission, paystub_count)
     event_logger.track(TrackEvent::ApplicantSharedIncomeSummary, nil, {
       time: Time.current.to_i,
       client_agency_id: cbv_flow.client_agency_id,
       cbv_applicant_id: cbv_flow.cbv_applicant_id,
       cbv_flow_id: cbv_flow.id,
+      cbv_flow_transmission_id: transmission.id,
+      transmission_method: transmission.method_type,
       device_id: cbv_flow.device_id,
       invitation_id: cbv_flow.cbv_flow_invitation_id,
       account_count: cbv_flow.fully_synced_payroll_accounts.count,

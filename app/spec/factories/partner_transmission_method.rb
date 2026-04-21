@@ -2,10 +2,10 @@
 FactoryBot.define do
   factory :partner_transmission_method do
     association :partner_config
-    method_type { :shared_email }
+    method_type { :sftp }
 
-    trait :sftp do
-      method_type { :sftp }
+    trait :shared_email do
+      method_type { :shared_email }
     end
 
     trait :encrypted_s3 do

@@ -1,7 +1,7 @@
 FactoryBot.define do
   factory :cbv_flow_transmission do
     association :cbv_flow
-    method_type { :shared_email }
+    method_type { :sftp }
     status { :pending }
     configuration { {} }
   end
