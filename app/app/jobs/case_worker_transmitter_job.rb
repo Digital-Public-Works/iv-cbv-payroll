@@ -34,7 +34,7 @@ class CaseWorkerTransmitterJob < ApplicationJob
   end
 
   def enqueue_transmission_job(transmission_id)
-    if test_queue_adapter?
+    if Rails.env.test?
       begin
         CbvFlowTransmissionJob.perform_now(transmission_id)
       rescue StandardError
