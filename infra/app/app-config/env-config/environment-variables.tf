@@ -15,9 +15,7 @@ locals {
     # DB_CONNECTION_POOL_SIZE = 5
   }
 
-  ssm_environment_variables = {
-    LA_LDH_PILOT_ENABLED = "/service/${var.app_name}-${var.environment}/la-ldh-pilot-enabled"
-  }
+  ssm_environment_variables = {}
 
   # Configuration for secrets
   # Map of configurations for defining environment variables that pull from SSM parameter
@@ -82,20 +80,6 @@ locals {
       secret_store_name = "/service/${var.app_name}-${var.environment}/active-record-encryption-key-derivation-salt"
     },
 
-    # Transmission Configuration:
-    LA_LDH_INCOME_REPORT_URL = {
-      manage_method     = "manual"
-      secret_store_name = "/service/${var.app_name}-${var.environment}/la-ldh-income-report-url"
-    },
-    LA_LDH_INCOME_REPORT_APIKEY = {
-      manage_method     = "manual"
-      secret_store_name = "/service/${var.app_name}-${var.environment}/la-ldh-income-report-apikey"
-    },
-    LA_LDH_INCOME_REPORT_ACCOUNTCODE = {
-      manage_method     = "manual"
-      secret_store_name = "/service/${var.app_name}-${var.environment}/la-ldh-income-report-accountcode"
-    },
-
     # Feature Flags:
     SUPPORTED_PROVIDERS = {
       manage_method     = "manual"
@@ -120,18 +104,6 @@ locals {
       manage_method     = "manual"
       secret_store_name = "/service/${var.app_name}-${var.environment}/pinwheel-api-token-sandbox"
     },
-    AZ_DES_PINWHEEL_ENVIRONMENT = {
-      manage_method     = "manual"
-      secret_store_name = "/service/${var.app_name}-${var.environment}/az-des-pinwheel-environment"
-    },
-    PA_DHS_PINWHEEL_ENVIRONMENT = {
-      manage_method     = "manual"
-      secret_store_name = "/service/${var.app_name}-${var.environment}/pa-dhs-pinwheel-environment"
-    },
-    LA_LDH_PINWHEEL_ENVIRONMENT = {
-      manage_method     = "manual"
-      secret_store_name = "/service/${var.app_name}-${var.environment}/la-ldh-pinwheel-environment"
-    },
     SANDBOX_PINWHEEL_ENVIRONMENT = {
       manage_method     = "manual"
       secret_store_name = "/service/${var.app_name}-${var.environment}/sandbox-pinwheel-environment"
@@ -139,18 +111,6 @@ locals {
 
 
     # Argyle Configuration:
-    AZ_DES_ARGYLE_ENVIRONMENT = {
-      manage_method     = "manual"
-      secret_store_name = "/service/${var.app_name}-${var.environment}/az-des-argyle-environment"
-    },
-    LA_LDH_ARGYLE_ENVIRONMENT = {
-      manage_method     = "manual"
-      secret_store_name = "/service/${var.app_name}-${var.environment}/la-ldh-argyle-environment"
-    },
-    PA_DHS_ARGYLE_ENVIRONMENT = {
-      manage_method     = "manual"
-      secret_store_name = "/service/${var.app_name}-${var.environment}/pa-dhs-argyle-environment"
-    },
     SANDBOX_ARGYLE_ENVIRONMENT = {
       manage_method     = "manual"
       secret_store_name = "/service/${var.app_name}-${var.environment}/sandbox-argyle-environment"
@@ -193,70 +153,10 @@ locals {
       manage_method     = "manual"
       secret_store_name = "/service/${var.app_name}-${var.environment}/azure-sandbox-tenant-id"
     },
-    AZ_DES_SFTP_USER = {
-      manage_method     = "manual"
-      secret_store_name = "/service/${var.app_name}-${var.environment}/az-des-sftp-user"
-    },
-    AZ_DES_SFTP_PASSWORD = {
-      manage_method     = "manual"
-      secret_store_name = "/service/${var.app_name}-${var.environment}/az-des-sftp-password"
-    },
-    AZ_DES_SFTP_URL = {
-      manage_method     = "manual"
-      secret_store_name = "/service/${var.app_name}-${var.environment}/az-des-sftp-url"
-    },
-    AZ_DES_SFTP_DIRECTORY = {
-      manage_method     = "manual"
-      secret_store_name = "/service/${var.app_name}-${var.environment}/az-des-sftp-directory"
-    },
-    PA_DHS_SFTP_USER = {
-      manage_method     = "manual"
-      secret_store_name = "/service/${var.app_name}-${var.environment}/pa-dhs-sftp-user"
-    },
-    PA_DHS_SFTP_PASSWORD = {
-      manage_method     = "manual"
-      secret_store_name = "/service/${var.app_name}-${var.environment}/pa-dhs-sftp-password"
-    },
-    PA_DHS_SFTP_URL = {
-      manage_method     = "manual"
-      secret_store_name = "/service/${var.app_name}-${var.environment}/pa-dhs-sftp-url"
-    },
-    PA_DHS_SFTP_DIRECTORY = {
-      manage_method     = "manual"
-      secret_store_name = "/service/${var.app_name}-${var.environment}/pa-dhs-sftp-directory"
-    },
-
-
-    # Other site-specific Configuration:
-    LA_LDH_WEEKLY_REPORT_RECIPIENTS = {
-      manage_method     = "manual"
-      secret_store_name = "/service/${var.app_name}-${var.environment}/la-ldh-weekly-report-recipients"
-    },
-    AZ_DES_WEEKLY_REPORT_RECIPIENTS = {
-      manage_method     = "manual"
-      secret_store_name = "/service/${var.app_name}-${var.environment}/az-des-weekly-report-recipients"
-    },
-    PA_DHS_WEEKLY_REPORT_RECIPIENTS = {
-      manage_method     = "manual"
-      secret_store_name = "/service/${var.app_name}-${var.environment}/pa-dhs-weekly-report-recipients"
-    },
-
     # This is what drives if a configuration is loaded
-    AGENCY_AZ_DES_ACTIVE = {
-      manage_method     = "manual"
-      secret_store_name = "/service/${var.app_name}-${var.environment}/agency-az-des-active"
-    },
-    AGENCY_PA_DHS_ACTIVE = {
-      manage_method     = "manual"
-      secret_store_name = "/service/${var.app_name}-${var.environment}/agency-pa-dhs-active"
-    },
     AGENCY_DEFAULT_ACTIVE = {
       manage_method     = "manual"
       secret_store_name = "/service/${var.app_name}-${var.environment}/agency-default-active"
-    },
-    AGENCY_LA_LDH_ACTIVE = {
-      manage_method     = "manual"
-      secret_store_name = "/service/${var.app_name}-${var.environment}/agency-la-ldh-active"
     }
   }
 }
