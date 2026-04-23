@@ -307,18 +307,22 @@ en:
           pa_dhs: I agree that Verify My Income can access my income, including W-2 and/or gig work information. After reviewing my income details, I can choose to share my income with the PA Department of Human Services (DHS). If shared, DHS will use my income details to determine my benefits. I understand that Verify My Income will not have ongoing access to my income details.
         continue: Get started
         header: Let's verify your income
-        step1: Search and sign into your employer or online payroll provider.
-        step1_description: Use the login credentials you have for viewing your online pay stub. We won’t share or keep your login information. If you work for an app, like Uber, this would be the same login when you sign into the Uber app.
-        step2: Review your payment information.
-        step2_description: You will be able to preview and approve everything that is shared with %{agency_acronym}.
-        step3: Submit your payment information.
-        step3_description: We’ll automatically send it to %{agency_acronym}. This will help you prove your income and can help %{agency_acronym} get to a decision faster.
-        subheader_html: 'We’ll send your payment records from your employer(s) to %{agency_full_name} (%{agency_acronym}) to verify your income. <strong>Most people complete this process in about 5 minutes.</strong> Just follow these steps:'
+        step1: Find your employer or payroll company
+        step1_description: Payroll or gig companies like ADP, Workday, Uber, or Lyft have information about your pay. Find your job and use the same login you use to check your pay stubs online.
+        step1_note: Verify My Income will not keep or share your login information.
+        step2: Review pay from your job
+        step2_description: After you log in, Verify My Income pulls your recent paychecks into a single report. You can check the details and add comments to the report before you allow it to be sent to %{agency_full_name}.
+        step2_note: You can also add more jobs to your report if you need to.
+        step3: Submit your income report
+        step3_description: Your pay information gets sent directly to %{agency_acronym}. When you finish, you can save a copy of your report. You can also share a link with other household members to verify their pay, too.
+        subheader: Verify My Income helps you prove your income. You can combine your pay into one report so you don't need to upload pay stubs. After you review your report, you can send it directly to %{agency_full_name}.
+        time_estimate: Most people can find, connect and review one job in about 5 minutes.
         what_if_i_cant_use_this_body_1: If you need to verify your income and can’t use this tool, then you’ll need to share your income information for this job directly with %{agency_portal_name}.
         what_if_i_cant_use_this_body_2_html:
           default: Visit the <a href="%{agency_url}" target="_blank" rel="noopener noreferrer">%{agency_portal_name} website</a> for more information on how to submit documents.
           la_ldh: 'You can: <ul><li>Upload documents through the Self Service Portal online at <a href="https://mymedicaid.la.gov/" target="_blank" rel="noopener noreferrer">https://mymedicaid.la.gov/</a></li><li>Send documents through US Mail: Louisiana Medicaid/LaCHIP, P.O. Box 91283, Baton Rouge, LA 70821-9278</li><li>Email documents: <a href="mailto:MyMedicaid@la.gov">MyMedicaid@la.gov</a></li><li>Bring your documents to the Medicaid office of choice.</li></ul>'
         what_if_i_cant_use_this_title: What if I can't use this tool?
+        what_youll_do: What you’ll do
         who_is_this_for_body: You can use this tool if you have earned income in the last 90 days (even if you’re no longer working), and you can access your paystubs online or work for an app-based company like Uber, Lyft or Amazon Flex.
         who_is_this_for_title: Who is this tool for?
     error_invalid_link: Invalid link used to begin CBV. Try clicking the link again or contact your caseworker for help.

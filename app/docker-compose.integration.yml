@@ -13,7 +13,7 @@ services:
   # https://github.com/Digital-Public-Works/dicit-webhook-api-ref-impl
   # Validates payload schema, API key auth, and HMAC signatures.
   webhook-api:
-    build: https://github.com/Digital-Public-Works/dicit-webhook-api-ref-impl.git
+    build: https://github.com/Digital-Public-Works/dicit-webhook-api-ref-impl.git#main:lahore-v1
     ports:
       - "9292:9292"
     environment:

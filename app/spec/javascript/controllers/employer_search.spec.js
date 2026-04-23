@@ -30,18 +30,25 @@ describe("EmployerSearchController", () => {
     document.body.innerHTML = ""
   })
 
-  it("adds turbo:frame-missing listener on connect()", () => {
-    expect(stimulusElement.addEventListener).toBeCalledTimes(1)
+  it("adds turbo:frame-missing and turbo:submit-start listeners on connect()", () => {
+    expect(stimulusElement.addEventListener).toBeCalledTimes(2)
     expect(stimulusElement.addEventListener).toHaveBeenCalledWith(
       "turbo:frame-missing",
       expect.any(Function)
     )
+
+    expect(stimulusElement.addEventListener).toHaveBeenCalledWith(
+      "turbo:submit-start",
+      expect.any(Function)
+    )
   })
 
-  it("removes turbo:frame-missing listener on disconnect()", async () => {
+  it("removes turbo:frame-missing and turbo:submit-start listeners on disconnect()", async () => {
     await stimulusElement.remove()
-    expect(stimulusElement.removeEventListener).toBeCalledTimes(1)
-    expect(stimulusElement.removeEventListener.mock.calls[0][0]).toBe("turbo:frame-missing")
+    expect(stimulusElement.removeEventListener).toBeCalledTimes(2)
+    const removedEvents = stimulusElement.removeEventListener.mock.calls.map((c) => c[0])
+    expect(removedEvents).toContain("turbo:frame-missing")
+    expect(removedEvents).toContain("turbo:submit-start")
   })
 })
 
@@ -129,6 +136,44 @@ describe("EmployerSearchController with argyle", () => {
     expect(await fetchArgyleToken).toBeCalled()
     expect(await fetchArgyleToken.mock.results[0].value).toStrictEqual(mockArgyleAuthToken)
     expect(fetchArgyleToken.mock.calls[0]).toMatchSnapshot()
+  })
+})
+
+describe("EmployerSearchController onSearchStart", () => {
+  let controllerElement
+  let form
+  let submitButton
+
+  beforeEach(async () => {
+    controllerElement = document.createElement("div")
+    controllerElement.setAttribute("data-controller", "cbv-employer-search")
+
+    form = document.createElement("form")
+
+    submitButton = document.createElement("button")
+    submitButton.setAttribute("type", "submit")
+
+    form.appendChild(submitButton)
+    controllerElement.appendChild(form)
+    document.body.appendChild(controllerElement)
+
+    await window.Stimulus.register("cbv-employer-search", EmployerSearchController)
+  })
+
+  afterEach(() => {
+    document.body.innerHTML = ""
+  })
+
+  it("re-enables the submitter before the Turbo snapshot is captured", () => {
+    submitButton.disabled = true
+
+    const event = new CustomEvent("turbo:submit-start", {
+      bubbles: true,
+      detail: { formSubmission: { submitter: submitButton } },
+    })
+    form.dispatchEvent(event)
+
+    expect(submitButton.disabled).toBe(false)
   })
 })
 
