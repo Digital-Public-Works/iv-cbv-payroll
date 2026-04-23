@@ -15,10 +15,12 @@ export default class extends Controller {
 
   async connect() {
     this.errorHandler = this.element.addEventListener("turbo:frame-missing", this.onTurboError)
+    this.element.addEventListener("turbo:submit-start", this.onSearchStart)
   }
 
   disconnect() {
     this.element.removeEventListener("turbo:frame-missing", this.errorHandler)
+    this.element.removeEventListener("turbo:submit-start", this.onSearchStart)
   }
 
   onTurboError(event) {
@@ -27,6 +29,12 @@ export default class extends Controller {
     const location = event.detail.response.url
     event.detail.visit(location)
     event.preventDefault()
+  }
+
+  onSearchStart(event) {
+    const submitter = event.detail.formSubmission?.submitter
+
+    if (submitter) submitter.disabled = false
   }
 
   onSuccess(accountId) {
