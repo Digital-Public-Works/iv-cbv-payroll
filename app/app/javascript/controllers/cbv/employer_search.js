@@ -14,12 +14,12 @@ export default class extends Controller {
   }
 
   async connect() {
-    this.errorHandler = this.element.addEventListener("turbo:frame-missing", this.onTurboError)
+    this.element.addEventListener("turbo:frame-missing", this.onTurboError)
     this.element.addEventListener("turbo:submit-start", this.onSearchStart)
   }
 
   disconnect() {
-    this.element.removeEventListener("turbo:frame-missing", this.errorHandler)
+    this.element.removeEventListener("turbo:frame-missing", this.onTurboError)
     this.element.removeEventListener("turbo:submit-start", this.onSearchStart)
   }
 
