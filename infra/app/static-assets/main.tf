@@ -96,6 +96,8 @@ data "aws_iam_policy_document" "static_assets_kms" {
 
 # S3 bucket
 resource "aws_s3_bucket" "static_assets" {
+  # checkov:skip=CKV_AWS_144:Cross-region replication not required for static assets
+  # checkov:skip=CKV2_AWS_62:Event notifications not needed for static assets
   bucket = local.bucket_name
 }
 
@@ -190,6 +192,7 @@ resource "aws_cloudfront_distribution" "static_assets" {
   # checkov:skip=CKV_AWS_305:No default root object for path-based asset serving
   # checkov:skip=CKV_AWS_310:S3 origin is highly available, failover not needed
   # checkov:skip=CKV_AWS_374:No geo restriction needed
+  # checkov:skip=CKV2_AWS_32:Response headers policy not required for static asset distribution
   enabled     = true
   comment     = "${module.project_config.project_name} static assets"
   price_class = "PriceClass_100"
