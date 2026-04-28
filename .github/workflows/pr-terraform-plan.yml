@@ -33,11 +33,6 @@ jobs:
               terraform -chdir="infra/$APP_NAME/database" plan -lock=false -var="environment_name=$ENVIRONMENT" -out .planfile
             working-directory: infra/app/database
             header: "📝 Terraform Plan: Database"
-          - terraform-cmd: |
-              terraform -chdir="infra/$APP_NAME/static-assets" init -input=false -reconfigure -backend-config="shared.s3.tfbackend"
-              terraform -chdir="infra/$APP_NAME/static-assets" plan -lock=false -out .planfile
-            working-directory: infra/app/static-assets
-            header: "📝 Terraform Plan: Static Assets"
 
     steps:
     - name: Checkout repository
