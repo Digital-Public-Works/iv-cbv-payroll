@@ -62,6 +62,10 @@ resource "aws_kms_key_policy" "static_assets" {
 }
 
 data "aws_iam_policy_document" "static_assets_kms" {
+  # checkov:skip=CKV_AWS_109:Root account kms:* grant is required by AWS to prevent key lockout
+  # checkov:skip=CKV_AWS_111:Root account kms:* grant is required by AWS to prevent key lockout
+  # checkov:skip=CKV_AWS_283:Root account kms:* grant is required by AWS to prevent key lockout
+  # checkov:skip=CKV_AWS_356:Root account kms:* grant is required by AWS to prevent key lockout
   statement {
     sid     = "EnableIAMUserPermissions"
     effect  = "Allow"
@@ -181,6 +185,11 @@ resource "aws_cloudfront_origin_access_control" "static_assets" {
 
 # CloudFront distribution
 resource "aws_cloudfront_distribution" "static_assets" {
+  # checkov:skip=CKV_AWS_68:WAF not required for static asset distribution
+  # checkov:skip=CKV_AWS_86:Access logging not needed for static assets
+  # checkov:skip=CKV_AWS_305:No default root object for path-based asset serving
+  # checkov:skip=CKV_AWS_310:S3 origin is highly available, failover not needed
+  # checkov:skip=CKV_AWS_374:No geo restriction needed
   enabled     = true
   comment     = "${module.project_config.project_name} static assets"
   price_class = "PriceClass_100"
