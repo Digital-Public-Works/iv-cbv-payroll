@@ -32,7 +32,7 @@ module Aggregators::AggregatorReports
 
         missing = account_missing_in_argyle?(payroll_account)
         if missing
-          Rails.logger.warn(
+          Rails.logger.info(
             "ArgyleReport: discarding payroll_account #{payroll_account.id} " \
             "(aggregator_account_id=#{payroll_account.aggregator_account_id}) — no longer present/connected in Argyle"
           )
