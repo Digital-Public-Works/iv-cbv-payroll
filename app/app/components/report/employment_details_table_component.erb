@@ -9,7 +9,7 @@
       <%= row.with_data_cell(is_header: true, class_names: "text-nowrap")
              .with_content(I18n.t("components.report.employment_details_table.header.your_details")) %>
     <% end %>
-    <% if @show_identity %>
+    <% if @show_identity && @identity.present? %>
       <%= table.with_data_point(:client_full_name, @identity.full_name) %>
       <%= table.with_data_point(:ssn, @identity.ssn) %>
     <% end %>

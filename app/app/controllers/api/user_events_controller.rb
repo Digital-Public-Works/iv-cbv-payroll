@@ -29,6 +29,10 @@ class Api::UserEventsController < ApplicationController
       raise "Unknown Event Type #{event_name.inspect}"
     end
 
+    if event_name == "ApplicantRemovedArgyleAccount" && @cbv_flow.present?
+      discard_argyle_payroll_account(event_attributes)
+    end
+
     render json: { status: :ok }
 
   rescue => ex
@@ -43,5 +47,16 @@ class Api::UserEventsController < ApplicationController
 
   def user_action_params
     params.fetch(:events, {}).permit(:event_name, attributes: {})
+  end
+
+  def discard_argyle_payroll_account(event_attributes)
+    account_id = event_attributes["argyle.accountId"]
+    return if account_id.blank?
+
+    payroll_account = @cbv_flow.payroll_accounts.find_by(type: :argyle, aggregator_account_id: account_id)
+    payroll_account&.discard!
+  rescue => ex
+    NewRelic::Agent.notice_error(ex) if defined?(NewRelic::Agent)
+    Rails.logger.error "Unable to discard payroll_account for ApplicantRemovedArgyleAccount: #{ex}"
   end
 end
