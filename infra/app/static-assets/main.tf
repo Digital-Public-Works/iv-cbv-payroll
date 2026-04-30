@@ -52,6 +52,7 @@ resource "aws_s3_bucket" "static_assets" {
   # checkov:skip=CKV_AWS_18:Access logging not needed for static assets
   # checkov:skip=CKV_AWS_21:Versioning not needed for static assets
   # checkov:skip=CKV_AWS_144:Cross-region replication not required for static assets
+  # checkov:skip=CKV_AWS_145:AES256 encryption is sufficient; KMS not required
   # checkov:skip=CKV2_AWS_62:Event notifications not needed for static assets
   bucket = local.bucket_name
 }

@@ -6,6 +6,7 @@ resource "aws_s3_bucket" "storage" {
 
   # checkov:skip=CKV_AWS_18:TODO Implement access logging
   # checkov:skip=CKV_AWS_144:Cross region replication not required by default
+  # checkov:skip=CKV_AWS_145:AES256 encryption is sufficient; KMS not required
   # checkov:skip=CKV2_AWS_62:S3 bucket does not need notifications enabled
   # checkov:skip=CKV_AWS_21:Bucket versioning is not needed
 }
