@@ -47,53 +47,6 @@ module "project_config" {
   source = "../../project-config"
 }
 
-# KMS key for bucket encryption
-resource "aws_kms_key" "static_assets" {
-  description             = "KMS key for static assets bucket"
-  deletion_window_in_days = 10
-  enable_key_rotation     = true
-}
-
-# KMS key policy: account root admin + CloudFront decrypt access
-# Set as a separate resource so it can reference the CloudFront distribution ARN
-resource "aws_kms_key_policy" "static_assets" {
-  key_id = aws_kms_key.static_assets.id
-  policy = data.aws_iam_policy_document.static_assets_kms.json
-}
-
-data "aws_iam_policy_document" "static_assets_kms" {
-  # checkov:skip=CKV_AWS_109:Root account kms:* grant is required by AWS to prevent key lockout
-  # checkov:skip=CKV_AWS_111:Root account kms:* grant is required by AWS to prevent key lockout
-  # checkov:skip=CKV_AWS_283:Root account kms:* grant is required by AWS to prevent key lockout
-  # checkov:skip=CKV_AWS_356:Root account kms:* grant is required by AWS to prevent key lockout
-  statement {
-    sid     = "EnableIAMUserPermissions"
-    effect  = "Allow"
-    actions = ["kms:*"]
-    principals {
-      type        = "AWS"
-      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
-    }
-    resources = ["*"]
-  }
-
-  statement {
-    sid     = "AllowCloudFrontDecrypt"
-    effect  = "Allow"
-    actions = ["kms:Decrypt"]
-    principals {
-      type        = "Service"
-      identifiers = ["cloudfront.amazonaws.com"]
-    }
-    resources = ["*"]
-    condition {
-      test     = "StringEquals"
-      variable = "aws:SourceArn"
-      values   = [aws_cloudfront_distribution.static_assets.arn]
-    }
-  }
-}
-
 # S3 bucket
 resource "aws_s3_bucket" "static_assets" {
   # checkov:skip=CKV_AWS_18:Access logging not needed for static assets
@@ -117,10 +70,8 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "static_assets" {
 
   rule {
     apply_server_side_encryption_by_default {
-      kms_master_key_id = aws_kms_key.static_assets.arn
-      sse_algorithm     = "aws:kms"
+      sse_algorithm = "AES256"
     }
-    bucket_key_enabled = true
   }
 }
 
@@ -268,11 +219,5 @@ data "aws_iam_policy_document" "static_assets_access" {
     ]
     effect    = "Allow"
     resources = [aws_s3_bucket.static_assets.arn, "${aws_s3_bucket.static_assets.arn}/*"]
-  }
-
-  statement {
-    actions   = ["kms:GenerateDataKey", "kms:Decrypt"]
-    effect    = "Allow"
-    resources = [aws_kms_key.static_assets.arn]
   }
 }
