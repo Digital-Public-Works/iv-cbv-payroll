@@ -34,14 +34,32 @@ pay_income_days_w2: 90
 pay_income_days_gig: 90
 report_customization_show_earnings_list: true
 weekly_report_enabled: false
-transmission_method: webhook
-transmission_configs:
-- key: webhook_url
-  encrypted: false
-  value: "http://localhost:9292/api/v1/income-report"
-- key: api_key
-  encrypted: false
-  value: "my-secure-guid"
+transmission_methods:
+- method_type: webhook
+  configs:
+  - key: webhook_url
+    encrypted: false
+    value: "http://localhost:9292/api/v1/income-report"
+  - key: api_key
+    encrypted: false
+    value: "my-secure-guid"
+- method_type: sftp
+  configs:
+  - key: url
+    encrypted: false
+    value: "localhost"
+  - key: port
+    encrypted: false
+    value: "2222"
+  - key: user
+    encrypted: false
+    value: "testuser"
+  - key: password
+    encrypted: false
+    value: "testpass"
+  - key: sftp_directory
+    encrypted: false
+    value: "upload"
 application_attributes:
 - name: case_number
   description: Case number

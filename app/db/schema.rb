@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_04_01_210743) do
+ActiveRecord::Schema[7.2].define(version: 2026_04_15_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -57,6 +57,19 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_01_210743) do
     t.index ["user_id"], name: "index_cbv_flow_invitations_on_user_id"
   end
 
+  create_table "cbv_flow_transmissions", force: :cascade do |t|
+    t.bigint "cbv_flow_id", null: false
+    t.integer "method_type", null: false
+    t.integer "status", default: 0, null: false
+    t.jsonb "configuration", default: {}, null: false
+    t.datetime "succeeded_at"
+    t.text "last_error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cbv_flow_id", "method_type"], name: "idx_cbv_flow_transmissions_on_flow_and_method", unique: true
+    t.index ["cbv_flow_id"], name: "index_cbv_flow_transmissions_on_cbv_flow_id"
+  end
+
   create_table "cbv_flows", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -87,11 +100,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_01_210743) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "show_on_caseworker_report", default: false, null: false
-    t.boolean "show_on_applicant_form", default: true, null: false
-    t.boolean "show_on_caseworker_form", default: true, null: false
     t.boolean "redactable", default: false, null: false
     t.string "redact_type"
     t.string "form_field_type", default: "text_field"
+    t.boolean "show_on_applicant_form", default: true, null: false
+    t.boolean "show_on_caseworker_form", default: true, null: false
     t.index ["partner_config_id"], name: "index_partner_application_attributes_on_partner_config_id"
   end
 
@@ -105,7 +118,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_01_210743) do
     t.string "domain"
     t.string "logo_path"
     t.string "argyle_environment"
-    t.integer "transmission_method"
     t.boolean "staff_portal_enabled", default: false, null: false
     t.boolean "pilot_ended", default: false, null: false
     t.string "default_origin"
@@ -136,13 +148,23 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_01_210743) do
   end
 
   create_table "partner_transmission_configs", force: :cascade do |t|
-    t.bigint "partner_config_id", null: false
+    t.bigint "partner_config_id"
     t.string "key", null: false
     t.text "value"
     t.boolean "is_encrypted", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "partner_transmission_method_id", null: false
     t.index ["partner_config_id"], name: "index_partner_transmission_configs_on_partner_config_id"
+    t.index ["partner_transmission_method_id"], name: "idx_on_partner_transmission_method_id_917bdbc05f"
+  end
+
+  create_table "partner_transmission_methods", force: :cascade do |t|
+    t.bigint "partner_config_id", null: false
+    t.integer "method_type", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["partner_config_id"], name: "index_partner_transmission_methods_on_partner_config_id"
   end
 
   create_table "payroll_accounts", force: :cascade do |t|
@@ -158,22 +180,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_01_210743) do
     t.datetime "discarded_at"
     t.index ["cbv_flow_id"], name: "index_payroll_accounts_on_cbv_flow_id"
     t.index ["discarded_at"], name: "index_payroll_accounts_on_discarded_at"
-  end
-
-  create_table "solid_queue_recurring_tasks", force: :cascade do |t|
-    t.string "key", null: false
-    t.string "schedule", null: false
-    t.string "command", limit: 2048
-    t.string "class_name"
-    t.text "arguments"
-    t.string "queue_name"
-    t.integer "priority", default: 0
-    t.boolean "static", default: true, null: false
-    t.text "description"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["key"], name: "index_solid_queue_recurring_tasks_on_key", unique: true
-    t.index ["static"], name: "index_solid_queue_recurring_tasks_on_static"
   end
 
   create_table "users", force: :cascade do |t|
@@ -206,10 +212,13 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_01_210743) do
   end
 
   add_foreign_key "cbv_flow_invitations", "users"
+  add_foreign_key "cbv_flow_transmissions", "cbv_flows"
   add_foreign_key "cbv_flows", "cbv_flow_invitations"
   add_foreign_key "partner_application_attributes", "partner_configs"
   add_foreign_key "partner_translations", "partner_configs"
   add_foreign_key "partner_transmission_configs", "partner_configs"
+  add_foreign_key "partner_transmission_configs", "partner_transmission_methods"
+  add_foreign_key "partner_transmission_methods", "partner_configs"
   add_foreign_key "payroll_accounts", "cbv_flows"
   add_foreign_key "webhook_events", "payroll_accounts"
 end

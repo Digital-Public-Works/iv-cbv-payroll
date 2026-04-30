@@ -17,12 +17,11 @@ class PartnerConfigLoader
     report_customization_show_earnings_list
     weekly_report_enabled weekly_report_recipients weekly_report_variant
     include_invitation_details_on_weekly_report
-    transmission_method
   ].freeze
 
-  REQUIRED_ATTRS = %w[partner_id name timezone transmission_method pay_income_days_w2 pay_income_days_gig].freeze
+  REQUIRED_ATTRS = %w[partner_id name timezone pay_income_days_w2 pay_income_days_gig].freeze
 
-  VALID_TRANSMISSION_METHODS = PartnerConfig.transmission_methods.keys.freeze
+  VALID_TRANSMISSION_METHODS = PartnerTransmissionMethod.method_types.keys.freeze
   VALID_DATA_TYPES = PartnerApplicationAttribute.data_types.keys.freeze
   VALID_PAY_INCOME_DAYS = [ 90, 182 ].freeze
 
@@ -66,9 +65,8 @@ class PartnerConfigLoader
     @warnings = []
 
     validate_required_attrs
-    validate_transmission_method
+    validate_transmission_methods
     validate_pay_income_days
-    validate_transmission_configs
     validate_application_attributes
     validate_translations
 
@@ -88,7 +86,7 @@ class PartnerConfigLoader
     raise ValidationError, "Cannot apply invalid config:\n  #{@errors.join("\n  ")}" unless valid?
 
     partner_id = @data[:partner_id]
-    changes = { config: nil, transmission_configs: { created: 0, updated: 0, deleted: 0 },
+    changes = { config: nil, transmission_methods: { created: 0, updated: 0, deleted: 0 },
                 application_attributes: { created: 0, updated: 0, deleted: 0 },
                 translations: { created: 0, updated: 0, deleted: 0 } }
 
@@ -101,7 +99,7 @@ class PartnerConfigLoader
       changes[:config] = is_new ? :created : (pc.changed? ? :updated : :unchanged)
       pc.save!
 
-      changes[:transmission_configs] = reconcile_transmission_configs(pc)
+      changes[:transmission_methods] = reconcile_transmission_methods(pc)
       changes[:application_attributes] = reconcile_application_attributes(pc)
       changes[:translations] = reconcile_translations(pc)
     end
@@ -122,11 +120,14 @@ class PartnerConfigLoader
       data[attr] = pc.send(attr)
     end
 
-    data["transmission_configs"] = pc.partner_transmission_configs.map do |tc|
-      entry = { "key" => tc.key, "encrypted" => tc.is_encrypted }
-      # Don't export actual encrypted values; use a placeholder.
-      entry["value"] = tc.is_encrypted ? "$ENCRYPTED" : tc[:value]
-      entry
+    data["transmission_methods"] = pc.partner_transmission_methods.map do |ptm|
+      method_data = { "method_type" => ptm.method_type }
+      method_data["configs"] = ptm.partner_transmission_configs.map do |tc|
+        entry = { "key" => tc.key, "encrypted" => tc.is_encrypted }
+        entry["value"] = tc.is_encrypted ? "$ENCRYPTED" : tc[:value]
+        entry
+      end
+      method_data
     end
 
     data["application_attributes"] = pc.partner_application_attributes.map do |attr|
@@ -210,11 +211,33 @@ class PartnerConfigLoader
     end
   end
 
-  def validate_transmission_method
-    tm = @data[:transmission_method]
-    return if tm.blank? # already caught by required check
-    unless VALID_TRANSMISSION_METHODS.include?(tm.to_s)
-      @errors << "Invalid transmission_method '#{tm}'. Valid: #{VALID_TRANSMISSION_METHODS.join(', ')}"
+  def validate_transmission_methods
+    methods = @data[:transmission_methods]
+    if methods.blank?
+      @errors << "At least one transmission method is required"
+      return
+    end
+
+    unless methods.is_a?(Array)
+      @errors << "transmission_methods must be an array"
+      return
+    end
+
+    methods.each_with_index do |tm, i|
+      method_type = tm[:method_type]
+      if method_type.blank?
+        @errors << "transmission_methods[#{i}]: missing 'method_type'"
+      elsif !VALID_TRANSMISSION_METHODS.include?(method_type.to_s)
+        @errors << "transmission_methods[#{i}]: invalid method_type '#{method_type}'. Valid: #{VALID_TRANSMISSION_METHODS.join(', ')}"
+      end
+
+      (tm[:configs] || []).each_with_index do |tc, j|
+        @errors << "transmission_methods[#{i}].configs[#{j}]: missing 'key'" if tc[:key].blank?
+        if tc[:value].present?
+          _, err = resolve_env_value_safe(tc[:value])
+          @warnings << "transmission_methods[#{i}].configs[#{j}] (#{tc[:key]}): #{err}" if err
+        end
+      end
     end
   end
 
@@ -224,17 +247,6 @@ class PartnerConfigLoader
       next if val.blank? # already caught by required check
       unless VALID_PAY_INCOME_DAYS.include?(val.to_i)
         @errors << "Invalid #{attr} '#{val}'. Valid: #{VALID_PAY_INCOME_DAYS.join(', ')}"
-      end
-    end
-  end
-
-  def validate_transmission_configs
-    configs = @data[:transmission_configs] || []
-    configs.each_with_index do |tc, i|
-      @errors << "transmission_configs[#{i}]: missing 'key'" if tc[:key].blank?
-      if tc[:value].present?
-        _, err = resolve_env_value_safe(tc[:value])
-        @warnings << "transmission_configs[#{i}] (#{tc[:key]}): #{err}" if err
       end
     end
   end
@@ -270,27 +282,38 @@ class PartnerConfigLoader
   # Reconciliation helpers (for apply!)
   # ---------------------------------------------------------------------------
 
-  def reconcile_transmission_configs(pc)
+  def reconcile_transmission_methods(pc)
     counts = { created: 0, updated: 0, deleted: 0 }
-    yaml_configs = @data[:transmission_configs] || []
-    yaml_keys = yaml_configs.map { |c| c[:key] }
+    yaml_methods = @data[:transmission_methods] || []
+    yaml_method_types = yaml_methods.map { |m| m[:method_type].to_s }
 
-    # Delete configs not in YAML
-    pc.partner_transmission_configs.where.not(key: yaml_keys).destroy_all.tap { |d| counts[:deleted] = d.size }
+    # Delete transmission methods not in YAML
+    pc.partner_transmission_methods.where.not(method_type: yaml_method_types).destroy_all.tap { |d| counts[:deleted] = d.size }
 
-    yaml_configs.each do |tc_data|
-      resolved_value = resolve_env_value(tc_data[:value])
-      existing = pc.partner_transmission_configs.find_by(key: tc_data[:key])
-      if existing
-        existing.update!(is_encrypted: tc_data.fetch(:encrypted, false), value: resolved_value)
-        counts[:updated] += 1
-      else
-        pc.partner_transmission_configs.create!(
-          key: tc_data[:key],
-          is_encrypted: tc_data.fetch(:encrypted, false),
-          value: resolved_value
-        )
-        counts[:created] += 1
+    yaml_methods.each do |tm_data|
+      method_type = tm_data[:method_type].to_s
+      ptm = pc.partner_transmission_methods.find_or_create_by!(method_type: method_type)
+      counts[:created] += 1 if ptm.previously_new_record?
+
+      # Reconcile configs within this transmission method
+      yaml_configs = tm_data[:configs] || []
+      yaml_keys = yaml_configs.map { |c| c[:key] }
+      ptm.partner_transmission_configs.where.not(key: yaml_keys).destroy_all
+
+      yaml_configs.each do |tc_data|
+        resolved_value = resolve_env_value(tc_data[:value])
+        existing = ptm.partner_transmission_configs.find_by(key: tc_data[:key])
+        if existing
+          existing.update!(is_encrypted: tc_data.fetch(:encrypted, false), value: resolved_value)
+          counts[:updated] += 1
+        else
+          ptm.partner_transmission_configs.create!(
+            key: tc_data[:key],
+            is_encrypted: tc_data.fetch(:encrypted, false),
+            value: resolved_value
+          )
+          counts[:created] += 1
+        end
       end
     end
 

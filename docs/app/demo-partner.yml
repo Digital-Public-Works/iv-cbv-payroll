@@ -27,20 +27,21 @@ weekly_report_enabled: true
 weekly_report_recipients: test@example.com
 weekly_report_variant: invitations
 include_invitation_details_on_weekly_report: true
-transmission_method: sftp
-transmission_configs:
-- key: user
-  encrypted: false
-  value: "demo_user"
-- key: password
-  encrypted: false
-  value: "demo_pass"
-- key: url
-  encrypted: false
-  value:
-- key: sftp_directory
-  encrypted: false
-  value:
+transmission_methods:
+- method_type: sftp
+  configs:
+  - key: user
+    encrypted: false
+    value: "demo_user"
+  - key: password
+    encrypted: false
+    value: "demo_pass"
+  - key: url
+    encrypted: false
+    value:
+  - key: sftp_directory
+    encrypted: false
+    value:
 application_attributes:
 - name: first_name
   description: Applicant first name

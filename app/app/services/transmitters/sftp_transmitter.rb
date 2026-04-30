@@ -2,10 +2,9 @@ class Transmitters::SftpTransmitter
   include Transmitter
 
   def deliver
-    config = current_agency.transmission_method_configuration.with_indifferent_access
-    sftp_gateway = SftpGateway.new(config)
+    sftp_gateway = SftpGateway.new(@transmission_config)
     filename = current_agency.pdf_filename(cbv_flow, cbv_flow.consented_to_authorized_use_at)
-    sftp_gateway.upload_data(StringIO.new(pdf_output.content), "#{config["sftp_directory"]}/#{filename}.pdf")
+    sftp_gateway.upload_data(StringIO.new(pdf_output.content), "#{@transmission_config["sftp_directory"]}/#{filename}.pdf")
   end
 
   def pdf_output

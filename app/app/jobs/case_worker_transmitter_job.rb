@@ -1,67 +1,58 @@
 class CaseWorkerTransmitterJob < ApplicationJob
-  include Cbv::AggregatorDataHelper
-
-  attr_reader :cbv_flow
-
   queue_as :report_sender
 
   def perform(cbv_flow_id)
-    @cbv_flow = CbvFlow.find(cbv_flow_id)
-    @current_agency = current_agency(@cbv_flow)
+    cbv_flow = CbvFlow.find(cbv_flow_id)
+    current_agency = current_agency(cbv_flow)
+    raise "Client agency #{cbv_flow.client_agency_id} not found for CbvFlow #{cbv_flow.id}" unless current_agency
 
-    transmitter_class.new(@cbv_flow, @current_agency, set_aggregator_report).deliver
-    @cbv_flow.touch(:transmitted_at)
-    track_transmitted_event(CbvFlow.find(cbv_flow_id), set_aggregator_report.paystubs)
-    enqueue_agency_name_matching_job(CbvFlow.find(cbv_flow_id))
-  end
+    transmissions = synchronize_transmissions!(cbv_flow, current_agency)
 
-  def agency_config
-    ClientAgencyConfig.instance
-  end
+    transmissions.each do |transmission|
+      next if transmission.succeeded?
 
-  def transmitter_class
-    case @current_agency.transmission_method
-    when "shared_email"
-      Transmitters::SharedEmailTransmitter
-    when "sftp"
-      Transmitters::SftpTransmitter
-    when "encrypted_s3"
-      Transmitters::EncryptedS3Transmitter
-    when "json"
-      Transmitters::JsonTransmitter
-    when "webhook"
-      Transmitters::WebhookTransmitter
-    else
-      raise "Unsupported transmission method: #{@current_agency.transmission_method}"
+      enqueue_transmission_job(transmission.id)
     end
   end
 
-  def enqueue_agency_name_matching_job(cbv_flow)
-    return unless cbv_flow.cbv_applicant.agency_expected_names.any?
+  private
 
-    MatchAgencyNamesJob.perform_later(cbv_flow.id)
+  def synchronize_transmissions!(cbv_flow, current_agency)
+    configured_methods = current_agency.transmission_methods.index_by { |entry| entry.method.to_s }
+
+    cbv_flow.cbv_flow_transmissions.where.not(method_type: configured_methods.keys).destroy_all
+
+    configured_methods.map do |method_type, entry|
+      validate_method_type!(method_type)
+
+      transmission = cbv_flow.cbv_flow_transmissions.find_or_initialize_by(method_type: method_type)
+      transmission.configuration = entry.configuration
+      transmission.status = :pending if transmission.failed?
+      transmission.save! if transmission.new_record? || transmission.changed?
+      transmission
+    end
   end
 
-  def track_transmitted_event(cbv_flow, payments)
-    event_logger.track(TrackEvent::ApplicantSharedIncomeSummary, nil, {
-      time: Time.current.to_i,
-      client_agency_id: cbv_flow.client_agency_id,
-      cbv_applicant_id: cbv_flow.cbv_applicant_id,
-      cbv_flow_id: cbv_flow.id,
-      device_id: cbv_flow.device_id,
-      invitation_id: cbv_flow.cbv_flow_invitation_id,
-      account_count: cbv_flow.fully_synced_payroll_accounts.count,
-      time_since_invite_seconds: cbv_flow.cbv_flow_invitation&.created_at &&
-        Time.current - cbv_flow.cbv_flow_invitation.created_at,
-      paystub_count: payments.count,
-      account_count_with_additional_information:
-        cbv_flow.additional_information.values.count { |info| info["comment"].present? },
-      flow_started_seconds_ago: (cbv_flow.consented_to_authorized_use_at - cbv_flow.created_at).to_i,
-      locale: I18n.locale
-    })
+  def enqueue_transmission_job(transmission_id)
+    if Rails.env.test?
+      begin
+        CbvFlowTransmissionJob.perform_now(transmission_id)
+      rescue StandardError
+        # In test mode perform_now raises synchronously. The job has already persisted the
+        # error on the transmission row, so swallow so sibling methods still fire.
+      end
+    else
+      CbvFlowTransmissionJob.perform_later(transmission_id)
+    end
   end
 
   def current_agency(cbv_flow)
-    agency_config[cbv_flow.client_agency_id]
+    ClientAgencyConfig.instance[cbv_flow.client_agency_id]
+  end
+
+  def validate_method_type!(method_type)
+    return if CbvFlowTransmission.method_types.key?(method_type.to_s)
+
+    raise "Unsupported transmission method: #{method_type}"
   end
 end

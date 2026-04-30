@@ -9,16 +9,16 @@ RSpec.describe ClientAgencyConfig do
   end
 
   let!(:sample_config) do
-    PartnerConfig.create!(
+    pc = PartnerConfig.create!(
       partner_id: 'foo',
       name: 'Foo Agency Name',
       timezone: 'America/Los_Angeles',
       argyle_environment: 'foo',
-      transmission_method: 'shared_email',
-      argyle_environment: 'foo',
       pay_income_days_w2: 90,
       pay_income_days_gig: 182
     )
+    pc.partner_transmission_methods.create!(method_type: :shared_email)
+    pc
   end
 
   let!(:sample_attr) do

@@ -28,7 +28,7 @@ RSpec.describe CsvToSftpReportDelivererJob, type: :job do
           cbv_flow.cbv_applicant.update!(case_number: "12345")
 
           agency = ClientAgencyConfig.instance[partner_id]
-          allow(agency).to receive(:transmission_method_configuration).and_return(
+          allow(agency).to receive(:transmission_configuration_for).with("sftp").and_return(
             { "sftp_directory" => "test" }.with_indifferent_access
           )
 
@@ -41,6 +41,21 @@ RSpec.describe CsvToSftpReportDelivererJob, type: :job do
             expect(row["consent_timestamp"]).to eq(config[:expected_consent_timestamp])
             expect(row["pdf_filename"]).to eq("CBVPilot_00012345_20250101_ConfSANDBOX0010002.pdf")
           end
+
+          described_class.perform_now(partner_id, Date.new(2025, 4, 1), Date.new(2025, 5, 2))
+        end
+
+        it "does not upload when the agency has no sftp transmission method" do
+          create(:cbv_flow, :completed, :invited, client_agency_id: partner_id,
+                 consented_to_authorized_use_at: authorized_timestamp,
+                 transmitted_at: transmitted_at)
+
+          agency = ClientAgencyConfig.instance[partner_id]
+          allow(agency).to receive(:transmission_configuration_for).with("sftp").and_return(
+            {}.with_indifferent_access
+          )
+
+          expect(sftp_gateway).not_to receive(:upload_data)
 
           described_class.perform_now(partner_id, Date.new(2025, 4, 1), Date.new(2025, 5, 2))
         end

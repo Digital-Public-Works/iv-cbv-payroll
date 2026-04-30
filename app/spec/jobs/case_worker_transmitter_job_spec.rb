@@ -1,389 +1,78 @@
-require 'rails_helper'
-require 'csv'
-require 'active_support/testing/time_helpers'
+require "rails_helper"
 
 RSpec.describe CaseWorkerTransmitterJob, type: :job do
-  include PinwheelApiHelper
-  include ActiveSupport::Testing::TimeHelpers
-
-  let(:mock_client_agency) { double(ClientAgencyConfig::ClientAgency) }
-  let(:cbv_applicant) { create(:cbv_applicant, created_at: current_time, case_number: "ABC1234") }
-  let(:errored_jobs) { [] }
-  let(:current_time) { DateTime.parse('2024-06-18 00:00:00') }
-  # let(:pinwheel_report) { build(:pinwheel_report, :with_pinwheel_account) }
-  let(:argyle_report) { build(:argyle_report, :with_argyle_account) }
-  let(:fake_event_logger) { instance_double(GenericEventTracker, track: nil) }
-  let(:mocked_client_logo_path) { "des_logo.png" }
-
   let(:cbv_flow) do
     create(:cbv_flow,
       :invited,
       :with_argyle_account,
-      with_errored_jobs: errored_jobs,
-      created_at: current_time - 10.minutes,
-      cbv_applicant: cbv_applicant
+      confirmation_code: "SANDBOX001"
     )
   end
 
-  around do |ex|
-    Timecop.freeze(current_time, &ex)
+  let(:agency) { instance_double(ClientAgencyConfig::ClientAgency) }
+  let(:transmission_methods) do
+    [
+      ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(
+        method: "webhook",
+        configuration: { "webhook_url" => "https://example.test/webhook", "api_key" => "abc123" }.with_indifferent_access
+      ),
+      ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(
+        method: "sftp",
+        configuration: { "url" => "sftp.example.test", "user" => "test", "password" => "secret" }.with_indifferent_access
+      )
+    ]
   end
-
-  let(:transmission_method) {
-    raise "define this transmission method in your spec"
-  }
-  let(:transmission_method_configuration) {
-    {}
-  }
-
-  let(:mocked_client_id) {
-    "sandbox"
-  }
 
   before do
-    # pinwheel_stub_request_end_user_accounts_response
-    # pinwheel_stub_request_end_user_paystubs_response
-    # pinwheel_stub_request_employment_info_response
-    # pinwheel_stub_request_income_metadata_response
-    # pinwheel_stub_request_identity_response
-    # allow(Aggregators::AggregatorReports::PinwheelReport).to receive(:new).and_return(pinwheel_report)
-    allow(Aggregators::AggregatorReports::ArgyleReport).to receive(:new).and_return(argyle_report)
-
-    allow_any_instance_of(described_class).to receive(:current_agency).and_return(mock_client_agency)
-    allow(mock_client_agency).to receive(:id).and_return(mocked_client_id)
-    allow(mock_client_agency).to receive(:logo_path).and_return(mocked_client_logo_path)
-    allow(mock_client_agency).to receive(:transmission_method).and_return(transmission_method)
-    allow(mock_client_agency).to receive(:transmission_method_configuration).and_return(transmission_method_configuration)
-    allow(mock_client_agency).to receive(:report_customization_show_earnings_list).and_return(true)
-
-    allow_any_instance_of(described_class)
-      .to receive(:event_logger)
-        .and_return(fake_event_logger)
+    allow_any_instance_of(described_class).to receive(:current_agency).and_return(agency)
+    allow(agency).to receive(:transmission_methods).and_return(transmission_methods)
+    allow(CbvFlowTransmissionJob).to receive(:perform_now)
   end
 
-  shared_examples "tracks an ApplicantSharedIncomeSummary event" do
-    it "tracks an ApplicantSharedIncomeSummary event" do
+  it "creates one CbvFlowTransmission per configured method and enqueues a job for each" do
+    expect {
       described_class.new.perform(cbv_flow.id)
+    }.to change(CbvFlowTransmission, :count).by(2)
 
-      expect(fake_event_logger).to have_received(:track)
-        .with("ApplicantSharedIncomeSummary", anything, include(
-          cbv_flow_id: cbv_flow.id,
-          flow_started_seconds_ago: 10.minutes.to_i,
-          account_count: cbv_flow.fully_synced_payroll_accounts.count
-        ))
-    end
+    expect(cbv_flow.cbv_flow_transmissions.pluck(:method_type)).to contain_exactly("webhook", "sftp")
+    expect(cbv_flow.cbv_flow_transmissions.all?(&:pending?)).to be(true)
+    expect(CbvFlowTransmissionJob).to have_received(:perform_now).twice
   end
 
-  shared_examples "enqueues match agency names job for agency with expected names" do
-    context "when the CbvApplicant has agency_expected_names" do
-      let(:cbv_applicant) { create(:cbv_applicant, :az_des, created_at: current_time, case_number: "ABC1234") }
+  it "raises an error when a method type is unsupported" do
+    allow(agency).to receive(:transmission_methods).and_return([
+      ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(method: "smoke_signal", configuration: {})
+    ])
 
-      before do
-        ActiveJob::Base.queue_adapter = :test
-      end
-
-      it "enqueues a MatchAgencyNamesJob" do
-        expect { described_class.new.perform(cbv_flow.id) }
-          .to have_enqueued_job(MatchAgencyNamesJob)
-      end
-    end
+    expect {
+      described_class.new.perform(cbv_flow.id)
+    }.to raise_error("Unsupported transmission method: smoke_signal")
   end
 
-  context "#perform" do
-    let(:argyle_report) { build(:argyle_report, :with_argyle_account) }
+  it "resets previously failed transmissions to pending and reuses existing rows" do
+    failed = create(:cbv_flow_transmission,
+      cbv_flow: cbv_flow,
+      method_type: :webhook,
+      status: :failed,
+      last_error: "boom"
+    )
 
-    before do
-      cbv_flow.update(consented_to_authorized_use_at: Time.now)
-    end
+    described_class.new.perform(cbv_flow.id)
 
-    context "when transmission method is shared_email" do
-      let(:transmission_method) { "shared_email" }
-      let(:transmission_method_configuration) { {
-        "email" => 'test@example.com'
-      } }
+    expect(failed.reload.pending?).to be(true)
+    expect(cbv_flow.cbv_flow_transmissions.where(method_type: :webhook).count).to eq(1)
+  end
 
-      context "when confirmation_code exists" do
-        let(:existing_confirmation_code) { "SANDBOX000" }
+  it "skips enqueueing jobs for transmissions already succeeded" do
+    create(:cbv_flow_transmission,
+      cbv_flow: cbv_flow,
+      method_type: :webhook,
+      status: :succeeded,
+      succeeded_at: 1.hour.ago
+    )
 
-        before do
-          cbv_flow.update(confirmation_code: existing_confirmation_code)
-        end
+    described_class.new.perform(cbv_flow.id)
 
-        it "uses existing confirmation code and generates email" do
-          confirmation_code = "SANDBOX123"
-          cbv_flow.update(confirmation_code: confirmation_code)
-
-          expect { described_class.new.perform(cbv_flow.id) }.not_to change { cbv_flow.reload.confirmation_code }
-
-          email = ActionMailer::Base.deliveries.last
-          expect(email.to).to include('test@example.com')
-          expect(email.subject).to include("Income Verification Report")
-          expect(email.body.encoded).to include(cbv_flow.cbv_applicant.case_number)
-          expect(email.body.encoded).to include(cbv_flow.confirmation_code)
-        end
-
-        it "does not override the existing confirmation code" do
-          expect { described_class.new.perform(cbv_flow.id) }.not_to change { cbv_flow.reload.confirmation_code }
-        end
-      end
-
-      it "sends an email to the caseworker and updates transmitted_at" do
-        expect {
-          described_class.new.perform(cbv_flow.id)
-        }.to change { ActionMailer::Base.deliveries.count }.by(1)
-                                                           .and change { cbv_flow.reload.transmitted_at }.from(nil)
-
-        email = ActionMailer::Base.deliveries.last
-        expect(email.to).to include('test@example.com')
-        expect(email.subject).to include("Income Verification Report")
-        expect(email.body.encoded).to include(cbv_flow.cbv_applicant.case_number)
-      end
-
-      it_behaves_like "tracks an ApplicantSharedIncomeSummary event"
-      it_behaves_like "enqueues match agency names job for agency with expected names"
-    end
-
-    context "when transmission method is sftp" do
-      let(:transmission_method) { "sftp" }
-      let(:user) { create(:user, email: "test@test.com") }
-      let(:sftp_double) { instance_double(SftpGateway) }
-      let(:transmission_method_configuration) { {
-        "user" => "user",
-        "password" => "password",
-        "url" => "sftp.com",
-        "sftp_directory" => "test"
-      } }
-      let(:now) { Time.zone.parse('2025-01-01 08:00:30') }
-
-      context "when client is az_des" do
-        let(:mocked_client_id) { "az_des" }
-
-        before do
-          allow(SftpGateway).to receive(:new).and_return(sftp_double)
-          allow(sftp_double).to receive(:upload_data)
-          allow(mock_client_agency).to receive(:pdf_filename) do |flow, t|
-            ClientAgencyConfig.instance[mocked_client_id].pdf_filename(flow, t)
-          end
-
-          travel_to now
-        end
-
-        it "generates and sends data to SFTP and updates transmitted_at" do
-          agency_id_number = cbv_applicant.agency_id_number
-          beacon_id = cbv_applicant.beacon_id
-
-          cbv_flow.update!(confirmation_code: "AZDES001", consented_to_authorized_use_at: now, client_agency_id: "az_des")
-          cbv_flow.cbv_applicant.update!(case_number: "01000", client_agency_id: "az_des", beacon_id: beacon_id, agency_id_number: agency_id_number)
-
-          expect(sftp_double).to receive(:upload_data).with(anything, /test\/CBVPilot_00001000_20250101_ConfAZDES001.pdf/)
-
-          expect { described_class.new.perform(cbv_flow.id) }.to change { cbv_flow.reload.transmitted_at }
-        end
-      end
-
-      context "when client is pa_dhs" do
-        let(:mocked_client_id) { "pa_dhs" }
-
-        before do
-          allow(SftpGateway).to receive(:new).and_return(sftp_double)
-          allow(sftp_double).to receive(:upload_data)
-          allow(mock_client_agency).to receive(:pdf_filename) do |flow, t|
-            ClientAgencyConfig.instance[mocked_client_id].pdf_filename(flow, t)
-          end
-
-          travel_to now
-        end
-
-        it "generates and sends data to SFTP and updates transmitted_at" do
-          agency_id_number = cbv_applicant.agency_id_number
-          beacon_id = cbv_applicant.beacon_id
-
-          cbv_flow.update!(confirmation_code: "PADHS001", consented_to_authorized_use_at: now, client_agency_id: "pa_dhs")
-          cbv_flow.cbv_applicant.update!(case_number: "01000", client_agency_id: "pa_dhs", beacon_id: beacon_id, agency_id_number: agency_id_number)
-
-          expect(sftp_double).to receive(:upload_data).with(anything, /test\/CBVPilot_00001000_20250101_ConfPADHS001.pdf/)
-
-          expect { described_class.new.perform(cbv_flow.id) }.to change { cbv_flow.reload.transmitted_at }
-        end
-      end
-
-      context "when client is pa_dhs without mocking pdf_filename" do
-        before do
-          # Remove the mock of current_agency to use the real Rails config
-          allow_any_instance_of(described_class).to receive(:current_agency).and_call_original
-
-          allow(SftpGateway).to receive(:new).and_return(sftp_double)
-          allow(sftp_double).to receive(:upload_data)
-          # Intentionally NOT mocking pdf_filename to demonstrate the real error
-          travel_to now
-        end
-
-        it "successfully transmits without NoMethodError on pdf_filename" do
-          cbv_flow.update!(confirmation_code: "PADHS001", consented_to_authorized_use_at: now, client_agency_id: "pa_dhs")
-          cbv_flow.cbv_applicant.update!(case_number: "01000", client_agency_id: "pa_dhs")
-
-          # This test will fail with: NoMethodError: undefined method 'pdf_filename'
-          # because SftpTransmitter tries to call current_agency.pdf_filename()
-          # but ClientAgencyConfig::ClientAgency doesn't have that instance method
-          expect(sftp_double).to receive(:upload_data).with(anything, /CBVPilot_00001000_20250101_ConfPADHS001.pdf/)
-
-          expect { described_class.new.perform(cbv_flow.id) }.not_to raise_error
-        end
-      end
-
-      context "when performing shared examples" do
-        before do
-          allow(SftpGateway).to receive(:new).and_return(sftp_double)
-          allow(sftp_double).to receive(:upload_data)
-          allow(mock_client_agency).to receive(:pdf_filename).and_return("test.pdf")
-
-          travel_to now
-        end
-
-        it_behaves_like "tracks an ApplicantSharedIncomeSummary event"
-        it_behaves_like "enqueues match agency names job for agency with expected names"
-      end
-    end
-
-    context "when transmission method is encrypted_s3" do
-      include_context "gpg_setup"
-
-      let(:user) { create(:user, email: "test@test.com") }
-      let(:s3_service_double) { instance_double(S3Service) }
-      let(:transmission_method) { "encrypted_s3" }
-      let(:mocked_client_id) { "sandbox" }
-      let(:transmission_method_configuration) { {
-        "bucket" => "test-bucket",
-        "public_key" => @public_key
-      } }
-
-      before do
-        allow(S3Service).to receive(:new).and_return(s3_service_double)
-        allow(s3_service_double).to receive(:upload_file)
-      end
-
-      it "generates, gzips, encrypts, and uploads PDF and CSV files to S3" do
-        agency_id_number = cbv_applicant.agency_id_number
-        beacon_id = cbv_applicant.beacon_id
-
-        expect(s3_service_double).to receive(:upload_file).once do |file_path, file_name|
-          expect(file_path).to end_with('.gpg')
-          expect(file_name).to start_with("outfiles/IncomeReport_#{cbv_applicant.agency_id_number}_")
-          expect(file_name).to end_with('.tar.gz.gpg')
-          expect(File.exist?(file_path)).to be true
-        end
-
-        expect(CSV).to receive(:generate).and_wrap_original do |original_method, *args, &block|
-          csv_content = original_method.call(*args, &block)
-          csv_rows = CSV.parse(csv_content, headers: true)
-          expect(csv_rows[0]["client_id"]).to eq(agency_id_number)
-          csv_content
-        end
-
-        cbv_flow.update(client_agency_id: "sandbox")
-        cbv_applicant.update(client_agency_id: "sandbox")
-        cbv_applicant.update(beacon_id: beacon_id)
-        cbv_applicant.update(agency_id_number: agency_id_number)
-
-        described_class.new.perform(cbv_flow.id)
-      end
-
-      it "handles errors during file processing and upload" do
-        cbv_flow.update(client_agency_id: 'sandbox')
-        allow_any_instance_of(GpgEncryptable).to receive(:gpg_encrypt_file).and_raise(StandardError, "Encryption failed")
-
-        expect {
-          described_class.new.perform(cbv_flow.id)
-        }.to raise_error(StandardError, "Encryption failed")
-
-        expect(s3_service_double).not_to have_received(:upload_file)
-        expect(cbv_flow.reload.transmitted_at).to be_nil
-      end
-
-      it_behaves_like "tracks an ApplicantSharedIncomeSummary event"
-      it_behaves_like "enqueues match agency names job for agency with expected names"
-    end
-
-    context "when transmission method is json" do
-      let(:transmission_method) { "json" }
-      let(:agency_api_url) { "http://fake-state.api.gov/api/v1/income-report" }
-      let(:transmission_method_configuration) { { "url" => agency_api_url } }
-
-      before do
-        expect_any_instance_of(Transmitters::JsonTransmitter).to receive(:deliver).and_return("ok")
-      end
-
-      it "is handled by the job" do
-        expect { described_class.new.perform(cbv_flow.id) }.to_not raise_error
-      end
-
-      it_behaves_like "tracks an ApplicantSharedIncomeSummary event"
-      it_behaves_like "enqueues match agency names job for agency with expected names"
-
-      context "time_since_invite_seconds" do
-        it "sets time_since_invite_seconds to (now - invitation.created_at) when an invitation exists" do
-          invitation_time = current_time - 5.minutes
-          cbv_flow.cbv_flow_invitation.update!(created_at: invitation_time)
-
-          described_class.new.perform(cbv_flow.id)
-
-          expect(fake_event_logger).to have_received(:track) do |event_type, _req, attrs|
-            expect(event_type).to eq("ApplicantSharedIncomeSummary")
-            expect(attrs[:time_since_invite_seconds]).to be_within(0.5).of(5.minutes)
-          end
-        end
-
-        context "when there is NO invitation" do
-          let(:cbv_flow) do
-            create(
-              :cbv_flow,
-              :with_argyle_account,
-              with_errored_jobs: errored_jobs,
-              created_at: current_time - 10.minutes,
-              cbv_applicant: cbv_applicant
-            ).tap do |flow|
-              flow.update!(consented_to_authorized_use_at: Time.current)
-            end
-          end
-
-          it "sets time_since_invite_seconds to nil when no invitation exists" do
-            described_class.new.perform(cbv_flow.id)
-
-            expect(fake_event_logger).to have_received(:track) do |event_type, _req, attrs|
-              expect(event_type).to eq("ApplicantSharedIncomeSummary")
-              expect(attrs[:time_since_invite_seconds]).to be_nil
-            end
-          end
-        end
-      end
-    end
-
-    context "when transmission method is webhook" do
-      let(:transmission_method) { "webhook" }
-      let(:webhook_url) { "http://fake-state.api.gov/api/v1/webhook" }
-      let(:transmission_method_configuration) { {
-        "webhook_url" => webhook_url,
-        "api_key" => "test-webhook-api-key"
-      } }
-
-      before do
-        expect_any_instance_of(Transmitters::WebhookTransmitter).to receive(:deliver).and_return("ok")
-      end
-
-      it "is handled by the job" do
-        expect { described_class.new.perform(cbv_flow.id) }.to_not raise_error
-      end
-
-      it_behaves_like "tracks an ApplicantSharedIncomeSummary event"
-      it_behaves_like "enqueues match agency names job for agency with expected names"
-    end
-
-    context "when transmission method is unsupported" do
-      let(:transmission_method) { "smoke_signal" }
-
-      it "raises an error" do
-        expect { described_class.new.perform(cbv_flow.id) }.to raise_error(/Unsupported transmission method/)
-      end
-    end
+    expect(CbvFlowTransmissionJob).to have_received(:perform_now).once
   end
 end
