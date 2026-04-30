@@ -60,6 +60,19 @@ jobs:
           terraform_wrapper: false
       - name: Validate
         run: make infra-validate-modules
+  validate-terraform-shared:
+    name: Validate shared Terraform root modules
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.8.3
+          terraform_wrapper: false
+      - name: Validate static-assets
+        run: |
+          terraform -chdir="infra/app/static-assets" init -backend=false
+          terraform -chdir="infra/app/static-assets" validate
   check-compliance-with-checkov:
     name: Check compliance with checkov
     runs-on: ubuntu-latest

@@ -22,6 +22,7 @@ Each application directory contains the following:
   build-repository/   [Root module] Docker image repository for the application (shared across environments and terraform workspaces)
   database/           [Root module] Configuration for database (different config for different environments)
   service/            [Root module] Configuration for containers, such as load balancer, application service (different config for different environments)
+  static-assets/      [Root module] S3 bucket and CloudFront distribution for static assets (shared across environments)
 ```
 
 Details about terraform root modules and child modules are documented in [module-architecture](/docs/infra/module-architecture.md).
@@ -44,6 +45,7 @@ The infrastructure is designed to operate on different layers:
 - Account layer
 - Network layer
 - Build repository layer (per application)
+- Static assets layer (per application) — S3 bucket and CloudFront distribution for static files; shared across environments. Run with `make infra-update-app-static-assets APP_NAME=app`.
 - Database layer (per application)
 - Service layer (per application)
 
@@ -83,6 +85,7 @@ To set up this project for the first time (i.e., it has never been deployed to t
     5. [Configure webhooks for payroll providers](/docs/app/runbooks/webhook-configuration.md)
     6. [Complete post-deployment checklist](/docs/infra/post-deployment-checklist.md)
     7. [Set up background jobs](/docs/infra/background-jobs.md)
+    8. Set up static assets infrastructure: `make infra-update-app-static-assets APP_NAME=app`
 
 ### 🆕 New developer
 
