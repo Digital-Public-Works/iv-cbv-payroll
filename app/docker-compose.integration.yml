@@ -1,0 +1,23 @@
+services:
+  # SFTP server for testing SftpTransmitter
+  # Files uploaded to /upload/<user>/
+  sftp:
+    image: atmoz/sftp:latest
+    ports:
+      - "2222:22"
+    command: testuser:testpass:::upload
+    volumes:
+      - ./tmp/integration_transmissions/sftp:/home/testuser/upload
+
+  # Webhook API reference implementation
+  # https://github.com/Digital-Public-Works/dicit-webhook-api-ref-impl
+  # Validates payload schema, API key auth, and HMAC signatures.
+  webhook-api:
+    build: https://github.com/Digital-Public-Works/dicit-webhook-api-ref-impl.git#main:lahore-v1
+    ports:
+      - "9292:9292"
+    environment:
+      VMI_API_KEY: my-secure-guid
+      PAYLOAD_DIR: /data/received
+    volumes:
+      - ./tmp/integration_transmissions/webhook:/data/received
