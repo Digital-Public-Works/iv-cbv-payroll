@@ -19,7 +19,7 @@ exports[`ArgyleModalAdapter > event:other > logs ApplicantClickedArgyleLoginHelp
 }
 `;
 
-exports[`ArgyleModalAdapter > event:other > logs ApplicantClosedArgyleLinkFromErrorScreen for link closed event 1`] = `
+exports[`ArgyleModalAdapter > event:other > logs ApplicantClosedArgyleLinkFromErrorScreen when closed after link error screen 1`] = `
 {
   "argyle.eventName": "link closed",
   "argyle.userId": "test-user-id",

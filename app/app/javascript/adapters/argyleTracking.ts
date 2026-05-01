@@ -44,6 +44,15 @@ function loginEventToTrackingName(properties: ArgyleUIEvent["properties"]): stri
   return "ApplicantViewedArgyleLoginPage"
 }
 
+// Returns true if the UI event represents an error screen the user may have seen.
+export function isArgyleErrorEvent(event: ArgyleUIEvent): boolean {
+  if (event.name === "error - opened") return true
+  if (event.name === "account error - opened") return true
+  if (event.name === "login - opened" && event.properties.errorCode != null) return true
+
+  return false
+}
+
 // Convert Argyle UI events to tracking event names
 export function argyleUIEventToTrackingName(event: ArgyleUIEvent): string {
   switch (event.name) {
