@@ -70,15 +70,14 @@ class Report::GigMonthlySummaryTableComponent < ViewComponent::Base
     year = parse_month_safely(month_string).year
     cents_per_mile = self.federal_cents_per_mile(year)
 
-    # Note: we need to round miles to dollars x miles rate displayed
-    format_money(month_summary[:total_mileage].to_f.round(0) * cents_per_mile)
+    format_money(month_summary[:total_mileage].to_f * cents_per_mile)
   end
 
   def format_verified_mileage_expense_rate(month_summary, month_string)
     year = parse_month_safely(month_string).year
     cents_per_mile = self.federal_cents_per_mile(year)
     t("components.report.monthly_summary_table.dollars_times_miles",
-      dollar_amount: format_money_with_subcents(cents_per_mile), number_of_miles: month_summary[:total_mileage].to_f.round(0))
+      dollar_amount: format_money_with_subcents(cents_per_mile), number_of_miles: number_with_precision(month_summary[:total_mileage].to_f, precision: 2, strip_insignificant_zeros: true))
   end
 
   def format_total_gig_hours(month_summary)
