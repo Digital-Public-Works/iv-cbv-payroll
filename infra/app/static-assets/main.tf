@@ -6,7 +6,7 @@ data "aws_route53_zone" "zone" {
 }
 
 data "aws_acm_certificate" "wildcard" {
-  domain   = "*.verifymyincome.org"
+  domain   = "verifymyincome.org"
   statuses = ["ISSUED"]
 }
 
