@@ -22,6 +22,12 @@ class PartnerConfigLoader
 
   REQUIRED_ATTRS = %w[partner_id name timezone transmission_method pay_income_days_w2 pay_income_days_gig].freeze
 
+  # Subdomain prefixes reserved for non-partner infrastructure. A partner
+  # claiming one of these would never receive traffic — DNS for the
+  # subdomain points elsewhere (e.g. `static` is the CloudFront-fronted
+  # static-assets CDN).
+  RESERVED_DOMAIN_PREFIXES = %w[static].freeze
+
   VALID_TRANSMISSION_METHODS = PartnerConfig.transmission_methods.keys.freeze
   VALID_DATA_TYPES = PartnerApplicationAttribute.data_types.keys.freeze
   VALID_PAY_INCOME_DAYS = [ 90, 182 ].freeze
@@ -68,6 +74,7 @@ class PartnerConfigLoader
     validate_required_attrs
     validate_transmission_method
     validate_pay_income_days
+    validate_domain
     validate_transmission_configs
     validate_application_attributes
     validate_translations
@@ -225,6 +232,14 @@ class PartnerConfigLoader
       unless VALID_PAY_INCOME_DAYS.include?(val.to_i)
         @errors << "Invalid #{attr} '#{val}'. Valid: #{VALID_PAY_INCOME_DAYS.join(', ')}"
       end
+    end
+  end
+
+  def validate_domain
+    domain = @data[:domain]
+    return if domain.blank?
+    if RESERVED_DOMAIN_PREFIXES.include?(domain.to_s.downcase)
+      @errors << "Invalid domain '#{domain}'. Reserved prefixes: #{RESERVED_DOMAIN_PREFIXES.join(', ')}"
     end
   end
 
