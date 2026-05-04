@@ -153,12 +153,12 @@ RSpec.describe Report::GigMonthlySummaryTableComponent, type: :component do
         subject = render_inline(described_class.new(argyle_report, payroll_account))
 
         expect(subject.css("thead tr.subheader-row th:nth-child(3)").to_html).to include "Verified mileage expenses"
-        expect(subject.css("tbody tr:nth-child(1) td:nth-child(3)").to_html).to include "$58.10"
-        expect(subject.css("tbody tr:nth-child(1) td:nth-child(3)").to_html).to include "($0.70 x 83 miles)"
-        expect(subject.css("tbody tr:nth-child(2) td:nth-child(3)").to_html).to include "$431.90"
-        expect(subject.css("tbody tr:nth-child(2) td:nth-child(3)").to_html).to include "($0.70 x 617 miles)"
-        expect(subject.css("tbody tr:nth-child(3) td:nth-child(3)").to_html).to include "$91.70"
-        expect(subject.css("tbody tr:nth-child(3) td:nth-child(3)").to_html).to include "($0.70 x 131 miles)"
+        expect(subject.css("tbody tr:nth-child(1) td:nth-child(3)").to_html).to include "$58.40"
+        expect(subject.css("tbody tr:nth-child(1) td:nth-child(3)").to_html).to include "($0.70 x 83.43 miles)"
+        expect(subject.css("tbody tr:nth-child(2) td:nth-child(3)").to_html).to include "$431.73"
+        expect(subject.css("tbody tr:nth-child(2) td:nth-child(3)").to_html).to include "($0.70 x 616.75 miles)"
+        expect(subject.css("tbody tr:nth-child(3) td:nth-child(3)").to_html).to include "$91.99"
+        expect(subject.css("tbody tr:nth-child(3) td:nth-child(3)").to_html).to include "($0.70 x 131.41 miles)"
       end
 
       it "emphasizes 'Definition names' in the explanation" do
