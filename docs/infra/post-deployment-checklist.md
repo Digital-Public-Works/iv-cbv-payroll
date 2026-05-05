@@ -41,7 +41,7 @@ Use this checklist after deploying infrastructure and application to ensure all 
 
 ### Application Features
 - [ ] **Background jobs enabled** - `ACTIVEJOB_ENABLED=true`
-- [ ] **Mission Control dashboard accessible** at `/jobs` endpoint
+- [ ] **Shoryuken worker running** - check ECS service `app-{env}-worker` is healthy and SQS messages are being consumed
 - [ ] **Supported providers configured** - `SUPPORTED_PROVIDERS` set appropriately
 - [ ] **Maintenance mode disabled** - `MAINTENANCE_MODE=false`
 
