@@ -5,6 +5,11 @@ class Api::InvitationsController < ApplicationController
   before_action :authenticate
 
   def create
+    missing = missing_required_metadata_keys
+    if missing.any?
+      return render json: missing_required_errors(missing), status: :bad_request
+    end
+
     cbv_flow_invitation = CbvInvitationService.new(event_logger)
       .invite(cbv_flow_invitation_params, @current_user, delivery_method: nil)
 
@@ -19,35 +24,81 @@ class Api::InvitationsController < ApplicationController
       tokenized_url: cbv_flow_invitation.to_url,
       expiration_date: cbv_flow_invitation.expires_at_local,
       language: cbv_flow_invitation.language
-      # TODO: Determine if we actually want to echo this data back, maybe should be config param?
-      # agency_partner_metadata: allowed_metadata_params
     }, status: :created
   end
 
   private
 
+  def partner_config
+    @partner_config ||= ClientAgencyConfig.instance[@current_user.client_agency_id]
+  end
+
   def cbv_flow_invitation_params
     client_agency_id = @current_user.client_agency_id
 
-    # Permit top-level params of the invitation itself, while merging back in
-    # the allowed applicant attributes.
-    permitted = params.without(:client_agency_id, :agency_partner_metadata).permit(:language, :email_address, :user_id, :expiration_date, :expiration_days)
+    # Top-level invitation params (language, email, expiration).
+    permitted = params.without(:client_agency_id, :agency_partner_metadata).permit(
+      :language, :email_address, :user_id, :expiration_date, :expiration_days
+    )
+
+    # Split the incoming agency_partner_metadata hash by destination on
+    # cbv_applicants:
+    #   - The key matching `partner_identifier_name` → partner_identifier column.
+    #   - Keys that match real columns (date_of_birth, snap_application_date, etc.)
+    #     → assigned directly to those columns.
+    #   - Everything else → packed into the agency_partner_metadata jsonb.
+    incoming = unsafe_metadata_hash
+    identifier_name = partner_config.partner_identifier_name
+    real_columns = CbvApplicant.column_names
+
+    partner_identifier_value = nil
+    metadata = {}
+    direct_column_assignments = {}
+
+    partner_config.applicant_attributes.keys.each do |name|
+      key = name.to_s
+      value = incoming[name]
+      if identifier_name.present? && key == identifier_name.to_s
+        partner_identifier_value = value
+      elsif real_columns.include?(key)
+        direct_column_assignments[key.to_sym] = value
+      else
+        metadata[key] = value
+      end
+    end
+
+    cbv_applicant_attrs = {
+      client_agency_id: client_agency_id,
+      partner_identifier: partner_identifier_value,
+      agency_partner_metadata: metadata
+    }.merge(direct_column_assignments)
+
     permitted.deep_merge!(
       client_agency_id: client_agency_id,
       email_address: @current_user.email,
-      cbv_applicant_attributes: {
-        client_agency_id: client_agency_id,
-        **allowed_metadata_params.permit!
-      }
+      cbv_applicant_attributes: cbv_applicant_attrs
     )
   end
 
-  def allowed_metadata_params
-    # Allow params in the VALID_ATTRIBUTES array for the relevant agency
-    # CbvApplicant subclass.
-    ActionController::Parameters.new(
-      CbvApplicant.build_agency_partner_metadata(@current_user.client_agency_id) { |attr| params[:agency_partner_metadata][attr] }
-    )
+  def missing_required_metadata_keys
+    incoming = unsafe_metadata_hash
+    required_attrs = partner_config.applicant_attributes.select { |_name, attr| attr.required }
+    required_attrs.keys.reject { |name| incoming[name].present? }
+  end
+
+  # create output matching the expected data, drop anything unexpected.
+  def unsafe_metadata_hash
+    raw = params[:agency_partner_metadata]
+    return {} if raw.blank?
+    raw.respond_to?(:to_unsafe_h) ? raw.to_unsafe_h : raw.to_h
+  end
+
+  def missing_required_errors(missing)
+    {
+      errors: missing.map do |name|
+        { field: "agency_partner_metadata.#{name}", message: "is required" }
+      end
+    }
   end
 
   def authenticate

@@ -51,7 +51,7 @@ class Cbv::ApplicantInformationsController < Cbv::BaseController
 
     return unless params[:skip_edit] == "true"
 
-    redirect_to next_path unless @cbv_applicant.has_applicant_attribute_missing?
+    redirect_to next_path if @cbv_applicant.missing_required_attributes.empty?
   end
 
   def redirect_when_in_invitation_flow

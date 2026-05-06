@@ -537,22 +537,30 @@ RSpec.describe DataRetentionService do
     end
   end
 
-  describe ".manually_redact_by_case_number!" do
-    let(:cbv_flow_invitation) { create(:cbv_flow_invitation, cbv_applicant_attributes: { case_number: "DELETEME001" }) }
+  describe ".manually_redact_by_partner_identifier!" do
+    let(:cbv_flow_invitation) do
+      create(:cbv_flow_invitation, client_agency_id: "sandbox",
+        cbv_applicant_attributes: { client_agency_id: "sandbox", case_number: "DELETEME001" })
+    end
     let!(:cbv_flow) { CbvFlow.create_from_invitation(cbv_flow_invitation, "test_device_id") }
     let!(:second_cbv_flow) { CbvFlow.create_from_invitation(cbv_flow_invitation, "test_device_id_2") }
     let!(:payroll_account) { create(:payroll_account, cbv_flow: second_cbv_flow) }
 
-    it "redacts the invitation and all flow objects" do
-      DataRetentionService.manually_redact_by_case_number!("DELETEME001")
+    it "redacts the invitation, all flow objects, and the metadata jsonb keys flagged redactable" do
+      DataRetentionService.manually_redact_by_partner_identifier!("sandbox", "DELETEME001")
 
       expect(cbv_flow.reload).to have_attributes(
         redacted_at: within(1.second).of(Time.now)
       )
-      expect(cbv_flow.cbv_applicant.reload).to have_attributes(
-        first_name: "REDACTED",
-        redacted_at: within(1.second).of(Time.now)
-      )
+
+      applicant = cbv_flow.cbv_applicant.reload
+      expect(applicant.redacted_at).to be_within(1.second).of(Time.now)
+
+      expect(applicant.first_name).to eq("REDACTED")
+      expect(applicant.agency_partner_metadata).to include("first_name" => "REDACTED")
+
+      expect(applicant.partner_identifier).to eq("DELETEME001")
+
       expect(second_cbv_flow.reload).to have_attributes(
         redacted_at: within(1.second).of(Time.now)
       )
@@ -564,6 +572,52 @@ RSpec.describe DataRetentionService do
       )
     end
 
+    it "redacts every matching applicant when the same partner_identifier value is reused within an agency" do
+      duplicate_invitation = create(:cbv_flow_invitation, client_agency_id: "sandbox",
+        cbv_applicant_attributes: { client_agency_id: "sandbox", case_number: "DELETEME001" })
+      duplicate_flow = CbvFlow.create_from_invitation(duplicate_invitation, "another_device")
+
+      DataRetentionService.manually_redact_by_partner_identifier!("sandbox", "DELETEME001")
+
+      expect(duplicate_flow.reload.redacted_at).to be_within(1.second).of(Time.now)
+      expect(duplicate_flow.cbv_applicant.reload.redacted_at).to be_within(1.second).of(Time.now)
+    end
+
+    it "does not touch applicants with the same partner_identifier in a different agency" do
+      other_agency_invitation = create(:cbv_flow_invitation, :az_des,
+        cbv_applicant_attributes: { client_agency_id: "az_des", case_number: "DELETEME001",
+                                     first_name: "Other", last_name: "Person" })
+      other_flow = CbvFlow.create_from_invitation(other_agency_invitation, "az_device")
+
+      DataRetentionService.manually_redact_by_partner_identifier!("sandbox", "DELETEME001")
+
+      expect(other_flow.reload.redacted_at).to be_nil
+      expect(other_flow.cbv_applicant.reload.redacted_at).to be_nil
+      expect(other_flow.cbv_applicant.partner_identifier).to eq("DELETEME001")
+    end
+
+    it "raises when no applicant matches" do
+      expect {
+        DataRetentionService.manually_redact_by_partner_identifier!("sandbox", "DOES_NOT_EXIST")
+      }.to raise_error(ActiveRecord::RecordNotFound)
+    end
+
+    context "when the agency's partner_identifier_name attribute is also flagged redactable" do
+      before do
+        sandbox_config = PartnerConfig.find_by(partner_id: "sandbox")
+        PartnerApplicationAttribute
+          .where(partner_config: sandbox_config, name: "case_number")
+          .update_all(redactable: true, redact_type: "string")
+        ClientAgencyConfig.reset!
+      end
+
+      it "redacts the partner_identifier column" do
+        DataRetentionService.manually_redact_by_partner_identifier!("sandbox", "DELETEME001")
+
+        expect(cbv_flow.cbv_applicant.reload.partner_identifier).to eq("REDACTED")
+      end
+    end
+
     context "when a flow has an argyle_user_id" do
       before do
         second_cbv_flow.update!(argyle_user_id: "argyle_manual_123", client_agency_id: "sandbox")
@@ -571,7 +625,7 @@ RSpec.describe DataRetentionService do
 
       it "deletes the argyle user" do
         expect_any_instance_of(DataRetentionService).to receive(:delete_argyle_user).with("sandbox", "argyle_manual_123")
-        DataRetentionService.manually_redact_by_case_number!("DELETEME001")
+        DataRetentionService.manually_redact_by_partner_identifier!("sandbox", "DELETEME001")
       end
     end
   end
@@ -606,26 +660,6 @@ RSpec.describe DataRetentionService do
         expect { service.send(:redact_cbv_flow, cbv_flow) }.to raise_error(StandardError)
         expect(cbv_flow.reload.redacted_at).to be_nil
       end
-    end
-  end
-
-  describe ".redact_case_numbers_by_agency" do
-    let(:agency_to_redact) { "sandbox" }
-    let!(:cbv_flow_invitation) { create(:cbv_flow_invitation, cbv_applicant_attributes: { case_number: "DELETEME001", client_agency_id: agency_to_redact }) }
-    let!(:cbv_flow_invitation2) { create(:cbv_flow_invitation, cbv_applicant_attributes: { case_number: "DELETEME002", client_agency_id: agency_to_redact }) }
-    let!(:cbv_flow) { CbvFlow.create_from_invitation(cbv_flow_invitation, "test_device_id") }
-    let!(:cbv_flow2) { CbvFlow.create_from_invitation(cbv_flow_invitation2, "test_device_id_2") }
-
-    it "redacts all case numbers for a given agency" do
-      DataRetentionService.redact_case_numbers_by_agency(agency_to_redact)
-      expect(cbv_flow.cbv_applicant.reload).to have_attributes(
-        case_number: "REDACTED",
-        redacted_at: within(1.second).of(Time.now)
-      )
-      expect(cbv_flow2.cbv_applicant.reload).to have_attributes(
-        case_number: "REDACTED",
-        redacted_at: within(1.second).of(Time.now)
-      )
     end
   end
 end

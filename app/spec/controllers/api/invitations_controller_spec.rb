@@ -136,10 +136,10 @@ RSpec.describe Api::InvitationsController do
         valid_params
       end
 
-      it "returns unprocessable entity with structured error response" do
+      it "returns bad request with structured error response when a required attribute is missing" do
         post :create, params: invalid_params
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:bad_request)
         parsed_response = JSON.parse(response.body)
 
         # Check for structured error response
@@ -150,7 +150,7 @@ RSpec.describe Api::InvitationsController do
         error_fields = parsed_response["errors"].map { |e| e["field"] }
 
         expect(error_fields).not_to include("cbv_applicant")
-        expect(error_fields).to include("cbv_applicant.first_name")
+        expect(error_fields).to include("agency_partner_metadata.first_name")
       end
     end
 

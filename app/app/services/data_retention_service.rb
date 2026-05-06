@@ -84,12 +84,19 @@ class DataRetentionService
     end
   end
 
-  # Use after conducting a user test or other time we want to manually redact a
-  # specific person's data in the system. Class level method for calling from terminal.
-  def self.manually_redact_by_case_number!(case_number)
+  # manually redact all instances of a specific identifier for a partner. the partner identifier is not unique per partner (could create more
+  # than one invitation for a single applicant). This is a manual way to redact records.
+  def self.manually_redact_by_partner_identifier!(client_agency_id, partner_identifier)
+    applicants = CbvApplicant.where(
+      client_agency_id: client_agency_id,
+      partner_identifier: partner_identifier
+    )
+    raise ActiveRecord::RecordNotFound, "No CbvApplicant found for client_agency_id=#{client_agency_id.inspect} partner_identifier=#{partner_identifier.inspect}" if applicants.empty?
+
     service = new
-    applicant = CbvApplicant.find_by!(case_number: case_number)
-    applicant.cbv_flows.each { |cbv_flow| service.send(:redact_cbv_flow, cbv_flow) }
+    applicants.find_each do |applicant|
+      applicant.cbv_flows.each { |cbv_flow| service.send(:redact_cbv_flow, cbv_flow) }
+    end
   end
 
   private
@@ -120,15 +127,5 @@ class DataRetentionService
 
     Rails.logger.error "Unable to delete Argyle User #{argyle_user_id} - #{ex.message}"
     GenericEventTracker.new.track("DataRedactionFailure", nil, { argyle_user_id: argyle_user_id })
-  end
-
-  # retroactive redaction for case numbers by agency
-  # TODO: This is a one off. Should be updated to just be something like retroactive_redact(agency_id,field_name)
-  def self.redact_case_numbers_by_agency(agency_id)
-    applicants = CbvApplicant.where(client_agency_id: agency_id)
-    applicants.find_each(batch_size: 200) do |applicant|
-      applicant.redact!({ case_number: :string })
-    end
-    Rails.logger.info "Redacted #{applicants.length} applicants"
   end
 end

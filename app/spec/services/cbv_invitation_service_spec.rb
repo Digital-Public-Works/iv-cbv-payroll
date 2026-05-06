@@ -24,11 +24,9 @@ RSpec.describe CbvInvitationService, type: :service do
         )
 
         invitation = CbvFlowInvitation.last
-        expect(invitation).to have_attributes(
-          user: current_user,
-          cbv_applicant: have_attributes(
-            case_number: cbv_flow_invitation_params[:case_number]
-          )
+        expect(invitation.user).to eq(current_user)
+        expect(invitation.cbv_applicant.case_number).to eq(
+          cbv_flow_invitation_params[:cbv_applicant_attributes][:case_number]
         )
       end
 
@@ -71,11 +69,9 @@ RSpec.describe CbvInvitationService, type: :service do
         )
 
         invitation = CbvFlowInvitation.last
-        expect(invitation).to have_attributes(
-          user: current_user,
-          cbv_applicant: have_attributes(
-            case_number: cbv_flow_invitation_params[:case_number]
-          )
+        expect(invitation.user).to eq(current_user)
+        expect(invitation.cbv_applicant.case_number).to eq(
+          cbv_flow_invitation_params[:cbv_applicant_attributes][:case_number]
         )
       end
 

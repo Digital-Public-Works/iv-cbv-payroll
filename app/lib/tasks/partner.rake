@@ -43,10 +43,4 @@ namespace :partner do
     end
   end
 
-  desc "redact case numbers for a partner"
-  task :redact_case_numbers, [ :partner_id ] => :environment do |_t, args|
-    partner_id = args.fetch(:partner_id)
-    Rails.logger.info "Redacting case-numbers for #{partner_id}..."
-    DataRetentionService.redact_case_numbers_by_agency(partner_id)
-  end
 end
