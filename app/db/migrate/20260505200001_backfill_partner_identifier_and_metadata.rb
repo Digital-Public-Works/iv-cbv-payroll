@@ -21,7 +21,6 @@ class BackfillPartnerIdentifierAndMetadata < ActiveRecord::Migration[7.2]
       UPDATE partner_configs
       SET partner_identifier_name = 'case_number'
       WHERE partner_identifier_name IS NULL
-        AND partner_id <> 'mirza'
     SQL
   end
 
