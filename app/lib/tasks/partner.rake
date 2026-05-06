@@ -42,5 +42,4 @@ namespace :partner do
       MatchAgencyNamesJob.perform_now(cbv_flow.id)
     end
   end
-
 end

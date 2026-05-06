@@ -43,7 +43,21 @@ class Cbv::ApplicantInformationsController < Cbv::BaseController
       attr == :date_of_birth ? { date_of_birth: [ :day, :month, :year ] } : attr
     }
 
-    params.fetch("cbv_applicant_#{@cbv_flow.client_agency_id}", {}).permit(cbv_applicant: permitted)
+    parsed = params.fetch("cbv_applicant_#{@cbv_flow.client_agency_id}", {})
+                   .permit(cbv_applicant: permitted)
+
+    # HTML forms send "" for empty inputs. CbvApplicant treats only literal
+    # `nil` as missing, so coerce blank scalar values to nil before
+    # mass-assignment to preserve form-validation UX. API callers (which
+    # don't go through this controller) can still send any non-nil value.
+    cbv_attrs = parsed[:cbv_applicant]
+    if cbv_attrs.is_a?(ActionController::Parameters)
+      cbv_attrs.each do |key, val|
+        cbv_attrs[key] = nil if val.is_a?(String) && val.empty?
+      end
+    end
+
+    parsed
   end
 
   def redirect_when_info_present
