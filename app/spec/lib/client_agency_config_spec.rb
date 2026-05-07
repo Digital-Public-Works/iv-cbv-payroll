@@ -17,7 +17,8 @@ RSpec.describe ClientAgencyConfig do
       transmission_method: 'shared_email',
       argyle_environment: 'foo',
       pay_income_days_w2: 90,
-      pay_income_days_gig: 182
+      pay_income_days_gig: 182,
+      partner_identifier_name: 'first_name'
     )
   end
 

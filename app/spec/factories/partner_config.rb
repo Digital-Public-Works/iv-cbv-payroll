@@ -22,6 +22,7 @@ FactoryBot.define do
     weekly_report_variant { "invitations" }
     invitation_valid_days_default { 14 }
     report_customization_show_earnings_list { true }
+    partner_identifier_name { "case_number" }
 
     trait :az_des do
       partner_id { "az_des" }

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_04_01_210743) do
+ActiveRecord::Schema[7.2].define(version: 2026_05_05_200002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -24,10 +24,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_01_210743) do
   end
 
   create_table "cbv_applicants", force: :cascade do |t|
-    t.string "case_number"
-    t.string "first_name"
-    t.string "middle_name"
-    t.string "last_name"
     t.string "agency_id_number"
     t.string "client_id_number"
     t.date "snap_application_date"
@@ -39,6 +35,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_01_210743) do
     t.jsonb "income_changes"
     t.date "date_of_birth"
     t.string "doc_id"
+    t.jsonb "agency_partner_metadata", default: {}, null: false
+    t.string "partner_identifier"
+    t.index ["partner_identifier"], name: "index_cbv_applicants_on_partner_identifier"
   end
 
   create_table "cbv_flow_invitations", force: :cascade do |t|
@@ -122,6 +121,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_01_210743) do
     t.datetime "updated_at", null: false
     t.boolean "include_invitation_details_on_weekly_report", default: false, null: false
     t.string "state_name"
+    t.string "partner_identifier_name"
     t.index ["partner_id"], name: "index_partner_configs_on_partner_id", unique: true
   end
 

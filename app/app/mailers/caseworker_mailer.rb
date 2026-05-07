@@ -6,13 +6,13 @@ class CaseworkerMailer < ApplicationMailer
 
   def summary_email
     timestamp = Time.now.strftime("%Y%m%d%H%M%S")
-    case_number = @cbv_flow.cbv_applicant.case_number
-    filename = "#{case_number}_#{timestamp}_income_verification.pdf"
+    partner_identifier = @cbv_flow.cbv_applicant.partner_identifier
+    filename = "#{partner_identifier}_#{timestamp}_income_verification.pdf"
     attachments[filename] = generate_pdf
     mail(
       to: @email_address,
       subject: view_context.agency_translation("caseworker_mailer.summary_email.subject",
-                                case_number: case_number,
+                                case_number: partner_identifier,
                                 confirmation_code: @cbv_flow.confirmation_code),
     )
   end

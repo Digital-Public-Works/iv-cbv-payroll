@@ -146,6 +146,7 @@ class ClientAgencyConfig
       require_applicant_information_on_invitation
       include_invitation_details_on_weekly_report
       state_name
+      partner_identifier_name
     ])
 
     def initialize(partner_config)
@@ -189,6 +190,7 @@ class ClientAgencyConfig
       @include_invitation_details_on_weekly_report = partner_config.respond_to?(:include_invitation_details_on_weekly_report) &&
         partner_config.include_invitation_details_on_weekly_report
       @state_name = partner_config.respond_to?(:state_name) ? partner_config.state_name : nil
+      @partner_identifier_name = partner_config.partner_identifier_name
 
       raise ArgumentError.new("Client Agency missing id") if @id.blank?
       raise ArgumentError.new("Client Agency #{@id} missing required attribute `timezone`") if @timezone.blank?
@@ -196,17 +198,14 @@ class ClientAgencyConfig
       raise ArgumentError.new("Client Agency #{@id} invalid value for pay_income_days.w2") unless VALID_PAY_INCOME_DAYS.include?(@pay_income_days[:w2])
       raise ArgumentError.new("Client Agency #{@id} invalid value for pay_income_days.gig") unless VALID_PAY_INCOME_DAYS.include?(@pay_income_days[:gig])
       raise ArgumentError.new("Client Agency #{@id} missing required attribute `transmission_method`") if @transmission_method.blank?
-    end
-
-    def self.case_number(cbv_flow)
-      cbv_flow.cbv_applicant.case_number.rjust(8, "0")
+      raise ArgumentError.new("Client Agency #{@id} missing required attribute `partner_identifier_name`") if @partner_identifier_name.blank?
     end
 
     def pdf_filename(cbv_flow, time)
       time = time.in_time_zone(timezone)
 
-      padded_case_number = cbv_flow.cbv_applicant.case_number.rjust(8, "0")
-      "CBVPilot_#{padded_case_number}_" \
+      padded_identifier = cbv_flow.cbv_applicant.partner_identifier.to_s.rjust(8, "0")
+      "CBVPilot_#{padded_identifier}_" \
         "#{time.strftime('%Y%m%d')}_" \
         "Conf#{cbv_flow.confirmation_code}"
     end
