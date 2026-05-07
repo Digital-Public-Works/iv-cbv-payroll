@@ -14,8 +14,8 @@ class Transmitters::EncryptedS3Transmitter
     end
 
     time_now = Time.now
-    beginning_date = (Date.parse(@aggregator_report.from_date).strftime("%b") rescue @aggregator_report.from_date)
-    ending_date = (Date.parse(@aggregator_report.to_date).strftime("%b%Y") rescue @aggregator_report.to_date)
+    beginning_date = @aggregator_report.from_date.to_date.strftime("%b")
+    ending_date = @aggregator_report.to_date.to_date.strftime("%b%Y")
     @file_name = "IncomeReport_#{@cbv_flow.cbv_applicant.partner_identifier}_" \
       "#{beginning_date}-#{ending_date}_" \
       "Conf#{@cbv_flow.confirmation_code}_" \
