@@ -260,15 +260,20 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
       before do
         allow(S3Service).to receive(:new).and_return(s3_service_double)
         allow(s3_service_double).to receive(:upload_file)
+        allow(mock_client_agency).to receive(:partner_identifier_name).and_return("case_number")
+        allow(mock_client_agency).to receive(:applicant_attributes).and_return({
+          "case_number" => double(required: true),
+          "first_name"  => double(required: false),
+          "last_name"   => double(required: false)
+        })
       end
 
-      it "generates, gzips, encrypts, and uploads PDF and CSV files to S3" do
-        agency_id_number = cbv_applicant.agency_id_number
-        beacon_id = cbv_applicant.beacon_id
+      it "uses partner_identifier for the filename and identifier-keyed CSV column" do
+        partner_identifier_value = cbv_applicant.partner_identifier
 
         expect(s3_service_double).to receive(:upload_file).once do |file_path, file_name|
           expect(file_path).to end_with('.gpg')
-          expect(file_name).to start_with("outfiles/IncomeReport_#{cbv_applicant.agency_id_number}_")
+          expect(file_name).to start_with("outfiles/IncomeReport_#{partner_identifier_value}_")
           expect(file_name).to end_with('.tar.gz.gpg')
           expect(File.exist?(file_path)).to be true
         end
@@ -276,14 +281,16 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
         expect(CSV).to receive(:generate).and_wrap_original do |original_method, *args, &block|
           csv_content = original_method.call(*args, &block)
           csv_rows = CSV.parse(csv_content, headers: true)
-          expect(csv_rows[0]["client_id"]).to eq(agency_id_number)
+          # First column header is named after the agency's
+          # partner_identifier_name; value comes from the partner_identifier column.
+          expect(csv_rows[0]["case_number"]).to eq(partner_identifier_value)
+          # Vestigial legacy column names should not be present.
+          expect(csv_rows[0].headers).not_to include("client_id")
           csv_content
         end
 
         cbv_flow.update(client_agency_id: "sandbox")
         cbv_applicant.update(client_agency_id: "sandbox")
-        cbv_applicant.update(beacon_id: beacon_id)
-        cbv_applicant.update(agency_id_number: agency_id_number)
 
         described_class.new.perform(cbv_flow.id)
       end

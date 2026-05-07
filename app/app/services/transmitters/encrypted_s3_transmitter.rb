@@ -16,7 +16,7 @@ class Transmitters::EncryptedS3Transmitter
     time_now = Time.now
     beginning_date = (Date.parse(@aggregator_report.from_date).strftime("%b") rescue @aggregator_report.from_date)
     ending_date = (Date.parse(@aggregator_report.to_date).strftime("%b%Y") rescue @aggregator_report.to_date)
-    @file_name = "IncomeReport_#{@cbv_flow.cbv_applicant.agency_id_number}_" \
+    @file_name = "IncomeReport_#{@cbv_flow.cbv_applicant.partner_identifier}_" \
       "#{beginning_date}-#{ending_date}_" \
       "Conf#{@cbv_flow.confirmation_code}_" \
       "#{time_now.strftime('%Y%m%d%H%M%S')}"
@@ -61,26 +61,33 @@ class Transmitters::EncryptedS3Transmitter
     end
   end
 
+  # Builds the CSV from the agency's declared `applicant_attributes`.
   def generate_csv
     payroll_account = PayrollAccount.find_by(cbv_flow_id: @cbv_flow.id)
+    applicant = @cbv_flow.cbv_applicant
+    identifier_name = @current_agency.partner_identifier_name.to_s
 
-    data = {
-      client_id: @cbv_flow.cbv_applicant.agency_id_number,
-      first_name: @cbv_flow.cbv_applicant.first_name,
-      last_name: @cbv_flow.cbv_applicant.last_name,
-      middle_name: @cbv_flow.cbv_applicant.middle_name,
-      client_email_address: @cbv_flow.cbv_flow_invitation.email_address,
-      beacon_userid: @cbv_flow.cbv_applicant.beacon_id,
-      app_date: @cbv_flow.cbv_applicant.snap_application_date.strftime("%m/%d/%Y"),
-      report_date_created: payroll_account.created_at.strftime("%m/%d/%Y"),
+    data = { identifier_name.to_sym => applicant.partner_identifier }
+
+    # create column for all custom fields as long as they are not the identifier field
+    @current_agency.applicant_attributes.each do |name, _attr|
+      next if name.to_s == identifier_name
+      data[name.to_sym] = applicant.send(name)
+    end
+
+    # build the records
+    data.merge!(
+      client_email_address: @cbv_flow.cbv_flow_invitation&.email_address,
+      report_date_created: payroll_account&.created_at&.strftime("%m/%d/%Y"),
       confirmation_code: @cbv_flow.confirmation_code,
-      consent_timestamp: @cbv_flow.consented_to_authorized_use_at.strftime("%m/%d/%Y %H:%M:%S"),
+      consent_timestamp: @cbv_flow.consented_to_authorized_use_at&.strftime("%m/%d/%Y %H:%M:%S"),
       pdf_filename: "#{@file_name}.pdf",
       pdf_filetype: "application/pdf",
       pdf_filesize: pdf_output.file_size,
       pdf_number_of_pages: pdf_output.page_count
-    }
+    )
 
+    # call the csvhelper and generate the csv stream
     create_csv(data)
   end
 
