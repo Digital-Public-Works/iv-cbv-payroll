@@ -40,10 +40,9 @@ class ClientAgencyConfig
   end
 
   def initialize(load_all_agency_configs)
-    # This code runs during every boot of the app, including the migrations necessary top create the partner_configs table.
-    # Skip if the table hasn't been created yet.
-    # The partner application attributes are added last, so if they are not present, the db is missing tables needed to initialize from db configuration.
-    return unless ActiveRecord::Base.connection.data_source_exists?(:partner_application_attributes)
+    # This runs during bootup even before migrations. this is a temp guard until these migrations are made
+    # TODO: make this less brittle
+    return unless ActiveRecord::Base.connection.column_exists?(:partner_configs, :partner_identifier_name)
 
     @client_agencies = PartnerConfig.all.each_with_object({}) do |config, h|
       next unless load_all_agency_configs ||
