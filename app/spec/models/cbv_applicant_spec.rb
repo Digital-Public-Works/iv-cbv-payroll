@@ -9,24 +9,30 @@ RSpec.describe CbvApplicant, type: :model do
     end
   end
 
-  describe "#has_applicant_attribute_missing?" do
+  describe "#missing_required_attributes" do
     before do
+      # Include a subset of attributes for testing, mark first_name as required for test purposes
       allow_any_instance_of(ClientAgencyConfig::ClientAgency).to receive(:applicant_attributes).and_return(
-        { first_name: "required" }
+        {
+          "case_number" => "required",
+          "first_name" => "required",
+          "middle_name" => "",
+          "last_name" => ""
+        }
       )
     end
 
     let(:cbv_applicant) { create(:cbv_applicant, first_name: nil) }
-    it "returns true if a field missing" do
+    it "includes the missing required attribute names" do
       cbv_applicant.set_applicant_attributes
       expect(cbv_applicant.required_applicant_attributes).to be_present
-      expect(cbv_applicant.has_applicant_attribute_missing?).to eq(true)
+      expect(cbv_applicant.missing_required_attributes).to include(:first_name)
     end
 
-    it "returns false if a field not missing" do
+    it "returns an empty array when all required attributes are present" do
       cbv_applicant.set_applicant_attributes
       cbv_applicant.first_name = "Dean Venture"
-      expect(cbv_applicant.has_applicant_attribute_missing?).to eq(false)
+      expect(cbv_applicant.missing_required_attributes).to be_empty
     end
   end
 
@@ -34,7 +40,7 @@ RSpec.describe CbvApplicant, type: :model do
     let(:date_of_birth) { build(:cbv_applicant).date_of_birth }
 
     it "returns an array of symbols containing the missing field keys" do
-      cbv_applicant_without_case_number = build(:cbv_applicant, :sandbox, middle_name: nil)
+      cbv_applicant_without_case_number = build(:cbv_applicant, :sandbox, middle_name: nil, case_number: nil)
       cbv_applicant_without_case_number.set_applicant_attributes
       expect(cbv_applicant_without_case_number.required_applicant_attributes).to be_present
       expect(cbv_applicant_without_case_number.case_number).to be_nil
@@ -256,8 +262,11 @@ RSpec.describe CbvApplicant, type: :model do
         before do
           allow_any_instance_of(ClientAgencyConfig::ClientAgency).to receive(:applicant_attributes).and_return(
             {
-              first_name: { "required" => true },
-              date_of_birth: { "required" => true, "type" => "date" }
+              "case_number" => { "required" => false },
+              "first_name" => { "required" => true },
+              "middle_name" => { "required" => false },
+              "last_name" => { "required" => false },
+              "date_of_birth" => { "required" => true, "type" => "date" }
             }
           )
         end

@@ -18,9 +18,10 @@ class PartnerConfigLoader
     weekly_report_enabled weekly_report_recipients weekly_report_variant
     include_invitation_details_on_weekly_report
     transmission_method
+    partner_identifier_name
   ].freeze
 
-  REQUIRED_ATTRS = %w[partner_id name timezone transmission_method pay_income_days_w2 pay_income_days_gig].freeze
+  REQUIRED_ATTRS = %w[partner_id name timezone transmission_method pay_income_days_w2 pay_income_days_gig partner_identifier_name].freeze
 
   # Subdomain prefixes reserved for non-partner infrastructure. A partner
   # claiming one of these would never receive traffic — DNS for the
@@ -77,6 +78,7 @@ class PartnerConfigLoader
     validate_domain
     validate_transmission_configs
     validate_application_attributes
+    validate_partner_identifier_name
     validate_translations
 
     self
@@ -266,6 +268,18 @@ class PartnerConfigLoader
         @errors << "application_attributes[#{i}]: duplicate name '#{attr[:name]}'"
       end
       names << attr[:name]
+    end
+  end
+
+  def validate_partner_identifier_name
+    name = @data[:partner_identifier_name]
+    return if name.blank?
+    attrs = @data[:application_attributes] || []
+    matching = attrs.find { |a| a[:name].to_s == name.to_s }
+    if matching.nil?
+      @errors << "partner_identifier_name '#{name}' must be defined as an entry in application_attributes"
+    elsif !matching[:required]
+      @errors << "partner_identifier_name '#{name}' must reference an application_attribute with required: true"
     end
   end
 

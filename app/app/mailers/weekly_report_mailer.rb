@@ -58,17 +58,19 @@ class WeeklyReportMailer < ApplicationMailer
     end
   end
 
-  def build_record(flow, applicant, invitation, agency)
+  def build_record(flow, applicant, invitation, partner)
     base_fields = {
       started_at: flow&.created_at,
       transmitted_at: flow&.transmitted_at,
       completed_at: flow&.consented_to_authorized_use_at
     }
 
-    # Add case_number if the agency has it as an applicant attribute
-    base_fields[:case_number] = applicant.case_number if agency.applicant_attributes.key?("case_number")
+    # add column header to represent the partner identifier
+    if partner.partner_identifier_name.present?
+      base_fields[partner.partner_identifier_name.to_sym] = applicant.partner_identifier
+    end
 
-    if agency.include_invitation_details_on_weekly_report
+    if partner.include_invitation_details_on_weekly_report
       base_fields[:email_address] = invitation&.email_address
       base_fields[:invited_at] = invitation&.created_at
     end

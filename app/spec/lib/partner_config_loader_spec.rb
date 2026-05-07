@@ -24,6 +24,7 @@ RSpec.describe PartnerConfigLoader do
       "report_customization_show_earnings_list" => true,
       "weekly_report_enabled" => false,
       "transmission_method" => "shared_email",
+      "partner_identifier_name" => "case_number",
       "transmission_configs" => [
         { "key" => "email", "encrypted" => false, "value" => "reports@test.example.com" }
       ],
