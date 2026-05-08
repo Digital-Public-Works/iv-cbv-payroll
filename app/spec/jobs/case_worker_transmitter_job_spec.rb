@@ -295,6 +295,27 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
         described_class.new.perform(cbv_flow.id)
       end
 
+      it "encrypts the gzipped tar with the configured public key before upload" do
+        cbv_flow.update(client_agency_id: 'sandbox')
+        captured_key = nil
+
+        expect_any_instance_of(GpgEncryptable).to receive(:gpg_encrypt_file) do |_instance, path, public_key|
+          captured_key = public_key
+          expect(path).to be_a(String)
+          expect(File.exist?(path)).to be true
+          fake_encrypted = Tempfile.new(%w[encrypted .gpg])
+          fake_encrypted.binmode
+          fake_encrypted.write("ENCRYPTED")
+          fake_encrypted.rewind
+          fake_encrypted
+        end
+
+        described_class.new.perform(cbv_flow.id)
+
+        expect(captured_key).to eq(@public_key)
+        expect(s3_service_double).to have_received(:upload_file)
+      end
+
       it "handles errors during file processing and upload" do
         cbv_flow.update(client_agency_id: 'sandbox')
         allow_any_instance_of(GpgEncryptable).to receive(:gpg_encrypt_file).and_raise(StandardError, "Encryption failed")
@@ -304,6 +325,101 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
         }.to raise_error(StandardError, "Encryption failed")
 
         expect(s3_service_double).not_to have_received(:upload_file)
+        expect(cbv_flow.reload.transmitted_at).to be_nil
+      end
+
+      context "when public_key is missing from configuration" do
+        let(:transmission_method_configuration) { { "bucket" => "test-bucket" } }
+
+        it "raises before attempting upload" do
+          cbv_flow.update(client_agency_id: 'sandbox')
+
+          expect {
+            described_class.new.perform(cbv_flow.id)
+          }.to raise_error(/Public key is required/)
+
+          expect(s3_service_double).not_to have_received(:upload_file)
+          expect(cbv_flow.reload.transmitted_at).to be_nil
+        end
+      end
+
+      it_behaves_like "tracks an ApplicantSharedIncomeSummary event"
+      it_behaves_like "enqueues match agency names job for agency with expected names"
+    end
+
+    context "when transmission method is unencrypted_s3" do
+      let(:s3_service_double) { instance_double(S3Service) }
+      let(:transmission_method) { "unencrypted_s3" }
+      let(:mocked_client_id) { "sandbox" }
+      let(:transmission_method_configuration) { {
+        "bucket" => "test-bucket"
+      } }
+
+      before do
+        allow(S3Service).to receive(:new).and_return(s3_service_double)
+        allow(s3_service_double).to receive(:upload_file)
+        allow(mock_client_agency).to receive(:partner_identifier_name).and_return("case_number")
+        allow(mock_client_agency).to receive(:applicant_attributes).and_return({
+          "case_number" => double(required: true),
+          "first_name"  => double(required: false),
+          "last_name"   => double(required: false)
+        })
+      end
+
+      it "uploads an unencrypted .tar.gz keyed under outfiles/ with partner_identifier in the filename" do
+        partner_identifier_value = cbv_applicant.partner_identifier
+
+        expect(s3_service_double).to receive(:upload_file).once do |file_path, file_name|
+          expect(file_path).to end_with('.gz')
+          expect(file_path).not_to end_with('.gpg')
+          expect(file_name).to start_with("outfiles/IncomeReport_#{partner_identifier_value}_")
+          expect(file_name).to end_with('.tar.gz')
+          expect(file_name).not_to end_with('.tar.gz.gpg')
+          expect(File.exist?(file_path)).to be true
+        end
+
+        expect(CSV).to receive(:generate).and_wrap_original do |original_method, *args, &block|
+          csv_content = original_method.call(*args, &block)
+          csv_rows = CSV.parse(csv_content, headers: true)
+          expect(csv_rows[0]["case_number"]).to eq(partner_identifier_value)
+          expect(csv_rows[0].headers).not_to include("client_id")
+          csv_content
+        end
+
+        cbv_flow.update(client_agency_id: "sandbox")
+        cbv_applicant.update(client_agency_id: "sandbox")
+
+        described_class.new.perform(cbv_flow.id)
+      end
+
+      it "does not perform GPG encryption" do
+        cbv_flow.update(client_agency_id: 'sandbox')
+
+        expect_any_instance_of(GpgEncryptable).not_to receive(:gpg_encrypt_file)
+
+        described_class.new.perform(cbv_flow.id)
+
+        expect(s3_service_double).to have_received(:upload_file)
+      end
+
+      it "uploads even when no public_key is present in configuration" do
+        cbv_flow.update(client_agency_id: 'sandbox')
+
+        expect {
+          described_class.new.perform(cbv_flow.id)
+        }.not_to raise_error
+
+        expect(s3_service_double).to have_received(:upload_file)
+      end
+
+      it "handles errors during upload" do
+        cbv_flow.update(client_agency_id: 'sandbox')
+        allow(s3_service_double).to receive(:upload_file).and_raise(StandardError, "Upload failed")
+
+        expect {
+          described_class.new.perform(cbv_flow.id)
+        }.to raise_error(StandardError, "Upload failed")
+
         expect(cbv_flow.reload.transmitted_at).to be_nil
       end
 

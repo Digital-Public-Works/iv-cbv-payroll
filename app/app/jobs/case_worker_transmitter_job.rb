@@ -27,6 +27,8 @@ class CaseWorkerTransmitterJob < ApplicationJob
       Transmitters::SftpTransmitter
     when "encrypted_s3"
       Transmitters::EncryptedS3Transmitter
+    when "unencrypted_s3"
+      Transmitters::UnencryptedS3Transmitter
     when "json"
       Transmitters::JsonTransmitter
     when "webhook"
