@@ -1,4 +1,4 @@
-class Transmitters::EncryptedS3Transmitter < Transmitters::S3Transmitter
+class Transmitters::EncryptedS3Transmitter < Transmitters::UnencryptedS3Transmitter
   include GpgEncryptable
 
   protected

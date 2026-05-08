@@ -1,4 +1,4 @@
-class Transmitters::S3Transmitter
+class Transmitters::UnencryptedS3Transmitter
   include Transmitter
   include TarFileCreatable
   include CsvHelper
@@ -90,10 +90,10 @@ class Transmitters::S3Transmitter
 
   protected
 
-  # no-op by default, s3_encrypted verifies there is a public key
+  # no-op by default, encrypted_s3 verifies there is a public key
   def pre_deliver_check(_config); end
 
-  # by default is a no-op, subclass can transform (encrypt in s3_encrypted
+  # by default a no-op; subclass can transform (encrypted_s3 encrypts here)
   def prepare_upload(tempfile, _config); tempfile; end
 
   # file extension appended after the IncomeReport_..._<timestamp> stem.
