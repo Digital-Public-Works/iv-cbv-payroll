@@ -347,9 +347,9 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
       it_behaves_like "enqueues match agency names job for agency with expected names"
     end
 
-    context "when transmission method is s3" do
+    context "when transmission method is unencrypted_s3" do
       let(:s3_service_double) { instance_double(S3Service) }
-      let(:transmission_method) { "s3" }
+      let(:transmission_method) { "unencrypted_s3" }
       let(:mocked_client_id) { "sandbox" }
       let(:transmission_method_configuration) { {
         "bucket" => "test-bucket"
