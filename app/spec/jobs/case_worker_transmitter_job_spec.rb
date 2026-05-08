@@ -273,7 +273,7 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
 
         expect(s3_service_double).to receive(:upload_file).once do |file_path, file_name|
           expect(file_path).to end_with('.gpg')
-          expect(file_name).to start_with("outfiles/IncomeReport_#{partner_identifier_value}_")
+          expect(file_name).to start_with("IncomeReport_#{partner_identifier_value}_")
           expect(file_name).to end_with('.tar.gz.gpg')
           expect(File.exist?(file_path)).to be true
         end
@@ -366,13 +366,14 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
         })
       end
 
-      it "uploads an unencrypted .tar.gz keyed under outfiles/ with partner_identifier in the filename" do
+      it "uploads an unencrypted .tar.gz at the bucket root with partner_identifier in the filename" do
         partner_identifier_value = cbv_applicant.partner_identifier
 
         expect(s3_service_double).to receive(:upload_file).once do |file_path, file_name|
           expect(file_path).to end_with('.gz')
           expect(file_path).not_to end_with('.gpg')
-          expect(file_name).to start_with("outfiles/IncomeReport_#{partner_identifier_value}_")
+          expect(file_name).to start_with("IncomeReport_#{partner_identifier_value}_")
+          expect(file_name).not_to start_with("outfiles/")
           expect(file_name).to end_with('.tar.gz')
           expect(file_name).not_to end_with('.tar.gz.gpg')
           expect(File.exist?(file_path)).to be true

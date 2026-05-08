@@ -28,7 +28,7 @@ class Transmitters::UnencryptedS3Transmitter
       gzipped_tempfile = gzip_file(tar_tempfile)
       upload_tempfile = prepare_upload(gzipped_tempfile, config)
 
-      S3Service.new(config).upload_file(upload_tempfile.path, "outfiles/#{@file_name}.#{upload_extension}")
+      S3Service.new(config).upload_file(upload_tempfile.path, "#{@file_name}.#{upload_extension}")
     rescue => ex
       Rails.logger.error "Failed to transmit to caseworker: #{ex.message}"
       raise
