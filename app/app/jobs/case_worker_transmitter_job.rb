@@ -10,8 +10,7 @@ class CaseWorkerTransmitterJob < ApplicationJob
 
     transmissions.each do |transmission|
       next if transmission.succeeded?
-
-      enqueue_transmission_job(transmission.id)
+      CbvFlowTransmissionJob.perform_later(transmission.id)
     end
   end
 
@@ -33,18 +32,6 @@ class CaseWorkerTransmitterJob < ApplicationJob
     end
   end
 
-  def enqueue_transmission_job(transmission_id)
-    if Rails.env.test?
-      begin
-        CbvFlowTransmissionJob.perform_now(transmission_id)
-      rescue StandardError
-        # In test mode perform_now raises synchronously. The job has already persisted the
-        # error on the transmission row, so swallow so sibling methods still fire.
-      end
-    else
-      CbvFlowTransmissionJob.perform_later(transmission_id)
-    end
-  end
 
   def current_agency(cbv_flow)
     ClientAgencyConfig.instance[cbv_flow.client_agency_id]

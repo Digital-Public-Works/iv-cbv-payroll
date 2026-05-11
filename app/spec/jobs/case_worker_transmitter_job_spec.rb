@@ -26,7 +26,6 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
   before do
     allow_any_instance_of(described_class).to receive(:current_agency).and_return(agency)
     allow(agency).to receive(:transmission_methods).and_return(transmission_methods)
-    allow(CbvFlowTransmissionJob).to receive(:perform_now)
   end
 
   it "creates one CbvFlowTransmission per configured method and enqueues a job for each" do
@@ -36,7 +35,7 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
 
     expect(cbv_flow.cbv_flow_transmissions.pluck(:method_type)).to contain_exactly("webhook", "sftp")
     expect(cbv_flow.cbv_flow_transmissions.all?(&:pending?)).to be(true)
-    expect(CbvFlowTransmissionJob).to have_received(:perform_now).twice
+    expect(CbvFlowTransmissionJob).to have_been_enqueued.exactly(:twice)
   end
 
   it "raises an error when a method type is unsupported" do
@@ -73,6 +72,6 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
 
     described_class.new.perform(cbv_flow.id)
 
-    expect(CbvFlowTransmissionJob).to have_received(:perform_now).once
+    expect(CbvFlowTransmissionJob).to have_been_enqueued.exactly(:once)
   end
 end
