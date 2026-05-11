@@ -4,7 +4,7 @@ class CsvToSftpReportDelivererJob < ApplicationJob
 
     config = agency.transmission_configuration_for("sftp")
     if config.empty?
-      Rails.logger.info "#{partner_id} has no sftp transmission method configured, skipping CSV summary delivery"
+      Rails.logger.error "#{partner_id} has no sftp transmission method configured, skipping CSV summary delivery"
       return
     end
 
