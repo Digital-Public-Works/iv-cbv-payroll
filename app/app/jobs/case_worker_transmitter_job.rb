@@ -19,8 +19,6 @@ class CaseWorkerTransmitterJob < ApplicationJob
   def synchronize_transmissions!(cbv_flow, current_agency)
     configured_methods = current_agency.transmission_methods.index_by { |entry| entry.method.to_s }
 
-    cbv_flow.cbv_flow_transmissions.where.not(method_type: configured_methods.keys).destroy_all
-
     configured_methods.map do |method_type, entry|
       validate_method_type!(method_type)
 
