@@ -25,7 +25,7 @@ class CaseWorkerTransmitterJob < ApplicationJob
       transmission = cbv_flow.cbv_flow_transmissions.find_or_initialize_by(method_type: method_type)
       transmission.configuration = entry.configuration
       transmission.status = :pending if transmission.failed?
-      transmission.save! if transmission.new_record? || transmission.changed?
+      transmission.save!
       transmission
     end
   end
