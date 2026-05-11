@@ -1,13 +1,7 @@
 class CbvFlowTransmission < ApplicationRecord
-  belongs_to :cbv_flow
+  include TransmissionMethodTypes
 
-  enum :method_type, {
-    sftp: 0,
-    shared_email: 1,
-    encrypted_s3: 2,
-    json: 3,
-    webhook: 4
-  }
+  belongs_to :cbv_flow
 
   enum :status, {
     pending: 0,
