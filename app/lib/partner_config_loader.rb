@@ -262,7 +262,7 @@ class PartnerConfigLoader
   end
 
   def validate_domain
-    domain = @data[:domain]
+    domain = @yaml_data[:domain]
     return if domain.blank?
     if RESERVED_DOMAIN_PREFIXES.include?(domain.to_s.downcase)
       @errors << "Invalid domain '#{domain}'. Reserved prefixes: #{RESERVED_DOMAIN_PREFIXES.join(', ')}"
@@ -270,7 +270,7 @@ class PartnerConfigLoader
   end
 
   def validate_transmission_configs
-    configs = @data[:transmission_configs] || []
+    configs = @yaml_data[:transmission_configs] || []
     configs.each_with_index do |tc, i|
       @errors << "transmission_configs[#{i}]: missing 'key'" if tc[:key].blank?
       if tc[:value].present?
@@ -296,9 +296,9 @@ class PartnerConfigLoader
   end
 
   def validate_partner_identifier_name
-    name = @data[:partner_identifier_name]
+    name = @yaml_data[:partner_identifier_name]
     return if name.blank?
-    attrs = @data[:application_attributes] || []
+    attrs = @yaml_data[:application_attributes] || []
     matching = attrs.find { |a| a[:name].to_s == name.to_s }
     if matching.nil?
       @errors << "partner_identifier_name '#{name}' must be defined as an entry in application_attributes"
