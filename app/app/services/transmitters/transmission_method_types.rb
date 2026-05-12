@@ -4,7 +4,8 @@ module Transmitters::TransmissionMethodTypes
     shared_email: 1,
     encrypted_s3: 2,
     json: 3,
-    webhook: 4
+    webhook: 4,
+    unencrypted_s3: 5
   }.freeze
 
   def self.transmitter_class(method_type)
@@ -15,6 +16,8 @@ module Transmitters::TransmissionMethodTypes
       Transmitters::SftpTransmitter
     when "encrypted_s3"
       Transmitters::EncryptedS3Transmitter
+    when "unencrypted_s3"
+      Transmitters::UnencryptedS3Transmitter
     when "json"
       Transmitters::JsonTransmitter
     when "webhook"
