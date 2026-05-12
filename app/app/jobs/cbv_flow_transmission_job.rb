@@ -9,7 +9,8 @@ class CbvFlowTransmissionJob < ApplicationJob
   queue_as :report_sender
 
   def perform(cbv_flow_transmission_id)
-    transmission = CbvFlowTransmission.find(cbv_flow_transmission_id)
+    transmission = CbvFlowTransmission.find_by(id: cbv_flow_transmission_id)
+    raise "CbvFlowTransmission #{cbv_flow_transmission_id} not found" unless transmission
     return if transmission.succeeded?
 
     cbv_flow = transmission.cbv_flow
