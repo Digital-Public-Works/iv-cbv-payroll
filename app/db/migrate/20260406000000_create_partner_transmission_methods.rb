@@ -12,19 +12,13 @@ class CreatePartnerTransmissionMethods < ActiveRecord::Migration[7.2]
     # Migrate existing data: create a PartnerTransmissionMethod for each
     # PartnerConfig that has a transmission_method set, then associate its
     # PartnerTransmissionConfigs with the new record.
-    execute <<~SQL
-      INSERT INTO partner_transmission_methods (partner_config_id, method_type, created_at, updated_at)
-      SELECT id, transmission_method, NOW(), NOW()
-      FROM partner_configs
-      WHERE transmission_method IS NOT NULL
-    SQL
-
-    execute <<~SQL
-      UPDATE partner_transmission_configs
-      SET partner_transmission_method_id = ptm.id
-      FROM partner_transmission_methods ptm
-      WHERE partner_transmission_configs.partner_config_id = ptm.partner_config_id
-    SQL
+    PartnerConfig.where.not(transmission_method: nil).find_each do |pc|
+      ptm = PartnerTransmissionMethod.create!(
+        partner_config: pc,
+        method_type: pc.transmission_method
+      )
+      pc.partner_transmission_configs.update_all(partner_transmission_method_id: ptm.id)
+    end
 
     change_column_null :partner_transmission_configs, :partner_transmission_method_id, false
 
