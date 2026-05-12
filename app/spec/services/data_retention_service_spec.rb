@@ -557,7 +557,7 @@ RSpec.describe DataRetentionService do
       expect(applicant.redacted_at).to be_within(1.second).of(Time.now)
 
       expect(applicant.first_name).to eq("REDACTED")
-      expect(applicant.agency_partner_metadata).to include("first_name" => "REDACTED")
+      expect(applicant.custom_attributes).to include("first_name" => "REDACTED")
 
       expect(applicant.partner_identifier).to eq("DELETEME001")
 

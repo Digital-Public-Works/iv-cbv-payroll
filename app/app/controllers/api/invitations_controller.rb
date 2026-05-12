@@ -2,10 +2,20 @@ class Api::InvitationsController < ApplicationController
   skip_forgery_protection
   wrap_parameters false
 
+  LEGACY_CUSTOM_ATTRIBUTES_PARAM = :agency_partner_metadata
+  CUSTOM_ATTRIBUTES_PARAM = :custom_attributes
+
   before_action :authenticate
 
   def create
-    missing = missing_required_metadata_keys
+    if params[CUSTOM_ATTRIBUTES_PARAM].present? && params[LEGACY_CUSTOM_ATTRIBUTES_PARAM].present?
+      return render json: {
+        errors: [ { field: CUSTOM_ATTRIBUTES_PARAM.to_s,
+                    message: "Provide either #{CUSTOM_ATTRIBUTES_PARAM} or #{LEGACY_CUSTOM_ATTRIBUTES_PARAM}, but not both." } ]
+      }, status: :bad_request
+    end
+
+    missing = missing_required_custom_attributes_keys
     if missing.any?
       return render json: missing_required_errors(missing), status: :bad_request
     end
@@ -37,22 +47,21 @@ class Api::InvitationsController < ApplicationController
     client_agency_id = @current_user.client_agency_id
 
     # Top-level invitation params (language, email, expiration).
-    permitted = params.without(:client_agency_id, :agency_partner_metadata).permit(
+    permitted = params.without(:client_agency_id, CUSTOM_ATTRIBUTES_PARAM, LEGACY_CUSTOM_ATTRIBUTES_PARAM).permit(
       :language, :email_address, :user_id, :expiration_date, :expiration_days
     )
 
-    # Split the incoming agency_partner_metadata hash by destination on
-    # cbv_applicants:
+    # Split the incoming custom_attributes hash by destination on cbv_applicants:
     #   - The key matching `partner_identifier_name` → partner_identifier column.
     #   - Keys that match real columns (date_of_birth, snap_application_date, etc.)
     #     → assigned directly to those columns.
-    #   - Everything else → packed into the agency_partner_metadata jsonb.
-    incoming = unsafe_metadata_hash
+    #   - Everything else → packed into the custom_attributes jsonb.
+    incoming = unsafe_custom_attributes_hash
     identifier_name = partner_config.partner_identifier_name
     real_columns = CbvApplicant.column_names
 
     partner_identifier_value = nil
-    metadata = {}
+    custom_attributes = {}
     direct_column_assignments = {}
 
     partner_config.applicant_attributes.keys.each do |name|
@@ -63,14 +72,14 @@ class Api::InvitationsController < ApplicationController
       elsif real_columns.include?(key)
         direct_column_assignments[key.to_sym] = value
       else
-        metadata[key] = value
+        custom_attributes[key] = value
       end
     end
 
     cbv_applicant_attrs = {
       client_agency_id: client_agency_id,
       partner_identifier: partner_identifier_value,
-      agency_partner_metadata: metadata
+      custom_attributes: custom_attributes
     }.merge(direct_column_assignments)
 
     permitted.deep_merge!(
@@ -80,15 +89,15 @@ class Api::InvitationsController < ApplicationController
     )
   end
 
-  def missing_required_metadata_keys
-    incoming = unsafe_metadata_hash
+  def missing_required_custom_attributes_keys
+    incoming = unsafe_custom_attributes_hash
     required_attrs = partner_config.applicant_attributes.select { |_name, attr| attr.required }
     required_attrs.keys.reject { |name| incoming[name].present? }
   end
 
-  # create output matching the expected data, drop anything unexpected.
-  def unsafe_metadata_hash
-    raw = params[:agency_partner_metadata]
+  # allows either custom_attributes or agency_partner_metadata to allow for backwards compatibility
+  def unsafe_custom_attributes_hash
+    raw = params[CUSTOM_ATTRIBUTES_PARAM].presence || params[LEGACY_CUSTOM_ATTRIBUTES_PARAM]
     return {} if raw.blank?
     raw.respond_to?(:to_unsafe_h) ? raw.to_unsafe_h : raw.to_h
   end
@@ -96,7 +105,7 @@ class Api::InvitationsController < ApplicationController
   def missing_required_errors(missing)
     {
       errors: missing.map do |name|
-        { field: "agency_partner_metadata.#{name}", message: "is required" }
+        { field: "#{CUSTOM_ATTRIBUTES_PARAM}.#{name}", message: "is required" }
       end
     }
   end
@@ -110,7 +119,7 @@ class Api::InvitationsController < ApplicationController
   def errors_to_json(errors)
     # Generates a Hash of attribute => error_message and translates the
     # internal names of objects (cbv_applicant) to the external names
-    # (agency_partner_metadata)
+    # (custom_attributes).
     error_messages = errors.map do |error|
       next if error.attribute == :cbv_applicant
 
@@ -119,7 +128,7 @@ class Api::InvitationsController < ApplicationController
       case error
       when ActiveModel::NestedError
         prefix, attribute_name = error.attribute.to_s.split(".")
-        prefix = "agency_partner_metadata" if prefix == "cbv_applicant"
+        prefix = CUSTOM_ATTRIBUTES_PARAM.to_s if prefix == "cbv_applicant"
 
         { field: "#{prefix}.#{attribute_name}", message: error_message }
       else

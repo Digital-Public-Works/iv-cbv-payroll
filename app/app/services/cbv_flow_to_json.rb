@@ -64,12 +64,12 @@ class CbvFlowToJson
   end
 
   def build_client_information
-    # get all configured agency partner metadata properties
-    agency_partner_metadata = CbvApplicant.build_agency_partner_metadata(@current_agency.id) do |attr|
+    # get all configured agency custom attribute properties
+    custom_attributes = CbvApplicant.build_custom_attributes(@current_agency.id) do |attr|
       @cbv_flow.cbv_applicant.public_send(attr)
     end
 
-    agency_partner_metadata.merge(
+    custom_attributes.merge(
       additional_jobs_to_report: @cbv_flow.has_other_jobs
     )
   end

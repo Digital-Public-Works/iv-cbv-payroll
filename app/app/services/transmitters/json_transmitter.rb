@@ -5,14 +5,14 @@ class Transmitters::JsonTransmitter
     api_url = URI(@current_agency.transmission_method_configuration["url"])
     include_report_pdf = @current_agency.transmission_method_configuration["include_report_pdf"]
     req = Net::HTTP::Post.new(api_url)
-    agency_partner_metadata = CbvApplicant.build_agency_partner_metadata(@current_agency.id) { |attr| @cbv_flow.cbv_applicant.public_send(attr) }
+    custom_attributes = CbvApplicant.build_custom_attributes(@current_agency.id) { |attr| @cbv_flow.cbv_applicant.public_send(attr) }
 
     req.content_type = "application/json"
 
     payload = {
       confirmation_code: @cbv_flow.confirmation_code,
       completed_at: @cbv_flow.consented_to_authorized_use_at.iso8601,
-      agency_partner_metadata: agency_partner_metadata,
+      custom_attributes: custom_attributes,
       income_report: @aggregator_report.income_report
     }
 
