@@ -20,8 +20,6 @@ class CaseWorkerTransmitterJob < ApplicationJob
     configured_methods = current_agency.transmission_methods.index_by { |entry| entry.method.to_s }
 
     configured_methods.map do |method_type, entry|
-      validate_method_type!(method_type)
-
       transmission = cbv_flow.cbv_flow_transmissions.find_or_initialize_by(method_type: method_type)
       transmission.configuration = entry.configuration
       transmission.status = :pending if transmission.failed?
@@ -33,11 +31,5 @@ class CaseWorkerTransmitterJob < ApplicationJob
 
   def current_agency(cbv_flow)
     ClientAgencyConfig.instance[cbv_flow.client_agency_id]
-  end
-
-  def validate_method_type!(method_type)
-    return if CbvFlowTransmission.method_types.key?(method_type.to_s)
-
-    raise "Unsupported transmission method: #{method_type}"
   end
 end

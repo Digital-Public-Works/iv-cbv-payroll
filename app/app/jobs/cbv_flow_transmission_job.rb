@@ -31,7 +31,7 @@ class CbvFlowTransmissionJob < ApplicationJob
     # a date rather than a timestamp (same-day retries overwrite, cross-
     # midnight retries land as a second file).
     begin
-      transmitter_class(transmission.method_type)
+      Transmitters::TransmissionMethodTypes.transmitter_class(transmission.method_type)
         .new(cbv_flow, current_agency, aggregator_report, transmission.configuration)
         .deliver
     rescue => e
@@ -106,22 +106,5 @@ class CbvFlowTransmissionJob < ApplicationJob
       flow_started_seconds_ago: (cbv_flow.consented_to_authorized_use_at - cbv_flow.created_at).to_i,
       locale: I18n.locale
     })
-  end
-
-  def transmitter_class(method_type)
-    case method_type.to_s
-    when "shared_email"
-      Transmitters::SharedEmailTransmitter
-    when "sftp"
-      Transmitters::SftpTransmitter
-    when "encrypted_s3"
-      Transmitters::EncryptedS3Transmitter
-    when "json"
-      Transmitters::JsonTransmitter
-    when "webhook"
-      Transmitters::WebhookTransmitter
-    else
-      raise "Unsupported transmission method: #{method_type}"
-    end
   end
 end

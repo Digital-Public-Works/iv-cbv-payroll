@@ -1,7 +1,7 @@
 class CbvFlowTransmission < ApplicationRecord
   belongs_to :cbv_flow
 
-  enum :method_type, TransmissionMethodTypes::METHOD_TYPES
+  enum :method_type, Transmitters::TransmissionMethodTypes::METHOD_TYPES
 
   enum :status, {
     pending: 0,

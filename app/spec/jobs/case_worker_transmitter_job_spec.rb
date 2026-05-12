@@ -45,7 +45,7 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
 
     expect {
       described_class.new.perform(cbv_flow.id)
-    }.to raise_error("Unsupported transmission method: smoke_signal")
+    }.to raise_error(ArgumentError)
   end
 
   it "resets previously failed transmissions to pending and reuses existing rows" do
