@@ -49,37 +49,38 @@ class CbvFlowTransmissionJob < ApplicationJob
 
   private
 
+  # record_success! includes the business logic on how to handle the first and subsequent
+  # successful transmission to a partner. (e.g. a report may get sent over shared email
+  # before it transmits over sftp)
   def record_success!(transmission, cbv_flow, aggregator_report)
     now = Time.current
     first_success = false
 
+    # update the corresponding db fields as a transaction.
     ActiveRecord::Base.transaction do
       transmission.update!(status: :succeeded, succeeded_at: now, last_error: nil)
-      first_success = record_first_transmission_success!(cbv_flow, now)
+      first_success = first_transmission_success?(cbv_flow, now)
     end
 
+    # for each successful transmission, send an analytics event
     track_transmitted_event(cbv_flow, transmission, aggregator_report&.paystubs&.count || 0)
 
     return unless first_success
 
+    # only for the first successful transmission, enqueue the agency name matching job
     enqueue_agency_name_matching_job(cbv_flow)
   end
 
-  # Stamp cbv_flow.transmitted_at with the timestamp of the first successful
-  # per-method delivery. Later successes do NOT overwrite it — transmitted_at
-  # represents "when this applicant's data first reached the agency" and is
-  # what the weekly summary reports read. Returns true iff this call performed
-  # the stamp (so callers can gate one-time side-effects like event tracking).
-  def record_first_transmission_success!(cbv_flow, now)
-    first = false
+  # Stamps cbv_flow.transmitted_at on the first successful delivery. Later
+  # successes return false without overwriting.
+  def first_transmission_success?(cbv_flow, now)
+    return false if cbv_flow.transmitted_at.present?
+
     cbv_flow.with_lock do
-      cbv_flow.reload
-      if cbv_flow.transmitted_at.blank?
-        cbv_flow.update!(transmitted_at: now)
-        first = true
-      end
+      return false if cbv_flow.reload.transmitted_at.present?
+      cbv_flow.update!(transmitted_at: now)
     end
-    first
+    true
   end
 
   def enqueue_agency_name_matching_job(cbv_flow)
