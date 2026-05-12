@@ -215,6 +215,105 @@ RSpec.describe Api::InvitationsController do
       end
     end
 
+    context "with a malformed JSON body" do
+      it "returns a structured 400 explaining the parse failure" do
+        request.headers["Content-Type"] = "application/json"
+        request.headers["Authorization"] = "Bearer #{api_access_token_instance.access_token}"
+
+        # Missing comma between objects — invalid JSON
+        post :create, body: '{"custom_attributes": {"application_id": "1234"} "language": "en"}'
+
+        expect(response).to have_http_status(:bad_request)
+        parsed_response = JSON.parse(response.body)
+        expect(parsed_response["errors"]).to be_an(Array)
+        first = parsed_response["errors"].first
+        expect(first["field"]).to eq("body")
+        expect(first["message"]).to match(/Request body is not valid JSON/)
+      end
+
+      it "returns a structured 400 for a truncated body" do
+        request.headers["Content-Type"] = "application/json"
+        request.headers["Authorization"] = "Bearer #{api_access_token_instance.access_token}"
+
+        post :create, body: '{'
+
+        expect(response).to have_http_status(:bad_request)
+        parsed_response = JSON.parse(response.body)
+        expect(parsed_response["errors"].first["field"]).to eq("body")
+        expect(parsed_response["errors"].first["message"]).to match(/Request body is not valid JSON/)
+      end
+    end
+
+    context "with metrics_attributes" do
+      let(:fake_event_logger) { instance_double(GenericEventTracker, track: nil) }
+
+      before do
+        allow(GenericEventTracker).to receive(:new).and_return(fake_event_logger)
+      end
+
+      it "forwards keys with an ensured x- prefix (lowercased) to the CaseworkerInvitedApplicantToFlow event" do
+        params_with_metrics = valid_params.merge(metrics_attributes: {
+          "X-Request-ID" => "abc-123",
+          "Source" => "ops_console",
+          "campaign_id" => "42"
+        })
+
+        post :create, params: params_with_metrics
+
+        expect(response).to have_http_status(:created)
+        expect(fake_event_logger).to have_received(:track).with(
+          'CaseworkerInvitedApplicantToFlow',
+          nil,
+          hash_including(
+            "x-request-id" => "abc-123",
+            "x-source" => "ops_console",
+            "x-campaign_id" => "42"
+          )
+        )
+      end
+
+      it "does not double-prefix keys that already begin with x-" do
+        post :create, params: valid_params.merge(metrics_attributes: {
+          "x-trace" => "lower",
+          "X-Trace-Id" => "mixed-case"
+        })
+
+        expect(fake_event_logger).to have_received(:track).with(
+          'CaseworkerInvitedApplicantToFlow',
+          nil,
+          hash_including("x-trace" => "lower", "x-trace-id" => "mixed-case")
+        )
+      end
+
+      it "does not persist metrics_attributes anywhere on the invitation or applicant" do
+        post :create, params: valid_params.merge(metrics_attributes: { "trace" => "xyz" })
+
+        invitation = CbvFlowInvitation.last
+        expect(invitation.attributes).not_to include("trace")
+        expect(invitation.attributes).not_to include("x-trace")
+        expect(invitation.cbv_applicant.custom_attributes).not_to include("trace")
+        expect(invitation.cbv_applicant.custom_attributes).not_to include("x-trace")
+        expect(invitation.cbv_applicant.custom_attributes).not_to include("metrics_attributes")
+      end
+
+      it "creates the invitation normally when metrics_attributes is omitted" do
+        post :create, params: valid_params
+
+        expect(response).to have_http_status(:created)
+        expect(fake_event_logger).to have_received(:track).with(
+          'CaseworkerInvitedApplicantToFlow',
+          nil,
+          hash_including(:invitation_id)
+        )
+      end
+
+      it "tolerates an empty metrics_attributes hash" do
+        post :create, params: valid_params.merge(metrics_attributes: {})
+
+        expect(response).to have_http_status(:created)
+      end
+    end
+
     context "unauthorized user" do
       before do
         request.headers["Authorization"] = nil

@@ -4,6 +4,17 @@ class Api::InvitationsController < ApplicationController
 
   LEGACY_CUSTOM_ATTRIBUTES_PARAM = :agency_partner_metadata
   CUSTOM_ATTRIBUTES_PARAM = :custom_attributes
+  METRICS_ATTRIBUTES_PARAM = :metrics_attributes
+
+  # return useful information if there is a malformed invitation api body
+  rescue_from ActionDispatch::Http::Parameters::ParseError do |exception|
+    underlying = exception.cause&.message || exception.message
+    render json: {
+      errors: [
+        { field: "body", message: "Request body is not valid JSON: #{underlying}" }
+      ]
+    }, status: :bad_request
+  end
 
   before_action :authenticate
 
@@ -21,7 +32,7 @@ class Api::InvitationsController < ApplicationController
     end
 
     cbv_flow_invitation = CbvInvitationService.new(event_logger)
-      .invite(cbv_flow_invitation_params, @current_user, delivery_method: nil)
+      .invite(cbv_flow_invitation_params, @current_user, delivery_method: nil, metrics_attributes: metrics_attributes_hash)
 
     errors = cbv_flow_invitation.errors
     if errors.any?
@@ -47,7 +58,7 @@ class Api::InvitationsController < ApplicationController
     client_agency_id = @current_user.client_agency_id
 
     # Top-level invitation params (language, email, expiration).
-    permitted = params.without(:client_agency_id, CUSTOM_ATTRIBUTES_PARAM, LEGACY_CUSTOM_ATTRIBUTES_PARAM).permit(
+    permitted = params.without(:client_agency_id, CUSTOM_ATTRIBUTES_PARAM, LEGACY_CUSTOM_ATTRIBUTES_PARAM, METRICS_ATTRIBUTES_PARAM).permit(
       :language, :email_address, :user_id, :expiration_date, :expiration_days
     )
 
@@ -100,6 +111,19 @@ class Api::InvitationsController < ApplicationController
     raw = params[CUSTOM_ATTRIBUTES_PARAM].presence || params[LEGACY_CUSTOM_ATTRIBUTES_PARAM]
     return {} if raw.blank?
     raw.respond_to?(:to_unsafe_h) ? raw.to_unsafe_h : raw.to_h
+  end
+
+  # all metrics attributes are lowercased and prefixed with 'x-' (if not already present) to prevent possible key collision
+  def metrics_attributes_hash
+    raw = params[METRICS_ATTRIBUTES_PARAM]
+    return {} if raw.blank?
+    hash = raw.respond_to?(:to_unsafe_h) ? raw.to_unsafe_h : (raw.is_a?(Hash) ? raw.to_h : {})
+    hash.each_with_object({}) do |(k, v), result|
+      next if k.blank?
+      normalized = k.to_s.downcase
+      normalized = "x-#{normalized}" unless normalized.start_with?("x-")
+      result[normalized] = v
+    end
   end
 
   def missing_required_errors(missing)
