@@ -203,16 +203,9 @@ class ClientAgencyConfig
       raise ArgumentError.new("Client Agency #{@id} must have at least one transmission method configured") if @transmission_methods.empty?
     end
 
-    # Convenience: returns the method type string of the first transmission method.
-    # Useful for code that only expects a single method.
-    def transmission_method
-      @transmission_methods.first&.method
-    end
-
-    # Convenience: returns the configuration hash of the first transmission method.
-    # For multi-method partners, prefer accessing transmission_methods directly.
-    def transmission_method_configuration
-      @transmission_methods.first&.configuration || {}.with_indifferent_access
+    # Returns true if this agency has the given transmission method configured.
+    def has_transmission_method?(method_type)
+      @transmission_methods.any? { |tm| tm.method == method_type.to_s }
     end
 
     # Returns the configuration hash for a specific transmission method type.

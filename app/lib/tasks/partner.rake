@@ -17,11 +17,12 @@ namespace :partner do
   task :deliver_csv_reports, [ :partner_id ] => :environment do |_t, args|
     partner_id = args.fetch(:partner_id)
     agency = ClientAgencyConfig.instance[partner_id]
-    config = agency.transmission_configuration_for("sftp")
-    if config.empty?
+    unless agency.has_transmission_method?("sftp")
       Rails.logger.info "#{partner_id} has no sftp transmission method configured, not enqueuing job"
       next
     end
+
+    config = agency.transmission_configuration_for("sftp")
     unless config.fetch("csv_summary_reports_enabled", true)
       Rails.logger.info "#{partner_id} CSV summary delivery disabled, not enqueuing job"
       next

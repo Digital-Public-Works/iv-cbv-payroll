@@ -28,6 +28,7 @@ RSpec.describe CsvToSftpReportDelivererJob, type: :job do
           cbv_flow.cbv_applicant.update!(case_number: "12345")
 
           agency = ClientAgencyConfig.instance[partner_id]
+          allow(agency).to receive(:has_transmission_method?).with("sftp").and_return(true)
           allow(agency).to receive(:transmission_configuration_for).with("sftp").and_return(
             { "sftp_directory" => "test" }.with_indifferent_access
           )
@@ -51,9 +52,7 @@ RSpec.describe CsvToSftpReportDelivererJob, type: :job do
                  transmitted_at: transmitted_at)
 
           agency = ClientAgencyConfig.instance[partner_id]
-          allow(agency).to receive(:transmission_configuration_for).with("sftp").and_return(
-            {}.with_indifferent_access
-          )
+          allow(agency).to receive(:has_transmission_method?).with("sftp").and_return(false)
 
           expect(sftp_gateway).not_to receive(:upload_data)
 

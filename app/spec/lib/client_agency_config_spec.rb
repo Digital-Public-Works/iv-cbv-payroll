@@ -31,21 +31,6 @@ RSpec.describe ClientAgencyConfig do
     )
   end
 
-  let(:sample_config_with_invitation_required) { <<~YAML }
-    id: foo
-    agency_name: Foo Agency Name
-    timezone: America/Los_Angeles
-    pinwheel:
-      environment: foo
-    argyle:
-      environment: foo
-    transmission_method: shared_email
-    transmission_method_configuration:
-      email: foo
-    require_applicant_information_on_invitation: true
-  YAML
-
-
   describe "#initialize" do
     it "loads the client agency config" do
       expect do

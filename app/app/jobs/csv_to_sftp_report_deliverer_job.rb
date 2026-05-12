@@ -2,11 +2,12 @@ class CsvToSftpReportDelivererJob < ApplicationJob
   def perform(partner_id, date_start, date_end)
     agency = ClientAgencyConfig.instance[partner_id]
 
-    config = agency.transmission_configuration_for("sftp")
-    if config.empty?
+    unless agency.has_transmission_method?("sftp")
       Rails.logger.error "#{partner_id} has no sftp transmission method configured, skipping CSV summary delivery"
       return
     end
+
+    config = agency.transmission_configuration_for("sftp")
 
     cbv_flows = CbvFlow.where(transmitted_at: date_start..date_end, client_agency_id: partner_id).includes(:cbv_applicant, :cbv_flow_invitation)
 
