@@ -21,6 +21,7 @@ FactoryBot.define do
     weekly_report_variant { "invitations" }
     invitation_valid_days_default { 14 }
     report_customization_show_earnings_list { true }
+    partner_identifier_name { "case_number" }
 
     after(:create) do |partner_config, evaluator|
       if partner_config.partner_transmission_methods.empty?

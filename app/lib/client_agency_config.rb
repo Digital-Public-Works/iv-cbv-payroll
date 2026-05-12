@@ -40,10 +40,9 @@ class ClientAgencyConfig
   end
 
   def initialize(load_all_agency_configs)
-    # This code runs during every boot of the app, including the migrations necessary top create the partner_configs table.
-    # Skip if the table hasn't been created yet.
-    # The partner application attributes are added last, so if they are not present, the db is missing tables needed to initialize from db configuration.
-    return unless ActiveRecord::Base.connection.data_source_exists?(:partner_application_attributes) &&
+    # This runs during bootup even before migrations. this is a temp guard until these migrations are made
+    # TODO: make this less brittle
+    return unless ActiveRecord::Base.connection.column_exists?(:partner_configs, :partner_identifier_name) &&
       ActiveRecord::Base.connection.data_source_exists?(:partner_transmission_methods)
 
     @client_agencies = PartnerConfig.all.each_with_object({}) do |config, h|
@@ -149,6 +148,7 @@ class ClientAgencyConfig
       require_applicant_information_on_invitation
       include_invitation_details_on_weekly_report
       state_name
+      partner_identifier_name
     ])
 
     def initialize(partner_config)
@@ -194,12 +194,15 @@ class ClientAgencyConfig
       @include_invitation_details_on_weekly_report = partner_config.respond_to?(:include_invitation_details_on_weekly_report) &&
         partner_config.include_invitation_details_on_weekly_report
       @state_name = partner_config.respond_to?(:state_name) ? partner_config.state_name : nil
+      @partner_identifier_name = partner_config.partner_identifier_name
 
       raise ArgumentError.new("Client Agency missing id") if @id.blank?
       raise ArgumentError.new("Client Agency #{@id} missing required attribute `timezone`") if @timezone.blank?
       raise ArgumentError.new("Client Agency #{@id} missing required attribute `name`") if @agency_name.blank?
       raise ArgumentError.new("Client Agency #{@id} invalid value for pay_income_days.w2") unless VALID_PAY_INCOME_DAYS.include?(@pay_income_days[:w2])
       raise ArgumentError.new("Client Agency #{@id} invalid value for pay_income_days.gig") unless VALID_PAY_INCOME_DAYS.include?(@pay_income_days[:gig])
+      raise ArgumentError.new("Client Agency #{@id} missing required attribute `transmission_method`") if @transmission_method.blank?
+      raise ArgumentError.new("Client Agency #{@id} missing required attribute `partner_identifier_name`") if @partner_identifier_name.blank?
       raise ArgumentError.new("Client Agency #{@id} must have at least one transmission method configured") if @transmission_methods.empty?
     end
 
@@ -221,8 +224,8 @@ class ClientAgencyConfig
     def pdf_filename(cbv_flow, time)
       time = time.in_time_zone(timezone)
 
-      padded_case_number = cbv_flow.cbv_applicant.case_number.rjust(8, "0")
-      "CBVPilot_#{padded_case_number}_" \
+      padded_identifier = cbv_flow.cbv_applicant.partner_identifier.to_s.rjust(8, "0")
+      "CBVPilot_#{padded_identifier}_" \
         "#{time.strftime('%Y%m%d')}_" \
         "Conf#{cbv_flow.confirmation_code}"
     end

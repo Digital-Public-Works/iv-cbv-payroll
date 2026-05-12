@@ -12,12 +12,30 @@ namespace :invitation do
       )
 
       user.update(is_service_account: true)
+      agency = ClientAgencyConfig.instance[client_agency_id]
+
+      # to use this rake to create an example invitation for another partner, this sample metadata would need to be expanded to include the values required by that partner
+      sample_metadata = {
+        "first_name" => "Joe",
+        "last_name" => "Schmoe",
+        "date_of_birth" => Date.new(1990, 1, 1)
+      }
+      applicant_attrs = {
+        client_agency_id: client_agency_id,
+        partner_identifier: rand(1000..9999).to_s
+      }
+      # Only carry sample fields when the agency has them configured. Real
+      # columns and partner-defined attributes alike are routed correctly.
+      sample_metadata.each do |key, value|
+        applicant_attrs[key.to_sym] = value if agency&.applicant_attributes&.key?(key)
+      end
+
       invite = CbvFlowInvitation.new({
         user: user,
         client_agency_id: client_agency_id,
         language: "en",
         email_address: user.email,
-        cbv_applicant_attributes: { first_name: "Joe", last_name: "Schmoe", client_agency_id: client_agency_id, case_number: rand(1000..9999).to_s }
+        cbv_applicant_attributes: applicant_attrs
       })
       invite.save!
       log.info "Invite link created successfully! 🎉"

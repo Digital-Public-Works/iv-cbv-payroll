@@ -23,6 +23,7 @@ RSpec.describe PartnerConfigLoader do
       "pay_income_days_gig" => 182,
       "report_customization_show_earnings_list" => true,
       "weekly_report_enabled" => false,
+      "partner_identifier_name" => "case_number",
       "transmission_methods" => [
         {
           "method_type" => "shared_email",
@@ -167,6 +168,19 @@ RSpec.describe PartnerConfigLoader do
       loader.validate!
       expect(loader.valid?).to be false
       expect(loader.errors).to include(/Invalid pay_income_days_w2/)
+    end
+
+    it "errors on reserved domain prefix" do
+      valid_yaml["domain"] = "static"
+      yaml_file.reopen(yaml_file.path, "w")
+      yaml_file.write(valid_yaml.to_yaml)
+      yaml_file.rewind
+
+      loader = described_class.new(yaml_file.path)
+      loader.load!
+      loader.validate!
+      expect(loader.valid?).to be false
+      expect(loader.errors).to include(/Invalid domain 'static'/)
     end
 
     it "errors on invalid application attribute data_type" do

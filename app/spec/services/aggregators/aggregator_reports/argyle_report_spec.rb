@@ -282,6 +282,124 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
     end
   end
 
+  describe '#fetch' do
+    let(:argyle_report) do
+      described_class.new(
+        payroll_accounts: [ payroll_account ],
+        argyle_service: argyle_service,
+        days_to_fetch_for_w2: days_ago_to_fetch,
+        days_to_fetch_for_gig: days_ago_to_fetch_for_gig
+      )
+    end
+
+    def discarded_in_db?(record)
+      PayrollAccount.with_discarded.find(record.id).discarded?
+    end
+
+    context "when Argyle returns an account" do
+      it "does not discard the payroll_account" do
+        argyle_report.fetch
+        expect(discarded_in_db?(payroll_account)).to be false
+      end
+
+      it "still fetches report data" do
+        argyle_report.fetch
+        expect(argyle_service).to have_received(:fetch_identities_api).with(account: account)
+      end
+    end
+
+    context "when Argyle does not return an account" do
+      let(:other_account_id) { "missing-account-id" }
+
+      let!(:other_payroll_account) do
+        create(:payroll_account, :argyle_fully_synced, cbv_flow: payroll_account.cbv_flow, aggregator_account_id: other_account_id)
+      end
+
+      let(:argyle_report) do
+        described_class.new(
+          payroll_accounts: [ payroll_account, other_payroll_account ],
+          argyle_service: argyle_service,
+          days_to_fetch_for_w2: days_ago_to_fetch,
+          days_to_fetch_for_gig: days_ago_to_fetch_for_gig
+        )
+      end
+
+      before do
+        allow(argyle_service).to receive(:fetch_account_api).with(account: account).and_return(account_json)
+        allow(argyle_service).to receive(:fetch_account_api)
+          .with(account: other_account_id)
+          .and_raise(Faraday::ResourceNotFound.new(nil, nil))
+      end
+
+      it "discards the missing account and leaves the valid one alone" do
+        argyle_report.fetch
+        expect(discarded_in_db?(other_payroll_account)).to be true
+        expect(discarded_in_db?(payroll_account)).to be false
+      end
+
+      it "removes the missing account from @payroll_accounts so its data is not fetched" do
+        argyle_report.fetch
+        expect(argyle_service).not_to have_received(:fetch_identities_api).with(account: other_account_id)
+      end
+    end
+
+    context "when Argyle reports the account as disconnected" do
+      let(:disconnected_account_json) do
+        account_json.deep_dup.tap { |j| j["connection"]["status"] = "disconnected" }
+      end
+
+      before do
+        allow(argyle_service).to receive(:fetch_account_api).and_return(disconnected_account_json)
+      end
+
+      it "discards the disconnected account" do
+        expect { argyle_report.fetch }.to raise_error(Aggregators::AggregatorReports::ArgyleReport::NoValidAccountsError)
+        expect(discarded_in_db?(payroll_account)).to be true
+      end
+    end
+
+    context "when Argyle reports an error status" do
+      let(:error_account_json) do
+        account_json.deep_dup.tap { |j| j["connection"]["status"] = "error" }
+      end
+
+      before do
+        allow(argyle_service).to receive(:fetch_account_api).and_return(error_account_json)
+      end
+
+      it "does not discard the account" do
+        argyle_report.fetch
+        expect(discarded_in_db?(payroll_account)).to be false
+      end
+    end
+
+    context "when calling Argyle throws an error" do
+      before do
+        allow(argyle_service).to receive(:fetch_account_api).and_raise(StandardError, "argyle is down")
+      end
+
+      it "does not discard the account" do
+        argyle_report.fetch
+        expect(discarded_in_db?(payroll_account)).to be false
+      end
+    end
+
+    context "when no accounts are connected" do
+      before do
+        allow(argyle_service).to receive(:fetch_account_api).and_raise(Faraday::ResourceNotFound.new(nil, nil))
+      end
+
+      it "raises NoValidAccountsError" do
+        expect { argyle_report.fetch }.to raise_error(Aggregators::AggregatorReports::ArgyleReport::NoValidAccountsError)
+      end
+
+      it "discards the disconnected account and raises" do
+        expect { argyle_report.fetch }.to raise_error(Aggregators::AggregatorReports::ArgyleReport::NoValidAccountsError)
+        expect(discarded_in_db?(payroll_account)).to be true
+      end
+    end
+  end
+
   describe "#days_since_last_paydate" do
     let(:argyle_report) do
       described_class.new(

@@ -172,5 +172,23 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
         ]
       )
     end
+
+    it 'does not raise when summary[:identity] is null' do
+      existing_summary = report.summarize_by_employer
+      account_id = existing_summary.keys.first
+      existing_summary[account_id] = existing_summary[account_id].merge(
+        identity: nil,
+        has_identity_data: true
+      )
+      allow(report).to receive(:summarize_by_employer).and_return(existing_summary)
+
+      expect { report.income_report }.not_to raise_error
+      employment = report.income_report[:employments].first
+      expect(employment[:applicant_first_name]).to be_nil
+      expect(employment[:applicant_last_name]).to be_nil
+      expect(employment[:applicant_full_name]).to be_nil
+      expect(employment[:applicant_ssn]).to be_nil
+      expect(employment[:employer_name]).to eq("Cool Company")
+    end
   end
 end

@@ -15,7 +15,8 @@ RSpec.describe ClientAgencyConfig do
       timezone: 'America/Los_Angeles',
       argyle_environment: 'foo',
       pay_income_days_w2: 90,
-      pay_income_days_gig: 182
+      pay_income_days_gig: 182,
+      partner_identifier_name: 'first_name'
     )
     pc.partner_transmission_methods.create!(method_type: :shared_email)
     pc

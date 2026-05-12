@@ -5,6 +5,10 @@ module Aggregators::AggregatorReports
     include ActiveModel::Validations::Callbacks
     include Warnable
 
+    class NoValidAccountsError < StandardError; end
+
+    DISCONNECTED_STATES = %w[disconnected]
+
     validates_with Aggregators::Validators::UsefulReportValidator, on: :useful_report
 
     def initialize(argyle_service: nil, **params)
@@ -12,7 +16,45 @@ module Aggregators::AggregatorReports
       @argyle_service = argyle_service
     end
 
+    def fetch
+      return false unless is_ready_to_fetch?
+
+      discard_accounts_missing_in_argyle
+      raise NoValidAccountsError, "All Argyle accounts have been removed or disconnected" if @payroll_accounts.empty?
+      fetch_report_data
+    end
+
     private
+
+    def discard_accounts_missing_in_argyle
+      @payroll_accounts = @payroll_accounts.reject do |payroll_account|
+        next false unless payroll_account.is_a?(PayrollAccount::Argyle)
+
+        missing = account_missing_in_argyle?(payroll_account)
+        if missing
+          Rails.logger.info(
+            "ArgyleReport: discarding payroll_account #{payroll_account.id} " \
+            "(aggregator_account_id=#{payroll_account.aggregator_account_id}) — no longer present/connected in Argyle"
+          )
+          payroll_account.discard!
+        end
+
+        missing
+      end
+    end
+
+    def account_missing_in_argyle?(payroll_account)
+      account_json = @argyle_service.fetch_account_api(account: payroll_account.aggregator_account_id)
+      DISCONNECTED_STATES.include?(account_json.dig("connection", "status"))
+    rescue Faraday::ResourceNotFound
+      true
+    rescue => ex
+      Rails.logger.warn(
+        "ArgyleReport: pre-flight check failed for payroll_account #{payroll_account.id} " \
+        "(aggregator_account_id=#{payroll_account.aggregator_account_id}): #{ex.class} #{ex.message}"
+      )
+      false
+    end
 
     def fetch_report_data_for_account(payroll_account)
       identities_json = @argyle_service.fetch_identities_api(

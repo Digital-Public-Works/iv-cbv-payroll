@@ -17,9 +17,16 @@ class PartnerConfigLoader
     report_customization_show_earnings_list
     weekly_report_enabled weekly_report_recipients weekly_report_variant
     include_invitation_details_on_weekly_report
+    partner_identifier_name
   ].freeze
 
-  REQUIRED_ATTRS = %w[partner_id name timezone pay_income_days_w2 pay_income_days_gig].freeze
+  REQUIRED_ATTRS = %w[partner_id name timezone pay_income_days_w2 pay_income_days_gig partner_identifier_name].freeze
+
+  # Subdomain prefixes reserved for non-partner infrastructure. A partner
+  # claiming one of these would never receive traffic — DNS for the
+  # subdomain points elsewhere (e.g. `static` is the CloudFront-fronted
+  # static-assets CDN).
+  RESERVED_DOMAIN_PREFIXES = %w[static].freeze
 
   VALID_TRANSMISSION_METHODS = PartnerTransmissionMethod.method_types.keys.freeze
   VALID_DATA_TYPES = PartnerApplicationAttribute.data_types.keys.freeze
@@ -67,7 +74,10 @@ class PartnerConfigLoader
     validate_required_attrs
     validate_transmission_methods
     validate_pay_income_days
+    validate_domain
+    validate_transmission_configs
     validate_application_attributes
+    validate_partner_identifier_name
     validate_translations
 
     self
@@ -251,6 +261,25 @@ class PartnerConfigLoader
     end
   end
 
+  def validate_domain
+    domain = @data[:domain]
+    return if domain.blank?
+    if RESERVED_DOMAIN_PREFIXES.include?(domain.to_s.downcase)
+      @errors << "Invalid domain '#{domain}'. Reserved prefixes: #{RESERVED_DOMAIN_PREFIXES.join(', ')}"
+    end
+  end
+
+  def validate_transmission_configs
+    configs = @data[:transmission_configs] || []
+    configs.each_with_index do |tc, i|
+      @errors << "transmission_configs[#{i}]: missing 'key'" if tc[:key].blank?
+      if tc[:value].present?
+        _, err = resolve_env_value_safe(tc[:value])
+        @warnings << "transmission_configs[#{i}] (#{tc[:key]}): #{err}" if err
+      end
+    end
+  end
+
   def validate_application_attributes
     attrs = @yaml_data[:application_attributes] || []
     names = []
@@ -263,6 +292,18 @@ class PartnerConfigLoader
         @errors << "application_attributes[#{i}]: duplicate name '#{attr[:name]}'"
       end
       names << attr[:name]
+    end
+  end
+
+  def validate_partner_identifier_name
+    name = @data[:partner_identifier_name]
+    return if name.blank?
+    attrs = @data[:application_attributes] || []
+    matching = attrs.find { |a| a[:name].to_s == name.to_s }
+    if matching.nil?
+      @errors << "partner_identifier_name '#{name}' must be defined as an entry in application_attributes"
+    elsif !matching[:required]
+      @errors << "partner_identifier_name '#{name}' must reference an application_attribute with required: true"
     end
   end
 
