@@ -34,13 +34,13 @@ class PartnerConfigLoader
     shared.reporting_purpose
   ].freeze
 
-  attr_reader :data, :errors, :warnings
+  attr_reader :yaml_data, :errors, :warnings
 
   def initialize(source)
     @source = source
     @errors = []
     @warnings = []
-    @data = nil
+    @yaml_data = nil
   end
 
   # ---------------------------------------------------------------------------
@@ -49,7 +49,7 @@ class PartnerConfigLoader
 
   def load!
     raw = fetch_source(@source)
-    @data = YAML.safe_load(raw, permitted_classes: [ Symbol ]).to_h.with_indifferent_access
+    @yaml_data = YAML.safe_load(raw, permitted_classes: [ Symbol ]).to_h.with_indifferent_access
     self
   rescue Psych::SyntaxError => e
     raise SourceError, "Invalid YAML: #{e.message}"
@@ -60,7 +60,7 @@ class PartnerConfigLoader
   # ---------------------------------------------------------------------------
 
   def validate!
-    raise "Call load! first" unless @data
+    raise "Call load! first" unless @yaml_data
     @errors = []
     @warnings = []
 
@@ -82,10 +82,10 @@ class PartnerConfigLoader
   # ---------------------------------------------------------------------------
 
   def apply!
-    raise "Call load! and validate! first" unless @data
+    raise "Call load! and validate! first" unless @yaml_data
     raise ValidationError, "Cannot apply invalid config:\n  #{@errors.join("\n  ")}" unless valid?
 
-    partner_id = @data[:partner_id]
+    partner_id = @yaml_data[:partner_id]
     changes = { config: nil, transmission_methods: { created: 0, updated: 0, deleted: 0 },
                 application_attributes: { created: 0, updated: 0, deleted: 0 },
                 translations: { created: 0, updated: 0, deleted: 0 } }
@@ -94,7 +94,7 @@ class PartnerConfigLoader
       pc = PartnerConfig.find_or_initialize_by(partner_id: partner_id)
       is_new = pc.new_record?
 
-      config_attrs = @data.slice(*PARTNER_CONFIG_ATTRS)
+      config_attrs = @yaml_data.slice(*PARTNER_CONFIG_ATTRS)
       pc.assign_attributes(config_attrs)
       changes[:config] = is_new ? :created : (pc.changed? ? :updated : :unchanged)
       pc.save!
@@ -207,12 +207,12 @@ class PartnerConfigLoader
 
   def validate_required_attrs
     REQUIRED_ATTRS.each do |attr|
-      @errors << "Missing required attribute: #{attr}" if @data[attr].blank?
+      @errors << "Missing required attribute: #{attr}" if @yaml_data[attr].blank?
     end
   end
 
   def validate_transmission_methods
-    methods = @data[:transmission_methods]
+    methods = @yaml_data[:transmission_methods]
     if methods.blank?
       @errors << "At least one transmission method is required"
       return
@@ -243,7 +243,7 @@ class PartnerConfigLoader
 
   def validate_pay_income_days
     %w[pay_income_days_w2 pay_income_days_gig].each do |attr|
-      val = @data[attr]
+      val = @yaml_data[attr]
       next if val.blank? # already caught by required check
       unless VALID_PAY_INCOME_DAYS.include?(val.to_i)
         @errors << "Invalid #{attr} '#{val}'. Valid: #{VALID_PAY_INCOME_DAYS.join(', ')}"
@@ -252,7 +252,7 @@ class PartnerConfigLoader
   end
 
   def validate_application_attributes
-    attrs = @data[:application_attributes] || []
+    attrs = @yaml_data[:application_attributes] || []
     names = []
     attrs.each_with_index do |attr, i|
       @errors << "application_attributes[#{i}]: missing 'name'" if attr[:name].blank?
@@ -267,7 +267,7 @@ class PartnerConfigLoader
   end
 
   def validate_translations
-    translations = @data[:translations] || {}
+    translations = @yaml_data[:translations] || {}
     %w[en es].each do |locale|
       locale_translations = translations[locale] || {}
       REQUIRED_TRANSLATION_KEYS.each do |key|
@@ -284,7 +284,7 @@ class PartnerConfigLoader
 
   def reconcile_transmission_methods(pc)
     counts = { created: 0, updated: 0, deleted: 0 }
-    yaml_methods = @data[:transmission_methods] || []
+    yaml_methods = @yaml_data[:transmission_methods] || []
     yaml_method_types = yaml_methods.map { |m| m[:method_type].to_s }
 
     # Delete transmission methods not in YAML
@@ -322,7 +322,7 @@ class PartnerConfigLoader
 
   def reconcile_application_attributes(pc)
     counts = { created: 0, updated: 0, deleted: 0 }
-    yaml_attrs = @data[:application_attributes] || []
+    yaml_attrs = @yaml_data[:application_attributes] || []
     yaml_names = yaml_attrs.map { |a| a[:name] }
 
     pc.partner_application_attributes.where.not(name: yaml_names).destroy_all.tap { |d| counts[:deleted] = d.size }
@@ -355,7 +355,7 @@ class PartnerConfigLoader
 
   def reconcile_translations(pc)
     counts = { created: 0, updated: 0, deleted: 0 }
-    translations = @data[:translations] || {}
+    translations = @yaml_data[:translations] || {}
 
     # Build set of (locale, key) pairs from YAML
     yaml_pairs = Set.new

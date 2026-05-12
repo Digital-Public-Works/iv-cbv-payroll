@@ -85,7 +85,7 @@ RSpec.describe PartnerConfigLoader do
     it "loads YAML from a file path" do
       loader = described_class.new(yaml_file.path)
       loader.load!
-      expect(loader.data[:partner_id]).to eq("test_partner")
+      expect(loader.yaml_data[:partner_id]).to eq("test_partner")
     end
 
     it "raises SourceError for missing file" do
