@@ -212,14 +212,14 @@ class PartnerConfigLoader
   end
 
   def validate_transmission_methods
-    methods = @yaml_data[:transmission_methods]
-    if methods.blank?
-      @errors << "At least one transmission method is required"
+    if @yaml_data.key?(:transmission_method)
+      @errors << "Use 'transmission_methods' (plural), not 'transmission_method'"
       return
     end
 
-    unless methods.is_a?(Array)
-      @errors << "transmission_methods must be an array"
+    methods = @yaml_data[:transmission_methods]
+    if methods.blank?
+      @errors << "At least one transmission method is required"
       return
     end
 
