@@ -28,9 +28,7 @@ class CreatePartnerTransmissionMethods < ActiveRecord::Migration[7.2]
 
     change_column_null :partner_transmission_configs, :partner_transmission_method_id, false
 
-    # Make partner_config_id nullable (kept for backwards compatibility but
-    # no longer the canonical FK — partner_transmission_method_id is).
-    change_column_null :partner_transmission_configs, :partner_config_id, true
+    remove_reference :partner_transmission_configs, :partner_config, foreign_key: true
 
     remove_column :partner_configs, :transmission_method
   end
@@ -51,6 +49,8 @@ class CreatePartnerTransmissionMethods < ActiveRecord::Migration[7.2]
     SQL
 
     # Restore partner_config_id on partner_transmission_configs
+    add_reference :partner_transmission_configs, :partner_config, null: true, foreign_key: true
+
     execute <<~SQL
       UPDATE partner_transmission_configs
       SET partner_config_id = ptm.partner_config_id

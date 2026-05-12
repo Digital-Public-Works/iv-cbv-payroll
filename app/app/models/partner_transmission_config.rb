@@ -1,5 +1,4 @@
 class PartnerTransmissionConfig < ApplicationRecord
-  belongs_to :partner_config, optional: true # Legacy FK — kept for migration compatibility
   belongs_to :partner_transmission_method
 
   validates :key, presence: true

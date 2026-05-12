@@ -148,14 +148,12 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_15_000001) do
   end
 
   create_table "partner_transmission_configs", force: :cascade do |t|
-    t.bigint "partner_config_id"
     t.string "key", null: false
     t.text "value"
     t.boolean "is_encrypted", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "partner_transmission_method_id", null: false
-    t.index ["partner_config_id"], name: "index_partner_transmission_configs_on_partner_config_id"
     t.index ["partner_transmission_method_id"], name: "idx_on_partner_transmission_method_id_917bdbc05f"
   end
 
@@ -216,7 +214,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_15_000001) do
   add_foreign_key "cbv_flows", "cbv_flow_invitations"
   add_foreign_key "partner_application_attributes", "partner_configs"
   add_foreign_key "partner_translations", "partner_configs"
-  add_foreign_key "partner_transmission_configs", "partner_configs"
   add_foreign_key "partner_transmission_configs", "partner_transmission_methods"
   add_foreign_key "partner_transmission_methods", "partner_configs"
   add_foreign_key "payroll_accounts", "cbv_flows"
