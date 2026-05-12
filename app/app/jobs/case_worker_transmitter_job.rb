@@ -28,7 +28,6 @@ class CaseWorkerTransmitterJob < ApplicationJob
     end
   end
 
-
   def current_agency(cbv_flow)
     ClientAgencyConfig.instance[cbv_flow.client_agency_id]
   end
