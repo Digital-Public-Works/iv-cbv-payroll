@@ -151,10 +151,7 @@ namespace :integration do
   namespace :docker do
     desc "Start Docker services for integration tests"
     task :up do
-      # buckets need to be pre-created as folders for s3proxy
-      FileUtils.mkdir_p("tmp/integration_transmissions/s3/test-unencrypted-bucket")
-      FileUtils.mkdir_p("tmp/integration_transmissions/s3/test-encrypted-bucket")
-      sh "docker compose -f #{COMPOSE_FILE} up -d"
+      sh "docker compose -f #{COMPOSE_FILE} up -d --wait"
     end
 
     desc "Stop Docker services for integration tests"

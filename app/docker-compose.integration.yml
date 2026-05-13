@@ -1,4 +1,20 @@
+# Healthchecks used to support CI testing. They gate `docker compose up --wait` on the port actually accepting connections, not just "container running".
+
 services:
+  # Creates bucket dirs s3proxy needs and chmods so user in ci can write.
+  bucket-init:
+    image: busybox:latest
+    volumes:
+      - ./tmp/integration_transmissions:/data
+    command:
+      - sh
+      - -c
+      - |
+        mkdir -p /data/sftp /data/webhook \
+                 /data/s3/test-unencrypted-bucket /data/s3/test-encrypted-bucket
+        chmod -R 777 /data
+    restart: "no"
+
   # SFTP server for testing SftpTransmitter
   # Files uploaded to /upload/<user>/
   sftp:
@@ -8,6 +24,9 @@ services:
     command: testuser:testpass:::upload
     volumes:
       - ./tmp/integration_transmissions/sftp:/home/testuser/upload
+    depends_on:
+      bucket-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/22"]
       interval: 5s
@@ -27,6 +46,9 @@ services:
       PAYLOAD_DIR: /data/received
     volumes:
       - ./tmp/integration_transmissions/webhook:/data/received
+    depends_on:
+      bucket-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/9292"]
       interval: 5s
@@ -48,6 +70,9 @@ services:
       JCLOUDS_FILESYSTEM_BASEDIR: /data
     volumes:
       - ./tmp/integration_transmissions/s3:/data
+    depends_on:
+      bucket-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/80"]
       interval: 5s

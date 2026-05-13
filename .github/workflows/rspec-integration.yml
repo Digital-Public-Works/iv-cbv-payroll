@@ -37,17 +37,6 @@ jobs:
         with:
           rails_env: test
 
-      - name: Pre-create bind-mount dirs
-        working-directory: app
-        run: |
-          mkdir -p \
-            tmp/integration_transmissions/sftp \
-            tmp/integration_transmissions/webhook \
-            tmp/integration_transmissions/s3/test-unencrypted-bucket \
-            tmp/integration_transmissions/s3/test-encrypted-bucket
-          # Bind-mount sources need to be writable by container UIDs that may not match the runner's.
-          chmod -R 777 tmp/integration_transmissions
-
       - name: Start integration stack
         working-directory: app
         run: docker compose -f docker-compose.integration.yml up -d --build --wait --wait-timeout 120

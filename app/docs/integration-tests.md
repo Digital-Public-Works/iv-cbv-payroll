@@ -58,7 +58,7 @@ Credentials:
 - Webhook API: API key `my-secure-guid` (set via `VMI_API_KEY`)
 - S3: access key `s3test`, secret `s3test`
 
-We use **s3proxy** so each uploaded object lands as a plain file at `tmp/integration_transmissions/s3/<bucket>/<key>`. `integration:docker:up` creates them on the host before bringing the stack up. If you run `docker compose -f docker-compose.integration.yml up -d` directly (bypassing the rake task), pre-create the bucket directories yourself or s3proxy will return 404 on the first request.
+We use **s3proxy** so each uploaded object lands as a plain file at `tmp/integration_transmissions/s3/<bucket>/<key>`. A `bucket-init` service in the compose file creates the bucket directories before the real services start.
 
 ## Test Files
 
