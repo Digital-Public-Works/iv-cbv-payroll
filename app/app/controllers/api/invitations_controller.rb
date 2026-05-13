@@ -2,10 +2,6 @@ class Api::InvitationsController < ApplicationController
   skip_forgery_protection
   wrap_parameters false
 
-  LEGACY_CUSTOM_ATTRIBUTES_PARAM = :agency_partner_metadata
-  CUSTOM_ATTRIBUTES_PARAM = :custom_attributes
-  METRICS_ATTRIBUTES_PARAM = :metrics_attributes
-
   # return useful information if there is a malformed invitation api body
   rescue_from ActionDispatch::Http::Parameters::ParseError do |exception|
     underlying = exception.cause&.message || exception.message
@@ -51,7 +47,7 @@ class Api::InvitationsController < ApplicationController
     client_agency_id = @current_user.client_agency_id
 
     # Top-level invitation params (language, email, expiration).
-    permitted = params.without(:client_agency_id, CUSTOM_ATTRIBUTES_PARAM, LEGACY_CUSTOM_ATTRIBUTES_PARAM, METRICS_ATTRIBUTES_PARAM).permit(
+    permitted = params.without(:client_agency_id, :custom_attributes, :agency_partner_metadata, :metrics_attributes).permit(
       :language, :email_address, :user_id, :expiration_date, :expiration_days
     )
 
@@ -101,14 +97,14 @@ class Api::InvitationsController < ApplicationController
 
   # allow both custom_attributes and agency_partner_metadata to account for legacy partners
   def unsafe_custom_attributes_hash
-    raw = params[CUSTOM_ATTRIBUTES_PARAM].presence || params[LEGACY_CUSTOM_ATTRIBUTES_PARAM]
+    raw = params[:custom_attributes].presence || params[:agency_partner_metadata]
     return {} if raw.blank?
     raw.respond_to?(:to_unsafe_h) ? raw.to_unsafe_h : raw.to_h
   end
 
   # all metrics attributes are lowercased and prefixed with 'x-' (if not already present) to prevent possible key collision
   def metrics_attributes_hash
-    raw = params[METRICS_ATTRIBUTES_PARAM]
+    raw = params[:metrics_attributes]
     return {} if raw.blank?
     hash = raw.respond_to?(:to_unsafe_h) ? raw.to_unsafe_h : (raw.is_a?(Hash) ? raw.to_h : {})
     hash.each_with_object({}) do |(k, v), result|
@@ -122,7 +118,7 @@ class Api::InvitationsController < ApplicationController
   def missing_required_errors(missing)
     {
       errors: missing.map do |name|
-        { field: "#{CUSTOM_ATTRIBUTES_PARAM}.#{name}", message: "is required" }
+        { field: "#{:custom_attributes}.#{name}", message: "is required" }
       end
     }
   end
@@ -145,7 +141,7 @@ class Api::InvitationsController < ApplicationController
       case error
       when ActiveModel::NestedError
         prefix, attribute_name = error.attribute.to_s.split(".")
-        prefix = CUSTOM_ATTRIBUTES_PARAM.to_s if prefix == "cbv_applicant"
+        prefix = :custom_attributes.to_s if prefix == "cbv_applicant"
 
         { field: "#{prefix}.#{attribute_name}", message: error_message }
       else
