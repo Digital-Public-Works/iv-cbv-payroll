@@ -21,3 +21,18 @@ services:
       PAYLOAD_DIR: /data/received
     volumes:
       - ./tmp/integration_transmissions/webhook:/data/received
+
+  # S3-compatible object storage for testing UnencryptedS3Transmitter and
+  # EncryptedS3Transmitter.
+  s3:
+    image: andrewgaul/s3proxy:latest
+    ports:
+      - "9000:80"
+    environment:
+      S3PROXY_AUTHORIZATION: aws-v2-or-v4
+      S3PROXY_IDENTITY: s3test
+      S3PROXY_CREDENTIAL: s3test
+      JCLOUDS_PROVIDER: filesystem
+      JCLOUDS_FILESYSTEM_BASEDIR: /data
+    volumes:
+      - ./tmp/integration_transmissions/s3:/data

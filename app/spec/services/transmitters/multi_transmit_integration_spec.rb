@@ -37,6 +37,25 @@ RSpec.describe "Multi-transmission delivery", integration: true do
     }
   end
 
+  let(:encrypted_s3_config) do
+    {
+      "bucket" => "test-encrypted-bucket",
+      "region" => "us-east-1",
+      "aws_access_key_id" => "test-access-key",
+      "aws_secret_access_key" => "test-secret-key",
+      "public_key" => "fake-public-key"
+    }
+  end
+
+  let(:unencrypted_s3_config) do
+    {
+      "bucket" => "test-unencrypted-bucket",
+      "region" => "us-east-1",
+      "aws_access_key_id" => "test-access-key",
+      "aws_secret_access_key" => "test-secret-key"
+    }
+  end
+
   let(:mock_client_agency) do
     instance_double(ClientAgencyConfig::ClientAgency,
       id: "sandbox",
@@ -51,6 +70,14 @@ RSpec.describe "Multi-transmission delivery", integration: true do
         ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(
           method: "sftp",
           configuration: sftp_config.with_indifferent_access
+        ),
+        ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(
+          method: "encrypted_s3",
+          configuration: encrypted_s3_config.with_indifferent_access
+        ),
+        ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(
+          method: "unencrypted_s3",
+          configuration: unencrypted_s3_config.with_indifferent_access
         )
       ]
     )
@@ -66,13 +93,13 @@ RSpec.describe "Multi-transmission delivery", integration: true do
   it "creates a pending transmission per configured method and enqueues a job for each" do
     expect {
       CaseWorkerTransmitterJob.new.perform(cbv_flow.id)
-    }.to change(CbvFlowTransmission, :count).by(2)
+    }.to change(CbvFlowTransmission, :count).by(4)
 
     transmissions = cbv_flow.reload.cbv_flow_transmissions
 
-    expect(transmissions.pluck(:method_type)).to contain_exactly("webhook", "sftp")
+    expect(transmissions.pluck(:method_type)).to contain_exactly("webhook", "sftp", "encrypted_s3", "unencrypted_s3")
     expect(transmissions.all?(&:pending?)).to be(true)
-    expect(CbvFlowTransmissionJob).to have_been_enqueued.exactly(:twice)
+    expect(CbvFlowTransmissionJob).to have_been_enqueued.exactly(4).times
 
     transmissions.each do |transmission|
       expect(CbvFlowTransmissionJob).to have_been_enqueued.with(transmission.id)
@@ -89,13 +116,13 @@ RSpec.describe "Multi-transmission delivery", integration: true do
 
     CaseWorkerTransmitterJob.new.perform(cbv_flow.id)
 
-    expect(CbvFlowTransmissionJob).to have_been_enqueued.exactly(:once)
+    expect(CbvFlowTransmissionJob).to have_been_enqueued.exactly(3).times
   end
 
   it "resets failed transmissions to pending" do
     failed = create(:cbv_flow_transmission,
       cbv_flow: cbv_flow,
-      method_type: :webhook,
+      method_type: :encrypted_s3,
       status: :failed,
       last_error: "connection refused"
     )
@@ -103,19 +130,20 @@ RSpec.describe "Multi-transmission delivery", integration: true do
     CaseWorkerTransmitterJob.new.perform(cbv_flow.id)
 
     expect(failed.reload.pending?).to be(true)
-    expect(CbvFlowTransmissionJob).to have_been_enqueued.exactly(:twice)
+    expect(CbvFlowTransmissionJob).to have_been_enqueued.exactly(4).times
   end
 
   it "removes transmissions for methods no longer configured" do
     orphan = create(:cbv_flow_transmission,
       cbv_flow: cbv_flow,
-      method_type: :encrypted_s3,
+      method_type: :shared_email,
       status: :pending
     )
 
     CaseWorkerTransmitterJob.new.perform(cbv_flow.id)
 
     expect(CbvFlowTransmission.exists?(orphan.id)).to be(false)
-    expect(cbv_flow.reload.cbv_flow_transmissions.pluck(:method_type)).to contain_exactly("webhook", "sftp")
+    expect(cbv_flow.reload.cbv_flow_transmissions.pluck(:method_type))
+      .to contain_exactly("webhook", "sftp", "encrypted_s3", "unencrypted_s3")
   end
 end

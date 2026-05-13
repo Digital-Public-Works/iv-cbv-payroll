@@ -2,8 +2,10 @@ namespace :integration do
   # Spec files tagged `integration: true`. Add new integration specs here so
   # they get picked up by `integration:rspec:*` convenience tasks.
   INTEGRATION_SPECS = {
-    webhook: "spec/services/transmitters/webhook_transmitter_integration_spec.rb",
-    sftp:    "spec/services/transmitters/sftp_transmitter_integration_spec.rb"
+    webhook:         "spec/services/transmitters/webhook_transmitter_integration_spec.rb",
+    sftp:            "spec/services/transmitters/sftp_transmitter_integration_spec.rb",
+    unencrypted_s3:  "spec/services/transmitters/unencrypted_s3_transmitter_integration_spec.rb",
+    encrypted_s3:    "spec/services/transmitters/encrypted_s3_transmitter_integration_spec.rb"
   }.freeze
 
   COMPOSE_FILE = ENV.fetch("INTEGRATION_COMPOSE_FILE", "docker-compose.integration.yml").freeze
@@ -149,6 +151,9 @@ namespace :integration do
   namespace :docker do
     desc "Start Docker services for integration tests"
     task :up do
+      # buckets need to be pre-created as folders for s3proxy
+      FileUtils.mkdir_p("tmp/integration_transmissions/s3/test-unencrypted-bucket")
+      FileUtils.mkdir_p("tmp/integration_transmissions/s3/test-encrypted-bucket")
       sh "docker compose -f #{COMPOSE_FILE} up -d"
     end
 
