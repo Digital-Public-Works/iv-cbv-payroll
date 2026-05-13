@@ -8,6 +8,12 @@ services:
     command: testuser:testpass:::upload
     volumes:
       - ./tmp/integration_transmissions/sftp:/home/testuser/upload
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/22"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
 
   # Webhook API reference implementation
   # https://github.com/Digital-Public-Works/dicit-webhook-api-ref-impl
@@ -21,6 +27,12 @@ services:
       PAYLOAD_DIR: /data/received
     volumes:
       - ./tmp/integration_transmissions/webhook:/data/received
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/9292"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
 
   # S3-compatible object storage for testing UnencryptedS3Transmitter and
   # EncryptedS3Transmitter.
@@ -36,3 +48,9 @@ services:
       JCLOUDS_FILESYSTEM_BASEDIR: /data
     volumes:
       - ./tmp/integration_transmissions/s3:/data
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/80"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
