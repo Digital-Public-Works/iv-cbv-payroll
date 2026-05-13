@@ -30,7 +30,7 @@ class S3Service
     end
     if @endpoint.present?
       client_opts[:endpoint] = @endpoint
-      # s3proxy mis-parses flexible-checksum trailers (gaul/s3proxy#922) — opt back into legacy behavior.
+      # s3proxy (used in integration tests) does not handle checksum's well https://github.com/gaul/s3proxy/issues/922
       client_opts[:request_checksum_calculation] = "when_required"
     end
     client_opts[:force_path_style] = true if @force_path_style
