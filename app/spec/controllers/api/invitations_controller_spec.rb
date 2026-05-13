@@ -12,9 +12,9 @@ RSpec.describe Api::InvitationsController do
 
     let(:valid_params) do
       attributes_for(:cbv_flow_invitation, client_agency_id).tap do |params|
-        params[:agency_partner_metadata] = attributes_for(:cbv_applicant, client_agency_id)
+        params[:custom_attributes] = attributes_for(:cbv_applicant, client_agency_id)
         # ensure that client_agency_id is not considered a valid param. it should be inferred from the api token
-        params[:agency_partner_metadata].delete(:client_agency_id)
+        params[:custom_attributes].delete(:client_agency_id)
         params.delete(:client_agency_id)
       end
     end
@@ -43,10 +43,10 @@ RSpec.describe Api::InvitationsController do
 
 
     # TODO: See invitations_controller note on if we are including the echo-back metadata
-    # it "includes all agency_partner_metadata fields in the response" do
+    # it "includes all custom_attributes fields in the response" do
     #   subject
     #   parsed_response = JSON.parse(response.body)
-    #   expect(parsed_response["agency_partner_metadata"].keys.map(&:to_sym)).to match_array(
+    #   expect(parsed_response["custom_attributes"].keys.map(&:to_sym)).to match_array(
     #     CbvApplicant.valid_attributes_for_agency(client_agency_id.to_s)
     #   )
     # end
@@ -82,7 +82,7 @@ RSpec.describe Api::InvitationsController do
       let(:client_agency_id) { "la_ldh".to_sym }
       let(:valid_params) do
         attributes_for(:cbv_flow_invitation, client_agency_id).tap do |params|
-          params[:agency_partner_metadata] = {
+          params[:custom_attributes] = {
             doc_id: "ABC1234"
           }
         end
@@ -102,13 +102,13 @@ RSpec.describe Api::InvitationsController do
       end
 
       # TODO: See invitations_controller note on if we are including the echo-back metadata
-      # it "returns the expected agency_partner_metadata" do
+      # it "returns the expected custom_attributes" do
       #   subject
       #   parsed_response = JSON.parse(response.body)
-      #   expect(parsed_response["agency_partner_metadata"]).to eq(
-      #     "doc_id" => valid_params[:agency_partner_metadata][:doc_id],
-      #     "case_number" => valid_params[:agency_partner_metadata][:case_number],
-      #     "date_of_birth" => valid_params[:agency_partner_metadata][:date_of_birth],
+      #   expect(parsed_response["custom_attributes"]).to eq(
+      #     "doc_id" => valid_params[:custom_attributes][:doc_id],
+      #     "case_number" => valid_params[:custom_attributes][:case_number],
+      #     "date_of_birth" => valid_params[:custom_attributes][:date_of_birth],
       #   )
       # end
     end
@@ -132,7 +132,7 @@ RSpec.describe Api::InvitationsController do
 
     context "invalid params" do
       let(:invalid_params) do
-        valid_params[:agency_partner_metadata].delete(:first_name)
+        valid_params[:custom_attributes].delete(:first_name)
         valid_params
       end
 
@@ -150,14 +150,58 @@ RSpec.describe Api::InvitationsController do
         error_fields = parsed_response["errors"].map { |e| e["field"] }
 
         expect(error_fields).not_to include("cbv_applicant")
-        expect(error_fields).to include("agency_partner_metadata.first_name")
+        expect(error_fields).to include("custom_attributes.first_name")
+      end
+    end
+
+    context "legacy agency_partner_metadata param" do
+      let(:legacy_params) do
+        valid_params.tap do |p|
+          p[:agency_partner_metadata] = p.delete(:custom_attributes)
+        end
+      end
+
+      it "is accepted and routed through the same invitation flow" do
+        expect {
+          post :create, params: legacy_params
+        }.to change(CbvFlowInvitation, :count).by(1)
+          .and change(CbvApplicant, :count).by(1)
+
+        expect(response).to have_http_status(:created)
+      end
+
+      it "emits the canonical custom_attributes prefix in error responses" do
+        legacy_params[:agency_partner_metadata].delete(:first_name)
+        post :create, params: legacy_params
+
+        expect(response).to have_http_status(:bad_request)
+        error_fields = JSON.parse(response.body)["errors"].map { |e| e["field"] }
+        expect(error_fields).to include("custom_attributes.first_name")
+        expect(error_fields).not_to include("agency_partner_metadata.first_name")
+      end
+    end
+
+    context "when both custom_attributes and agency_partner_metadata are supplied" do
+      let(:dual_params) do
+        valid_params.merge(
+          custom_attributes: valid_params[:custom_attributes].merge(case_number: "WINNER"),
+          agency_partner_metadata: valid_params[:custom_attributes].merge(case_number: "LOSER")
+        )
+      end
+
+      it "uses custom_attributes and ignores agency_partner_metadata" do
+        post :create, params: dual_params
+
+        expect(response).to have_http_status(:created)
+        invitation = CbvFlowInvitation.last
+        expect(invitation.cbv_applicant.case_number).to eq("WINNER")
       end
     end
 
     context "params not included in the agency's valid attributes" do
       let(:params_with_invalid_attributes) do
         # doc_id is not valid for sandbox
-        valid_params[:agency_partner_metadata][:doc_id] = "1234567"
+        valid_params[:custom_attributes][:doc_id] = "1234567"
         valid_params
       end
 
@@ -168,6 +212,105 @@ RSpec.describe Api::InvitationsController do
 
         invitation = CbvFlowInvitation.last
         expect(invitation.cbv_applicant.doc_id).to be_nil
+      end
+    end
+
+    context "with a malformed JSON body" do
+      it "returns a structured 400 explaining the parse failure" do
+        request.headers["Content-Type"] = "application/json"
+        request.headers["Authorization"] = "Bearer #{api_access_token_instance.access_token}"
+
+        # Missing comma between objects — invalid JSON
+        post :create, body: '{"custom_attributes": {"application_id": "1234"} "language": "en"}'
+
+        expect(response).to have_http_status(:bad_request)
+        parsed_response = JSON.parse(response.body)
+        expect(parsed_response["errors"]).to be_an(Array)
+        first = parsed_response["errors"].first
+        expect(first["field"]).to eq("body")
+        expect(first["message"]).to match(/Request body is not valid JSON/)
+      end
+
+      it "returns a structured 400 for a truncated body" do
+        request.headers["Content-Type"] = "application/json"
+        request.headers["Authorization"] = "Bearer #{api_access_token_instance.access_token}"
+
+        post :create, body: '{'
+
+        expect(response).to have_http_status(:bad_request)
+        parsed_response = JSON.parse(response.body)
+        expect(parsed_response["errors"].first["field"]).to eq("body")
+        expect(parsed_response["errors"].first["message"]).to match(/Request body is not valid JSON/)
+      end
+    end
+
+    context "with metrics_attributes" do
+      let(:fake_event_logger) { instance_double(GenericEventTracker, track: nil) }
+
+      before do
+        allow(GenericEventTracker).to receive(:new).and_return(fake_event_logger)
+      end
+
+      it "forwards keys with an ensured x- prefix (lowercased) to the CaseworkerInvitedApplicantToFlow event" do
+        params_with_metrics = valid_params.merge(metrics_attributes: {
+          "X-Request-ID" => "abc-123",
+          "Source" => "ops_console",
+          "campaign_id" => "42"
+        })
+
+        post :create, params: params_with_metrics
+
+        expect(response).to have_http_status(:created)
+        expect(fake_event_logger).to have_received(:track).with(
+          'CaseworkerInvitedApplicantToFlow',
+          nil,
+          hash_including(
+            "x-request-id" => "abc-123",
+            "x-source" => "ops_console",
+            "x-campaign_id" => "42"
+          )
+        )
+      end
+
+      it "does not double-prefix keys that already begin with x-" do
+        post :create, params: valid_params.merge(metrics_attributes: {
+          "x-trace" => "lower",
+          "X-Trace-Id" => "mixed-case"
+        })
+
+        expect(fake_event_logger).to have_received(:track).with(
+          'CaseworkerInvitedApplicantToFlow',
+          nil,
+          hash_including("x-trace" => "lower", "x-trace-id" => "mixed-case")
+        )
+      end
+
+      it "does not persist metrics_attributes anywhere on the invitation or applicant" do
+        post :create, params: valid_params.merge(metrics_attributes: { "trace" => "xyz" })
+
+        invitation = CbvFlowInvitation.last
+        expect(invitation.attributes).not_to include("trace")
+        expect(invitation.attributes).not_to include("x-trace")
+        expect(invitation.cbv_applicant.custom_attributes).not_to include("trace")
+        expect(invitation.cbv_applicant.custom_attributes).not_to include("x-trace")
+        expect(invitation.cbv_applicant.custom_attributes).not_to include("metrics_attributes")
+      end
+
+      it "creates the invitation normally when metrics_attributes is omitted" do
+        post :create, params: valid_params
+
+        expect(response).to have_http_status(:created)
+        expect(fake_event_logger).to have_received(:track).with(
+          'CaseworkerInvitedApplicantToFlow',
+          nil,
+          hash_including(:invitation_id)
+        )
+      end
+
+      it "tolerates an empty metrics_attributes hash" do
+        post :create, params: valid_params.merge(metrics_attributes: {})
+
+        expect(response).to have_http_status(:created)
       end
     end
 

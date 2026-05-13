@@ -23,8 +23,11 @@ RSpec.configure do |config|
   end
 
   def should_check_title?(request, response)
-    (request.get? || request.params[:action] == 'show') &&
-      !%w[new create].include?(request.params[:action]) &&
+    # Use path_parameters (route-based) rather than request.params so this
+    # check doesn't re-trigger body parsing on requests with a malformed JSON body.
+    action = request.path_parameters[:action]
+    (request.get? || action == 'show') &&
+      !%w[new create].include?(action) &&
       response.body.present? &&
       response.status == 200 &&
       response.content_type =~ /html/

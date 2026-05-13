@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_05_05_200002) do
+ActiveRecord::Schema[7.2].define(version: 2026_05_12_164251) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -35,7 +35,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_05_200002) do
     t.jsonb "income_changes"
     t.date "date_of_birth"
     t.string "doc_id"
-    t.jsonb "agency_partner_metadata", default: {}, null: false
+    t.jsonb "custom_attributes", default: {}, null: false
     t.string "partner_identifier"
     t.index ["partner_identifier"], name: "index_cbv_applicants_on_partner_identifier"
   end
