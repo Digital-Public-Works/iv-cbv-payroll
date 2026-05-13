@@ -68,6 +68,18 @@ RSpec.describe MixpanelEventTracker do
           tracker.track(event_type, request, { user_id: "456" })
         end
       end
+
+      context 'precedence when both cbv_applicant_id and user_id are present' do
+        before do
+          allow(ENV).to receive(:[]).and_call_original
+          allow(ENV).to receive(:[]).with("MIXPANEL_DISTINCT_ID_PREFIX").and_return(nil)
+        end
+
+        it 'prefers cbv_applicant_id so caseworker-initiated events group under the applicant' do
+          expect_any_instance_of(Mixpanel::Tracker).to receive(:track).with("applicant-123", event_type, anything)
+          tracker.track(event_type, request, { cbv_applicant_id: "123", user_id: "456" })
+        end
+      end
     end
   end
 end
