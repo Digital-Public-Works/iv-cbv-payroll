@@ -89,4 +89,36 @@ RSpec.describe Transmitters::UnencryptedS3Transmitter, integration: true do
       expect(meta["pdf_number_of_pages"].to_i).to be >= 1
     end
   end
+
+  describe "with bad credentials" do
+    it "fails the transmission and records the error" do
+      bad_config = transmission_method_configuration.merge(
+        "aws_access_key_id" => "wrong-key",
+        "aws_secret_access_key" => "wrong-secret"
+      )
+      transmission = create(:cbv_flow_transmission,
+        cbv_flow: cbv_flow,
+        method_type: :unencrypted_s3,
+        status: :pending,
+        configuration: bad_config
+      )
+
+      # Use the real ClientAgencyConfig — the live "sandbox" config supplies
+      # the agency methods the deliver path needs. Only stub the two
+      # job-internal helpers we can't run for real.
+      allow_any_instance_of(CbvFlowTransmissionJob).to receive(:set_aggregator_report).and_return(aggregator_report)
+      allow_any_instance_of(CbvFlowTransmissionJob).to receive(:event_logger)
+        .and_return(instance_double(GenericEventTracker, track: nil))
+
+      expect {
+        CbvFlowTransmissionJob.new.perform(transmission.id)
+      }.to raise_error(Aws::S3::Errors::ServiceError)
+
+      transmission.reload
+      expect(transmission).to be_failed
+      expect(transmission.last_error).to be_present
+      expect(transmission.succeeded_at).to be_nil
+      expect(cbv_flow.reload.transmitted_at).to be_nil
+    end
+  end
 end
