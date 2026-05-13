@@ -182,19 +182,19 @@ RSpec.describe Api::InvitationsController do
     end
 
     context "when both custom_attributes and agency_partner_metadata are supplied" do
-      let(:conflicting_params) do
-        valid_params.merge(agency_partner_metadata: valid_params[:custom_attributes])
+      let(:dual_params) do
+        valid_params.merge(
+          custom_attributes: valid_params[:custom_attributes].merge(case_number: "WINNER"),
+          agency_partner_metadata: valid_params[:custom_attributes].merge(case_number: "LOSER")
+        )
       end
 
-      it "returns 400 without creating any records" do
-        expect {
-          post :create, params: conflicting_params
-        }.not_to change(CbvFlowInvitation, :count)
+      it "uses custom_attributes and ignores agency_partner_metadata" do
+        post :create, params: dual_params
 
-        expect(response).to have_http_status(:bad_request)
-        parsed_response = JSON.parse(response.body)
-        expect(parsed_response["errors"].first["field"]).to eq("custom_attributes")
-        expect(parsed_response["errors"].first["message"]).to match(/Provide either custom_attributes or agency_partner_metadata/)
+        expect(response).to have_http_status(:created)
+        invitation = CbvFlowInvitation.last
+        expect(invitation.cbv_applicant.case_number).to eq("WINNER")
       end
     end
 

@@ -19,13 +19,6 @@ class Api::InvitationsController < ApplicationController
   before_action :authenticate
 
   def create
-    if params[CUSTOM_ATTRIBUTES_PARAM].present? && params[LEGACY_CUSTOM_ATTRIBUTES_PARAM].present?
-      return render json: {
-        errors: [ { field: CUSTOM_ATTRIBUTES_PARAM.to_s,
-                    message: "Provide either #{CUSTOM_ATTRIBUTES_PARAM} or #{LEGACY_CUSTOM_ATTRIBUTES_PARAM}, but not both." } ]
-      }, status: :bad_request
-    end
-
     missing = missing_required_custom_attributes_keys
     if missing.any?
       return render json: missing_required_errors(missing), status: :bad_request
@@ -106,7 +99,7 @@ class Api::InvitationsController < ApplicationController
     required_attrs.keys.reject { |name| incoming[name].present? }
   end
 
-  # allows either custom_attributes or agency_partner_metadata to allow for backwards compatibility
+  # allow both custom_attributes and agency_partner_metadata to account for legacy partners
   def unsafe_custom_attributes_hash
     raw = params[CUSTOM_ATTRIBUTES_PARAM].presence || params[LEGACY_CUSTOM_ATTRIBUTES_PARAM]
     return {} if raw.blank?
