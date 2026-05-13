@@ -34,7 +34,6 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
   end
 
   before do
-    allow(mock_client_agency).to receive(:transmission_method_configuration).and_return(transmission_method_configuration)
     allow(mock_client_agency).to receive(:id).and_return("sandbox")
     allow(CbvApplicant).to receive(:valid_attributes_for_agency).with("sandbox").and_return([ "case_number" ])
 
@@ -45,7 +44,7 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
     WebMock.disable_net_connect!
   end
 
-  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report) }
+  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
 
   describe "#deliver" do
     let(:confirmation_code) { "WEBHOOK_DELIVER" }

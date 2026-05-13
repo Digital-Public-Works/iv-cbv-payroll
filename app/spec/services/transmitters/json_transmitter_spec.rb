@@ -28,7 +28,6 @@ RSpec.describe Transmitters::JsonTransmitter do
   let!(:api_token) { create(:api_access_token, user: service_user) }
 
   before do
-    allow(mock_client_agency).to receive(:transmission_method_configuration).and_return(transmission_method_configuration)
     allow(mock_client_agency).to receive(:id).and_return("sandbox")
     allow(CbvApplicant).to receive(:valid_attributes_for_agency).with("sandbox").and_return([ "case_number" ])
     allow(Rails.logger).to receive(:error)
@@ -38,7 +37,7 @@ RSpec.describe Transmitters::JsonTransmitter do
     it 'posts to the endpoint with the expected data' do
       expect(aggregator_report).to receive(:income_report).and_return({ cool: "report" })
       VCR.use_cassette("json_transmitter_200") do
-        described_class.new(cbv_flow, mock_client_agency, aggregator_report).deliver
+        described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration).deliver
       end
     end
   end
@@ -46,7 +45,7 @@ RSpec.describe Transmitters::JsonTransmitter do
   context 'agency responds with 500' do
     it 'raises an HTTP error' do
       VCR.use_cassette("json_transmitter_500") do
-        expect { described_class.new(cbv_flow, mock_client_agency, aggregator_report).deliver }.to raise_error("Unexpected response from agency: 500 Internal Server Error")
+        expect { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration).deliver }.to raise_error("Unexpected response from agency: 500 Internal Server Error")
       end
 
       expect(Rails.logger).to have_received(:error).with(/Unexpected response: 500/)
@@ -56,7 +55,7 @@ RSpec.describe Transmitters::JsonTransmitter do
   context 'any other non-200 response' do
     it 'raises an HTTP error' do
       VCR.use_cassette("json_transmitter_418") do
-        expect { described_class.new(cbv_flow, mock_client_agency, aggregator_report).deliver }
+        expect { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration).deliver }
           .to raise_error("Unexpected response from agency: 418 I'm a teapot")
       end
 
@@ -74,7 +73,7 @@ RSpec.describe Transmitters::JsonTransmitter do
       ).and_return("mock-signature")
 
       VCR.use_cassette("json_transmitter_200") do
-        described_class.new(cbv_flow, mock_client_agency, aggregator_report).deliver
+        described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration).deliver
       end
     end
 
@@ -86,7 +85,7 @@ RSpec.describe Transmitters::JsonTransmitter do
         expect(JsonApiSignature).to receive(:generate).with(anything, anything, older_token.access_token).and_return("mock-signature")
 
         VCR.use_cassette("json_transmitter_200") do
-          described_class.new(cbv_flow, mock_client_agency, aggregator_report).deliver
+          described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration).deliver
         end
       end
     end
@@ -108,7 +107,7 @@ RSpec.describe Transmitters::JsonTransmitter do
         .with(headers: { 'X-Client-ID' => 'test-client-id', 'X-Request-ID' => 'test-request-id' })
         .to_return(status: 200, body: '{"status": "success"}')
 
-      expect(described_class.new(cbv_flow, mock_client_agency, aggregator_report).deliver).to eq("ok")
+      expect(described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration).deliver).to eq("ok")
       expect(stub).to have_been_requested
     end
   end

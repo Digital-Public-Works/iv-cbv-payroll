@@ -39,7 +39,6 @@ RSpec.describe Transmitters::SftpTransmitter, integration: true do
     allow(mock_client_agency).to receive(:report_customization_show_earnings_list).and_return(true)
     allow(mock_client_agency).to receive(:timezone).and_return("America/New_York")
     allow(mock_client_agency).to receive(:pdf_filename).and_return("test_report")
-    allow(mock_client_agency).to receive(:transmission_method_configuration).and_return(transmission_method_configuration)
 
     # Stub PDF generation — we're testing SFTP upload, not PDF rendering
     allow_any_instance_of(PdfService).to receive(:generate)
@@ -56,7 +55,7 @@ RSpec.describe Transmitters::SftpTransmitter, integration: true do
     end
   end
 
-  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report) }
+  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
 
   describe "#deliver" do
     it "uploads a PDF to the SFTP server" do

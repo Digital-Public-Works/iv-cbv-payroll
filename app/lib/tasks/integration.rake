@@ -35,7 +35,7 @@ namespace :integration do
 
       changes = loader.apply!
       puts "  Config: #{changes[:config]}"
-      puts "  Transmission configs: #{changes[:transmission_configs][:created]} created, #{changes[:transmission_configs][:updated]} updated, #{changes[:transmission_configs][:deleted]} deleted"
+      puts "  Transmission methods: #{changes[:transmission_methods][:created]} created, #{changes[:transmission_methods][:updated]} updated, #{changes[:transmission_methods][:deleted]} deleted"
       puts "  Application attributes: #{changes[:application_attributes][:created]} created, #{changes[:application_attributes][:updated]} updated, #{changes[:application_attributes][:deleted]} deleted"
       puts "  Translations: #{changes[:translations][:created]} created, #{changes[:translations][:updated]} updated, #{changes[:translations][:deleted]} deleted"
       puts
