@@ -8,6 +8,9 @@ on:
   push:
     branches: ['main', 'release-demo', 'release-prod']
 
+permissions:
+  contents: read
+
 jobs:
   rspec-integration:
     name: Rspec (integration)
@@ -34,11 +37,16 @@ jobs:
         with:
           rails_env: test
 
-      - name: Pre-create s3proxy bucket dirs
+      - name: Pre-create bind-mount dirs
         working-directory: app
         run: |
-          mkdir -p tmp/integration_transmissions/s3/test-unencrypted-bucket
-          mkdir -p tmp/integration_transmissions/s3/test-encrypted-bucket
+          mkdir -p \
+            tmp/integration_transmissions/sftp \
+            tmp/integration_transmissions/webhook \
+            tmp/integration_transmissions/s3/test-unencrypted-bucket \
+            tmp/integration_transmissions/s3/test-encrypted-bucket
+          # Bind-mount sources need to be writable by container UIDs that may not match the runner's.
+          chmod -R 777 tmp/integration_transmissions
 
       - name: Start integration stack
         working-directory: app
