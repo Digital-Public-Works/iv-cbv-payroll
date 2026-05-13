@@ -43,15 +43,7 @@ RSpec.describe Transmitters::UnencryptedS3Transmitter, integration: true do
     allow(mock_client_agency).to receive(:partner_identifier_name).and_return("case_number")
     allow(mock_client_agency).to receive(:applicant_attributes).and_return({})
 
-    # Stub the report-rendering path with a simple wicked_pdf call so the
-    # uploaded artifact is a real, openable PDF — without dragging in the
-    # asset pipeline (sassc) that the full report layout needs.
-    pdf_bytes = WickedPdf.new.pdf_from_string(
-      "<html><body><h1>UnencryptedS3Transmitter integration test</h1>" \
-      "<p>If you can read this, the transmission and tar.gz extraction worked.</p></body></html>"
-    )
-    allow_any_instance_of(PdfService).to receive(:generate)
-      .and_return(OpenStruct.new(content: pdf_bytes, file_size: pdf_bytes.bytesize, page_count: 1))
+    stub_pdf_generation(label: "UnencryptedS3Transmitter integration test")
   end
 
   subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }

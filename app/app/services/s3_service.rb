@@ -8,6 +8,7 @@ class S3Service
     @region           = config["region"]
     @access_key       = config["aws_access_key_id"]
     @secret_key       = config["aws_secret_access_key"]
+    # Only set for s3proxy in integration tests; production talks to real AWS S3 without these.
     @endpoint         = config["endpoint"]
     @force_path_style = config["force_path_style"]
   end
@@ -29,10 +30,7 @@ class S3Service
     end
     if @endpoint.present?
       client_opts[:endpoint] = @endpoint
-      # Custom endpoints (s3proxy, LocalStack, etc.) frequently don't
-      # support the flexible-checksum trailers aws-sdk-s3 sends by default;
-      # fall back to the legacy "only when required" behavior. Real AWS
-      # (no endpoint override) keeps the new defaults.
+      # s3proxy mis-parses flexible-checksum trailers (gaul/s3proxy#922) — opt back into legacy behavior.
       client_opts[:request_checksum_calculation] = "when_required"
     end
     client_opts[:force_path_style] = true if @force_path_style

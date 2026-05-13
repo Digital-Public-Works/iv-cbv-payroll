@@ -40,15 +40,7 @@ RSpec.describe Transmitters::SftpTransmitter, integration: true do
     allow(mock_client_agency).to receive(:timezone).and_return("America/New_York")
     allow(mock_client_agency).to receive(:pdf_filename).and_return("test_report")
 
-    # Stub the report-rendering path with a simple wicked_pdf call so the
-    # uploaded artifact is a real, openable PDF — without dragging in the
-    # asset pipeline (sassc) that the full report layout needs.
-    pdf_bytes = WickedPdf.new.pdf_from_string(
-      "<html><body><h1>SftpTransmitter integration test</h1>" \
-      "<p>If you can read this, the SFTP upload worked.</p></body></html>"
-    )
-    allow_any_instance_of(PdfService).to receive(:generate)
-      .and_return(OpenStruct.new(content: pdf_bytes))
+    stub_pdf_generation(label: "SftpTransmitter integration test")
 
     # Use password-only auth to avoid scanning local ~/.ssh keys (which may
     # include ed25519 keys that require an optional gem not in the bundle).
