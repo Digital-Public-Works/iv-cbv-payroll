@@ -25,12 +25,12 @@ class CbvFlowTransmissionJob < ApplicationJob
     # Shoryuken retries on any raised error. If the external delivery actually
     # landed but the job failed after (e.g. connection reset on the upload
     # response, or the transmission.update! below raises), the retry will
-    # re-run deliver. Transmitters dedupe via confirmation_code embedded in
-    # the payload/filename so receivers can collapse duplicates. Two caveats
-    # where dedup breaks: encrypted_s3 filenames include a per-attempt
-    # timestamp (every retry is a new S3 object), and sftp pdf_filename uses
-    # a date rather than a timestamp (same-day retries overwrite, cross-
-    # midnight retries land as a second file).
+    # re-run deliver. All transmitters now derive their filename from
+    # TransmissionFilename, which is keyed off consented_to_authorized_use_at
+    # (date-only granularity in agency tz). Same-day retries produce the
+    # identical filename and overwrite cleanly; cross-midnight retries land
+    # as a second file. The confirmation_code in the filename + payload lets
+    # receivers collapse duplicates either way.
     begin
       Transmitters::TransmissionMethodTypes.transmitter_class(transmission.method_type)
         .new(cbv_flow, current_agency, aggregator_report, transmission.configuration)

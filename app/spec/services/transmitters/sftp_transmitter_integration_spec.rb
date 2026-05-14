@@ -38,7 +38,6 @@ RSpec.describe Transmitters::SftpTransmitter, integration: true do
     allow(mock_client_agency).to receive(:logo_path).and_return("pa_compass_logo.svg")
     allow(mock_client_agency).to receive(:report_customization_show_earnings_list).and_return(true)
     allow(mock_client_agency).to receive(:timezone).and_return("America/New_York")
-    allow(mock_client_agency).to receive(:pdf_filename).and_return("test_report")
 
     stub_pdf_generation(label: "SftpTransmitter integration test")
 
