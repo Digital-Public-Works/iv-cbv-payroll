@@ -55,12 +55,25 @@ class CbvFlowToJson
   def build_report_metadata
     {
       confirmation_code: @cbv_flow.confirmation_code,
+      filenames: build_filenames,
       report_date_range: {
         start_date: @aggregator_report.from_date.strftime("%Y-%m-%d"),
         end_date: @aggregator_report.to_date.strftime("%Y-%m-%d")
       },
       consent_timestamp_utc: @cbv_flow.consented_to_authorized_use_at&.utc&.iso8601
     }
+  end
+
+  # Filenames the receiver should expect on the agency's file channels (SFTP
+  # and/or S3). Webhook is excluded — the dict points at companion files, not
+  # at this payload itself. Empty hash if the agency has no file channels.
+  def build_filenames
+    @current_agency.transmission_methods.each_with_object({}) do |entry, hash|
+      method = entry.method.to_sym
+      next if method == :webhook
+
+      hash[method] = TransmissionFilename.for(@cbv_flow, @current_agency, method)
+    end
   end
 
   def build_client_information

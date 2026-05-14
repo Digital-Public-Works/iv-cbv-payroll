@@ -19,7 +19,7 @@ class Transmitters::EncryptedS3Transmitter < Transmitters::UnencryptedS3Transmit
     encrypted
   end
 
-  def upload_extension
-    "tar.gz.gpg"
+  def method_type_for_filename
+    :encrypted_s3
   end
 end

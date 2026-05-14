@@ -220,15 +220,6 @@ class ClientAgencyConfig
       cbv_flow.cbv_applicant.case_number.rjust(8, "0")
     end
 
-    def pdf_filename(cbv_flow, time)
-      time = time.in_time_zone(timezone)
-
-      padded_identifier = cbv_flow.cbv_applicant.partner_identifier.to_s.rjust(8, "0")
-      "CBVPilot_#{padded_identifier}_" \
-        "#{time.strftime('%Y%m%d')}_" \
-        "Conf#{cbv_flow.confirmation_code}"
-    end
-
     def format_timestamp(time)
       return nil if time.nil?
 
