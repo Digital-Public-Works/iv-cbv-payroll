@@ -65,12 +65,13 @@ class CbvFlowToJson
   end
 
   # Filenames the receiver should expect on the agency's file channels (SFTP
-  # and/or S3). Webhook is excluded — the dict points at companion files, not
-  # at this payload itself. Empty hash if the agency has no file channels.
+  # and/or S3). Non-file methods (webhook, shared_email, json) are skipped —
+  # the dict points at companion files, not at this payload or other channels
+  # that have no file. Empty hash if the agency has no file channels.
   def build_filenames
     @current_agency.transmission_methods.each_with_object({}) do |entry, hash|
       method = entry.method.to_sym
-      next if method == :webhook
+      next unless TransmissionFilename::EXTENSIONS.key?(method)
 
       hash[method] = TransmissionFilename.for(@cbv_flow, @current_agency, method)
     end
