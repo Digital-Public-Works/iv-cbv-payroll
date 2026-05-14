@@ -28,9 +28,10 @@ RSpec.describe TransmissionFilename do
         .to eq("CBVPilot_00012345_20260513_ConfABC123.tar.gz.gpg")
     end
 
-    it "returns the bare stem for webhook (no extension)" do
-      expect(described_class.for(cbv_flow, agency, :webhook))
-        .to eq("CBVPilot_00012345_20260513_ConfABC123")
+    it "raises for non-file methods (webhook, shared_email, json have no filename)" do
+      expect { described_class.for(cbv_flow, agency, :webhook) }.to raise_error(KeyError, /not a file-producing method/)
+      expect { described_class.for(cbv_flow, agency, :shared_email) }.to raise_error(KeyError, /not a file-producing method/)
+      expect { described_class.for(cbv_flow, agency, :json) }.to raise_error(KeyError, /not a file-producing method/)
     end
 
     it "accepts string method types" do
@@ -67,7 +68,7 @@ RSpec.describe TransmissionFilename do
 
     it "raises on an unknown method_type" do
       expect { described_class.for(cbv_flow, agency, :smoke_signal) }
-        .to raise_error(KeyError)
+        .to raise_error(KeyError, /not a file-producing method/)
     end
   end
 end
