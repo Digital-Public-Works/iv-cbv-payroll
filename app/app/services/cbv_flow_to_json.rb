@@ -64,10 +64,9 @@ class CbvFlowToJson
     }
   end
 
-  # Filenames the receiver should expect on the agency's file channels (SFTP
-  # and/or S3). Non-file methods (webhook, shared_email, json) are skipped —
-  # the dict points at companion files, not at this payload or other channels
-  # that have no file. Empty hash if the agency has no file channels.
+  # Build a hash of the filenames the partner should expect on the 
+  # partner's file transmitters (SFTP and/or S3). 
+  # Non-file transmitters (webhook, shared_email, json) are ignored.
   def build_filenames
     @current_agency.transmission_methods.each_with_object({}) do |entry, hash|
       method = entry.method.to_sym
