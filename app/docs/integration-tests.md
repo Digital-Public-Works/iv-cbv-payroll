@@ -29,12 +29,14 @@ All integration-related tasks live under the `integration:` namespace:
 
 | Task | Purpose |
 |---|---|
-| `integration:docker:up` | Start the Docker services (SFTP, webhook-api) |
+| `integration:docker:up` | Start the Docker services (SFTP, webhook-api, S3) |
 | `integration:docker:down` | Stop the Docker services |
 | `integration:docker:ps` | Show Docker service status |
 | `integration:rspec:all` | Run every integration spec (verifies Docker is up first) |
 | `integration:rspec:webhook` | Run just the webhook transmitter spec |
 | `integration:rspec:sftp` | Run just the SFTP transmitter spec |
+| `integration:rspec:unencrypted_s3` | Run just the unencrypted S3 transmitter spec |
+| `integration:rspec:encrypted_s3` | Run just the encrypted S3 transmitter spec |
 | `integration:partner:setup` | Create the `integration_test` partner and API service account (for e2e browser testing) |
 | `integration:partner:teardown` | Remove the `integration_test` partner and service account |
 
@@ -48,11 +50,15 @@ The file `docker-compose.integration.yml` defines the following services:
 |---|---|---|---|
 | `sftp` | `atmoz/sftp:latest` | 2222 | SFTP server for `SftpTransmitter` |
 | `webhook-api` | [dicit-webhook-api-ref-impl](https://github.com/Digital-Public-Works/dicit-webhook-api-ref-impl) | 9292 | Webhook reference server for `WebhookTransmitter` |
+| `s3` | `andrewgaul/s3proxy:latest` | 9000 | S3-compatible storage for `UnencryptedS3Transmitter` and `EncryptedS3Transmitter` |
 
 Credentials:
 
 - SFTP: user `testuser`, password `testpass`, upload directory `/upload`
 - Webhook API: API key `my-secure-guid` (set via `VMI_API_KEY`)
+- S3: access key `s3test`, secret `s3test`
+
+We use **s3proxy** so each uploaded object lands as a plain file at `tmp/integration_transmissions/s3/<bucket>/<key>`. A `bucket-init` service in the compose file creates the bucket directories before the real services start.
 
 ## Test Files
 
@@ -62,6 +68,8 @@ Integration specs carry the tag `integration: true` and are excluded from the de
 |---|---|---|
 | `sftp_transmitter_integration_spec.rb` | `SftpTransmitter` | SFTP container |
 | `webhook_transmitter_integration_spec.rb` | `WebhookTransmitter` | Webhook ref impl (port 9292) |
+| `unencrypted_s3_transmitter_integration_spec.rb` | `UnencryptedS3Transmitter` | s3proxy (port 9000) |
+| `encrypted_s3_transmitter_integration_spec.rb` | `EncryptedS3Transmitter` | s3proxy (port 9000) + locally generated GPG keypair |
 
 ## End-to-End Browser Testing (optional)
 
@@ -110,6 +118,22 @@ sftp -P 2222 testuser@localhost
 
 ```bash
 curl http://localhost:9292/health
+```
+
+**S3:**
+
+Uploaded objects are mounted to the host (usually in the repo's app folder):
+
+```bash
+ls tmp/integration_transmissions/s3/test-unencrypted-bucket
+ls tmp/integration_transmissions/s3/test-encrypted-bucket
+```
+
+To wipe bucket contents between runs, take the stack down and remove the directory:
+
+```bash
+bundle exec rake integration:docker:down
+rm -rf tmp/integration_transmissions/s3
 ```
 
 ## Troubleshooting

@@ -4,7 +4,7 @@ class Transmitters::UnencryptedS3Transmitter
   include CsvHelper
 
   def deliver
-    config = @current_agency.transmission_method_configuration
+    config = @transmission_config
     pre_deliver_check(config)
 
     time_now = Time.now
