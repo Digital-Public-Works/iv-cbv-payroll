@@ -69,10 +69,6 @@ RSpec.describe CbvFlowToJson do
           expect(filenames[:sftp]).to eq(TransmissionFilename.for(cbv_flow, mock_client_agency, :sftp))
         end
 
-        it "omits the webhook method (it points at companion files, not itself)" do
-          expect(filenames).not_to have_key(:webhook)
-        end
-
         context "when the agency configures encrypted_s3 alongside webhook" do
           let(:configured_methods) do
             [

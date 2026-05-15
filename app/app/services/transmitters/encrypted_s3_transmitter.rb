@@ -19,7 +19,7 @@ class Transmitters::EncryptedS3Transmitter < Transmitters::UnencryptedS3Transmit
     encrypted
   end
 
-  def method_type_for_filename
-    :encrypted_s3
+  def upload_key
+    TransmissionFilename.for(@cbv_flow, @current_agency, :encrypted_s3)
   end
 end

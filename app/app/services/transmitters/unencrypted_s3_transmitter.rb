@@ -7,14 +7,13 @@ class Transmitters::UnencryptedS3Transmitter
     config = @transmission_config
     pre_deliver_check(config)
 
-    @file_name = TransmissionFilename.stem(@cbv_flow, @current_agency)
-    upload_key = TransmissionFilename.for(@cbv_flow, @current_agency, method_type_for_filename)
+    @file_stem = TransmissionFilename.stem(@cbv_flow, @current_agency)
 
     csv_content = generate_csv
 
     file_data = [
-      { name: "#{@file_name}.pdf", content: pdf_output&.content },
-      { name: "#{@file_name}.csv", content: csv_content.string }
+      { name: "#{@file_stem}.pdf", content: pdf_output&.content },
+      { name: "#{@file_stem}.csv", content: csv_content.string }
     ]
     tar_tempfile = create_tar_file(file_data)
 
@@ -56,7 +55,7 @@ class Transmitters::UnencryptedS3Transmitter
       report_date_created: payroll_account&.created_at&.strftime("%m/%d/%Y"),
       confirmation_code: @cbv_flow.confirmation_code,
       consent_timestamp: @cbv_flow.consented_to_authorized_use_at&.strftime("%m/%d/%Y %H:%M:%S"),
-      pdf_filename: "#{@file_name}.pdf",
+      pdf_filename: "#{@file_stem}.pdf",
       pdf_filetype: "application/pdf",
       pdf_filesize: pdf_output.file_size,
       pdf_number_of_pages: pdf_output.page_count
@@ -91,7 +90,8 @@ class Transmitters::UnencryptedS3Transmitter
   # by default a no-op; subclass can transform (encrypted_s3 encrypts here)
   def prepare_upload(tempfile, _config); tempfile; end
 
-  # method symbol used by TransmissionFilename to pick the right extension.
-  # Overridden by EncryptedS3Transmitter.
-  def method_type_for_filename; :unencrypted_s3; end
+  # this is defined as an instance method to allow encrypted_s3_transmitter subclass to override
+  def upload_key
+    TransmissionFilename.for(@cbv_flow, @current_agency, :unencrypted_s3)
+  end
 end

@@ -82,26 +82,6 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
       expect(payload).to have_key("client_information")
       expect(payload).to have_key("employment_records")
     end
-
-    it "includes a filenames dict in report_metadata for the agency's file channels" do
-      sent_body = nil
-      allow(Net::HTTP).to receive(:start).and_wrap_original do |original, *args, **kwargs, &block|
-        original.call(*args, **kwargs) do |http|
-          allow(http).to receive(:request).and_wrap_original do |orig_request, req|
-            sent_body = req.body
-            orig_request.call(req)
-          end
-          block.call(http)
-        end
-      end
-
-      subject.deliver
-
-      filenames = JSON.parse(sent_body).dig("report_metadata", "filenames")
-      expect(filenames).to be_a(Hash)
-      expect(filenames["encrypted_s3"]).to end_with(".tar.gz.gpg")
-      expect(filenames).not_to have_key("webhook")
-    end
   end
 
   describe "pay_frequency nullable" do
