@@ -53,13 +53,13 @@ RSpec.describe PartnerConfigLoader do
           "shared.agency_acronym" => "TEST",
           "shared.agency_full_name" => "Test Agency",
           "shared.header.cbv_flow_title" => "Verify your income",
-          "shared.header.preheader" => "Test Income Verification",
+          "shared.header.preheader" => "Test Income Verification"
         },
         "es" => {
           "shared.agency_acronym" => "TEST",
           "shared.agency_full_name" => "Agencia de Prueba",
           "shared.header.cbv_flow_title" => "Verifique sus ingresos",
-          "shared.header.preheader" => "Verificacion de ingresos",
+          "shared.header.preheader" => "Verificacion de ingresos"
         }
       }
     }
@@ -278,8 +278,8 @@ RSpec.describe PartnerConfigLoader do
       loader.apply!
 
       pc = PartnerConfig.find_by(partner_id: "test_partner")
-      expect(pc.partner_translations.where(locale: "en").count).to eq(6)
-      expect(pc.partner_translations.where(locale: "es").count).to eq(6)
+      expect(pc.partner_translations.where(locale: "en").count).to eq(4)
+      expect(pc.partner_translations.where(locale: "es").count).to eq(4)
       acronym = pc.partner_translations.find_by(locale: "en", key: "shared.agency_acronym")
       expect(acronym.value).to eq("TEST")
     end
@@ -388,7 +388,7 @@ RSpec.describe PartnerConfigLoader do
       expect(changes[:config]).to eq(:created)
       expect(changes[:transmission_configs][:created]).to eq(1)
       expect(changes[:application_attributes][:created]).to eq(2)
-      expect(changes[:translations][:created]).to eq(12)
+      expect(changes[:translations][:created]).to eq(8)
     end
   end
 
