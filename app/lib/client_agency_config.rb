@@ -83,8 +83,6 @@ class ClientAgencyConfig
       shared.agency_full_name
       shared.header.cbv_flow_title
       shared.header.preheader
-      shared.benefit
-      shared.reporting_purpose
     ].freeze
 
   def validate_partner_translations

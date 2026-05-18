@@ -745,11 +745,6 @@ es:
     report_data_range:
       ninety_days: 90 días
       six_months: 6 meses
-    reporting_purpose:
-      az_des: Formulario de contacto para aprobaciones intermedias
-      la_ldh: beneficios
-      pa_dhs: Revisión de SNAP
-      sandbox: beneficios
     select_placeholder: "- Seleccione -"
     skip_link: Saltar al contenido principal
   time:
