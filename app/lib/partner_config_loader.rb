@@ -38,8 +38,6 @@ class PartnerConfigLoader
     shared.agency_full_name
     shared.header.cbv_flow_title
     shared.header.preheader
-    shared.benefit
-    shared.reporting_purpose
   ].freeze
 
   attr_reader :data, :errors, :warnings

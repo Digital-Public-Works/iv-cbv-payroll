@@ -54,16 +54,12 @@ RSpec.describe PartnerConfigLoader do
           "shared.agency_full_name" => "Test Agency",
           "shared.header.cbv_flow_title" => "Verify your income",
           "shared.header.preheader" => "Test Income Verification",
-          "shared.benefit" => "benefits",
-          "shared.reporting_purpose" => "benefits eligibility"
         },
         "es" => {
           "shared.agency_acronym" => "TEST",
           "shared.agency_full_name" => "Agencia de Prueba",
           "shared.header.cbv_flow_title" => "Verifique sus ingresos",
           "shared.header.preheader" => "Verificacion de ingresos",
-          "shared.benefit" => "beneficios",
-          "shared.reporting_purpose" => "elegibilidad de beneficios"
         }
       }
     }
@@ -193,7 +189,7 @@ RSpec.describe PartnerConfigLoader do
     end
 
     it "warns on missing recommended translations" do
-      valid_yaml["translations"]["en"].delete("shared.benefit")
+      valid_yaml["translations"]["en"].delete("shared.agency_acronym")
       yaml_file.reopen(yaml_file.path, "w")
       yaml_file.write(valid_yaml.to_yaml)
       yaml_file.rewind
@@ -202,7 +198,7 @@ RSpec.describe PartnerConfigLoader do
       loader.load!
       loader.validate!
       expect(loader.valid?).to be true
-      expect(loader.warnings).to include(/Missing recommended translation.*en.*shared\.benefit/)
+      expect(loader.warnings).to include(/Missing recommended translation.*en.*shared\.agency_acronym/)
     end
 
     context "with $ENV_VAR references" do

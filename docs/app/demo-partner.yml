@@ -96,8 +96,6 @@ translations:
     shared.agency_full_name: 'Demo Partner'
     shared.header.cbv_flow_title: 'Department of Demo'
     shared.header.preheader: 'This is a demo site.'
-    shared.benefit: 'Demo Assistance'
-    shared.reporting_purpose: 'Demo'
     shared.agency_portal_name: 'Demo Partner Portal'
     cbv.expired_invitations.show.cta_button_html: 'Expired Invitation'
   es:
@@ -105,7 +103,5 @@ translations:
     shared.agency_full_name: 'Demo'
     shared.header.cbv_flow_title: 'Departamento de Demo'
     shared.header.preheader: 'Un sitio de demo.'
-    shared.benefit: 'Asistencia Demo'
-    shared.reporting_purpose: 'Demo'
     shared.agency_portal_name: 'Demo'
     cbv.expired_invitations.show.cta_button_html: 'Su invitación para verificar ingresos ha expirado'
