@@ -66,7 +66,23 @@ RSpec.describe CbvFlowToJson do
         let(:filenames) { payload[:report_metadata][:filenames] }
 
         it "includes the sftp filename" do
-          expect(filenames[:sftp]).to eq(TransmissionFilename.for(cbv_flow, mock_client_agency, :sftp))
+          expect(filenames[:sftp]).to eq(TransmissionFilename.basename_for(cbv_flow, mock_client_agency, :sftp))
+        end
+
+        context "when sftp is configured with sftp_directory" do
+          let(:configured_methods) do
+            [
+              ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(
+                method: "sftp",
+                configuration: { "sftp_directory" => "inbox" }
+              )
+            ]
+          end
+
+          it "prefixes the sftp filename with the configured directory" do
+            basename = TransmissionFilename.basename_for(cbv_flow, mock_client_agency, :sftp)
+            expect(filenames[:sftp]).to eq("inbox/#{basename}")
+          end
         end
 
         context "when the agency configures encrypted_s3 alongside webhook" do
@@ -79,6 +95,38 @@ RSpec.describe CbvFlowToJson do
 
           it "includes the encrypted_s3 filename with the .tar.gz.gpg extension" do
             expect(filenames[:encrypted_s3]).to end_with(".tar.gz.gpg")
+          end
+        end
+
+        context "when encrypted_s3 is configured with a path_prefix" do
+          let(:configured_methods) do
+            [
+              ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(
+                method: "encrypted_s3",
+                configuration: { "path_prefix" => "agency/prod" }
+              )
+            ]
+          end
+
+          it "prefixes the encrypted_s3 filename with the configured path_prefix" do
+            basename = TransmissionFilename.basename_for(cbv_flow, mock_client_agency, :encrypted_s3)
+            expect(filenames[:encrypted_s3]).to eq("agency/prod/#{basename}")
+          end
+        end
+
+        context "when unencrypted_s3 is configured without a path_prefix" do
+          let(:configured_methods) do
+            [
+              ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(
+                method: "unencrypted_s3",
+                configuration: {}
+              )
+            ]
+          end
+
+          it "falls back to the basename only" do
+            expect(filenames[:unencrypted_s3])
+              .to eq(TransmissionFilename.basename_for(cbv_flow, mock_client_agency, :unencrypted_s3))
           end
         end
 

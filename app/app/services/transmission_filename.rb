@@ -10,16 +10,33 @@ class TransmissionFilename
     encrypted_s3:    ".tar.gz.gpg"
   }.freeze
 
+  # Transmission method configuration key for determining the remote-directory
+  REMOTE_DIRECTORY_CONFIG_KEY = {
+    sftp:            "sftp_directory",
+    unencrypted_s3:  "path_prefix",
+    encrypted_s3:    "path_prefix"
+  }.freeze
+
   # Legacy partners shipped before the VMI rename and have downstream automation
   # that parses the `CBVPilot_`
   # prefix for these agencies and use `VMI_` for everyone else.
-  LEGACY_PREFIX_AGENCY_IDS = %w[pa_dhs az_des].freeze
-  LEGACY_PREFIX = "CBVPilot".freeze
-  DEFAULT_PREFIX = "VMI".freeze
+  LEGACY_FILENAME_PREFIX_AGENCY_IDS = %w[pa_dhs az_des].freeze
+  LEGACY_FILENAME_PREFIX = "CBVPilot".freeze
+  DEFAULT_FILENAME_PREFIX = "VMI".freeze
 
-  # stem + extension (used to actually write the file + webhook payload builder)
-  def self.for(cbv_flow, agency, method_type)
-    extension = EXTENSIONS.fetch(method_type.to_sym) do
+  # The full remote path where this transmission lands.
+  # e.g. path/to/inbox/VMI_00012345_20260513_ConfABC123.pdf
+  def self.full_path(cbv_flow, agency, method_type, remote_directory)
+    basename = basename_for(cbv_flow, agency, method_type)
+    dir = remote_directory_for(method_type, remote_directory)
+    dir.empty? ? basename : File.join(dir, basename)
+  end
+
+  # Per-method-type basename (stem + extension). All file-producing methods share
+  # the same deterministic stem; only the extension differs by method_type.
+  # e.g. VMI_00012345_20260513_ConfABC123.pdf
+  def self.basename_for(cbv_flow, agency, method_type)
+    extension = EXTENSIONS.fetch(method_type) do
       raise KeyError, "TransmissionFilename: `#{method_type}` is not a file-producing method (only #{EXTENSIONS.keys.join(', ')} are)"
     end
     if cbv_flow.consented_to_authorized_use_at.nil?
@@ -36,6 +53,25 @@ class TransmissionFilename
     full
   end
 
+  # The configuration parameter remote_directory
+  def self.remote_directory_from_config(method_type, configuration)
+    key = REMOTE_DIRECTORY_CONFIG_KEY[method_type]
+    key && configuration[key]
+  end
+
+  # Per-method-type remote directory, normalized & validated. Returns "" when blank (use base directory)
+  # e.g. path/to/inbox
+  def self.remote_directory_for(method_type, remote_directory)
+    return "" if remote_directory.blank?
+
+    if %i[unencrypted_s3 encrypted_s3].include?(method_type) && remote_directory.start_with?("/")
+      raise ArgumentError,
+            "TransmissionFilename: remote_directory for #{method_type} must not start with '/' (got #{remote_directory.inspect})"
+    end
+
+    remote_directory
+  end
+
   def self.formatted_partner_identifier(cbv_flow)
     cbv_flow.cbv_applicant.partner_identifier.to_s.rjust(8, "0")
   end
@@ -44,13 +80,14 @@ class TransmissionFilename
     cbv_flow.consented_to_authorized_use_at.in_time_zone(agency.timezone).strftime("%Y%m%d")
   end
 
-  def self.prefix_for(agency)
-    LEGACY_PREFIX_AGENCY_IDS.include?(agency.id) ? LEGACY_PREFIX : DEFAULT_PREFIX
+  def self.filename_prefix_for(agency)
+    LEGACY_FILENAME_PREFIX_AGENCY_IDS.include?(agency.id) ? LEGACY_FILENAME_PREFIX : DEFAULT_FILENAME_PREFIX
   end
 
   # a stem is a filename without an extension.
   # This pure function is deterministic because consented_to_authorized_use_at is set once at consent time and not mutated.
+  # e.g. VMI_00012345_20260513_ConfABC123
   def self.stem(cbv_flow, agency)
-    "#{prefix_for(agency)}_#{formatted_partner_identifier(cbv_flow)}_#{formatted_consent_stamp(cbv_flow, agency)}_Conf#{cbv_flow.confirmation_code}"
+    "#{filename_prefix_for(agency)}_#{formatted_partner_identifier(cbv_flow)}_#{formatted_consent_stamp(cbv_flow, agency)}_Conf#{cbv_flow.confirmation_code}"
   end
 end

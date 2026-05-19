@@ -92,6 +92,6 @@ class Transmitters::UnencryptedS3Transmitter
 
   # this is defined as an instance method to allow encrypted_s3_transmitter subclass to override
   def upload_key
-    TransmissionFilename.for(@cbv_flow, @current_agency, :unencrypted_s3)
+    TransmissionFilename.full_path(@cbv_flow, @current_agency, :unencrypted_s3, @transmission_config["path_prefix"])
   end
 end

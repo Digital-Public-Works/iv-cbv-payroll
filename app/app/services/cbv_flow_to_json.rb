@@ -72,7 +72,8 @@ class CbvFlowToJson
       method = entry.method.to_sym
       next unless TransmissionFilename::EXTENSIONS.key?(method)
 
-      hash[method] = TransmissionFilename.for(@cbv_flow, @current_agency, method)
+      remote_directory = TransmissionFilename.remote_directory_from_config(method, entry.configuration)
+      hash[method] = TransmissionFilename.full_path(@cbv_flow, @current_agency, method, remote_directory)
     end
   end
 
