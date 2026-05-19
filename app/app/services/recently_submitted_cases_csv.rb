@@ -17,6 +17,8 @@ class RecentlySubmittedCasesCsv < CsvGenerator
         cbv_link_clicked_timestamp: @agency.format_timestamp(cbv_flow.created_at),
         report_created_timestamp: @agency.format_timestamp(cbv_flow.consented_to_authorized_use_at),
         consent_timestamp: @agency.format_timestamp(cbv_flow.consented_to_authorized_use_at),
+        # Note: RecentlySubmittedCasesCsv is currently only used in the CSVToSftpReportDelivererJob which assumes SFTP.
+        # If this class is ever used for other transmission methods, we'll need to make this dynamic.
         pdf_filename: TransmissionFilename.for(cbv_flow, @agency, :sftp),
         pdf_filetype: "application/pdf",
         language: invitation&.language
