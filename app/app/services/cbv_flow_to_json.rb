@@ -55,12 +55,25 @@ class CbvFlowToJson
   def build_report_metadata
     {
       confirmation_code: @cbv_flow.confirmation_code,
+      filenames: build_filenames,
       report_date_range: {
         start_date: @aggregator_report.from_date.strftime("%Y-%m-%d"),
         end_date: @aggregator_report.to_date.strftime("%Y-%m-%d")
       },
       consent_timestamp_utc: @cbv_flow.consented_to_authorized_use_at&.utc&.iso8601
     }
+  end
+
+  # Build a hash of the filenames the partner should expect on the
+  # partner's file transmitters (SFTP and/or S3).
+  # Non-file transmitters (webhook, shared_email, json) are ignored.
+  def build_filenames
+    @current_agency.transmission_methods.each_with_object({}) do |entry, hash|
+      method = entry.method.to_sym
+      next unless TransmissionFilename::EXTENSIONS.key?(method)
+
+      hash[method] = TransmissionFilename.for(@cbv_flow, @current_agency, method)
+    end
   end
 
   def build_client_information

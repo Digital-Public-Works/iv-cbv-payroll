@@ -3,8 +3,8 @@ class Transmitters::SftpTransmitter
 
   def deliver
     sftp_gateway = SftpGateway.new(@transmission_config)
-    filename = current_agency.pdf_filename(cbv_flow, cbv_flow.consented_to_authorized_use_at)
-    sftp_gateway.upload_data(StringIO.new(pdf_output.content), "#{@transmission_config["sftp_directory"]}/#{filename}.pdf")
+    filename = TransmissionFilename.for(cbv_flow, current_agency, :sftp)
+    sftp_gateway.upload_data(StringIO.new(pdf_output.content), "#{@transmission_config["sftp_directory"]}/#{filename}")
   end
 
   def pdf_output

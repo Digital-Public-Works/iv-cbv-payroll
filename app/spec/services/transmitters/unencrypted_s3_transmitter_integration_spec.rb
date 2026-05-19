@@ -54,8 +54,8 @@ RSpec.describe Transmitters::UnencryptedS3Transmitter, integration: true do
 
       s3 = s3_client_from(transmission_method_configuration)
       keys = s3.list_objects_v2(bucket: bucket).contents.map(&:key)
-      key = keys.grep(/\AIncomeReport_S3UNENC1_.*\.tar\.gz\z/).max
-      expect(key).not_to be_nil, "no IncomeReport tar.gz landed in the bucket; saw: #{keys.inspect}"
+      key = keys.grep(/\AVMI_[A-Z0-9]{8}_\d{8}_ConfS3UNENC1\.tar\.gz\z/).max
+      expect(key).not_to be_nil, "no VMI tar.gz landed in the bucket; saw: #{keys.inspect}"
 
       entries = extract_tar_gz(download_object(s3, bucket, key))
       expect(entries.keys).to contain_exactly(

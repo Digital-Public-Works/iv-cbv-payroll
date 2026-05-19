@@ -57,8 +57,8 @@ RSpec.describe Transmitters::EncryptedS3Transmitter, integration: true do
 
       s3 = s3_client_from(transmission_method_configuration)
       keys = s3.list_objects_v2(bucket: bucket).contents.map(&:key)
-      key = keys.grep(/\AIncomeReport_S3ENC1_.*\.tar\.gz\.gpg\z/).max
-      expect(key).not_to be_nil, "no encrypted IncomeReport landed in the bucket; saw: #{keys.inspect}"
+      key = keys.grep(/\AVMI_[A-Z0-9]{8}_\d{8}_ConfS3ENC1\.tar\.gz\.gpg\z/).max
+      expect(key).not_to be_nil, "no encrypted VMI tar.gz.gpg landed in the bucket; saw: #{keys.inspect}"
 
       encrypted = download_object(s3, bucket, key)
       # Confirm what landed is actually GPG-encrypted, not the raw tar.gz.
