@@ -10,6 +10,13 @@ class TransmissionFilename
     encrypted_s3:    ".tar.gz.gpg"
   }.freeze
 
+  # Legacy partners shipped before the VMI rename and have downstream automation
+  # that parses the `CBVPilot_`
+  # prefix for these agencies and use `VMI_` for everyone else.
+  LEGACY_PREFIX_AGENCY_IDS = %w[pa_dhs az_des].freeze
+  LEGACY_PREFIX = "CBVPilot".freeze
+  DEFAULT_PREFIX = "VMI".freeze
+
   # stem + extension (used to actually write the file + webhook payload builder)
   def self.for(cbv_flow, agency, method_type)
     extension = EXTENSIONS.fetch(method_type.to_sym) do
@@ -37,9 +44,13 @@ class TransmissionFilename
     cbv_flow.consented_to_authorized_use_at.in_time_zone(agency.timezone).strftime("%Y%m%d")
   end
 
+  def self.prefix_for(agency)
+    LEGACY_PREFIX_AGENCY_IDS.include?(agency.id) ? LEGACY_PREFIX : DEFAULT_PREFIX
+  end
+
   # a stem is a filename without an extension.
   # This pure function is deterministic because consented_to_authorized_use_at is set once at consent time and not mutated.
   def self.stem(cbv_flow, agency)
-    "CBVPilot_#{formatted_partner_identifier(cbv_flow)}_#{formatted_consent_stamp(cbv_flow, agency)}_Conf#{cbv_flow.confirmation_code}"
+    "#{prefix_for(agency)}_#{formatted_partner_identifier(cbv_flow)}_#{formatted_consent_stamp(cbv_flow, agency)}_Conf#{cbv_flow.confirmation_code}"
   end
 end
