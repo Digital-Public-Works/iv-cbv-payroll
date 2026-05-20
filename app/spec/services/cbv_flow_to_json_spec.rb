@@ -66,21 +66,21 @@ RSpec.describe CbvFlowToJson do
         let(:filenames) { payload[:report_metadata][:filenames] }
 
         it "includes the sftp filename" do
-          expect(filenames[:sftp]).to eq(TransmissionFilename.basename_for(cbv_flow, mock_client_agency, :sftp))
+          expect(filenames[:sftp]).to eq(TransmissionFilename.basename_for(cbv_flow: cbv_flow, agency: mock_client_agency, method_type: :sftp))
         end
 
-        context "when sftp is configured with sftp_directory" do
+        context "when sftp is configured with path_prefix" do
           let(:configured_methods) do
             [
               ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(
                 method: "sftp",
-                configuration: { "sftp_directory" => "inbox" }
+                configuration: { "path_prefix" => "inbox" }
               )
             ]
           end
 
           it "prefixes the sftp filename with the configured directory" do
-            basename = TransmissionFilename.basename_for(cbv_flow, mock_client_agency, :sftp)
+            basename = TransmissionFilename.basename_for(cbv_flow: cbv_flow, agency: mock_client_agency, method_type: :sftp)
             expect(filenames[:sftp]).to eq("inbox/#{basename}")
           end
         end
@@ -109,7 +109,7 @@ RSpec.describe CbvFlowToJson do
           end
 
           it "prefixes the encrypted_s3 filename with the configured path_prefix" do
-            basename = TransmissionFilename.basename_for(cbv_flow, mock_client_agency, :encrypted_s3)
+            basename = TransmissionFilename.basename_for(cbv_flow: cbv_flow, agency: mock_client_agency, method_type: :encrypted_s3)
             expect(filenames[:encrypted_s3]).to eq("agency/prod/#{basename}")
           end
         end
@@ -126,7 +126,7 @@ RSpec.describe CbvFlowToJson do
 
           it "falls back to the basename only" do
             expect(filenames[:unencrypted_s3])
-              .to eq(TransmissionFilename.basename_for(cbv_flow, mock_client_agency, :unencrypted_s3))
+              .to eq(TransmissionFilename.basename_for(cbv_flow: cbv_flow, agency: mock_client_agency, method_type: :unencrypted_s3))
           end
         end
 

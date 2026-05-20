@@ -10,13 +10,6 @@ class TransmissionFilename
     encrypted_s3:    ".tar.gz.gpg"
   }.freeze
 
-  # Transmission method configuration key for determining the remote-directory
-  REMOTE_DIRECTORY_CONFIG_KEY = {
-    sftp:            "sftp_directory",
-    unencrypted_s3:  "path_prefix",
-    encrypted_s3:    "path_prefix"
-  }.freeze
-
   # Legacy partners shipped before the VMI rename and have downstream automation
   # that parses the `CBVPilot_`
   # prefix for these agencies and use `VMI_` for everyone else.
@@ -26,16 +19,16 @@ class TransmissionFilename
 
   # The full remote path where this transmission lands.
   # e.g. path/to/inbox/VMI_00012345_20260513_ConfABC123.pdf
-  def self.full_path(cbv_flow, agency, method_type, remote_directory)
-    basename = basename_for(cbv_flow, agency, method_type)
-    dir = remote_directory_for(method_type, remote_directory)
+  def self.full_path(cbv_flow:, agency:, method_type:, remote_directory:)
+    basename = basename_for(cbv_flow: cbv_flow, agency: agency, method_type: method_type)
+    dir = remote_directory_for(method_type: method_type, remote_directory: remote_directory)
     dir.empty? ? basename : File.join(dir, basename)
   end
 
-  # Per-method-type basename (stem + extension). All file-producing methods share
+  # Basename (stem + extension). All file-producing methods share
   # the same deterministic stem; only the extension differs by method_type.
   # e.g. VMI_00012345_20260513_ConfABC123.pdf
-  def self.basename_for(cbv_flow, agency, method_type)
+  def self.basename_for(cbv_flow:, agency:, method_type:)
     extension = EXTENSIONS.fetch(method_type) do
       raise KeyError, "TransmissionFilename: `#{method_type}` is not a file-producing method (only #{EXTENSIONS.keys.join(', ')} are)"
     end
@@ -53,15 +46,16 @@ class TransmissionFilename
     full
   end
 
-  # The configuration parameter remote_directory
-  def self.remote_directory_from_config(method_type, configuration)
-    key = REMOTE_DIRECTORY_CONFIG_KEY[method_type]
-    key && configuration[key]
+  # The configured remote directory for a file-producing transmission method, or nil otherwise.
+  def self.remote_directory_from_config(method_type:, configuration:)
+    return nil unless EXTENSIONS.key?(method_type)
+    configuration["path_prefix"]
   end
 
-  # Per-method-type remote directory, normalized & validated. Returns "" when blank (use base directory)
+  # remote directory, normalized & validated across file-based transmission methods.
+  # Returns "" when blank (use base directory)
   # e.g. path/to/inbox
-  def self.remote_directory_for(method_type, remote_directory)
+  def self.remote_directory_for(method_type:, remote_directory:)
     return "" if remote_directory.blank?
 
     if %i[unencrypted_s3 encrypted_s3].include?(method_type) && remote_directory.start_with?("/")

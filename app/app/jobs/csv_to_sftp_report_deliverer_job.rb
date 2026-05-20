@@ -20,7 +20,7 @@ class CsvToSftpReportDelivererJob < ApplicationJob
 
     # TODO: Make this not sftp-specific. Verify functionality.
     sftp_gateway = sftp_gateway(config)
-    sftp_gateway.upload_data(csv, "#{config["sftp_directory"]}/#{filename(agency, date_start)}")
+    sftp_gateway.upload_data(csv, "#{config["path_prefix"]}/#{filename(agency, date_start)}")
 
     Rails.logger.info "delivered #{cbv_flows.count} applications for #{partner_id} in time range #{date_start}..#{date_end}"
   end

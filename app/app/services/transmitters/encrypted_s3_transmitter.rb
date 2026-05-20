@@ -20,6 +20,11 @@ class Transmitters::EncryptedS3Transmitter < Transmitters::UnencryptedS3Transmit
   end
 
   def upload_key
-    TransmissionFilename.full_path(@cbv_flow, @current_agency, :encrypted_s3, @transmission_config["path_prefix"])
+    TransmissionFilename.full_path(
+      cbv_flow: @cbv_flow,
+      agency: @current_agency,
+      method_type: :encrypted_s3,
+      remote_directory: @transmission_config["path_prefix"]
+    )
   end
 end

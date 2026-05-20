@@ -29,7 +29,7 @@ RSpec.describe Transmitters::SftpTransmitter, integration: true do
       "password" => "testpass",
       "url" => "localhost",
       "port" => "2222",
-      "sftp_directory" => "upload"
+      "path_prefix" => "upload"
     }
   end
 

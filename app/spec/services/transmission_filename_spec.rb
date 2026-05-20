@@ -17,31 +17,31 @@ RSpec.describe TransmissionFilename do
 
   describe ".basename_for" do
     it "produces the VMI stem with the sftp extension for non-legacy agencies" do
-      expect(described_class.basename_for(cbv_flow, agency, :sftp))
+      expect(described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :sftp))
         .to eq("VMI_00012345_20260513_ConfABC123.pdf")
     end
 
     it "uses the same stem for unencrypted_s3 with .tar.gz" do
-      expect(described_class.basename_for(cbv_flow, agency, :unencrypted_s3))
+      expect(described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :unencrypted_s3))
         .to eq("VMI_00012345_20260513_ConfABC123.tar.gz")
     end
 
     it "uses the same stem for encrypted_s3 with .tar.gz.gpg" do
-      expect(described_class.basename_for(cbv_flow, agency, :encrypted_s3))
+      expect(described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :encrypted_s3))
         .to eq("VMI_00012345_20260513_ConfABC123.tar.gz.gpg")
     end
 
     it "raises for non-file methods (webhook, shared_email, json have no filename)" do
-      expect { described_class.basename_for(cbv_flow, agency, :webhook) }.to raise_error(KeyError, /not a file-producing method/)
-      expect { described_class.basename_for(cbv_flow, agency, :shared_email) }.to raise_error(KeyError, /not a file-producing method/)
-      expect { described_class.basename_for(cbv_flow, agency, :json) }.to raise_error(KeyError, /not a file-producing method/)
+      expect { described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :webhook) }.to raise_error(KeyError, /not a file-producing method/)
+      expect { described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :shared_email) }.to raise_error(KeyError, /not a file-producing method/)
+      expect { described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :json) }.to raise_error(KeyError, /not a file-producing method/)
     end
 
     context "for the legacy PA agency" do
       let(:agency_id) { "pa_dhs" }
 
       it "uses the CBVPilot legacy prefix" do
-        expect(described_class.basename_for(cbv_flow, agency, :sftp))
+        expect(described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :sftp))
           .to eq("CBVPilot_00012345_20260513_ConfABC123.pdf")
       end
     end
@@ -50,7 +50,7 @@ RSpec.describe TransmissionFilename do
       let(:agency_id) { "az_des" }
 
       it "uses the CBVPilot legacy prefix" do
-        expect(described_class.basename_for(cbv_flow, agency, :sftp))
+        expect(described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :sftp))
           .to eq("CBVPilot_00012345_20260513_ConfABC123.pdf")
       end
     end
@@ -59,7 +59,7 @@ RSpec.describe TransmissionFilename do
       let(:partner_identifier) { "7" }
 
       it "pads to 8 digits" do
-        expect(described_class.basename_for(cbv_flow, agency, :sftp))
+        expect(described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :sftp))
           .to eq("VMI_00000007_20260513_ConfABC123.pdf")
       end
     end
@@ -68,7 +68,7 @@ RSpec.describe TransmissionFilename do
       let(:partner_identifier) { "550e8400-e29b-41d4-a716-446655440000" }
 
       it "leaves it unchanged (already longer than 8 chars)" do
-        expect(described_class.basename_for(cbv_flow, agency, :sftp))
+        expect(described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :sftp))
           .to eq("VMI_#{partner_identifier}_20260513_ConfABC123.pdf")
       end
     end
@@ -78,7 +78,7 @@ RSpec.describe TransmissionFilename do
 
       it "renders the date in the agency timezone" do
         # 03:00 UTC on the 13th is still the 12th in America/New_York.
-        expect(described_class.basename_for(cbv_flow, agency, :sftp))
+        expect(described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :sftp))
           .to eq("VMI_00012345_20260512_ConfABC123.pdf")
       end
     end
@@ -87,7 +87,7 @@ RSpec.describe TransmissionFilename do
       let(:consented_at) { nil }
 
       it "raises an error naming consent timestamp as the missing input" do
-        expect { described_class.basename_for(cbv_flow, agency, :sftp) }
+        expect { described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :sftp) }
           .to raise_error(/consent timestamp/i)
       end
     end
@@ -99,107 +99,107 @@ RSpec.describe TransmissionFilename do
       let(:confirmation_code) { "X" * 64 }
 
       it "raises an error referencing the 100-char ceiling" do
-        expect { described_class.basename_for(cbv_flow, agency, :encrypted_s3) }
+        expect { described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :encrypted_s3) }
           .to raise_error(/100/)
       end
     end
 
     it "raises on an unknown method_type" do
-      expect { described_class.basename_for(cbv_flow, agency, :smoke_signal) }
+      expect { described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :smoke_signal) }
         .to raise_error(KeyError, /not a file-producing method/)
     end
   end
 
   describe ".remote_directory_for" do
     it "returns an empty string when remote_directory is nil" do
-      expect(described_class.remote_directory_for(:sftp, nil)).to eq("")
+      expect(described_class.remote_directory_for(method_type: :sftp, remote_directory: nil)).to eq("")
     end
 
     it "returns an empty string when remote_directory is an empty string" do
-      expect(described_class.remote_directory_for(:unencrypted_s3, "")).to eq("")
+      expect(described_class.remote_directory_for(method_type: :unencrypted_s3, remote_directory: "")).to eq("")
     end
 
     it "returns the input unchanged for sftp with a relative directory" do
-      expect(described_class.remote_directory_for(:sftp, "inbox")).to eq("inbox")
+      expect(described_class.remote_directory_for(method_type: :sftp, remote_directory: "inbox")).to eq("inbox")
     end
 
     it "preserves a leading slash for sftp (absolute path)" do
-      expect(described_class.remote_directory_for(:sftp, "/var/inbox")).to eq("/var/inbox")
+      expect(described_class.remote_directory_for(method_type: :sftp, remote_directory: "/var/inbox")).to eq("/var/inbox")
     end
 
     it "returns the input unchanged for unencrypted_s3 with a relative prefix" do
-      expect(described_class.remote_directory_for(:unencrypted_s3, "inbox/prod")).to eq("inbox/prod")
+      expect(described_class.remote_directory_for(method_type: :unencrypted_s3, remote_directory: "inbox/prod")).to eq("inbox/prod")
     end
 
     it "returns the input unchanged for encrypted_s3 with a relative prefix" do
-      expect(described_class.remote_directory_for(:encrypted_s3, "agency/prod")).to eq("agency/prod")
+      expect(described_class.remote_directory_for(method_type: :encrypted_s3, remote_directory: "agency/prod")).to eq("agency/prod")
     end
 
     it "rejects a leading slash for unencrypted_s3" do
-      expect { described_class.remote_directory_for(:unencrypted_s3, "/inbox") }
+      expect { described_class.remote_directory_for(method_type: :unencrypted_s3, remote_directory: "/inbox") }
         .to raise_error(ArgumentError, %r{must not start with '/'})
     end
 
     it "rejects a leading slash for encrypted_s3" do
-      expect { described_class.remote_directory_for(:encrypted_s3, "/inbox") }
+      expect { described_class.remote_directory_for(method_type: :encrypted_s3, remote_directory: "/inbox") }
         .to raise_error(ArgumentError, %r{must not start with '/'})
     end
   end
 
   describe ".remote_directory_from_config" do
-    it "returns the configured sftp_directory for :sftp" do
-      expect(described_class.remote_directory_from_config(:sftp, { "sftp_directory" => "inbox" }))
+    it "returns the configured path_prefix for :sftp" do
+      expect(described_class.remote_directory_from_config(method_type: :sftp, configuration: { "path_prefix" => "inbox" }))
         .to eq("inbox")
     end
 
     it "returns the configured path_prefix for :unencrypted_s3" do
-      expect(described_class.remote_directory_from_config(:unencrypted_s3, { "path_prefix" => "inbox/prod" }))
+      expect(described_class.remote_directory_from_config(method_type: :unencrypted_s3, configuration: { "path_prefix" => "inbox/prod" }))
         .to eq("inbox/prod")
     end
 
     it "returns the configured path_prefix for :encrypted_s3" do
-      expect(described_class.remote_directory_from_config(:encrypted_s3, { "path_prefix" => "agency/prod" }))
+      expect(described_class.remote_directory_from_config(method_type: :encrypted_s3, configuration: { "path_prefix" => "agency/prod" }))
         .to eq("agency/prod")
     end
 
     it "returns nil when the configured key is absent" do
-      expect(described_class.remote_directory_from_config(:sftp, {})).to be_nil
-      expect(described_class.remote_directory_from_config(:unencrypted_s3, {})).to be_nil
+      expect(described_class.remote_directory_from_config(method_type: :sftp, configuration: {})).to be_nil
+      expect(described_class.remote_directory_from_config(method_type: :unencrypted_s3, configuration: {})).to be_nil
     end
 
     it "returns nil for non-file-producing methods" do
-      expect(described_class.remote_directory_from_config(:webhook, { "anything" => "x" })).to be_nil
+      expect(described_class.remote_directory_from_config(method_type: :webhook, configuration: { "path_prefix" => "x" })).to be_nil
     end
 
     it "reads string keys from a with_indifferent_access configuration" do
       configuration = { "path_prefix" => "inbox" }.with_indifferent_access
-      expect(described_class.remote_directory_from_config(:encrypted_s3, configuration)).to eq("inbox")
+      expect(described_class.remote_directory_from_config(method_type: :encrypted_s3, configuration: configuration)).to eq("inbox")
     end
   end
 
   describe ".full_path" do
     it "returns the basename when remote_directory is blank" do
-      expect(described_class.full_path(cbv_flow, agency, :sftp, nil))
+      expect(described_class.full_path(cbv_flow: cbv_flow, agency: agency, method_type: :sftp, remote_directory: nil))
         .to eq("VMI_00012345_20260513_ConfABC123.pdf")
     end
 
     it "joins remote_directory and basename with a single slash" do
-      expect(described_class.full_path(cbv_flow, agency, :encrypted_s3, "agency/prod"))
+      expect(described_class.full_path(cbv_flow: cbv_flow, agency: agency, method_type: :encrypted_s3, remote_directory: "agency/prod"))
         .to eq("agency/prod/VMI_00012345_20260513_ConfABC123.tar.gz.gpg")
     end
 
     it "collapses a single trailing slash on remote_directory" do
-      expect(described_class.full_path(cbv_flow, agency, :unencrypted_s3, "inbox/"))
+      expect(described_class.full_path(cbv_flow: cbv_flow, agency: agency, method_type: :unencrypted_s3, remote_directory: "inbox/"))
         .to eq("inbox/VMI_00012345_20260513_ConfABC123.tar.gz")
     end
 
     it "preserves an absolute path for sftp" do
-      expect(described_class.full_path(cbv_flow, agency, :sftp, "/var/inbox"))
+      expect(described_class.full_path(cbv_flow: cbv_flow, agency: agency, method_type: :sftp, remote_directory: "/var/inbox"))
         .to eq("/var/inbox/VMI_00012345_20260513_ConfABC123.pdf")
     end
 
     it "rejects a leading slash for s3 method types" do
-      expect { described_class.full_path(cbv_flow, agency, :unencrypted_s3, "/inbox") }
+      expect { described_class.full_path(cbv_flow: cbv_flow, agency: agency, method_type: :unencrypted_s3, remote_directory: "/inbox") }
         .to raise_error(ArgumentError, %r{must not start with '/'})
     end
   end
