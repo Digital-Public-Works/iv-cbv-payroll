@@ -32,7 +32,7 @@ class TransmissionFilename
     dir.empty? ? basename : File.join(dir, basename)
   end
 
-  # Per-method-type basename (stem + extension). All file-producing methods share
+  # Basename (stem + extension). All file-producing methods share
   # the same deterministic stem; only the extension differs by method_type.
   # e.g. VMI_00012345_20260513_ConfABC123.pdf
   def self.basename_for(cbv_flow, agency, method_type)
@@ -59,7 +59,8 @@ class TransmissionFilename
     key && configuration[key]
   end
 
-  # Per-method-type remote directory, normalized & validated. Returns "" when blank (use base directory)
+  # remote directory, normalized & validated across file-based transmission methods.
+  # Returns "" when blank (use base directory)
   # e.g. path/to/inbox
   def self.remote_directory_for(method_type, remote_directory)
     return "" if remote_directory.blank?
