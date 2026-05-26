@@ -11,7 +11,6 @@ module Transmitters
 
         @_paystubs_output ||= Aggregators::PaystubsPdfService.new(
           cbv_flow: @cbv_flow,
-          aggregator_report: @aggregator_report,
           argyle_service: Aggregators::Sdk::ArgyleService.new(@current_agency.argyle_environment)
         ).generate
       end

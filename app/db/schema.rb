@@ -99,11 +99,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_26_155906) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "show_on_caseworker_report", default: false, null: false
+    t.boolean "show_on_applicant_form", default: true, null: false
+    t.boolean "show_on_caseworker_form", default: true, null: false
     t.boolean "redactable", default: false, null: false
     t.string "redact_type"
     t.string "form_field_type", default: "text_field"
-    t.boolean "show_on_applicant_form", default: true, null: false
-    t.boolean "show_on_caseworker_form", default: true, null: false
     t.index ["partner_config_id"], name: "index_partner_application_attributes_on_partner_config_id"
   end
 
@@ -188,6 +188,22 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_26_155906) do
     t.datetime "discarded_at"
     t.index ["cbv_flow_id"], name: "index_payroll_accounts_on_cbv_flow_id"
     t.index ["discarded_at"], name: "index_payroll_accounts_on_discarded_at"
+  end
+
+  create_table "solid_queue_recurring_tasks", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "schedule", null: false
+    t.string "command", limit: 2048
+    t.string "class_name"
+    t.text "arguments"
+    t.string "queue_name"
+    t.integer "priority", default: 0
+    t.boolean "static", default: true, null: false
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_solid_queue_recurring_tasks_on_key", unique: true
+    t.index ["static"], name: "index_solid_queue_recurring_tasks_on_static"
   end
 
   create_table "users", force: :cascade do |t|

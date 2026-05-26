@@ -1,4 +1,5 @@
 require "csv"
+require "combine_pdf"
 require "tempfile"
 require "zlib"
 
@@ -31,19 +32,10 @@ class Cbv::SubmitsController < Cbv::BaseController
           locale: I18n.locale
         })
 
-        render pdf: "#{@cbv_flow.id}",
-          layout: "pdf",
-          locals: {
-            is_caseworker: is_not_production? && params[:is_caseworker],
-            aggregator_report: @aggregator_report
-          },
-          footer: { right: t(".pdf.footer.page_footer"), font_size: 10 },
-          margin: {
-            top: 10,
-            bottom: 10,
-            left: 10,
-            right: 10
-          }
+        send_data generate_client_pdf,
+          type: "application/pdf",
+          disposition: "inline",
+          filename: "#{@cbv_flow.id}.pdf"
       end
     end
 
@@ -71,6 +63,46 @@ class Cbv::SubmitsController < Cbv::BaseController
   end
 
   private
+
+  def generate_client_pdf
+    html = render_to_string(
+      template: "cbv/submits/show",
+      formats: [ :pdf ],
+      layout: "layouts/pdf",
+      locals: {
+        is_caseworker: is_not_production? && params[:is_caseworker],
+        aggregator_report: @aggregator_report
+      }
+    )
+
+    report_pdf = WickedPdf.new.pdf_from_string(
+      html,
+      footer: { right: t(".pdf.footer.page_footer"), font_size: 10 },
+      margin: { top: 10, bottom: 10, left: 10, right: 10 }
+    )
+
+    return report_pdf unless current_agency&.include_paystubs
+
+    begin
+      paystubs_result = Aggregators::PaystubsPdfService.new(
+        cbv_flow: @cbv_flow,
+        argyle_service: Aggregators::Sdk::ArgyleService.new(current_agency.argyle_environment)
+      ).generate
+      merge_pdfs(report_pdf, paystubs_result.content)
+    rescue Aggregators::PaystubsPdfService::NoPaystubsError => e
+      Rails.logger.warn "Client PDF download: no paystub documents found; omitting paystubs section: #{e.message}"
+      report_pdf
+    end
+  end
+
+  def merge_pdfs(pdf1_bytes, pdf2_bytes)
+    return pdf2_bytes if pdf1_bytes.blank?
+    return pdf1_bytes if pdf2_bytes.blank?
+
+    target = CombinePDF.new
+    [ pdf1_bytes, pdf2_bytes ].each { |bytes| target << CombinePDF.parse(bytes) }
+    target.to_pdf
+  end
 
   def check_aggregator_report
     if @aggregator_report.nil?

@@ -76,7 +76,7 @@ RSpec.describe Transmitters::EncryptedS3Transmitter, integration: true do
       expect(File.basename(pdf_name, ".pdf")).to eq(File.basename(csv_name, ".csv"))
 
       expect(pdf_bytes.byteslice(0, 5)).to eq("%PDF-")
-      expect(PDF::Reader.new(StringIO.new(pdf_bytes)).page_count).to be >= 1
+      expect(CombinePDF.parse(pdf_bytes).pages.count).to be >= 1
 
       meta = parse_metadata_csv(csv_bytes)
       expect(meta["case_number"]).to eq("S3ENC1")

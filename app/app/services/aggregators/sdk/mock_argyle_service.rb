@@ -63,6 +63,11 @@ module Aggregators::Sdk
       nil # 204 No Content
     end
 
+    def fetch_payroll_documents_api(account: nil, user: nil, employment: nil, limit: 200)
+      doc = load_fixture("request_payroll_document.json")
+      { "results" => [ doc ], "next" => nil }
+    end
+
     def fetch_payroll_document_api(id:)
       load_fixture("request_payroll_document.json")
     end

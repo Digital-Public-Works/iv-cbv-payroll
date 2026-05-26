@@ -162,3 +162,12 @@
     <%= render(Report::GigMonthlySummaryTableComponent.new(@aggregator_report, account_id, is_caseworker: is_caseworker, is_responsive: false, is_pdf: true, show_footnote: is_first_gig_job)) %>
   <% end %>
 <% end %>
+
+<% if current_agency&.include_paystubs %>
+  <% employer_names = aggregator_report.summarize_by_employer
+       .select { |_, summary| summary[:paystubs]&.any? { |p| p.payroll_document_id.present? } }
+       .filter_map { |_, summary| summary[:employment]&.employer_name } %>
+  <% if employer_names.any? %>
+    <%= render "paystubs_cover_page", current_agency: current_agency, employer_names: employer_names %>
+  <% end %>
+<% end %>

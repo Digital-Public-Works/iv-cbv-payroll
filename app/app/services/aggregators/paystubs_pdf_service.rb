@@ -1,16 +1,15 @@
 # frozen_string_literal: true
 
 require "combine_pdf"
-require "pdf-reader"
 
-# Builds a single combined PDF containing every paystub document linked
-# from the report's paystubs (Argyle only — see DEV_NOTES.md). Documents
-# are fetched in parallel, filtered to document_type == "paystub", and
-# merged in pay_date order.
+# Builds a single combined PDF of payout-statement documents for all accounts
+# on the CBV flow (Argyle only). Documents are fetched via the payroll-documents
+# list endpoint filtered by account ID, then merged in available_date order
+# with accounts grouped most-recent-first.
 module Aggregators
   class PaystubsPdfService
-    MAX_PARALLEL = 8
-    SUPPORTED_DOCUMENT_TYPE = "paystub"
+    MAX_PARALLEL = 3
+    SUPPORTED_DOCUMENT_TYPE = "payout-statement"
     SUPPORTED_IMAGE_PREFIX = "image/"
     SUPPORTED_PDF_PREFIX = "application/pdf"
 
@@ -18,19 +17,18 @@ module Aggregators
 
     class NoPaystubsError < StandardError; end
 
-    def initialize(cbv_flow:, aggregator_report:, argyle_service:)
+    def initialize(cbv_flow:, argyle_service:)
       @cbv_flow = cbv_flow
-      @aggregator_report = aggregator_report
       @argyle_service = argyle_service
     end
 
     def generate
       refs = collect_document_refs
-      raise NoPaystubsError, "no paystubs have a backing payroll_document" if refs.empty?
+      raise NoPaystubsError, "no payout statement documents found for any account" if refs.empty?
 
       docs = fetch_documents_parallel(refs)
       pdf_parts = docs.filter_map { |d| normalize_to_pdf(d) }
-      raise NoPaystubsError, "no paystub documents survived filtering" if pdf_parts.empty?
+      raise NoPaystubsError, "no paystub documents survived normalization" if pdf_parts.empty?
 
       merged = merge(pdf_parts)
       Result.new(content: merged, page_count: page_count(merged), file_size: merged.bytesize)
@@ -38,22 +36,34 @@ module Aggregators
 
     private
 
+    def accounts_for_service
+      @cbv_flow.payroll_accounts.pluck(:aggregator_account_id).compact
+    end
+
     def collect_document_refs
       refs = []
-      @aggregator_report.paystubs.each do |paystub|
-        if paystub.payroll_document_id.blank?
-          Rails.logger.warn(
-            "PaystubsPdfService: paystub #{paystub.id} has no payroll_document; skipping"
-          )
-          next
-        end
-        refs << {
-          paystub_id: paystub.id,
-          document_id: paystub.payroll_document_id,
-          pay_date: paystub.pay_date
-        }
+      accounts_for_service.each do |account_id|
+        @argyle_service.fetch_payroll_documents_api(account: account_id)["results"]
+          .select { |d| d["document_type"] == SUPPORTED_DOCUMENT_TYPE && d["file_url"].present? }
+          .each do |doc|
+            refs << {
+              document_id: doc["id"],
+              file_url: doc["file_url"],
+              available_date: doc["available_date"],
+              account_id: account_id
+            }
+          end
       end
-      refs.sort_by { |r| r[:pay_date].to_s }
+
+      refs.group_by { |r| r[:account_id] }
+          .transform_values { |group|
+            group.sort_by { |r| r[:available_date].present? ? Time.parse(r[:available_date]) : Time.at(0) }
+          }
+          .sort_by { |_, group|
+            group.last[:available_date].present? ? Time.parse(group.last[:available_date]) : Time.at(0)
+          }
+          .reverse
+          .flat_map { |_, group| group }
     end
 
     def fetch_documents_parallel(refs)
@@ -68,25 +78,8 @@ module Aggregators
     end
 
     def fetch_single(ref)
-      doc_json = @argyle_service.fetch_payroll_document_api(id: ref[:document_id])
-      if doc_json["document_type"] != SUPPORTED_DOCUMENT_TYPE
-        Rails.logger.warn(
-          "PaystubsPdfService: skipping payroll_document #{ref[:document_id]} " \
-          "(type=#{doc_json['document_type']}); only #{SUPPORTED_DOCUMENT_TYPE} is supported"
-        )
-        return nil
-      end
-
-      file_url = doc_json["file_url"]
-      if file_url.blank?
-        Rails.logger.warn(
-          "PaystubsPdfService: payroll_document #{ref[:document_id]} has no file_url; skipping"
-        )
-        return nil
-      end
-
-      bytes, content_type = @argyle_service.fetch_payroll_document_file(file_url: file_url)
-      { bytes: bytes, content_type: content_type.to_s, pay_date: ref[:pay_date] }
+      bytes, content_type = @argyle_service.fetch_payroll_document_file(file_url: ref[:file_url])
+      { bytes: bytes, content_type: content_type.to_s }
     end
 
     def normalize_to_pdf(doc)
@@ -128,13 +121,13 @@ module Aggregators
     end
 
     def merge(pdf_parts)
-      combined = CombinePDF.new
-      pdf_parts.each { |bytes| combined << CombinePDF.parse(bytes) }
-      combined.to_pdf
+      target = CombinePDF.new
+      pdf_parts.each { |bytes| target << CombinePDF.parse(bytes) }
+      target.to_pdf
     end
 
     def page_count(bytes)
-      PDF::Reader.new(StringIO.new(bytes)).page_count
+      CombinePDF.parse(bytes).pages.count
     rescue => e
       Rails.logger.warn("PaystubsPdfService: page count failed: #{e.class}: #{e.message}")
       0

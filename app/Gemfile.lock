@@ -608,7 +608,7 @@ DEPENDENCIES
   capybara
   cgi (>= 0.4.2)
   climate_control (~> 1.0)
-  combine_pdf (~> 1.0)
+  combine_pdf
   cssbundling-rails
   csv
   debase (~> 0.2.9)
