@@ -2,17 +2,17 @@ class Transmitters::JsonTransmitter
   include Transmitter
 
   def deliver
-    api_url = URI(@current_agency.transmission_method_configuration["url"])
-    include_report_pdf = @current_agency.transmission_method_configuration["include_report_pdf"]
+    api_url = URI(@transmission_config["url"])
+    include_report_pdf = @transmission_config["include_report_pdf"]
     req = Net::HTTP::Post.new(api_url)
-    agency_partner_metadata = CbvApplicant.build_agency_partner_metadata(@current_agency.id) { |attr| @cbv_flow.cbv_applicant.public_send(attr) }
+    custom_attributes = CbvApplicant.build_custom_attributes(@current_agency.id) { |attr| @cbv_flow.cbv_applicant.public_send(attr) }
 
     req.content_type = "application/json"
 
     payload = {
       confirmation_code: @cbv_flow.confirmation_code,
       completed_at: @cbv_flow.consented_to_authorized_use_at.iso8601,
-      agency_partner_metadata: agency_partner_metadata,
+      custom_attributes: custom_attributes,
       income_report: @aggregator_report.income_report
     }
 
@@ -26,7 +26,7 @@ class Transmitters::JsonTransmitter
     req["X-IVAAS-Timestamp"] = timestamp
     req["X-IVAAS-Signature"] = JsonApiSignature.generate(req.body, timestamp, api_key_for_agency)
 
-    custom_headers = @current_agency.transmission_method_configuration["custom_headers"]
+    custom_headers = @transmission_config["custom_headers"]
     if custom_headers
       custom_headers.each do |header_name, header_value|
         req[header_name] = header_value

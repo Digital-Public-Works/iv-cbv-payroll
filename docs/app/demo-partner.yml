@@ -27,20 +27,21 @@ weekly_report_enabled: true
 weekly_report_recipients: test@example.com
 weekly_report_variant: invitations
 include_invitation_details_on_weekly_report: true
-transmission_method: sftp
-transmission_configs:
-- key: user
-  encrypted: false
-  value: "demo_user"
-- key: password
-  encrypted: false
-  value: "demo_pass"
-- key: url
-  encrypted: false
-  value:
-- key: sftp_directory
-  encrypted: false
-  value:
+transmission_methods:
+- method_type: sftp
+  configs:
+  - key: user
+    encrypted: false
+    value: "demo_user"
+  - key: password
+    encrypted: false
+    value: "demo_pass"
+  - key: url
+    encrypted: false
+    value:
+  - key: sftp_directory
+    encrypted: false
+    value:
 application_attributes:
 - name: first_name
   description: Applicant first name
@@ -96,8 +97,6 @@ translations:
     shared.agency_full_name: 'Demo Partner'
     shared.header.cbv_flow_title: 'Department of Demo'
     shared.header.preheader: 'This is a demo site.'
-    shared.benefit: 'Demo Assistance'
-    shared.reporting_purpose: 'Demo'
     shared.agency_portal_name: 'Demo Partner Portal'
     cbv.expired_invitations.show.cta_button_html: 'Expired Invitation'
   es:
@@ -105,7 +104,5 @@ translations:
     shared.agency_full_name: 'Demo'
     shared.header.cbv_flow_title: 'Departamento de Demo'
     shared.header.preheader: 'Un sitio de demo.'
-    shared.benefit: 'Asistencia Demo'
-    shared.reporting_purpose: 'Demo'
     shared.agency_portal_name: 'Demo'
     cbv.expired_invitations.show.cta_button_html: 'Su invitación para verificar ingresos ha expirado'

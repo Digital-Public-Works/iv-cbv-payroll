@@ -23,10 +23,14 @@ RSpec.describe PartnerConfigLoader do
       "pay_income_days_gig" => 182,
       "report_customization_show_earnings_list" => true,
       "weekly_report_enabled" => false,
-      "transmission_method" => "shared_email",
       "partner_identifier_name" => "case_number",
-      "transmission_configs" => [
-        { "key" => "email", "encrypted" => false, "value" => "reports@test.example.com" }
+      "transmission_methods" => [
+        {
+          "method_type" => "shared_email",
+          "configs" => [
+            { "key" => "email", "encrypted" => false, "value" => "reports@test.example.com" }
+          ]
+        }
       ],
       "application_attributes" => [
         {
@@ -53,17 +57,13 @@ RSpec.describe PartnerConfigLoader do
           "shared.agency_acronym" => "TEST",
           "shared.agency_full_name" => "Test Agency",
           "shared.header.cbv_flow_title" => "Verify your income",
-          "shared.header.preheader" => "Test Income Verification",
-          "shared.benefit" => "benefits",
-          "shared.reporting_purpose" => "benefits eligibility"
+          "shared.header.preheader" => "Test Income Verification"
         },
         "es" => {
           "shared.agency_acronym" => "TEST",
           "shared.agency_full_name" => "Agencia de Prueba",
           "shared.header.cbv_flow_title" => "Verifique sus ingresos",
-          "shared.header.preheader" => "Verificacion de ingresos",
-          "shared.benefit" => "beneficios",
-          "shared.reporting_purpose" => "elegibilidad de beneficios"
+          "shared.header.preheader" => "Verificacion de ingresos"
         }
       }
     }
@@ -82,7 +82,7 @@ RSpec.describe PartnerConfigLoader do
     it "loads YAML from a file path" do
       loader = described_class.new(yaml_file.path)
       loader.load!
-      expect(loader.data[:partner_id]).to eq("test_partner")
+      expect(loader.yaml_data[:partner_id]).to eq("test_partner")
     end
 
     it "raises SourceError for missing file" do
@@ -127,8 +127,8 @@ RSpec.describe PartnerConfigLoader do
       expect(loader.errors).to include(/Missing required attribute: timezone/)
     end
 
-    it "errors on invalid transmission_method" do
-      valid_yaml["transmission_method"] = "vibes"
+    it "errors on invalid transmission method_type" do
+      valid_yaml["transmission_methods"] = [ { "method_type" => "vibes", "configs" => [] } ]
       yaml_file.reopen(yaml_file.path, "w")
       yaml_file.write(valid_yaml.to_yaml)
       yaml_file.rewind
@@ -137,7 +137,20 @@ RSpec.describe PartnerConfigLoader do
       loader.load!
       loader.validate!
       expect(loader.valid?).to be false
-      expect(loader.errors).to include(/Invalid transmission_method/)
+      expect(loader.errors).to include(/invalid method_type/)
+    end
+
+    it "errors when no transmission methods are configured" do
+      valid_yaml.delete("transmission_methods")
+      yaml_file.reopen(yaml_file.path, "w")
+      yaml_file.write(valid_yaml.to_yaml)
+      yaml_file.rewind
+
+      loader = described_class.new(yaml_file.path)
+      loader.load!
+      loader.validate!
+      expect(loader.valid?).to be false
+      expect(loader.errors).to include(/At least one transmission method is required/)
     end
 
     it "errors on invalid pay_income_days" do
@@ -193,7 +206,7 @@ RSpec.describe PartnerConfigLoader do
     end
 
     it "warns on missing recommended translations" do
-      valid_yaml["translations"]["en"].delete("shared.benefit")
+      valid_yaml["translations"]["en"].delete("shared.agency_acronym")
       yaml_file.reopen(yaml_file.path, "w")
       yaml_file.write(valid_yaml.to_yaml)
       yaml_file.rewind
@@ -202,13 +215,15 @@ RSpec.describe PartnerConfigLoader do
       loader.load!
       loader.validate!
       expect(loader.valid?).to be true
-      expect(loader.warnings).to include(/Missing recommended translation.*en.*shared\.benefit/)
+      expect(loader.warnings).to include(/Missing recommended translation.*en.*shared\.agency_acronym/)
     end
 
     context "with $ENV_VAR references" do
       before do
-        valid_yaml["transmission_configs"] = [
-          { "key" => "user", "encrypted" => true, "value" => "$TEST_SFTP_USER" }
+        valid_yaml["transmission_methods"] = [
+          { "method_type" => "shared_email", "configs" => [
+            { "key" => "user", "encrypted" => true, "value" => "$TEST_SFTP_USER" }
+          ] }
         ]
         yaml_file.reopen(yaml_file.path, "w")
         yaml_file.write(valid_yaml.to_yaml)
@@ -244,20 +259,22 @@ RSpec.describe PartnerConfigLoader do
       pc = PartnerConfig.find_by(partner_id: "test_partner")
       expect(pc.name).to eq("Test Agency")
       expect(pc.timezone).to eq("America/New_York")
-      expect(pc.transmission_method).to eq("shared_email")
       expect(pc.pay_income_days_w2).to eq(90)
       expect(pc.pay_income_days_gig).to eq(182)
     end
 
-    it "creates transmission configs" do
+    it "creates transmission methods and their configs" do
       loader = described_class.new(yaml_file.path)
       loader.load!
       loader.validate!
       loader.apply!
 
       pc = PartnerConfig.find_by(partner_id: "test_partner")
-      expect(pc.partner_transmission_configs.count).to eq(1)
-      tc = pc.partner_transmission_configs.first
+      expect(pc.partner_transmission_methods.count).to eq(1)
+      ptm = pc.partner_transmission_methods.first
+      expect(ptm.method_type).to eq("shared_email")
+      expect(ptm.partner_transmission_configs.count).to eq(1)
+      tc = ptm.partner_transmission_configs.first
       expect(tc.key).to eq("email")
       expect(tc.value).to eq("reports@test.example.com")
     end
@@ -282,8 +299,8 @@ RSpec.describe PartnerConfigLoader do
       loader.apply!
 
       pc = PartnerConfig.find_by(partner_id: "test_partner")
-      expect(pc.partner_translations.where(locale: "en").count).to eq(6)
-      expect(pc.partner_translations.where(locale: "es").count).to eq(6)
+      expect(pc.partner_translations.where(locale: "en").count).to eq(4)
+      expect(pc.partner_translations.where(locale: "es").count).to eq(4)
       acronym = pc.partner_translations.find_by(locale: "en", key: "shared.agency_acronym")
       expect(acronym.value).to eq("TEST")
     end
@@ -332,8 +349,10 @@ RSpec.describe PartnerConfigLoader do
     end
 
     it "resolves $ENV_VAR references in transmission config values" do
-      valid_yaml["transmission_configs"] = [
-        { "key" => "user", "encrypted" => true, "value" => "$TEST_APPLY_USER" }
+      valid_yaml["transmission_methods"] = [
+        { "method_type" => "shared_email", "configs" => [
+          { "key" => "user", "encrypted" => true, "value" => "$TEST_APPLY_USER" }
+        ] }
       ]
       yaml_file.reopen(yaml_file.path, "w")
       yaml_file.write(valid_yaml.to_yaml)
@@ -347,13 +366,16 @@ RSpec.describe PartnerConfigLoader do
       end
 
       pc = PartnerConfig.find_by(partner_id: "test_partner")
-      tc = pc.partner_transmission_configs.find_by(key: "user")
+      ptm = pc.partner_transmission_methods.first
+      tc = ptm.partner_transmission_configs.find_by(key: "user")
       expect(tc.value).to eq("resolved_user")
     end
 
     it "raises when $ENV_VAR is not set during apply" do
-      valid_yaml["transmission_configs"] = [
-        { "key" => "user", "encrypted" => true, "value" => "$MISSING_VAR_FOR_APPLY" }
+      valid_yaml["transmission_methods"] = [
+        { "method_type" => "shared_email", "configs" => [
+          { "key" => "user", "encrypted" => true, "value" => "$MISSING_VAR_FOR_APPLY" }
+        ] }
       ]
       yaml_file.reopen(yaml_file.path, "w")
       yaml_file.write(valid_yaml.to_yaml)
@@ -366,8 +388,10 @@ RSpec.describe PartnerConfigLoader do
     end
 
     it "handles $$ escape for literal dollar signs" do
-      valid_yaml["transmission_configs"] = [
-        { "key" => "literal", "encrypted" => false, "value" => "$$NOT_AN_ENV_VAR" }
+      valid_yaml["transmission_methods"] = [
+        { "method_type" => "shared_email", "configs" => [
+          { "key" => "literal", "encrypted" => false, "value" => "$$NOT_AN_ENV_VAR" }
+        ] }
       ]
       yaml_file.reopen(yaml_file.path, "w")
       yaml_file.write(valid_yaml.to_yaml)
@@ -379,7 +403,8 @@ RSpec.describe PartnerConfigLoader do
       loader.apply!
 
       pc = PartnerConfig.find_by(partner_id: "test_partner")
-      tc = pc.partner_transmission_configs.find_by(key: "literal")
+      ptm = pc.partner_transmission_methods.first
+      tc = ptm.partner_transmission_configs.find_by(key: "literal")
       expect(tc.value).to eq("$NOT_AN_ENV_VAR")
     end
 
@@ -390,9 +415,9 @@ RSpec.describe PartnerConfigLoader do
       changes = loader.apply!
 
       expect(changes[:config]).to eq(:created)
-      expect(changes[:transmission_configs][:created]).to eq(1)
+      expect(changes[:transmission_methods][:created]).to eq(2) # 1 method + 1 config
       expect(changes[:application_attributes][:created]).to eq(2)
-      expect(changes[:translations][:created]).to eq(12)
+      expect(changes[:translations][:created]).to eq(8)
     end
   end
 
@@ -408,7 +433,8 @@ RSpec.describe PartnerConfigLoader do
       data = described_class.export("test_partner")
       expect(data["partner_id"]).to eq("test_partner")
       expect(data["name"]).to eq("Test Agency")
-      expect(data["transmission_method"]).to eq("shared_email")
+      expect(data["transmission_methods"].size).to eq(1)
+      expect(data["transmission_methods"][0]["method_type"]).to eq("shared_email")
     end
 
     it "exports application attributes" do
@@ -425,8 +451,10 @@ RSpec.describe PartnerConfigLoader do
     end
 
     it "uses placeholder for encrypted transmission config values" do
-      valid_yaml["transmission_configs"] = [
-        { "key" => "secret", "encrypted" => true, "value" => "plaintext_for_test" }
+      valid_yaml["transmission_methods"] = [
+        { "method_type" => "shared_email", "configs" => [
+          { "key" => "secret", "encrypted" => true, "value" => "plaintext_for_test" }
+        ] }
       ]
       yaml_file.reopen(yaml_file.path, "w")
       yaml_file.write(valid_yaml.to_yaml)
@@ -438,7 +466,7 @@ RSpec.describe PartnerConfigLoader do
       loader.apply!
 
       data = described_class.export("test_partner")
-      secret_config = data["transmission_configs"].find { |c| c["key"] == "secret" }
+      secret_config = data["transmission_methods"][0]["configs"].find { |c| c["key"] == "secret" }
       expect(secret_config["value"]).to eq("$ENCRYPTED")
     end
 

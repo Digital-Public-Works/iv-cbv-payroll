@@ -33,14 +33,22 @@ RSpec.describe Transmitters::WebhookTransmitter do
     )
   end
 
+  let(:configured_methods) do
+    [
+      ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(method: "sftp", configuration: {}),
+      ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(method: "webhook", configuration: {})
+    ]
+  end
+
   before do
-    allow(mock_client_agency).to receive(:transmission_method_configuration).and_return(transmission_method_configuration)
     allow(mock_client_agency).to receive(:id).and_return("sandbox")
+    allow(mock_client_agency).to receive(:timezone).and_return("America/New_York")
+    allow(mock_client_agency).to receive(:transmission_methods).and_return(configured_methods)
     allow(CbvApplicant).to receive(:valid_attributes_for_agency).with("sandbox").and_return([ "case_number" ])
     allow(Rails.logger).to receive(:error)
   end
 
-  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report) }
+  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
 
   describe "#deliver" do
     context "when agency responds with 200" do

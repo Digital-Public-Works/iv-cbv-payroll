@@ -24,8 +24,17 @@ RSpec.describe CbvFlowToJson do
     )
   end
 
+  let(:configured_methods) do
+    [
+      ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(method: "sftp", configuration: {}),
+      ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(method: "webhook", configuration: {})
+    ]
+  end
+
   before do
     allow(mock_client_agency).to receive(:id).and_return("sandbox")
+    allow(mock_client_agency).to receive(:timezone).and_return("America/New_York")
+    allow(mock_client_agency).to receive(:transmission_methods).and_return(configured_methods)
     allow(CbvApplicant).to receive(:valid_attributes_for_agency).with("sandbox").and_return([ "case_number" ])
   end
 
@@ -51,6 +60,37 @@ RSpec.describe CbvFlowToJson do
 
       it "includes consent_timestamp_utc" do
         expect(payload[:report_metadata][:consent_timestamp_utc]).to eq(completed_at.utc.iso8601)
+      end
+
+      describe "filenames" do
+        let(:filenames) { payload[:report_metadata][:filenames] }
+
+        it "includes the sftp filename" do
+          expect(filenames[:sftp]).to eq(TransmissionFilename.for(cbv_flow, mock_client_agency, :sftp))
+        end
+
+        context "when the agency configures encrypted_s3 alongside webhook" do
+          let(:configured_methods) do
+            [
+              ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(method: "encrypted_s3", configuration: {}),
+              ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(method: "webhook", configuration: {})
+            ]
+          end
+
+          it "includes the encrypted_s3 filename with the .tar.gz.gpg extension" do
+            expect(filenames[:encrypted_s3]).to end_with(".tar.gz.gpg")
+          end
+        end
+
+        context "when the agency has only webhook configured" do
+          let(:configured_methods) do
+            [ ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(method: "webhook", configuration: {}) ]
+          end
+
+          it "returns an empty hash" do
+            expect(filenames).to eq({})
+          end
+        end
       end
     end
 

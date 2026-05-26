@@ -6,7 +6,7 @@ class Transmitters::EncryptedS3Transmitter < Transmitters::UnencryptedS3Transmit
   def pre_deliver_check(config)
     if config["public_key"].blank?
       Rails.logger.error("Public key is missing from transmission_method_configuration")
-      raise "Public key is required for S3 transmission"
+      raise "Public key is required for encrypted S3 transmission"
     end
   end
 
@@ -19,7 +19,7 @@ class Transmitters::EncryptedS3Transmitter < Transmitters::UnencryptedS3Transmit
     encrypted
   end
 
-  def upload_extension
-    "tar.gz.gpg"
+  def upload_key
+    TransmissionFilename.for(@cbv_flow, @current_agency, :encrypted_s3)
   end
 end

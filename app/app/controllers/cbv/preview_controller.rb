@@ -175,7 +175,7 @@ class Cbv::PreviewController < ApplicationController
     cbv_applicant = CbvApplicant.create!(
       client_agency_id: client_agency_id,
       partner_identifier: "PREVIEW123",
-      agency_partner_metadata: { "first_name" => "Preview", "last_name" => "User" },
+      custom_attributes: { "first_name" => "Preview", "last_name" => "User" },
       snap_application_date: Date.current
     )
 

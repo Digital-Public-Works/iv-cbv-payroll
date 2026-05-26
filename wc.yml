@@ -82,8 +82,6 @@ translations:
     shared.agency_full_name: 'West Carolina'
     shared.header.cbv_flow_title: 'West Carolina'
     shared.header.preheader: 'West Carolina'
-    shared.benefit: 'West Carolina Assistance'
-    shared.reporting_purpose: 'West Carolina'
     shared.agency_portal_name: 'WC Portal'
     cbv.expired_invitations.show.cta_button_html: 'Expired Invitation'
   es:
@@ -91,7 +89,5 @@ translations:
     shared.agency_full_name: 'West Carolina'
     shared.header.cbv_flow_title: 'West Carolina'
     shared.header.preheader: 'West Carolina'
-    shared.benefit: 'Asistencia de West Carolina'
-    shared.reporting_purpose: 'WC'
     shared.agency_portal_name: 'Portal de WC'
     cbv.expired_invitations.show.cta_button_html: 'Invitación Expirada'

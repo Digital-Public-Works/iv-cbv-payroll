@@ -9,17 +9,17 @@ RSpec.describe ClientAgencyConfig do
   end
 
   let!(:sample_config) do
-    PartnerConfig.create!(
+    pc = PartnerConfig.create!(
       partner_id: 'foo',
       name: 'Foo Agency Name',
       timezone: 'America/Los_Angeles',
-      argyle_environment: 'foo',
-      transmission_method: 'shared_email',
       argyle_environment: 'foo',
       pay_income_days_w2: 90,
       pay_income_days_gig: 182,
       partner_identifier_name: 'first_name'
     )
+    pc.partner_transmission_methods.create!(method_type: :shared_email)
+    pc
   end
 
   let!(:sample_attr) do
@@ -31,21 +31,6 @@ RSpec.describe ClientAgencyConfig do
       data_type: :string
     )
   end
-
-  let(:sample_config_with_invitation_required) { <<~YAML }
-    id: foo
-    agency_name: Foo Agency Name
-    timezone: America/Los_Angeles
-    pinwheel:
-      environment: foo
-    argyle:
-      environment: foo
-    transmission_method: shared_email
-    transmission_method_configuration:
-      email: foo
-    require_applicant_information_on_invitation: true
-  YAML
-
 
   describe "#initialize" do
     it "loads the client agency config" do
