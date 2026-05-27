@@ -37,6 +37,11 @@ RSpec.describe TransmissionFilename do
       expect { described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :json) }.to raise_error(KeyError, /not a file-producing method/)
     end
 
+    it "accepts string method types" do
+      expect(described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: "sftp"))
+        .to eq("VMI_00012345_20260513_ConfABC123.pdf")
+    end
+
     context "for the legacy PA agency" do
       let(:agency_id) { "pa_dhs" }
 

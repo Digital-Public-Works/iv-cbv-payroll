@@ -20,6 +20,7 @@ class TransmissionFilename
   # The full remote path where this transmission lands.
   # e.g. path/to/inbox/VMI_00012345_20260513_ConfABC123.pdf
   def self.full_path(cbv_flow:, agency:, method_type:, remote_directory:)
+    method_type = method_type.to_sym
     basename = basename_for(cbv_flow: cbv_flow, agency: agency, method_type: method_type)
     dir = remote_directory_for(method_type: method_type, remote_directory: remote_directory)
     dir.empty? ? basename : File.join(dir, basename)
@@ -29,6 +30,7 @@ class TransmissionFilename
   # the same deterministic stem; only the extension differs by method_type.
   # e.g. VMI_00012345_20260513_ConfABC123.pdf
   def self.basename_for(cbv_flow:, agency:, method_type:)
+    method_type = method_type.to_sym
     extension = EXTENSIONS.fetch(method_type) do
       raise KeyError, "TransmissionFilename: `#{method_type}` is not a file-producing method (only #{EXTENSIONS.keys.join(', ')} are)"
     end
@@ -48,6 +50,7 @@ class TransmissionFilename
 
   # The configured remote directory for a file-producing transmission method, or nil otherwise.
   def self.remote_directory_from_config(method_type:, configuration:)
+    method_type = method_type.to_sym
     return nil unless EXTENSIONS.key?(method_type)
     configuration["path_prefix"]
   end
@@ -56,6 +59,7 @@ class TransmissionFilename
   # Returns "" when blank (use base directory)
   # e.g. path/to/inbox
   def self.remote_directory_for(method_type:, remote_directory:)
+    method_type = method_type.to_sym
     return "" if remote_directory.blank?
 
     if %i[unencrypted_s3 encrypted_s3].include?(method_type) && remote_directory.start_with?("/")
