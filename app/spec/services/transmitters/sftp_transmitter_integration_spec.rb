@@ -1,13 +1,15 @@
 require "rails_helper"
 
 RSpec.describe Transmitters::SftpTransmitter, integration: true do
+  # Fixed consent timestamp keeps the basename deterministic across runs.
+  let(:consented_at) { Time.zone.local(2026, 5, 27, 12, 0, 0) }
   let(:cbv_applicant) { create(:cbv_applicant, case_number: "ABC1234") }
   let(:cbv_flow) do
     create(:cbv_flow,
       :invited,
       :with_argyle_account,
       cbv_applicant: cbv_applicant,
-      consented_to_authorized_use_at: Time.current,
+      consented_to_authorized_use_at: consented_at,
       confirmation_code: "SFTP001",
       client_agency_id: "pa_dhs"
     )
@@ -54,9 +56,45 @@ RSpec.describe Transmitters::SftpTransmitter, integration: true do
 
   subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
 
+  # The atmoz/sftp container mounts the host's sftp_mount_root to the container's home dir
+  let(:sftp_mount_root) { Rails.root.join("tmp/integration_transmissions/sftp") }
+  let(:expected_basename) { "CBVPilot_0ABC1234_20260527_ConfSFTP001.pdf" }
+
   describe "#deliver" do
-    it "uploads a PDF to the SFTP server" do
+    before do
+      # Clear any PDFs left by prior runs so file-existence checks are unambiguous.
+      Dir.glob(sftp_mount_root.join("**/*.pdf")).each { |f| FileUtils.rm_f(f) }
+    end
+
+    it "uploads the PDF under the configured path_prefix" do
       expect { subject.deliver }.not_to raise_error
+
+      landed = sftp_mount_root.join(expected_basename)
+      expect(landed).to exist,
+        "expected PDF at #{landed}, saw: #{Dir.children(sftp_mount_root).inspect}"
+    end
+
+    context "when path_prefix is a nested directory" do
+      let(:transmission_method_configuration) do
+        {
+          "user" => "testuser",
+          "password" => "testpass",
+          "url" => "localhost",
+          "port" => "2222",
+          "path_prefix" => "upload/inbox/prod"
+        }
+      end
+
+      it "uploads the PDF under the nested prefix" do
+        nested_dir = sftp_mount_root.join("inbox/prod")
+        FileUtils.mkdir_p(nested_dir)
+
+        expect { subject.deliver }.not_to raise_error
+
+        landed = nested_dir.join(expected_basename)
+        expect(landed).to exist,
+          "expected PDF at #{landed}, saw: #{Dir.children(nested_dir).inspect}"
+      end
     end
   end
 
