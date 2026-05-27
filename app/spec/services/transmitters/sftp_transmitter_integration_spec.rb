@@ -86,14 +86,28 @@ RSpec.describe Transmitters::SftpTransmitter, integration: true do
       end
 
       it "uploads the PDF under the nested prefix" do
-        nested_dir = sftp_mount_root.join("inbox/prod")
-        FileUtils.mkdir_p(nested_dir)
+        # Create the nested dir via SFTP so it's owned by the container's testuser
+        ssh = Net::SSH.start("localhost", "testuser",
+          password: "testpass", port: 2222,
+          keys: [], auth_methods: %w[password], non_interactive: true)
+        begin
+          sftp = Net::SFTP::Session.new(ssh).connect!
+          %w[upload/inbox upload/inbox/prod].each do |dir|
+            begin
+              sftp.mkdir!(dir)
+            rescue Net::SFTP::StatusException
+              # already exists from a prior run — fine
+            end
+          end
+        ensure
+          ssh.close
+        end
 
         expect { subject.deliver }.not_to raise_error
 
-        landed = nested_dir.join(expected_basename)
+        landed = sftp_mount_root.join("inbox/prod", expected_basename)
         expect(landed).to exist,
-          "expected PDF at #{landed}, saw: #{Dir.children(nested_dir).inspect}"
+          "expected PDF at #{landed}, saw: #{Dir.children(sftp_mount_root.join('inbox/prod')).inspect}"
       end
     end
   end
