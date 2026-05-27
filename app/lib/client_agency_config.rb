@@ -173,6 +173,18 @@ class ClientAgencyConfig
         TransmissionMethodEntry.new(method: ptm.method_type, configuration: config)
       end
 
+      @transmission_methods.each do |entry|
+        method_type = entry.method.to_sym
+        next unless TransmissionFilename::EXTENSIONS.key?(method_type)
+        # remote_directory_for validates that path_prefix is valid for method_type
+        TransmissionFilename.remote_directory_for(
+          method_type: method_type,
+          remote_directory: entry.configuration["path_prefix"]
+        )
+      rescue ArgumentError => e
+        raise ArgumentError.new("Client Agency #{@id}: #{e.message}")
+      end
+
       @staff_portal_enabled = partner_config.staff_portal_enabled
       @weekly_report = {
         "enabled" => partner_config.weekly_report_enabled,

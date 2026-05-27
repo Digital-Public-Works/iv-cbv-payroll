@@ -87,6 +87,30 @@ RSpec.describe Transmitters::EncryptedS3Transmitter, integration: true do
       expect(meta["pdf_number_of_pages"].to_i).to be >= 1
     end
 
+    context "when path_prefix is configured" do
+      let(:transmission_method_configuration) do
+        {
+          "bucket" => bucket,
+          "region" => "us-east-1",
+          "aws_access_key_id" => "s3test",
+          "aws_secret_access_key" => "s3test",
+          "endpoint" => ENV.fetch("S3_ENDPOINT", "http://localhost:9000"),
+          "force_path_style" => true,
+          "public_key" => @public_key,
+          "path_prefix" => "encrypted"
+        }
+      end
+
+      it "uploads the encrypted object under the prefixed key" do
+        expect { subject.deliver }.not_to raise_error
+
+        s3 = s3_client_from(transmission_method_configuration)
+        keys = s3.list_objects_v2(bucket: bucket).contents.map(&:key)
+        key = keys.grep(%r{\Aencrypted/VMI_[A-Z0-9]{8}_\d{8}_ConfS3ENC1\.tar\.gz\.gpg\z}).max
+        expect(key).not_to be_nil, "no prefixed VMI tar.gz.gpg landed in the bucket; saw: #{keys.inspect}"
+      end
+    end
+
     it "raises when public_key is missing" do
       bad_config = transmission_method_configuration.merge("public_key" => nil)
       transmitter = described_class.new(cbv_flow, mock_client_agency, aggregator_report, bad_config)

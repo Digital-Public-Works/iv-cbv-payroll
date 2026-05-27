@@ -80,6 +80,29 @@ RSpec.describe Transmitters::UnencryptedS3Transmitter, integration: true do
       expect(meta["pdf_filesize"].to_i).to eq(pdf_bytes.bytesize)
       expect(meta["pdf_number_of_pages"].to_i).to be >= 1
     end
+
+    context "when path_prefix is configured" do
+      let(:transmission_method_configuration) do
+        {
+          "bucket" => bucket,
+          "region" => "us-east-1",
+          "aws_access_key_id" => "s3test",
+          "aws_secret_access_key" => "s3test",
+          "endpoint" => ENV.fetch("S3_ENDPOINT", "http://localhost:9000"),
+          "force_path_style" => true,
+          "path_prefix" => "inbox/prod"
+        }
+      end
+
+      it "uploads the object under the prefixed key" do
+        expect { subject.deliver }.not_to raise_error
+
+        s3 = s3_client_from(transmission_method_configuration)
+        keys = s3.list_objects_v2(bucket: bucket).contents.map(&:key)
+        key = keys.grep(%r{\Ainbox/prod/VMI_[A-Z0-9]{8}_\d{8}_ConfS3UNENC1\.tar\.gz\z}).max
+        expect(key).not_to be_nil, "no prefixed VMI tar.gz landed in the bucket; saw: #{keys.inspect}"
+      end
+    end
   end
 
   describe "with bad credentials" do

@@ -39,7 +39,7 @@ transmission_methods:
   - key: url
     encrypted: false
     value:
-  - key: sftp_directory
+  - key: path_prefix
     encrypted: false
     value:
 application_attributes:

@@ -58,7 +58,7 @@ transmission_methods:
   - key: password
     encrypted: false
     value: "testpass"
-  - key: sftp_directory
+  - key: path_prefix
     encrypted: false
     value: "upload"
 application_attributes:

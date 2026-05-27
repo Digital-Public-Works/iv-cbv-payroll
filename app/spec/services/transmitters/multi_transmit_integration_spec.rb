@@ -33,7 +33,7 @@ RSpec.describe "Multi-transmission delivery", integration: true do
       "password" => "testpass",
       "url" => "localhost",
       "port" => "2222",
-      "sftp_directory" => "upload"
+      "path_prefix" => "upload"
     }
   end
 
