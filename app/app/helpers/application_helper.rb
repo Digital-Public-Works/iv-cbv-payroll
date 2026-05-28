@@ -134,6 +134,10 @@ module ApplicationHelper
     APPLICANT_FEEDBACK_FORM
   end
 
+  def page_title(prefix: nil)
+    [ content_for(:title).presence, prefix, t("shared.pilot_name") ].compact.join(" | ")
+  end
+
   def survey_form_url
     APPLICANT_SURVEY_FORM
   end
