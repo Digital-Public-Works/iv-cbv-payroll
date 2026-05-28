@@ -47,10 +47,6 @@ class CbvApplicant < ApplicationRecord
   def redact!(fields = nil)
     fields_to_redact = fields || redactable_fields_from_config
 
-    if fields_to_redact.blank? && partner_identifier_redactable? == false && custom_attributes.blank?
-      raise "No fields to redact for #{client_agency_id}"
-    end
-
     apply_redaction!(fields_to_redact || {})
 
     if income_changes.present?

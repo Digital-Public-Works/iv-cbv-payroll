@@ -26,8 +26,17 @@ class DataRetentionService
       .find_each do |cbv_flow_invitation|
         next unless Time.current.after?(cbv_flow_invitation.expires_at + REDACT_UNUSED_INVITATIONS_AFTER)
 
-        cbv_flow_invitation.redact!
-        cbv_flow_invitation.cbv_applicant&.redact!
+        begin
+          cbv_flow_invitation.redact!
+          cbv_flow_invitation.cbv_applicant&.redact!
+        rescue => ex
+          raise ex unless Rails.env.production?
+
+          report_redaction_failure(ex,
+            cbv_flow_invitation_id: cbv_flow_invitation.id,
+            client_agency_id: cbv_flow_invitation.client_agency_id
+          )
+        end
       end
   end
 
@@ -103,15 +112,30 @@ class DataRetentionService
 
   # do all redaction necessary on a cbv_flow
   def redact_cbv_flow(cbv_flow)
-    # delete the user from Argyle first, before marking local records as redacted.
-    # This ensures that if the API call fails, the flow remains unredacted and will
-    # be retried on the next run.
+    # Always attempt the Argyle user deletion before any local redaction.
     delete_argyle_user(cbv_flow.client_agency_id, cbv_flow.argyle_user_id) if cbv_flow.argyle_user_id.present?
 
-    cbv_flow.redact!
-    cbv_flow.cbv_flow_invitation.redact! if cbv_flow.cbv_flow_invitation.present?
-    cbv_flow.cbv_applicant&.redact!
-    cbv_flow.payroll_accounts.with_discarded.each(&:redact!) # Do not scope to kept records, all accounts should be redacted
+    begin
+      # mark redacted last, so it doesn't mark as redacted until all parts have actually sucessfully passed
+      cbv_flow.cbv_flow_invitation.redact! if cbv_flow.cbv_flow_invitation.present?
+      cbv_flow.cbv_applicant&.redact!
+      cbv_flow.payroll_accounts.with_discarded.each(&:redact!) # Do not scope to kept records, all accounts should be redacted
+      cbv_flow.redact!
+    rescue => ex
+      raise ex unless Rails.env.production?
+
+      report_redaction_failure(ex,
+        cbv_flow_id: cbv_flow.id,
+        client_agency_id: cbv_flow.client_agency_id
+      )
+    end
+  end
+
+  # Ensure a redaction failure is sent to NR as an error, and to mixpanel as an event
+  def report_redaction_failure(ex, context)
+    Rails.logger.error "Data redaction failed (#{context.inspect}): #{ex.class}: #{ex.message}"
+    NewRelic::Agent.notice_error(ex, custom_params: context) if defined?(NewRelic::Agent)
+    GenericEventTracker.new.track("DataRedactionFailure", nil, context.merge(error: ex.message))
   end
 
   # use Argyle api to delete the user and all associated data.

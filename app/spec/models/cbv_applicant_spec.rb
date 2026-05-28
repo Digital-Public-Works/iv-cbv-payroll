@@ -123,6 +123,31 @@ RSpec.describe CbvApplicant, type: :model do
       end
     end
 
+    context "partner with no applicant-level redactable fields (e.g. pa_dhs)" do
+      let(:applicant) { create(:cbv_applicant, :pa_dhs) }
+
+      it "marks the applicant redacted without raising" do
+        expect { applicant.redact! }.not_to raise_error
+        expect(applicant.reload.redacted_at).to be_within(1.second).of(Time.now)
+      end
+
+      it "leaves the partner_identifier (case_number) intact" do
+        original_case_number = applicant.partner_identifier
+        applicant.redact!
+
+        expect(applicant.reload.partner_identifier).to eq(original_case_number)
+      end
+
+      it "still redacts member_name in income_changes JSON" do
+        applicant.redact!
+
+        expect(applicant.income_changes).to be_present
+        applicant.income_changes.each do |ic|
+          expect(ic["member_name"]).to eq("REDACTED")
+        end
+      end
+    end
+
     context "income_changes redaction" do
       let(:applicant) { create(:cbv_applicant, :az_des) }
 
