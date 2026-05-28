@@ -99,7 +99,7 @@ RSpec.describe CbvApplicant, type: :model do
           first_name: "REDACTED",
           middle_name: "REDACTED",
           last_name: "REDACTED",
-          case_number: /[0-9]+/
+          case_number: "REDACTED" # partner_identifier is always redacted
         )
       end
 
@@ -118,7 +118,7 @@ RSpec.describe CbvApplicant, type: :model do
 
         expect(applicant).to have_attributes(
           date_of_birth: Date.new(1990, 1, 1),
-          case_number: /[0-9]+/
+          case_number: "REDACTED" # partner_identifier is always redacted
         )
       end
     end
@@ -131,11 +131,11 @@ RSpec.describe CbvApplicant, type: :model do
         expect(applicant.reload.redacted_at).to be_within(1.second).of(Time.now)
       end
 
-      it "leaves the partner_identifier (case_number) intact" do
-        original_case_number = applicant.partner_identifier
+      it "always redacts the partner_identifier (case_number), even when not configured redactable" do
+        expect(applicant.partner_identifier).to be_present
         applicant.redact!
 
-        expect(applicant.reload.partner_identifier).to eq(original_case_number)
+        expect(applicant.reload.partner_identifier).to eq("REDACTED")
       end
 
       it "still redacts member_name in income_changes JSON" do

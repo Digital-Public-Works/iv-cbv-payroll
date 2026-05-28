@@ -49,6 +49,11 @@ class CbvApplicant < ApplicationRecord
 
     apply_redaction!(fields_to_redact || {})
 
+    # always redact the partner_identifier
+    if partner_identifier.present?
+      self[:partner_identifier] = Redactable::REDACTION_REPLACEMENTS[:string]
+    end
+
     if income_changes.present?
       self[:income_changes] = redact_member_names_in_json(income_changes)
     end

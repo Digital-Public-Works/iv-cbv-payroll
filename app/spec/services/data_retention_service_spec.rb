@@ -601,7 +601,9 @@ RSpec.describe DataRetentionService do
       expect(applicant.first_name).to eq("REDACTED")
       expect(applicant.custom_attributes).to include("first_name" => "REDACTED")
 
-      expect(applicant.partner_identifier).to eq("DELETEME001")
+      # partner_identifier is always redacted, even though sandbox's case_number
+      # is not configured as a redactable attribute.
+      expect(applicant.partner_identifier).to eq("REDACTED")
 
       expect(second_cbv_flow.reload).to have_attributes(
         redacted_at: within(1.second).of(Time.now)
@@ -855,10 +857,10 @@ RSpec.describe DataRetentionService do
         expect(cbv_flow.cbv_applicant.reload.redacted_at).to be_within(1.second).of(Time.now)
       end
 
-      it "preserves the non-redactable partner_identifier (case_number)" do
-        original_case_number = cbv_flow.cbv_applicant.partner_identifier
+      it "redacts the partner_identifier (case_number) even though it has no configured redactable fields" do
+        expect(cbv_flow.cbv_applicant.partner_identifier).to be_present
         service.send(:redact_cbv_flow, cbv_flow)
-        expect(cbv_flow.cbv_applicant.reload.partner_identifier).to eq(original_case_number)
+        expect(cbv_flow.cbv_applicant.reload.partner_identifier).to eq("REDACTED")
       end
 
       it "still deletes the argyle user" do
