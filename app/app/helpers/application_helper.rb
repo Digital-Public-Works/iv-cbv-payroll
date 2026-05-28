@@ -135,7 +135,8 @@ module ApplicationHelper
   end
 
   def page_title(prefix: nil)
-    [ content_for(:title).presence, prefix, t("shared.pilot_name") ].compact.join(" | ")
+    parts = [ content_for(:title).presence, prefix, t("shared.pilot_name") ].compact
+    safe_join(parts, " | ")
   end
 
   def survey_form_url
