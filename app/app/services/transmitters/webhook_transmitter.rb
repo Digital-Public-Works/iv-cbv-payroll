@@ -2,8 +2,8 @@ class Transmitters::WebhookTransmitter
   include Transmitter
 
   def deliver
-    webhook_url = URI(@current_agency.transmission_method_configuration["webhook_url"])
-    api_key = @current_agency.transmission_method_configuration["api_key"]
+    webhook_url = URI(@transmission_config["webhook_url"])
+    api_key = @transmission_config["api_key"]
 
     req = Net::HTTP::Post.new(webhook_url)
     req.content_type = "application/json"

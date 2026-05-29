@@ -33,9 +33,17 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
     )
   end
 
+  let(:configured_methods) do
+    [
+      ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(method: "encrypted_s3", configuration: {}),
+      ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(method: "webhook", configuration: {})
+    ]
+  end
+
   before do
-    allow(mock_client_agency).to receive(:transmission_method_configuration).and_return(transmission_method_configuration)
     allow(mock_client_agency).to receive(:id).and_return("sandbox")
+    allow(mock_client_agency).to receive(:timezone).and_return("America/New_York")
+    allow(mock_client_agency).to receive(:transmission_methods).and_return(configured_methods)
     allow(CbvApplicant).to receive(:valid_attributes_for_agency).with("sandbox").and_return([ "case_number" ])
 
     WebMock.allow_net_connect!
@@ -45,7 +53,7 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
     WebMock.disable_net_connect!
   end
 
-  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report) }
+  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
 
   describe "#deliver" do
     let(:confirmation_code) { "WEBHOOK_DELIVER" }
@@ -185,6 +193,34 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
       expect(res.code).to eq("401")
       error_body = JSON.parse(res.body)
       expect(error_body["error_code"]).to eq("AUTHENTICATION_ERROR")
+    end
+  end
+
+  describe "with bad credentials" do
+    let(:confirmation_code) { "WEBHOOK_BAD_CREDS_JOB" }
+
+    it "fails the transmission and records the error" do
+      bad_config = transmission_method_configuration.merge("api_key" => "wrong-api-key-value")
+      transmission = create(:cbv_flow_transmission,
+        cbv_flow: cbv_flow,
+        method_type: :webhook,
+        status: :pending,
+        configuration: bad_config
+      )
+
+      allow_any_instance_of(CbvFlowTransmissionJob).to receive(:set_aggregator_report).and_return(aggregator_report)
+      allow_any_instance_of(CbvFlowTransmissionJob).to receive(:event_logger)
+        .and_return(instance_double(GenericEventTracker, track: nil))
+
+      expect {
+        CbvFlowTransmissionJob.new.perform(transmission.id)
+      }.to raise_error(/Unexpected response from agency: 401/)
+
+      transmission.reload
+      expect(transmission).to be_failed
+      expect(transmission.last_error).to be_present
+      expect(transmission.succeeded_at).to be_nil
+      expect(cbv_flow.reload.transmitted_at).to be_nil
     end
   end
 end

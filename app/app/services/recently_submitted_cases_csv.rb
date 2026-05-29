@@ -4,17 +4,22 @@ class RecentlySubmittedCasesCsv < CsvGenerator
   end
 
   def generate_csv(cbv_flows)
+    # dynamic expiration header based on configured partner identifier
+    identifier_header = (@agency.partner_identifier_name || "partner_identifier").to_sym
+
     data = cbv_flows.map do |cbv_flow|
       invitation = cbv_flow.cbv_flow_invitation
 
       {
-        case_number: cbv_flow.cbv_applicant.case_number,
+        identifier_header => cbv_flow.cbv_applicant.partner_identifier,
         confirmation_code: cbv_flow.confirmation_code,
         cbv_link_created_timestamp: invitation ? @agency.format_timestamp(cbv_flow.cbv_flow_invitation.created_at) : nil,
         cbv_link_clicked_timestamp: @agency.format_timestamp(cbv_flow.created_at),
         report_created_timestamp: @agency.format_timestamp(cbv_flow.consented_to_authorized_use_at),
         consent_timestamp: @agency.format_timestamp(cbv_flow.consented_to_authorized_use_at),
-        pdf_filename: "#{@agency.pdf_filename(cbv_flow, cbv_flow.consented_to_authorized_use_at)}.pdf",
+        # Note: RecentlySubmittedCasesCsv is currently only used in the CSVToSftpReportDelivererJob which assumes SFTP.
+        # If this class is ever used for other transmission methods, we'll need to make this dynamic.
+        pdf_filename: TransmissionFilename.for(cbv_flow, @agency, :sftp),
         pdf_filetype: "application/pdf",
         language: invitation&.language
       }

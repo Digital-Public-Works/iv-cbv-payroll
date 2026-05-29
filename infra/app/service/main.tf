@@ -118,6 +118,11 @@ data "aws_iam_policy" "migrator_db_access_policy" {
   name  = local.database_config.migrator_access_policy_name
 }
 
+data "aws_iam_policy" "static_assets_access" {
+  count = var.environment_name == "prod" ? 1 : 0
+  name  = "dpw-${module.project_config.project_name}-static-assets-access"
+}
+
 resource "aws_iam_policy" "email_access_policy" {
   name        = "${local.service_config.service_name}-email-access"
   description = "Allows the app service to send emails with AWS SES"
@@ -219,8 +224,12 @@ module "service" {
 
   extra_environment_variables = merge(
     {
-      BUCKET_NAME = local.storage_config.bucket_name
+      BUCKET_NAME           = local.storage_config.bucket_name
+      STATIC_ASSETS_CDN_URL = "https://static.verifymyincome.org"
     },
+    var.environment_name == "prod" ? {
+      STATIC_ASSETS_BUCKET_NAME = "dpw-${module.project_config.project_name}-static-assets"
+    } : {},
     local.ssm_env_vars,
     local.identity_provider_environment_variables,
     local.service_config.extra_environment_variables
@@ -243,6 +252,9 @@ module "service" {
       email_access      = aws_iam_policy.email_access_policy.arn,
       sqs_queues_access = module.service.sqs_access_policy_arn
     },
+    var.environment_name == "prod" ? {
+      static_assets_access = data.aws_iam_policy.static_assets_access[0].arn,
+    } : {},
     module.app_config.enable_identity_provider ? {
       identity_provider_access = module.identity_provider_client[0].access_policy_arn,
     } : {}

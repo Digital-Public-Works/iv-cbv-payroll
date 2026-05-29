@@ -25,8 +25,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
     env_file: .env.development.local
     environment:
       - DOCKERIZED=true
@@ -34,7 +32,6 @@ services:
       - DB_NAME=app
       - DB_USERNAME=app
       - DB_PASSWORD=secret123
-      - REDIS_URL=redis://redis:6379/1
       - RAILS_BINDING=0.0.0.0
       - RAILS_ENV=development
     ports:
@@ -49,21 +46,8 @@ services:
       - app_rails_tmp:/rails/tmp
       - app_rails_storage:/rails/storage
 
-  redis:
-    image: redis:alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
 volumes:
   postgres_data:
   app_rails_nodemodules:
   app_rails_tmp:
   app_rails_storage:
-  redis_data:

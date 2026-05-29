@@ -820,11 +820,6 @@ en:
     report_data_range:
       ninety_days: 90 days
       six_months: 6 months
-    reporting_purpose:
-      az_des: Mid Approval Contact form
-      la_ldh: benefits
-      pa_dhs: SNAP Renewal
-      sandbox: benefits
     select_placeholder: "- Select -"
     skip_link: Skip to main content
   time:

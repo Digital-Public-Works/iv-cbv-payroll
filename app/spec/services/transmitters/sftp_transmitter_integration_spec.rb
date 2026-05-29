@@ -38,12 +38,8 @@ RSpec.describe Transmitters::SftpTransmitter, integration: true do
     allow(mock_client_agency).to receive(:logo_path).and_return("pa_compass_logo.svg")
     allow(mock_client_agency).to receive(:report_customization_show_earnings_list).and_return(true)
     allow(mock_client_agency).to receive(:timezone).and_return("America/New_York")
-    allow(mock_client_agency).to receive(:pdf_filename).and_return("test_report")
-    allow(mock_client_agency).to receive(:transmission_method_configuration).and_return(transmission_method_configuration)
 
-    # Stub PDF generation — we're testing SFTP upload, not PDF rendering
-    allow_any_instance_of(PdfService).to receive(:generate)
-      .and_return(OpenStruct.new(content: "fake-pdf-content"))
+    stub_pdf_generation(label: "SftpTransmitter integration test")
 
     # Use password-only auth to avoid scanning local ~/.ssh keys (which may
     # include ed25519 keys that require an optional gem not in the bundle).
@@ -56,11 +52,37 @@ RSpec.describe Transmitters::SftpTransmitter, integration: true do
     end
   end
 
-  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report) }
+  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
 
   describe "#deliver" do
     it "uploads a PDF to the SFTP server" do
       expect { subject.deliver }.not_to raise_error
+    end
+  end
+
+  describe "with bad credentials" do
+    it "fails the transmission and records the error" do
+      bad_config = transmission_method_configuration.merge("password" => "wrong-password")
+      transmission = create(:cbv_flow_transmission,
+        cbv_flow: cbv_flow,
+        method_type: :sftp,
+        status: :pending,
+        configuration: bad_config
+      )
+
+      allow_any_instance_of(CbvFlowTransmissionJob).to receive(:set_aggregator_report).and_return(aggregator_report)
+      allow_any_instance_of(CbvFlowTransmissionJob).to receive(:event_logger)
+        .and_return(instance_double(GenericEventTracker, track: nil))
+
+      expect {
+        CbvFlowTransmissionJob.new.perform(transmission.id)
+      }.to raise_error(Net::SSH::AuthenticationFailed)
+
+      transmission.reload
+      expect(transmission).to be_failed
+      expect(transmission.last_error).to be_present
+      expect(transmission.succeeded_at).to be_nil
+      expect(cbv_flow.reload.transmitted_at).to be_nil
     end
   end
 end
