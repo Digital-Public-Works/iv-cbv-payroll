@@ -134,8 +134,8 @@ module ApplicationHelper
     APPLICANT_FEEDBACK_FORM
   end
 
-  def page_title(prefix: nil)
-    parts = [ content_for(:title).presence, prefix, t("shared.pilot_name") ].compact
+  def page_title
+    parts = [ content_for(:title).presence, t("shared.pilot_name") ].compact
     safe_join(parts, " | ")
   end
 
