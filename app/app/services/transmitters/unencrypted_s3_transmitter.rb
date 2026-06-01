@@ -66,6 +66,15 @@ class Transmitters::UnencryptedS3Transmitter
       pdf_number_of_pages: pdf_output.page_count
     )
 
+    if (paystubs = paystubs_output)
+      data.merge!(
+        paystubs_filename: "#{@file_stem}_paystubs.pdf",
+        paystubs_filetype: "application/pdf",
+        paystubs_filesize: paystubs.file_size,
+        paystubs_number_of_pages: paystubs.page_count
+      )
+    end
+
     create_csv(data)
   end
 

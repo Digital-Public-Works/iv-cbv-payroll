@@ -26,14 +26,22 @@
 <h1><%= t(".pdf.client.header") %></h1>
 <% if is_caseworker %>
   <p><%= t(".pdf.caseworker.description") %></p>
-  <div class="usa-alert usa-alert--info">
-    <div class="usa-alert__body">
-      <p class="usa-alert__text">
-        <strong><%= t(".pdf.caseworker.how_to_header") %></strong>
-        <%= t(".pdf.caseworker.how_to") %>
-      </p>
-    </div>
-  </div>
+  <% if current_agency&.include_paystubs %>
+    <% paystub_employer_names = aggregator_report.summarize_by_employer
+         .select { |_, summary| summary[:paystubs]&.any? { |p| p.payroll_document_id.present? } }
+         .filter_map { |_, summary| summary[:employment]&.employer_name } %>
+    <% if paystub_employer_names.any? %>
+      <%= render "shared/pdf_info_box" do %>
+        <p class="margin-0"><strong><%= t("cbv.submits.show.pdf.caseworker.paystubs_available_header") %></strong></p>
+        <ul class="margin-top-1 margin-bottom-0">
+          <% paystub_employer_names.each do |name| %>
+            <li><%= name %></li>
+          <% end %>
+        </ul>
+        <p class="margin-top-1 margin-bottom-0"><%= t("cbv.submits.show.pdf.caseworker.paystubs_separate_file") %></p>
+      <% end %>
+    <% end %>
+  <% end %>
 <% else %>
   <p><%= t(".pdf.client.description", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
 <% end %>
@@ -163,7 +171,7 @@
   <% end %>
 <% end %>
 
-<% if current_agency&.include_paystubs %>
+<% if current_agency&.include_paystubs && !is_caseworker %>
   <% employer_names = aggregator_report.summarize_by_employer
        .select { |_, summary| summary[:paystubs]&.any? { |p| p.payroll_document_id.present? } }
        .filter_map { |_, summary| summary[:employment]&.employer_name } %>

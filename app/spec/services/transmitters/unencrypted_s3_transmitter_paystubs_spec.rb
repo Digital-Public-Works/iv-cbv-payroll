@@ -52,6 +52,19 @@ RSpec.describe Transmitters::UnencryptedS3Transmitter do
       end
       subject.deliver
     end
+
+    it "omits paystubs metadata columns from the csv" do
+      tar_double = Tempfile.new("tar")
+      tar_double.write("tar")
+      tar_double.rewind
+      expect(subject).to receive(:create_tar_file) do |file_data|
+        csv_entry = file_data.find { |entry| entry[:name].match?(/\.csv\z/) }
+        header = CSV.parse(csv_entry[:content]).first
+        expect(header).not_to include(a_string_matching(/paystubs/))
+        tar_double
+      end
+      subject.deliver
+    end
   end
 
   context "when include_paystubs is true" do
@@ -76,6 +89,25 @@ RSpec.describe Transmitters::UnencryptedS3Transmitter do
         expect(names).to include(a_string_matching(/_paystubs\.pdf\z/))
         paystubs_entry = file_data.find { |e| e[:name].match?(/_paystubs\.pdf\z/) }
         expect(paystubs_entry[:content]).to eq("fake-paystubs-pdf")
+        tar_double
+      end
+      subject.deliver
+    end
+
+    it "includes paystubs metadata columns in the csv" do
+      tar_double = Tempfile.new("tar")
+      tar_double.write("tar")
+      tar_double.rewind
+      expect(subject).to receive(:create_tar_file) do |file_data|
+        csv_entry = file_data.find { |entry| entry[:name].match?(/\.csv\z/) }
+        parsed = CSV.parse(csv_entry[:content])
+        row = parsed.first.zip(parsed.last).to_h
+        expect(row).to include(
+          "paystubs_filename" => a_string_matching(/_paystubs\.pdf\z/),
+          "paystubs_filetype" => "application/pdf",
+          "paystubs_filesize" => "18",
+          "paystubs_number_of_pages" => "4"
+        )
         tar_double
       end
       subject.deliver

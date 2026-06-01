@@ -17,9 +17,11 @@ module Aggregators
 
     class NoPaystubsError < StandardError; end
 
-    def initialize(cbv_flow:, argyle_service:)
+    def initialize(cbv_flow:, argyle_service:, current_agency: nil, aggregator_report: nil)
       @cbv_flow = cbv_flow
       @argyle_service = argyle_service
+      @current_agency = current_agency
+      @aggregator_report = aggregator_report
     end
 
     def generate
@@ -31,6 +33,13 @@ module Aggregators
       raise NoPaystubsError, "no paystub documents survived normalization" if pdf_parts.empty?
 
       merged = merge(pdf_parts)
+
+      if @current_agency.present? && @aggregator_report.present?
+        if (cover = generate_caseworker_cover)
+          merged = prepend_pdf(cover, merged)
+        end
+      end
+
       Result.new(content: merged, page_count: page_count(merged), file_size: merged.bytesize)
     end
 
@@ -118,6 +127,42 @@ module Aggregators
     rescue => e
       Rails.logger.warn("PaystubsPdfService: image wrap failed (#{e.class}: #{e.message}); skipping page")
       nil
+    end
+
+    def generate_caseworker_cover
+      employer_names = collect_employer_names
+      controller = Cbv::SubmitsController.new
+      controller.instance_variable_set(:@current_agency, @current_agency)
+
+      html = controller.render_to_string(
+        template: "aggregators/paystubs_pdf/caseworker_cover",
+        formats: [ :pdf ],
+        layout: "layouts/pdf",
+        locals: {
+          current_agency: @current_agency,
+          cbv_flow: @cbv_flow,
+          aggregator_report: @aggregator_report,
+          employer_names: employer_names
+        }
+      )
+
+      WickedPdf.new.pdf_from_string(html).presence
+    rescue => e
+      Rails.logger.warn("PaystubsPdfService: caseworker cover generation failed (#{e.class}: #{e.message}); skipping")
+      nil
+    end
+
+    def collect_employer_names
+      @aggregator_report.summarize_by_employer
+        .select { |_, summary| summary[:paystubs]&.any? { |p| p.payroll_document_id.present? } }
+        .filter_map { |_, summary| summary[:employment]&.employer_name }
+    end
+
+    def prepend_pdf(front_bytes, back_bytes)
+      target = CombinePDF.new
+      target << CombinePDF.parse(front_bytes)
+      target << CombinePDF.parse(back_bytes)
+      target.to_pdf
     end
 
     def merge(pdf_parts)

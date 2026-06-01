@@ -56,10 +56,10 @@ class CbvFlowToJson
   def build_attachments
     return nil unless @current_agency.include_paystubs
 
-    stem = ReportFilename.stem(@cbv_flow, @aggregator_report)
+    stem = TransmissionFilename.stem(@cbv_flow, @current_agency)
     {
-      report_filename: ReportFilename.report_filename(stem),
-      paystubs_filename: ReportFilename.paystubs_filename(stem)
+      report_filename: "#{stem}.pdf",
+      paystubs_filename: "#{stem}_paystubs.pdf"
     }
   end
 

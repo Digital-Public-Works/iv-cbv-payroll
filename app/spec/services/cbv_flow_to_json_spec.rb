@@ -252,8 +252,8 @@ RSpec.describe CbvFlowToJson do
 
         it "exposes the report and paystubs filenames" do
           expect(payload[:attachments]).to be_a(Hash)
-          expect(payload[:attachments][:report_filename]).to match(/^IncomeReport_.+_ConfWEBHOOK123_\d{14}\.pdf$/)
-          expect(payload[:attachments][:paystubs_filename]).to match(/^IncomeReport_.+_ConfWEBHOOK123_\d{14}_paystubs\.pdf$/)
+          expect(payload[:attachments][:report_filename]).to match(/\AVMI_\w+_\d{8}_ConfWEBHOOK123\.pdf\z/)
+          expect(payload[:attachments][:paystubs_filename]).to match(/\AVMI_\w+_\d{8}_ConfWEBHOOK123_paystubs\.pdf\z/)
         end
 
         it "uses the same stem for both filenames" do

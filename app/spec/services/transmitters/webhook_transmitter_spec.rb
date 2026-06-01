@@ -156,8 +156,8 @@ RSpec.describe Transmitters::WebhookTransmitter do
 
           subject.deliver
           expect(captured["attachments"]).to be_a(Hash)
-          expect(captured["attachments"]["report_filename"]).to match(/_ConfWEBHOOK123_\d{14}\.pdf$/)
-          expect(captured["attachments"]["paystubs_filename"]).to match(/_ConfWEBHOOK123_\d{14}_paystubs\.pdf$/)
+          expect(captured["attachments"]["report_filename"]).to match(/\AVMI_\w+_\d{8}_ConfWEBHOOK123\.pdf\z/)
+          expect(captured["attachments"]["paystubs_filename"]).to match(/\AVMI_\w+_\d{8}_ConfWEBHOOK123_paystubs\.pdf\z/)
           expect(captured).not_to have_key("paystub_pdf")
           expect(captured).not_to have_key("report_pdf")
         end

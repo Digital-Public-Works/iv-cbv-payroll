@@ -1,0 +1,59 @@
+<% additional_jobs = cbv_flow.has_other_jobs ? I18n.t("us_form_with.boolean_true") : I18n.t("us_form_with.boolean_false") %>
+<% date_range = "#{format_parsed_date(aggregator_report.from_date)} to #{format_parsed_date(aggregator_report.to_date)}" %>
+
+<strong>
+  <span class="cbv-header__pilot-name font-sans-md text-middle">
+    <%= t("shared.pilot_name") %>
+  </span>
+
+  <% if current_agency.present? %>
+    <span class="cbv-header__separator text-primary font-sans-md text-middle">|</span>
+
+    <% if current_agency.logo_path.present? %>
+      <div class="display-inline-block text-middle">
+        <% if current_agency.logo_path.start_with?("http", "data:") %>
+          <%= image_tag current_agency.logo_path, class: "cbv-header__agency-logo--#{current_agency.id}" %>
+        <% else %>
+          <%= image_tag wicked_pdf_asset_base64(current_agency.logo_path), class: "cbv-header__agency-logo--#{current_agency.id}" %>
+        <% end %>
+      </div>
+    <% else %>
+      <span class="text-middle font-sans-md text-no-wrap"><%= agency_translation("cbv.submits.show.pdf.agency_header_name") %></span>
+    <% end %>
+  <% end %>
+</strong>
+
+<h1><%= t("transmitters.paystubs_caseworker_cover.title") %></h1>
+
+<%= render "shared/pdf_info_box" do %>
+  <p class="margin-0"><strong><%= t("transmitters.paystubs_caseworker_cover.supplement_heading") %></strong></p>
+  <p class="margin-top-1 margin-bottom-0"><%= t("transmitters.paystubs_caseworker_cover.supplement_body") %></p>
+<% end %>
+
+<p><%= t("transmitters.paystubs_caseworker_cover.employer_list_intro") %></p>
+<ul>
+  <% employer_names.each do |name| %>
+    <li><%= name %></li>
+  <% end %>
+</ul>
+
+<h2><%= t("transmitters.paystubs_caseworker_cover.client_and_report_information") %></h2>
+
+<%= render(TableComponent.new) do |table| %>
+  <%= table.with_header do %>
+    <h3 class="margin-0"><%= t("transmitters.paystubs_caseworker_cover.client_information") %></h3>
+  <% end %>
+  <%= table.with_row(t("transmitters.paystubs_caseworker_cover.additional_jobs"), additional_jobs) %>
+<% end %>
+
+<%= render(TableComponent.new) do |table| %>
+  <%= table.with_header do %>
+    <h3 class="margin-0"><%= t("transmitters.paystubs_caseworker_cover.report_details") %></h3>
+  <% end %>
+  <% if cbv_flow.confirmation_code.present? %>
+    <%= table.with_row(t("transmitters.paystubs_caseworker_cover.confirmation_code"), cbv_flow.confirmation_code) %>
+  <% end %>
+  <%= table.with_row(t("transmitters.paystubs_caseworker_cover.report_created"), format_parsed_date(cbv_flow.consented_to_authorized_use_at)) %>
+  <%= table.with_row(t("transmitters.paystubs_caseworker_cover.date_range"), date_range) %>
+  <%= table.with_row(t("transmitters.paystubs_caseworker_cover.consent_timestamp"), cbv_flow.consented_to_authorized_use_at) %>
+<% end %>
