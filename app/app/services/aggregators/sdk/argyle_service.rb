@@ -40,6 +40,7 @@ module Aggregators::Sdk
     GIGS_ENDPOINT = "gigs"
     SHIFTS_ENDPOINT = "shifts"
     WEBHOOKS_ENDPOINT = "webhooks"
+    PAYROLL_DOCUMENTS_ENDPOINT = "payroll-documents"
 
     attr_reader :webhook_secret
 
@@ -218,6 +219,23 @@ module Aggregators::Sdk
       raise ArgumentError if user.nil? && account.nil?
       params = { user: user, account: account }.compact
       @http.get(build_url(EMPLOYMENTS_ENDPOINT), params).body
+    end
+
+    # https://docs.argyle.com/api-reference/payroll-documents#retrieve
+    def fetch_payroll_document_api(id:)
+      @http.get(build_url("#{PAYROLL_DOCUMENTS_ENDPOINT}/#{id}")).body
+    end
+
+    # Streams the file at the signed file_url returned on a payroll_document.
+    # Returns [bytes, content_type]. Uses a bare Faraday connection because
+    # the file_url is a signed URL on a different host and must not receive
+    # Argyle auth headers.
+    def fetch_payroll_document_file(file_url:)
+      conn = Faraday.new do |c|
+        c.response :raise_error
+      end
+      resp = conn.get(file_url)
+      [ resp.body, resp.headers["content-type"] ]
     end
 
     def build_url(endpoint)

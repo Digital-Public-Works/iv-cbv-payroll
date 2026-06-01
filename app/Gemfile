@@ -55,6 +55,7 @@ gem "newrelic_rpm"
 gem "faraday", "~> 2.13"
 
 gem "wicked_pdf"
+gem "combine_pdf", "~> 1.0"
 gem "actioncable-enhanced-postgresql-adapter"
 gem "aws-sdk-rails"
 gem "aws-sdk-s3"

@@ -46,11 +46,22 @@ class CbvFlowToJson
     {
       report_metadata: build_report_metadata,
       client_information: build_client_information,
-      employment_records: build_employment_records
-    }
+      employment_records: build_employment_records,
+      attachments: build_attachments
+    }.compact
   end
 
   private
+
+  def build_attachments
+    return nil unless @current_agency.include_paystubs
+
+    stem = ReportFilename.stem(@cbv_flow, @aggregator_report)
+    {
+      report_filename: ReportFilename.report_filename(stem),
+      paystubs_filename: ReportFilename.paystubs_filename(stem)
+    }
+  end
 
   def build_report_metadata
     {

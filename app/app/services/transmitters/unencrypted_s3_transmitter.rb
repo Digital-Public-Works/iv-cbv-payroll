@@ -1,5 +1,6 @@
 class Transmitters::UnencryptedS3Transmitter
   include Transmitter
+  include Transmitters::Concerns::PaystubsOutput
   include TarFileCreatable
   include CsvHelper
 
@@ -15,6 +16,10 @@ class Transmitters::UnencryptedS3Transmitter
       { name: "#{@file_stem}.pdf", content: pdf_output&.content },
       { name: "#{@file_stem}.csv", content: csv_content.string }
     ]
+
+    if (paystubs = paystubs_output)
+      file_data << { name: "#{@file_stem}_paystubs.pdf", content: paystubs.content }
+    end
     tar_tempfile = create_tar_file(file_data)
 
     upload_tempfile = nil
