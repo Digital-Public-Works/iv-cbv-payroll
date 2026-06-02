@@ -44,6 +44,6 @@ class MatchAgencyNamesJob < ApplicationJob
 
   # Necessary for methods within Cbv::AggregatorDataHelper
   def agency_config
-    Rails.application.config.client_agencies
+    ClientAgencyConfig.instance
   end
 end

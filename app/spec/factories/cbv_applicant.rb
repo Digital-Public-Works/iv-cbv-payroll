@@ -1,6 +1,7 @@
 FactoryBot.define do
   factory :cbv_applicant do
     client_agency_id { "sandbox" }
+    case_number { 8.times.map { rand(10) }.join }
     first_name { "Jane" }
     middle_name { "Sue" }
     last_name { "Doe" }
@@ -10,7 +11,7 @@ FactoryBot.define do
 
     # Instantiate the proper subclass:
     # @see https://stackoverflow.com/questions/57504422/how-to-make-factorybot-return-the-right-sti-sub-class
-    initialize_with { CbvApplicant.sti_class_for(client_agency_id).new }
+    initialize_with { new(**attributes) }
 
     trait :sandbox do
       client_agency_id { "sandbox" }
@@ -21,11 +22,6 @@ FactoryBot.define do
       first_name { nil }
       middle_name { nil }
       last_name { nil }
-
-      case_number do
-        # TODO: Determine actual AZ DES case number format.
-        8.times.map { rand(10) }.join
-      end
 
       income_changes do
         [
@@ -62,11 +58,6 @@ FactoryBot.define do
       middle_name { nil }
       last_name { nil }
 
-      case_number do
-        # TODO: Determine actual PA DHS case number format.
-        8.times.map { rand(10) }.join
-      end
-
       income_changes do
         [
           {
@@ -98,12 +89,6 @@ FactoryBot.define do
 
     trait :la_ldh do
       client_agency_id { "la_ldh" }
-
-      case_number do
-        # TODO: Determine actual LA LDH case number format.
-        8.times.map { rand(10) }.join
-      end
-
       date_of_birth { Date.new(2000, 1, 1) }
       doc_id { "%08d" % rand(100_000_000) }
     end

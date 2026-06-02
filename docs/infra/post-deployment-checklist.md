@@ -41,7 +41,7 @@ Use this checklist after deploying infrastructure and application to ensure all 
 
 ### Application Features
 - [ ] **Background jobs enabled** - `ACTIVEJOB_ENABLED=true`
-- [ ] **Mission Control dashboard accessible** at `/jobs` endpoint
+- [ ] **Shoryuken worker running** - check ECS service `app-{env}-worker` is healthy and SQS messages are being consumed
 - [ ] **Supported providers configured** - `SUPPORTED_PROVIDERS` set appropriately
 - [ ] **Maintenance mode disabled** - `MAINTENANCE_MODE=false`
 
@@ -97,21 +97,6 @@ Use this checklist after deploying infrastructure and application to ensure all 
 - [ ] **Sandbox agency configured** for testing:
   - `SANDBOX_DOMAIN_NAME`, `SANDBOX_ARGYLE_ENVIRONMENT`, `SANDBOX_PINWHEEL_ENVIRONMENT`
   - `AGENCY_DEFAULT_ACTIVE=false` (disabled by default)
-
-- [ ] **Arizona DES agency configured** (if applicable):
-  - Domain, SFTP, environment settings
-  - `AGENCY_AZ_DES_ACTIVE=true` if enabled
-  - Verify partner configuration at [az_des.yml](../../app/config/client-agency-config/az_des.yml)
-
-- [ ] **Pennsylvania DHS agency configured** (if applicable):
-    - Domain, SFTP, environment settings
-    - `AGENCY_PA_DHS_ACTIVE=true` if enabled
-    - Verify partner configuration at [pa_dhs.yml](../../app/config/client-agency-config/pa_dhs.yml)
-
-- [ ] **Louisiana LDH agency configured** (if applicable):
-  - Domain, email, pilot status
-  - Environment settings
-  - Verify partner configuration at [la_ldh.yml](../../app/config/client-agency-config/la_ldh.yml)
 
 ### SFTP Configuration (Arizona DES)
 - [ ] **SFTP credentials configured** in Parameter Store

@@ -349,6 +349,23 @@ See the [E2E testing documentation](/docs/e2e/e2e-checks.md) for more informatio
 
 When writing E2E tests, use the `verify_page` helper when possible to ensure that the page meets our sitewide requirements: it has no missing translations and it passes accessibility checks (per WCAG 2.1 A & AA).
 
+## Integration Testing (Webhook)
+
+Integration tests validate webhook transmission against a running reference server. They are excluded from default test runs and CI.
+
+**Prerequisites:**
+1. Clone and start the [webhook API reference implementation](https://github.com/Digital-Public-Works/dicit-webhook-api-ref-impl) on `localhost:9292`
+2. Set the `WEBHOOK_TEST_API_KEY` environment variable to match the server's `VMI_API_KEY` (defaults to `my-secure-guid`)
+
+**Running integration tests:**
+```bash
+# Run all integration tests
+INTEGRATION_RUN_TESTS=1 bundle exec rspec --tag integration
+
+# Run just the webhook integration spec
+INTEGRATION_RUN_TESTS=1 bundle exec rspec spec/services/transmitters/webhook_transmitter_integration_spec.rb
+```
+
 ## Coding style and linters
 
 To enable automatic ruby linting and terraform formatting on every `git commit`, run the command `pre-commit install`.

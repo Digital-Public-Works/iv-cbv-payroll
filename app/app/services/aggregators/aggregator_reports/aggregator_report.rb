@@ -97,8 +97,10 @@ module Aggregators::AggregatorReports
         report[:employments] = summarize_by_employer.map do |_, summary|
           cbv_flow = payroll_accounts.first.cbv_flow
           {
-            applicant_full_name: summary[:identity].full_name,
-            applicant_ssn: summary[:identity].ssn,
+            applicant_first_name: summary[:identity]&.first_name,
+            applicant_last_name: summary[:identity]&.last_name,
+            applicant_full_name: summary[:identity]&.full_name,
+            applicant_ssn: summary[:identity]&.ssn,
             applicant_extra_comments: cbv_flow.additional_information["comment"],
             employer_name: summary[:employment].employer_name,
             employer_phone: summary[:employment].employer_phone_number,
@@ -222,6 +224,12 @@ module Aggregators::AggregatorReports
       else
         @fetched_days
       end
+    end
+
+    def base_pay_match
+      # only include paystubs that would be shown on the report anyway, to avoid 'see paystubs below' when there are no paystubs shown
+      paystubs_in_range = @paystubs.select { |paystub| parse_date_safely(paystub.pay_date)&.between?(from_date, to_date) }
+      Argyle::BasePayRateConsistencyChecker.new(income: @incomes.first, paystubs: paystubs_in_range).match?
     end
 
     private

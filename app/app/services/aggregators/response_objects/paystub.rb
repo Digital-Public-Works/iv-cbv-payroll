@@ -13,6 +13,7 @@ module Aggregators::ResponseObjects
     hours
     earnings
     employment_id
+    implied_base_rate_in_dollars
   ]
 
   Paystub = Struct.new(*PAYSTUB_FIELDS, keyword_init: true) do
@@ -66,7 +67,8 @@ module Aggregators::ResponseObjects
             amount: Aggregators::FormatMethods::Argyle.format_currency(deduction["amount"]),
           )
         end,
-        employment_id: response_body["employment"]
+        employment_id: response_body["employment"],
+        implied_base_rate_in_dollars: Aggregators::FormatMethods::Argyle.paystub_implied_base_rate_in_dollars(response_body)
       )
     end
 
@@ -74,14 +76,15 @@ module Aggregators::ResponseObjects
     # is complete and we are operating on an internal model instead of regenerating the synthetic hours as part of the view
     def self.log_paystub_to_mixpanel(response_body)
       gross_pay_total = response_body["gross_pay_list"]&.map { |item| item["hours"] || 0 }&.map(&:to_f)&.sum
-      synthetic_total_hours = Aggregators::FormatMethods::Argyle.hours_by_earning_category(response_body["gross_pay_list"]).map { |_category, hours| hours.to_f }&.max
+      synthetic_total_hours = Aggregators::FormatMethods::Argyle.synthetic_hours(response_body["gross_pay_list"])
 
       GenericEventTracker.new.track(TrackEvent::ArgylePaystubHours, nil, {
         time: Time.now.to_i,
         argyle_total_hours: response_body["hours"],
         gross_pay_sum: gross_pay_total,
         synthetic_total_hours: synthetic_total_hours,
-        argyle_total_hours_matches_synthetic: synthetic_total_hours == response_body["hours"],
+        argyle_total_hours_matches_synthetic:
+          Aggregators::FormatMethods::Argyle.total_hours_match?(synthetic_total_hours, response_body["hours"]),
         argyle_hours_null: response_body["hours"].nil?
       })
     end

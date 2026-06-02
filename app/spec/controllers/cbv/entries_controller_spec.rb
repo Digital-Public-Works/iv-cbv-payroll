@@ -50,7 +50,7 @@ RSpec.describe Cbv::EntriesController do
 
         get :show, params: { token: invitation.auth_token }
         expect(response).to have_http_status(:ok)
-        expect(response.body).to include("Review your payment information.")
+        expect(response.body).to include("Review pay from your job")
       end
 
       it "successfully starts the flow with a 36-character legacy token" do
@@ -62,7 +62,7 @@ RSpec.describe Cbv::EntriesController do
 
         get :show, params: { token: invitation.auth_token }
         expect(response).to have_http_status(:ok)
-        expect(response.body).to include("Review your payment information.")
+        expect(response.body).to include("Review pay from your job")
       end
 
       context "with multiple cbv flows" do

@@ -31,9 +31,9 @@ RSpec.describe Cbv::ApplicantInformationsController, type: :controller do
             cbv_applicant: {
               first_name: "Daph", # required
               middle_name: "",
-              last_name: "", # required
-              date_of_birth: { month: "", day: "", year: "" }, # required
-              case_number: "" # required
+              last_name: nil, # required, nil
+              date_of_birth: { month: "", day: "", year: "" }, # required, parses to nil
+              case_number: nil # required, nil
             }
           }
         }
@@ -104,7 +104,7 @@ RSpec.describe Cbv::ApplicantInformationsController, type: :controller do
             cbv_applicant: {
               first_name: "Daph",
               middle_name: "",
-              last_name: "", # required but missing
+              last_name: nil, # required but missing (nil triggers validation)
               date_of_birth: {
                 month: "03",
                 day: "19",
