@@ -1,3 +1,14 @@
+variable "environment_name" {
+  type        = string
+  description = "The environment name (e.g., demo, a11y, prod)"
+}
+
+variable "use_environment_suffix" {
+  type        = bool
+  default     = false
+  description = "Whether to append environment name to EventBridge and IAM role names. Set to true for non-standard environments (a11y, preview) to avoid resource conflicts. Standard environments (demo, prod) keep original names for backward compatibility."
+}
+
 variable "domain" {
   type        = string
   description = "The name of the desired SES domain"

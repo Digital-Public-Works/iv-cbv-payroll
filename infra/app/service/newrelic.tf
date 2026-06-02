@@ -1,5 +1,7 @@
+# NewRelic IAM role is created in standard environments (demo, prod) and shared across all environments.
+# Other environments (a11y, preview) reference it via data source.
 resource "aws_iam_role" "newrelic_metrics" {
-  count = !local.is_temporary ? 1 : 0
+  count = (var.environment_name == "demo" || var.environment_name == "prod") && !local.is_temporary ? 1 : 0
   # checkov:skip=CKV_AWS_61:This policy principal needs to be broad to allow for monitoring all services.
 
   name = "newrelic-metrics-collector"
@@ -22,10 +24,20 @@ resource "aws_iam_role" "newrelic_metrics" {
       }
     ]
   })
+
+  lifecycle {
+    ignore_changes = [tags, tags_all]
+  }
+}
+
+# Reference the shared NewRelic IAM role created in standard environments
+data "aws_iam_role" "newrelic_metrics" {
+  count = var.environment_name != "demo" && var.environment_name != "prod" && !local.is_temporary ? 1 : 0
+  name  = "newrelic-metrics-collector"
 }
 
 resource "aws_iam_role_policy_attachment" "newrelic_metrics" {
-  count      = !local.is_temporary ? 1 : 0
+  count      = (var.environment_name == "demo" || var.environment_name == "prod") && !local.is_temporary ? 1 : 0
   role       = aws_iam_role.newrelic_metrics[0].id
   policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
 }

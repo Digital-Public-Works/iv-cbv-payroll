@@ -8,6 +8,6 @@ module NonProductionAccessible
   end
 
   def demo_mode?
-    ENV["DOMAIN_NAME"]&.match?(/demo\.divt\.app$/)
+    ENV["DOMAIN_NAME"]&.match?(/divt\.app$/)
   end
 end
