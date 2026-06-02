@@ -99,11 +99,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_26_155906) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "show_on_caseworker_report", default: false, null: false
-    t.boolean "show_on_applicant_form", default: true, null: false
-    t.boolean "show_on_caseworker_form", default: true, null: false
     t.boolean "redactable", default: false, null: false
     t.string "redact_type"
     t.string "form_field_type", default: "text_field"
+    t.boolean "show_on_applicant_form", default: true, null: false
+    t.boolean "show_on_caseworker_form", default: true, null: false
     t.index ["partner_config_id"], name: "index_partner_application_attributes_on_partner_config_id"
   end
 
@@ -136,15 +136,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_26_155906) do
     t.string "partner_identifier_name"
     t.boolean "include_paystubs", default: false, null: false
     t.index ["partner_id"], name: "index_partner_configs_on_partner_id", unique: true
-  end
-
-  create_table "partner_output_configurations", force: :cascade do |t|
-    t.bigint "partner_config_id", null: false
-    t.boolean "include_direct_deposit_last_4", default: false, null: false
-    t.boolean "include_full_ssn", default: false, null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["partner_config_id"], name: "index_partner_output_configurations_on_partner_config_id"
   end
 
   create_table "partner_translations", force: :cascade do |t|
@@ -190,22 +181,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_26_155906) do
     t.index ["discarded_at"], name: "index_payroll_accounts_on_discarded_at"
   end
 
-  create_table "solid_queue_recurring_tasks", force: :cascade do |t|
-    t.string "key", null: false
-    t.string "schedule", null: false
-    t.string "command", limit: 2048
-    t.string "class_name"
-    t.text "arguments"
-    t.string "queue_name"
-    t.integer "priority", default: 0
-    t.boolean "static", default: true, null: false
-    t.text "description"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["key"], name: "index_solid_queue_recurring_tasks_on_key", unique: true
-    t.index ["static"], name: "index_solid_queue_recurring_tasks_on_static"
-  end
-
   create_table "users", force: :cascade do |t|
     t.string "client_agency_id", null: false
     t.string "email", default: "", null: false
@@ -239,7 +214,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_26_155906) do
   add_foreign_key "cbv_flow_transmissions", "cbv_flows"
   add_foreign_key "cbv_flows", "cbv_flow_invitations"
   add_foreign_key "partner_application_attributes", "partner_configs"
-  add_foreign_key "partner_output_configurations", "partner_configs"
   add_foreign_key "partner_translations", "partner_configs"
   add_foreign_key "partner_transmission_configs", "partner_transmission_methods"
   add_foreign_key "partner_transmission_methods", "partner_configs"
