@@ -131,10 +131,8 @@ module Aggregators
 
     def generate_caseworker_cover
       employer_names = collect_employer_names
-      controller = Cbv::SubmitsController.new
-      controller.instance_variable_set(:@current_agency, @current_agency)
 
-      html = controller.render_to_string(
+      html = ApplicationController.renderer.render(
         template: "aggregators/paystubs_pdf/caseworker_cover",
         formats: [ :pdf ],
         layout: "layouts/pdf",

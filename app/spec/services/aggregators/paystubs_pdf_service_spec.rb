@@ -197,4 +197,116 @@ RSpec.describe Aggregators::PaystubsPdfService do
       end
     end
   end
+
+  # Coverage for the caseworker cover page (the transmitter path passes
+  # current_agency + aggregator_report; the client-download path does not).
+  # These let ApplicationController.renderer.render run for real against the
+  # actual template + layout — the step the recent change touched — but stub
+  # the HTML->PDF conversion so the suite doesn't depend on the wkhtmltopdf
+  # binary. A missing helper or a broken layout helper would surface here as a
+  # rescued render failure rather than being swallowed silently in production.
+  describe "#generate with a caseworker cover page" do
+    # The cover template formats consented_to_authorized_use_at unguarded, so
+    # the flow needs a consent timestamp for the render to succeed.
+    let(:cbv_flow) { create(:cbv_flow, :invited, consented_to_authorized_use_at: 10.minutes.ago) }
+
+    let(:current_agency) do
+      instance_double(ClientAgencyConfig::ClientAgency,
+        id:        "cover_test",
+        logo_path: "https://example.test/logo.png" # URL logo => no asset-pipeline lookup
+      ).tap { |a| allow(a).to receive(:present?).and_return(true) }
+    end
+
+    let(:aggregator_report) do
+      instance_double(Aggregators::AggregatorReports::CompositeReport,
+        summarize_by_employer: {},
+        from_date:             Date.new(2024, 1, 1),
+        to_date:               Date.new(2024, 1, 31)
+      ).tap { |r| allow(r).to receive(:present?).and_return(true) }
+    end
+
+    let(:service_with_cover) do
+      described_class.new(
+        cbv_flow:          cbv_flow,
+        argyle_service:    argyle_service,
+        current_agency:    current_agency,
+        aggregator_report: aggregator_report
+      )
+    end
+
+    def no_cover_page_count
+      described_class.new(cbv_flow: cbv_flow, argyle_service: argyle_service).generate.page_count
+    end
+
+    before do
+      # One real paystub PDF so the merged body has content.
+      stub_docs(account: account_id, docs: [ doc("doc-a", available_date: "2024-01-01T00:00:00Z") ])
+      stub_file("https://example.test/doc-a")
+
+      # Real HTML render; stub only the HTML->PDF step and capture the HTML.
+      wicked = instance_double(WickedPdf)
+      allow(WickedPdf).to receive(:new).and_return(wicked)
+      allow(wicked).to receive(:pdf_from_string) { |html| @cover_html = html; sample_pdf_bytes }
+    end
+
+    it "renders the cover via ApplicationController.renderer and prepends it to the bundle" do
+      allow(ApplicationController).to receive(:renderer).and_call_original
+      baseline = no_cover_page_count
+
+      result = service_with_cover.generate
+
+      expect(result).to be_a(described_class::Result)
+      expect(result.content).to start_with("%PDF")
+      expect(result.page_count).to be > baseline                # cover added page(s)
+      expect(ApplicationController).to have_received(:renderer)  # used the new render path
+      expect(@cover_html).to include("cbv-header__pilot-name")   # the real template rendered
+    end
+
+    it "does not silently drop the cover on a successful render" do
+      allow(Rails.logger).to receive(:warn)
+      service_with_cover.generate
+      expect(Rails.logger).not_to have_received(:warn).with(/caseworker cover generation failed/)
+    end
+
+    context "when the agency has no logo configured" do
+      let(:current_agency) do
+        instance_double(ClientAgencyConfig::ClientAgency, id: "cover_test", logo_path: "")
+          .tap { |a| allow(a).to receive(:present?).and_return(true) }
+      end
+
+      it "still renders the cover via the textual agency-header fallback" do
+        allow(Rails.logger).to receive(:warn)
+        result = service_with_cover.generate
+
+        expect(result).to be_a(described_class::Result)
+        expect(@cover_html).to include("cbv-header__pilot-name")
+        expect(Rails.logger).not_to have_received(:warn).with(/caseworker cover generation failed/)
+      end
+    end
+
+    context "when cover rendering raises" do
+      before do
+        allow(ApplicationController).to receive(:renderer).and_raise(StandardError.new("render boom"))
+        allow(Rails.logger).to receive(:warn)
+      end
+
+      it "logs and returns the paystub bundle without the cover" do
+        baseline = no_cover_page_count
+
+        result = service_with_cover.generate
+
+        expect(result).to be_a(described_class::Result)
+        expect(result.page_count).to eq(baseline) # cover omitted, paystubs intact
+        expect(Rails.logger).to have_received(:warn).with(/caseworker cover generation failed/)
+      end
+    end
+
+    it "does not attempt a cover render when current_agency/aggregator_report are absent" do
+      allow(ApplicationController).to receive(:renderer).and_call_original
+
+      described_class.new(cbv_flow: cbv_flow, argyle_service: argyle_service).generate
+
+      expect(ApplicationController).not_to have_received(:renderer)
+    end
+  end
 end
