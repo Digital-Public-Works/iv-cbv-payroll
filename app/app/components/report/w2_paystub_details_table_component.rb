@@ -21,7 +21,8 @@ class Report::W2PaystubDetailsTableComponent < ViewComponent::Base
     show_hours_breakdown: true,
     show_gross_pay_ytd: true,
     show_pay_frequency: true,
-    show_earnings_items: false
+    show_earnings_items: false,
+    show_direct_deposit_accounts: false
   )
     @paystub = paystub
     @income = income
@@ -32,6 +33,7 @@ class Report::W2PaystubDetailsTableComponent < ViewComponent::Base
     @show_gross_pay_ytd = show_gross_pay_ytd
     @show_pay_frequency = show_pay_frequency
     @show_earnings_items = show_earnings_items
+    @show_direct_deposit_accounts = show_direct_deposit_accounts
   end
 
   private
@@ -66,6 +68,10 @@ class Report::W2PaystubDetailsTableComponent < ViewComponent::Base
 
   def show_earnings_items?
     @show_earnings_items && @paystub.earnings.present?
+  end
+
+  def show_direct_deposit_accounts?
+    @show_direct_deposit_accounts && @paystub.direct_deposit_accounts.present?
   end
 
   def earnings_sort_order(earnings)

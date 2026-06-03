@@ -51,6 +51,20 @@ RSpec.describe AggregateDataPointComponent, type: :component do
     end
   end
 
+  describe "#direct_deposit_account" do
+    it "renders the label" do
+      expect(
+        render_inline(described_class.new(:direct_deposit_account, "1234"))
+      ).to have_text(I18n.t("cbv.payment_details.show.direct_deposit_account_label"))
+    end
+
+    it "renders the interpolated last four value" do
+      expect(
+        render_inline(described_class.new(:direct_deposit_account, "1234"))
+      ).to have_text(I18n.t("cbv.payment_details.show.direct_deposit_account_value", last_four: "1234"))
+    end
+  end
+
   describe "#pay_gross_ytd" do
     it "renders with valid amount" do
       expect(

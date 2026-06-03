@@ -18,6 +18,11 @@
     <% end %>
   <% end %>
   <%= table.with_data_point(:net_pay_amount, @paystub.net_pay_amount) %>
+  <% if show_direct_deposit_accounts? %>
+    <% @paystub.direct_deposit_accounts.each do |last_four| %>
+      <%= table.with_data_point(:direct_deposit_account, last_four) %>
+    <% end %>
+  <% end %>
   <% @paystub.deductions.filter { |deduction| deduction.amount.to_f > 0 }.each do |deduction| %>
     <%= table.with_data_point(:deduction, deduction.category, deduction.tax, deduction.amount) %>
   <% end %>
