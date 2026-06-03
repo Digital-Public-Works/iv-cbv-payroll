@@ -123,6 +123,17 @@ module Aggregators::FormatMethods::Argyle
     ].compact.join(", ")
   end
 
+  def self.direct_deposit_accounts(destinations)
+    return [] if destinations.blank?
+
+    destinations.filter_map do |destination|
+      account = destination["ach_deposit_account"]
+      next if account.blank?
+
+      account["account_number"].to_s.gsub(/\D/, "").last(4).presence
+    end
+  end
+
   def self.seconds_to_hours(seconds)
     return unless seconds
     (seconds / 3600.0).round(2)
