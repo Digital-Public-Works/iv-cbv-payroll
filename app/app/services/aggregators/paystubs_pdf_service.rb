@@ -145,9 +145,6 @@ module Aggregators
       )
 
       WickedPdf.new.pdf_from_string(html).presence
-    rescue => e
-      Rails.logger.warn("PaystubsPdfService: caseworker cover generation failed (#{e.class}: #{e.message}); skipping")
-      nil
     end
 
     def collect_employer_names

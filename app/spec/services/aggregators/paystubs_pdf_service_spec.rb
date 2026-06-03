@@ -287,17 +287,10 @@ RSpec.describe Aggregators::PaystubsPdfService do
     context "when cover rendering raises" do
       before do
         allow(ApplicationController).to receive(:renderer).and_raise(StandardError.new("render boom"))
-        allow(Rails.logger).to receive(:warn)
       end
 
-      it "logs and returns the paystub bundle without the cover" do
-        baseline = no_cover_page_count
-
-        result = service_with_cover.generate
-
-        expect(result).to be_a(described_class::Result)
-        expect(result.page_count).to eq(baseline) # cover omitted, paystubs intact
-        expect(Rails.logger).to have_received(:warn).with(/caseworker cover generation failed/)
+      it "propagates the error instead of swallowing it" do
+        expect { service_with_cover.generate }.to raise_error(StandardError, "render boom")
       end
     end
 

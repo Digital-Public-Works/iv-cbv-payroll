@@ -42,6 +42,11 @@ module Aggregators::Sdk
     WEBHOOKS_ENDPOINT = "webhooks"
     PAYROLL_DOCUMENTS_ENDPOINT = "payroll-documents"
 
+    # Timeout (seconds) for retrieving a single paystub document file from the
+    # signed storage URL. These downloads can be large, so they get a longer
+    # budget than the default 5s API request timeout.
+    PAYSTUB_RETRIEVAL_TIMEOUT = 60
+
     attr_reader :webhook_secret
 
     # Factory method to return MockArgyleService when environment is "mock".
@@ -243,7 +248,7 @@ module Aggregators::Sdk
       storage_url = redirect_resp.headers["location"]
       raise "fetch_payroll_document_file: no redirect location returned for #{file_url}" if storage_url.blank?
 
-      conn = Faraday.new do |c|
+      conn = Faraday.new(request: { timeout: PAYSTUB_RETRIEVAL_TIMEOUT }) do |c|
         c.response :raise_error
       end
       resp = conn.get(storage_url)

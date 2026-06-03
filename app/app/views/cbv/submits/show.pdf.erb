@@ -26,13 +26,14 @@
 <h1><%= t(".pdf.client.header") %></h1>
 <% if is_caseworker %>
   <p><%= t(".pdf.caseworker.description") %></p>
-  <% if current_agency&.include_paystubs %>
-    <% paystub_employer_names = aggregator_report.summarize_by_employer
-         .select { |_, summary| summary[:paystubs]&.any? { |p| p.payroll_document_id.present? } }
-         .filter_map { |_, summary| summary[:employment]&.employer_name } %>
-    <% if paystub_employer_names.any? %>
-      <%= render "shared/pdf_info_box" do %>
-        <p class="margin-0"><strong><%= t("cbv.submits.show.pdf.caseworker.paystubs_available_header") %></strong></p>
+  <%= render "shared/pdf_info_box" do %>
+    <p class="margin-0"><strong><%= t("cbv.submits.show.pdf.caseworker.how_to_header") %></strong> <%= t("cbv.submits.show.pdf.caseworker.how_to") %></p>
+    <% if current_agency&.include_paystubs %>
+      <% paystub_employer_names = aggregator_report.summarize_by_employer
+           .select { |_, summary| summary[:paystubs]&.any? { |p| p.payroll_document_id.present? } }
+           .filter_map { |_, summary| summary[:employment]&.employer_name } %>
+      <% if paystub_employer_names.any? %>
+        <p class="margin-top-2 margin-bottom-0"><strong><%= t("cbv.submits.show.pdf.caseworker.paystubs_available_header") %></strong></p>
         <ul class="margin-top-1 margin-bottom-0">
           <% paystub_employer_names.each do |name| %>
             <li><%= name %></li>
