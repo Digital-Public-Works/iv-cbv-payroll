@@ -81,6 +81,8 @@ class Cbv::SubmitsController < Cbv::BaseController
       margin: { top: 10, bottom: 10, left: 10, right: 10 }
     )
 
+    # If this agency is not configured to include paystubs, just return the report without the paystubs.
+    # The code below this return adds the paystubs + cover page to the report.
     return report_pdf unless current_agency&.include_paystubs
 
     begin
