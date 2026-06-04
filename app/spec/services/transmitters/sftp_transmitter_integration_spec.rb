@@ -1,13 +1,15 @@
 require "rails_helper"
 
 RSpec.describe Transmitters::SftpTransmitter, integration: true do
+  # Fixed consent timestamp keeps the basename deterministic across runs.
+  let(:consented_at) { Time.zone.local(2026, 5, 27, 12, 0, 0) }
   let(:cbv_applicant) { create(:cbv_applicant, case_number: "ABC1234") }
   let(:cbv_flow) do
     create(:cbv_flow,
       :invited,
       :with_argyle_account,
       cbv_applicant: cbv_applicant,
-      consented_to_authorized_use_at: Time.current,
+      consented_to_authorized_use_at: consented_at,
       confirmation_code: "SFTP001",
       client_agency_id: "pa_dhs"
     )
@@ -29,7 +31,7 @@ RSpec.describe Transmitters::SftpTransmitter, integration: true do
       "password" => "testpass",
       "url" => "localhost",
       "port" => "2222",
-      "sftp_directory" => "upload"
+      "path_prefix" => "upload"
     }
   end
 
@@ -38,6 +40,7 @@ RSpec.describe Transmitters::SftpTransmitter, integration: true do
     allow(mock_client_agency).to receive(:logo_path).and_return("pa_compass_logo.svg")
     allow(mock_client_agency).to receive(:report_customization_show_earnings_list).and_return(true)
     allow(mock_client_agency).to receive(:timezone).and_return("America/New_York")
+    allow(mock_client_agency).to receive(:include_paystubs).and_return(false)
 
     stub_pdf_generation(label: "SftpTransmitter integration test")
 
@@ -54,9 +57,96 @@ RSpec.describe Transmitters::SftpTransmitter, integration: true do
 
   subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
 
+  # The atmoz/sftp container mounts the host's sftp_mount_root to the container's home dir
+  let(:sftp_mount_root) { Rails.root.join("tmp/integration_transmissions/sftp") }
+  let(:expected_basename) { "CBVPilot_0ABC1234_20260527_ConfSFTP001.pdf" }
+
   describe "#deliver" do
-    it "uploads a PDF to the SFTP server" do
+    before do
+      # Clear any PDFs left by prior runs so file-existence checks are unambiguous.
+      Dir.glob(sftp_mount_root.join("**/*.pdf")).each { |f| FileUtils.rm_f(f) }
+    end
+
+    it "uploads the PDF under the configured path_prefix" do
       expect { subject.deliver }.not_to raise_error
+
+      landed = sftp_mount_root.join(expected_basename)
+      expect(landed).to exist,
+        "expected PDF at #{landed}, saw: #{Dir.children(sftp_mount_root).inspect}"
+      expect(landed.binread.byteslice(0, 5)).to eq("%PDF-")
+    end
+
+    context "when path_prefix is a nested directory" do
+      let(:transmission_method_configuration) do
+        {
+          "user" => "testuser",
+          "password" => "testpass",
+          "url" => "localhost",
+          "port" => "2222",
+          "path_prefix" => "upload/inbox/prod"
+        }
+      end
+
+      it "uploads the PDF under the nested prefix" do
+        # Create the nested dir via SFTP so it's owned by the container's testuser
+        ssh = Net::SSH.start("localhost", "testuser",
+          password: "testpass", port: 2222,
+          keys: [], auth_methods: %w[password], non_interactive: true)
+        begin
+          sftp = Net::SFTP::Session.new(ssh).connect!
+          %w[upload/inbox upload/inbox/prod].each do |dir|
+            begin
+              sftp.mkdir!(dir)
+            rescue Net::SFTP::StatusException
+              # already exists from a prior run — fine
+            end
+          end
+        ensure
+          ssh.close
+        end
+
+        expect { subject.deliver }.not_to raise_error
+
+        landed = sftp_mount_root.join("inbox/prod", expected_basename)
+        expect(landed).to exist,
+          "expected PDF at #{landed}, saw: #{Dir.children(sftp_mount_root.join('inbox/prod')).inspect}"
+        expect(landed.binread.byteslice(0, 5)).to eq("%PDF-")
+      end
+    end
+  end
+
+  context "with include_paystubs enabled" do
+    let(:paystubs_pdf_bytes) do
+      File.binread(Aggregators::Sdk::MockArgyleService::SHARED_PAYSTUB_PDF_FIXTURE)
+    end
+    let(:expected_paystubs_basename) { "CBVPilot_0ABC1234_20260527_ConfSFTP001_paystubs.pdf" }
+
+    before do
+      # Clear any PDFs left by prior runs so file-existence checks are unambiguous.
+      Dir.glob(sftp_mount_root.join("**/*.pdf")).each { |f| FileUtils.rm_f(f) }
+      allow(mock_client_agency).to receive(:include_paystubs).and_return(true)
+      allow(mock_client_agency).to receive(:argyle_environment).and_return("mock")
+      allow_any_instance_of(Aggregators::PaystubsPdfService).to receive(:generate)
+        .and_return(Aggregators::PaystubsPdfService::Result.new(
+          content: paystubs_pdf_bytes,
+          page_count: 1,
+          file_size: paystubs_pdf_bytes.bytesize
+        ))
+    end
+
+    describe "#deliver" do
+      it "uploads both the report PDF and a separate paystubs PDF" do
+        expect { subject.deliver }.not_to raise_error
+
+        report = sftp_mount_root.join(expected_basename)
+        paystubs = sftp_mount_root.join(expected_paystubs_basename)
+        expect(report).to exist,
+          "expected report PDF at #{report}, saw: #{Dir.children(sftp_mount_root).inspect}"
+        expect(paystubs).to exist,
+          "expected paystubs PDF at #{paystubs}, saw: #{Dir.children(sftp_mount_root).inspect}"
+        expect(report.binread.byteslice(0, 5)).to eq("%PDF-")
+        expect(paystubs.binread).to eq(paystubs_pdf_bytes)
+      end
     end
   end
 

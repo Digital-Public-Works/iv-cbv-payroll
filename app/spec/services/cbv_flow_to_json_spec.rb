@@ -35,6 +35,7 @@ RSpec.describe CbvFlowToJson do
     allow(mock_client_agency).to receive(:id).and_return("sandbox")
     allow(mock_client_agency).to receive(:timezone).and_return("America/New_York")
     allow(mock_client_agency).to receive(:transmission_methods).and_return(configured_methods)
+    allow(mock_client_agency).to receive(:include_paystubs).and_return(false)
     allow(CbvApplicant).to receive(:valid_attributes_for_agency).with("sandbox").and_return([ "case_number" ])
   end
 
@@ -66,7 +67,23 @@ RSpec.describe CbvFlowToJson do
         let(:filenames) { payload[:report_metadata][:filenames] }
 
         it "includes the sftp filename" do
-          expect(filenames[:sftp]).to eq(TransmissionFilename.for(cbv_flow, mock_client_agency, :sftp))
+          expect(filenames[:sftp]).to eq(TransmissionFilename.basename_for(cbv_flow: cbv_flow, agency: mock_client_agency, method_type: :sftp))
+        end
+
+        context "when sftp is configured with path_prefix" do
+          let(:configured_methods) do
+            [
+              ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(
+                method: "sftp",
+                configuration: { "path_prefix" => "inbox" }
+              )
+            ]
+          end
+
+          it "prefixes the sftp filename with the configured directory" do
+            basename = TransmissionFilename.basename_for(cbv_flow: cbv_flow, agency: mock_client_agency, method_type: :sftp)
+            expect(filenames[:sftp]).to eq("inbox/#{basename}")
+          end
         end
 
         context "when the agency configures encrypted_s3 alongside webhook" do
@@ -79,6 +96,38 @@ RSpec.describe CbvFlowToJson do
 
           it "includes the encrypted_s3 filename with the .tar.gz.gpg extension" do
             expect(filenames[:encrypted_s3]).to end_with(".tar.gz.gpg")
+          end
+        end
+
+        context "when encrypted_s3 is configured with a path_prefix" do
+          let(:configured_methods) do
+            [
+              ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(
+                method: "encrypted_s3",
+                configuration: { "path_prefix" => "agency/prod" }
+              )
+            ]
+          end
+
+          it "prefixes the encrypted_s3 filename with the configured path_prefix" do
+            basename = TransmissionFilename.basename_for(cbv_flow: cbv_flow, agency: mock_client_agency, method_type: :encrypted_s3)
+            expect(filenames[:encrypted_s3]).to eq("agency/prod/#{basename}")
+          end
+        end
+
+        context "when unencrypted_s3 is configured without a path_prefix" do
+          let(:configured_methods) do
+            [
+              ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(
+                method: "unencrypted_s3",
+                configuration: {}
+              )
+            ]
+          end
+
+          it "falls back to the basename only" do
+            expect(filenames[:unencrypted_s3])
+              .to eq(TransmissionFilename.basename_for(cbv_flow: cbv_flow, agency: mock_client_agency, method_type: :unencrypted_s3))
           end
         end
 
@@ -193,6 +242,31 @@ RSpec.describe CbvFlowToJson do
           gig_record[:gig_monthly_summaries]&.each do |summary|
             expect(summary[:mileage_expenses]).to be_an(Array)
           end
+        end
+      end
+    end
+
+    describe "attachments block (include_paystubs)" do
+      context "when include_paystubs is true" do
+        before { allow(mock_client_agency).to receive(:include_paystubs).and_return(true) }
+
+        it "exposes the report and paystubs filenames" do
+          expect(payload[:attachments]).to be_a(Hash)
+          expect(payload[:attachments][:report_filename]).to match(/\AVMI_\w+_\d{8}_ConfWEBHOOK123\.pdf\z/)
+          expect(payload[:attachments][:paystubs_filename]).to match(/\AVMI_\w+_\d{8}_ConfWEBHOOK123_paystubs\.pdf\z/)
+        end
+
+        it "uses the same stem for both filenames" do
+          stem = payload[:attachments][:report_filename].sub(/\.pdf$/, "")
+          expect(payload[:attachments][:paystubs_filename]).to eq("#{stem}_paystubs.pdf")
+        end
+      end
+
+      context "when include_paystubs is false" do
+        before { allow(mock_client_agency).to receive(:include_paystubs).and_return(false) }
+
+        it "omits the attachments key entirely" do
+          expect(payload).not_to have_key(:attachments)
         end
       end
     end
