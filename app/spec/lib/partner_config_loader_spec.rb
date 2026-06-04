@@ -153,6 +153,73 @@ RSpec.describe PartnerConfigLoader do
       expect(loader.errors).to include(/At least one transmission method is required/)
     end
 
+    it "errors on an unknown top-level key" do
+      valid_yaml["include_paystubz"] = true # typo
+      yaml_file.reopen(yaml_file.path, "w")
+      yaml_file.write(valid_yaml.to_yaml)
+      yaml_file.rewind
+
+      loader = described_class.new(yaml_file.path)
+      loader.load!
+      loader.validate!
+      expect(loader.valid?).to be false
+      expect(loader.errors).to include(/Unknown top-level key: 'include_paystubz'/)
+    end
+
+    it "rejects the singular transmission_method / top-level transmission_configs format" do
+      valid_yaml.delete("transmission_methods")
+      valid_yaml["transmission_method"] = "unencrypted_s3"
+      valid_yaml["transmission_configs"] = [ { "key" => "bucket", "value" => "b" } ]
+      yaml_file.reopen(yaml_file.path, "w")
+      yaml_file.write(valid_yaml.to_yaml)
+      yaml_file.rewind
+
+      loader = described_class.new(yaml_file.path)
+      loader.load!
+      loader.validate!
+      expect(loader.valid?).to be false
+      expect(loader.errors).to include(/Unknown top-level key: 'transmission_configs'/)
+      expect(loader.errors).to include(/Use 'transmission_methods' \(plural\)/)
+    end
+
+    it "errors on an unknown key within a transmission config" do
+      valid_yaml["transmission_methods"][0]["configs"][0]["pat_prefix"] = "oops" # typo for path_prefix
+      yaml_file.reopen(yaml_file.path, "w")
+      yaml_file.write(valid_yaml.to_yaml)
+      yaml_file.rewind
+
+      loader = described_class.new(yaml_file.path)
+      loader.load!
+      loader.validate!
+      expect(loader.valid?).to be false
+      expect(loader.errors).to include(/transmission_methods\[0\]\.configs\[0\]: unknown key 'pat_prefix'/)
+    end
+
+    it "errors on an unknown key within an application attribute" do
+      valid_yaml["application_attributes"][0]["requried"] = true # typo for required
+      yaml_file.reopen(yaml_file.path, "w")
+      yaml_file.write(valid_yaml.to_yaml)
+      yaml_file.rewind
+
+      loader = described_class.new(yaml_file.path)
+      loader.load!
+      loader.validate!
+      expect(loader.valid?).to be false
+      expect(loader.errors).to include(/application_attributes\[0\]: unknown key 'requried'/)
+    end
+
+    it "accepts a path_prefix transmission config key" do
+      valid_yaml["transmission_methods"][0]["configs"] << { "key" => "path_prefix", "encrypted" => false, "value" => "outout" }
+      yaml_file.reopen(yaml_file.path, "w")
+      yaml_file.write(valid_yaml.to_yaml)
+      yaml_file.rewind
+
+      loader = described_class.new(yaml_file.path)
+      loader.load!
+      loader.validate!
+      expect(loader.valid?).to be true
+    end
+
     it "errors on invalid pay_income_days" do
       valid_yaml["pay_income_days_w2"] = 45
       yaml_file.reopen(yaml_file.path, "w")
@@ -261,6 +328,21 @@ RSpec.describe PartnerConfigLoader do
       expect(pc.timezone).to eq("America/New_York")
       expect(pc.pay_income_days_w2).to eq(90)
       expect(pc.pay_income_days_gig).to eq(182)
+    end
+
+    it "applies include_paystubs" do
+      valid_yaml["include_paystubs"] = true
+      yaml_file.reopen(yaml_file.path, "w")
+      yaml_file.write(valid_yaml.to_yaml)
+      yaml_file.rewind
+
+      loader = described_class.new(yaml_file.path)
+      loader.load!
+      loader.validate!
+      loader.apply!
+
+      pc = PartnerConfig.find_by(partner_id: "test_partner")
+      expect(pc.include_paystubs).to be true
     end
 
     it "creates transmission methods and their configs" do

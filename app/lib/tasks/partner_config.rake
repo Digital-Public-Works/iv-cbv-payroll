@@ -8,8 +8,8 @@ namespace :partner_config do
     loader.load!
     loader.validate!
 
-    if loader.data[:partner_id] != partner_id
-      abort "ERROR: partner_id in file (#{loader.data[:partner_id]}) does not match argument (#{partner_id})"
+    if loader.yaml_data[:partner_id] != partner_id
+      abort "ERROR: partner_id in file (#{loader.yaml_data[:partner_id]}) does not match argument (#{partner_id})"
     end
 
     display_errors(partner_id, loader)
@@ -34,7 +34,7 @@ namespace :partner_config do
 
     display_errors(partner_id, loader)
 
-    unless loader.valid? && loader.data[:partner_id] == partner_id
+    unless loader.valid? && loader.yaml_data[:partner_id] == partner_id
       abort "Cannot apply invalid config for #{partner_id}."
     end
 
@@ -58,8 +58,8 @@ namespace :partner_config do
 end
 
 def display_errors(partner_id, loader)
-  if loader.data[:partner_id] != partner_id
-    puts "ERROR: partner_id in file (#{loader.data[:partner_id]}) does not match argument (#{partner_id})"
+  if loader.yaml_data[:partner_id] != partner_id
+    puts "ERROR: partner_id in file (#{loader.yaml_data[:partner_id]}) does not match argument (#{partner_id})"
   end
 
   if loader.warnings.any?
