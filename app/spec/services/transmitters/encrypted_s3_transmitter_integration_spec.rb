@@ -45,6 +45,7 @@ RSpec.describe Transmitters::EncryptedS3Transmitter, integration: true do
     allow(mock_client_agency).to receive(:timezone).and_return("America/New_York")
     allow(mock_client_agency).to receive(:partner_identifier_name).and_return("case_number")
     allow(mock_client_agency).to receive(:applicant_attributes).and_return({})
+    allow(mock_client_agency).to receive(:include_paystubs).and_return(false)
 
     stub_pdf_generation(label: "EncryptedS3Transmitter integration test")
   end

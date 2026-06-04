@@ -77,7 +77,7 @@ class Cbv::SubmitsController < Cbv::BaseController
 
     report_pdf = WickedPdf.new.pdf_from_string(
       html,
-      footer: { right: t(".pdf.footer.page_footer"), font_size: 10 },
+      footer: { right: t("cbv.submits.show.pdf.footer.page_footer"), font_size: 10 },
       margin: { top: 10, bottom: 10, left: 10, right: 10 }
     )
 
