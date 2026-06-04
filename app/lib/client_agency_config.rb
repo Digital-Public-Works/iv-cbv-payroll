@@ -201,8 +201,19 @@ class ClientAgencyConfig
       @report_customization_show_earnings_list = partner_config.report_customization_show_earnings_list
       @generic_links_disabled = !partner_config.generic_links_enabled
       @invitation_links_enabled = partner_config.invitation_links_enabled
-      @include_full_ssn = partner_config.partner_output_configuration&.include_full_ssn || false
-      @include_direct_deposit_last_4 = partner_config.partner_output_configuration&.include_direct_deposit_last_4 || false
+      # The partner_output_configurations table may not exist yet on an older
+      # schema (e.g. new code serving traffic before its migration has run).
+      # Default the feature to off until the table is present. These values are
+      # read once and cached for the life of the process (see .instance), so a
+      # restart is required after the migration runs to pick up the real values.
+      if ActiveRecord::Base.connection.data_source_exists?(:partner_output_configurations)
+        output_configuration = partner_config.partner_output_configuration
+        @include_full_ssn = output_configuration&.include_full_ssn || false
+        @include_direct_deposit_last_4 = output_configuration&.include_direct_deposit_last_4 || false
+      else
+        @include_full_ssn = false
+        @include_direct_deposit_last_4 = false
+      end
 
 
       @require_applicant_information_on_invitation = partner_config.partner_application_attributes.exists?(required: true)

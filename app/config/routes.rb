@@ -81,8 +81,9 @@ Rails.application.routes.draw do
             root to: "generic_links#show", as: :new
           end
         end
-      rescue ActiveRecord::NoDatabaseError, PG::ConnectionBad, ActiveRecord::ConnectionNotEstablished, ArgumentError
-        # The database hasn't been created yet, we are likely in a db task.
+      rescue ActiveRecord::NoDatabaseError, PG::ConnectionBad, ActiveRecord::ConnectionNotEstablished, ActiveRecord::StatementInvalid, ArgumentError
+        # The database hasn't been created yet (or is on an older schema
+        # missing a table the config reads), we are likely in a db task.
       end
 
       # Session management
@@ -119,8 +120,9 @@ Rails.application.routes.draw do
           resources :cbv_flow_invitations, only: %i[new create], as: :invitations, path: :invitations
         end
       end
-    rescue ActiveRecord::NoDatabaseError, PG::ConnectionBad, ActiveRecord::ConnectionNotEstablished, ArgumentError
-      # The database hasn't been created yet, we are likely in a db task.
+    rescue ActiveRecord::NoDatabaseError, PG::ConnectionBad, ActiveRecord::ConnectionNotEstablished, ActiveRecord::StatementInvalid, ArgumentError
+      # The database hasn't been created yet (or is on an older schema
+      # missing a table the config reads), we are likely in a db task.
     end
   end
 
