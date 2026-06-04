@@ -55,6 +55,7 @@ gem "newrelic_rpm"
 gem "faraday", "~> 2.13"
 
 gem "wicked_pdf"
+gem "combine_pdf"
 gem "actioncable-enhanced-postgresql-adapter"
 gem "aws-sdk-rails"
 gem "aws-sdk-s3"
@@ -69,7 +70,6 @@ gem "rack", "~> 3.1.20"
 # https://www.ruby-lang.org/en/news/2024/08/01/dos-rexml-cve-2024-41123/
 gem "rexml", "~> 3.4.2"
 gem "gpgme", "~> 2.0", ">= 2.0.12"
-gem "pdf-reader", "~> 2.15.0"
 gem "net-imap", "0.5.10"  # Fixing GHSA-j3g3-5qv5-52m
 gem "cgi", ">= 0.4.2"     # Fixing GHSA-mhwm-jh88-3gjf
 gem "thor", ">= 1.4.0"    # Fixing GHSA-mqcp-p2hv-vw6x
@@ -109,6 +109,7 @@ group :development do
 end
 
 group :test do
+  gem "pdf-reader", "~> 2.15.0"
   gem "axe-core-rspec", "~> 4.10"
   gem "climate_control", "~> 1.0"
   gem "webmock", ">= 3.24.0"

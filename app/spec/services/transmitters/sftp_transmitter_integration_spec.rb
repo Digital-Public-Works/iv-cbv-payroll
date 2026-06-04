@@ -40,6 +40,7 @@ RSpec.describe Transmitters::SftpTransmitter, integration: true do
     allow(mock_client_agency).to receive(:logo_path).and_return("pa_compass_logo.svg")
     allow(mock_client_agency).to receive(:report_customization_show_earnings_list).and_return(true)
     allow(mock_client_agency).to receive(:timezone).and_return("America/New_York")
+    allow(mock_client_agency).to receive(:include_paystubs).and_return(false)
 
     stub_pdf_generation(label: "SftpTransmitter integration test")
 
@@ -72,6 +73,7 @@ RSpec.describe Transmitters::SftpTransmitter, integration: true do
       landed = sftp_mount_root.join(expected_basename)
       expect(landed).to exist,
         "expected PDF at #{landed}, saw: #{Dir.children(sftp_mount_root).inspect}"
+      expect(landed.binread.byteslice(0, 5)).to eq("%PDF-")
     end
 
     context "when path_prefix is a nested directory" do
@@ -108,6 +110,42 @@ RSpec.describe Transmitters::SftpTransmitter, integration: true do
         landed = sftp_mount_root.join("inbox/prod", expected_basename)
         expect(landed).to exist,
           "expected PDF at #{landed}, saw: #{Dir.children(sftp_mount_root.join('inbox/prod')).inspect}"
+        expect(landed.binread.byteslice(0, 5)).to eq("%PDF-")
+      end
+    end
+  end
+
+  context "with include_paystubs enabled" do
+    let(:paystubs_pdf_bytes) do
+      File.binread(Aggregators::Sdk::MockArgyleService::SHARED_PAYSTUB_PDF_FIXTURE)
+    end
+    let(:expected_paystubs_basename) { "CBVPilot_0ABC1234_20260527_ConfSFTP001_paystubs.pdf" }
+
+    before do
+      # Clear any PDFs left by prior runs so file-existence checks are unambiguous.
+      Dir.glob(sftp_mount_root.join("**/*.pdf")).each { |f| FileUtils.rm_f(f) }
+      allow(mock_client_agency).to receive(:include_paystubs).and_return(true)
+      allow(mock_client_agency).to receive(:argyle_environment).and_return("mock")
+      allow_any_instance_of(Aggregators::PaystubsPdfService).to receive(:generate)
+        .and_return(Aggregators::PaystubsPdfService::Result.new(
+          content: paystubs_pdf_bytes,
+          page_count: 1,
+          file_size: paystubs_pdf_bytes.bytesize
+        ))
+    end
+
+    describe "#deliver" do
+      it "uploads both the report PDF and a separate paystubs PDF" do
+        expect { subject.deliver }.not_to raise_error
+
+        report = sftp_mount_root.join(expected_basename)
+        paystubs = sftp_mount_root.join(expected_paystubs_basename)
+        expect(report).to exist,
+          "expected report PDF at #{report}, saw: #{Dir.children(sftp_mount_root).inspect}"
+        expect(paystubs).to exist,
+          "expected paystubs PDF at #{paystubs}, saw: #{Dir.children(sftp_mount_root).inspect}"
+        expect(report.binread.byteslice(0, 5)).to eq("%PDF-")
+        expect(paystubs.binread).to eq(paystubs_pdf_bytes)
       end
     end
   end

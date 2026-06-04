@@ -35,6 +35,7 @@ RSpec.describe CbvFlowToJson do
     allow(mock_client_agency).to receive(:id).and_return("sandbox")
     allow(mock_client_agency).to receive(:timezone).and_return("America/New_York")
     allow(mock_client_agency).to receive(:transmission_methods).and_return(configured_methods)
+    allow(mock_client_agency).to receive(:include_paystubs).and_return(false)
     allow(CbvApplicant).to receive(:valid_attributes_for_agency).with("sandbox").and_return([ "case_number" ])
   end
 
@@ -241,6 +242,31 @@ RSpec.describe CbvFlowToJson do
           gig_record[:gig_monthly_summaries]&.each do |summary|
             expect(summary[:mileage_expenses]).to be_an(Array)
           end
+        end
+      end
+    end
+
+    describe "attachments block (include_paystubs)" do
+      context "when include_paystubs is true" do
+        before { allow(mock_client_agency).to receive(:include_paystubs).and_return(true) }
+
+        it "exposes the report and paystubs filenames" do
+          expect(payload[:attachments]).to be_a(Hash)
+          expect(payload[:attachments][:report_filename]).to match(/\AVMI_\w+_\d{8}_ConfWEBHOOK123\.pdf\z/)
+          expect(payload[:attachments][:paystubs_filename]).to match(/\AVMI_\w+_\d{8}_ConfWEBHOOK123_paystubs\.pdf\z/)
+        end
+
+        it "uses the same stem for both filenames" do
+          stem = payload[:attachments][:report_filename].sub(/\.pdf$/, "")
+          expect(payload[:attachments][:paystubs_filename]).to eq("#{stem}_paystubs.pdf")
+        end
+      end
+
+      context "when include_paystubs is false" do
+        before { allow(mock_client_agency).to receive(:include_paystubs).and_return(false) }
+
+        it "omits the attachments key entirely" do
+          expect(payload).not_to have_key(:attachments)
         end
       end
     end

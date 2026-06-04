@@ -145,6 +145,7 @@ class ClientAgencyConfig
       report_customization_show_earnings_list
       require_applicant_information_on_invitation
       include_invitation_details_on_weekly_report
+      include_paystubs
       state_name
       partner_identifier_name
     ])
@@ -203,6 +204,8 @@ class ClientAgencyConfig
       @require_applicant_information_on_invitation = partner_config.partner_application_attributes.exists?(required: true)
       @include_invitation_details_on_weekly_report = partner_config.respond_to?(:include_invitation_details_on_weekly_report) &&
         partner_config.include_invitation_details_on_weekly_report
+      @include_paystubs = partner_config.respond_to?(:include_paystubs) &&
+        partner_config.include_paystubs
       @state_name = partner_config.respond_to?(:state_name) ? partner_config.state_name : nil
       @partner_identifier_name = partner_config.partner_identifier_name
 

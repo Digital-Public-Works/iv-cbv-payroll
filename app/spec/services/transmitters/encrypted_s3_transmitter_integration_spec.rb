@@ -45,6 +45,7 @@ RSpec.describe Transmitters::EncryptedS3Transmitter, integration: true do
     allow(mock_client_agency).to receive(:timezone).and_return("America/New_York")
     allow(mock_client_agency).to receive(:partner_identifier_name).and_return("case_number")
     allow(mock_client_agency).to receive(:applicant_attributes).and_return({})
+    allow(mock_client_agency).to receive(:include_paystubs).and_return(false)
 
     stub_pdf_generation(label: "EncryptedS3Transmitter integration test")
   end
@@ -76,7 +77,7 @@ RSpec.describe Transmitters::EncryptedS3Transmitter, integration: true do
       expect(File.basename(pdf_name, ".pdf")).to eq(File.basename(csv_name, ".csv"))
 
       expect(pdf_bytes.byteslice(0, 5)).to eq("%PDF-")
-      expect(PDF::Reader.new(StringIO.new(pdf_bytes)).page_count).to be >= 1
+      expect(CombinePDF.parse(pdf_bytes).pages.count).to be >= 1
 
       meta = parse_metadata_csv(csv_bytes)
       expect(meta["case_number"]).to eq("S3ENC1")

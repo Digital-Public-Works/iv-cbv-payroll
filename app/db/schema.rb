@@ -134,6 +134,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_26_155906) do
     t.boolean "include_invitation_details_on_weekly_report", default: false, null: false
     t.string "state_name"
     t.string "partner_identifier_name"
+    t.boolean "include_paystubs", default: false, null: false
     t.index ["partner_id"], name: "index_partner_configs_on_partner_id", unique: true
   end
 

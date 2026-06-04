@@ -466,6 +466,8 @@ en:
             how_to: This report includes payment information from the past 90 days. In most cases, you only need to review income from the last 30 days for eligibility purposes. Use data beyond the 30-day period only if necessary. Key fields for income verification are highlighted in yellow.
             how_to_header: 'How to use this report:'
             pay_period: Pay period (%{pay_frequency})
+            paystubs_available_header: 'Pay stub images are available for the following employers:'
+            paystubs_separate_file: Pay stub images are provided in a separate file for reference.
             snap_agency_id: SNAP Agency ID
             ssn: SSN
             staff_beacon_id_wel_id: Staff BEACON ID (WELID)
@@ -481,6 +483,10 @@ en:
             self_employment: Self-employment
           footer:
             page_footer: Income Verification Report | Page [page] of [topage]
+          paystubs_cover:
+            footer: The pay stub images are shown on the next page, and have been shared with %{agency_name}.
+            header: 'Income Verification Report: Pay stub images'
+            intro: 'There are pay stub images for these jobs:'
           shared:
             additional_jobs_to_report: Does the client have additional jobs they will verify separately?
             additional_jobs_to_report_html: Does the client have additional jobs they will verify separately?<sup>1</sup>
@@ -825,6 +831,20 @@ en:
   time:
     formats:
       default: "%Y-%m-%d"
+  transmitters:
+    paystubs_caseworker_cover:
+      additional_jobs: Does the client have additional jobs they will verify separately?
+      client_and_report_information: Client and Report Information
+      client_information: Client information
+      confirmation_code: Confirmation code
+      consent_timestamp: Agreement Consent Timestamp
+      date_range: Date range for the income report
+      employer_list_intro: 'Verify My Income pulled pay stubs from the client''s payroll account(s). Pay stubs are available for the jobs listed below:'
+      report_created: Date the income report was created
+      report_details: Report details
+      supplement_body: The income report is a separate file. It shows monthly summaries of the pay stubs in this file, and any client comments. Review the report for more complete information about the client's jobs.
+      supplement_heading: This file is a supplement to the Income Verification Report
+      title: 'Income Verification Report: Pay stub images'
   us_form_with:
     boolean_false: 'No'
     boolean_true: 'Yes'
