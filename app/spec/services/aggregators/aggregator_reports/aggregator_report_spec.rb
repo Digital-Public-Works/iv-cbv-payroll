@@ -217,6 +217,11 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
     end
 
     before do
+      # Build the report (and its CbvApplicant factories) using the real
+      # ClientAgencyConfig so dynamic applicant attributes like case_number
+      # resolve, before stubbing the config double below.
+      report
+
       allow(ClientAgencyConfig.instance).to receive(:[])
         .with(cbv_flow.client_agency_id)
         .and_return(client_agency)
@@ -300,6 +305,11 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
     end
 
     before do
+      # Build the report (and its CbvApplicant factories) using the real
+      # ClientAgencyConfig so dynamic applicant attributes like case_number
+      # resolve, before stubbing the config double below.
+      report
+
       allow(ClientAgencyConfig.instance).to receive(:[]).and_return(client_agency)
     end
 
