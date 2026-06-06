@@ -13,6 +13,20 @@
     ) %>
 </p>
 
+<% if current_agency&.include_full_ssn %>
+  <%# text-primary tints the lock icon via currentColor to match the design. %>
+  <ul class="usa-icon-list margin-top-3">
+    <li class="usa-icon-list__item">
+      <div class="usa-icon-list__icon text-primary">
+        <%= render "lock_outline_icon" %>
+      </div>
+      <div class="usa-icon-list__content">
+        <%= t(".full_ssn_notice", agency_acronym: agency_translation("shared.agency_acronym")) %>
+      </div>
+    </li>
+  </ul>
+<% end %>
+
 <%= render(Report::EmploymentDetailsTableComponent.new(@aggregator_report, @payroll_account, show_income: @is_w2_worker)) %>
 
 <% if @is_w2_worker %>

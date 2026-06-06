@@ -303,7 +303,7 @@ module Aggregators::AggregatorReports
     def direct_deposit_accounts_for(paystub, current_agency)
       return [] unless current_agency&.include_direct_deposit_last_4
 
-      paystub.direct_deposit_accounts || []
+      (paystub.direct_deposit_accounts || []).map(&:to_output)
     end
   end
 end

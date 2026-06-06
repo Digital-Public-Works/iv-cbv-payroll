@@ -127,10 +127,7 @@ module Aggregators::FormatMethods::Argyle
     return [] if destinations.blank?
 
     destinations.filter_map do |destination|
-      account = destination["ach_deposit_account"]
-      next if account.blank?
-
-      account["account_number"].to_s&.gsub(/\D/, "")&.last(4)&.presence
+      Aggregators::ResponseObjects::PaymentAccount.from_argyle(destination)
     end
   end
 

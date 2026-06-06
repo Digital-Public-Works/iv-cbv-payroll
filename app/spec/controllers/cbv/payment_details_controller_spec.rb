@@ -537,6 +537,35 @@ RSpec.describe Cbv::PaymentDetailsController do
           end
         end
 
+        context "when the agency includes the full SSN" do
+          before do
+            cbv_flow.update!(client_agency_id: "sandbox")
+            allow(ClientAgencyConfig.instance["sandbox"]).to receive(:include_full_ssn).and_return(true)
+          end
+
+          it "shows the full SSN notice with the lock icon" do
+            get :show, params: { user: { account_id: account_id } }
+            expect(response).to be_successful
+
+            doc = Nokogiri::HTML(response.body)
+            expect(response.body).to include("Your Social Security number will be securely sent to")
+            expect(doc.at_css(".usa-icon-list .usa-icon")).not_to be_nil
+          end
+        end
+
+        context "when the agency does not include the full SSN" do
+          before do
+            cbv_flow.update!(client_agency_id: "sandbox")
+            allow(ClientAgencyConfig.instance["sandbox"]).to receive(:include_full_ssn).and_return(false)
+          end
+
+          it "does not show the full SSN notice" do
+            get :show, params: { user: { account_id: account_id } }
+            expect(response).to be_successful
+            expect(response.body).not_to include("Your Social Security number will be securely sent to")
+          end
+        end
+
 
 
         context "includes employment details data for gig" do

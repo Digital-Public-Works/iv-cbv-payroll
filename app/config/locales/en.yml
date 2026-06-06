@@ -409,12 +409,13 @@ en:
         additional_information_placeholder: Enter up to 1000 characters
         continue: Continue
         deductions: 'Deduction: %{category} (%{tax})'
-        direct_deposit_account_label: Direct deposit account(s)
-        direct_deposit_account_value: ending in %{last_four}
+        direct_deposit_account_label: XXX - Last 4 digits of direct deposit account
+        direct_deposit_account_label_numbered: XXX - Last 4 digits of direct deposit account %{number}
         employment_end_date: Employment end date
         employment_information_table_header: Employment information
         employment_start_date: Employment start date
         employment_status: Employment status
+        full_ssn_notice: XXX - Your Social Security number will be securely sent to %{agency_acronym} to confirm who you are. Verify My Income will not keep or store this information.
         header: Review your payment information from %{employer_name}
         header_no_employer_name: Your payment information from your employer
         hourly_rate: Compensation amount
@@ -423,6 +424,7 @@ en:
           one: "%{count} hour"
           other: "%{count} hours"
         hours_paid: "%{category}: Hours paid"
+        no_deposit_accounts_found: XXX - No deposit accounts found
         none_found: We didn't find any payments from this employer in the past %{report_data_range}.
         none_found_description: This typically happens when you haven't received income from this job in the past %{report_data_range}. If you believe this is an error, please add a comment in the additional comments box. Otherwise, continue to the next page.
         number_of_hours_worked: Number of hours worked
@@ -435,6 +437,8 @@ en:
         pay_period_value: "%{start_date} to %{end_date}"
         payment_hours: "%{amount} hours"
         payments_and_deductions_table_header: Payments and deductions
+        payout_card_account_label: XXX - Last 4 digits of payout card account
+        payout_card_account_label_numbered: XXX - Last 4 digits of payout card account %{number}
         subheader_html: We have gathered your payment records from the past %{report_data_range} from %{start_date} to %{end_date}.<br>Please review your information. If something is missing or inaccurate, add a comment for %{agency_acronym}. This will be included in your income report.
         unknown: Unknown
     submits:
@@ -479,6 +483,7 @@ en:
             date_range: Date range for the income report
             description: We have collected your income information with your consent and sent it to %{agency_acronym}. Any additional income that you weren't able to add to this report should be shared separately with %{agency_acronym}.
             employment_payment_details: Employment and Payment details
+            full_ssn_notice: XXX - Your Social Security number was securely sent to %{agency_acronym} to confirm who you are. Verify My Income does not keep or store this information.
             header: Income Verification Report
             self_employment: Self-employment
           footer:

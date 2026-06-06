@@ -326,6 +326,33 @@ RSpec.describe Cbv::SubmitsController do
             expect(pdf_text).not_to include("Client Comments")
           end
         end
+
+        context "when the agency includes the full SSN" do
+          before do
+            allow(ClientAgencyConfig.instance[cbv_flow.client_agency_id]).to receive(:include_full_ssn).and_return(true)
+          end
+
+          it "shows the full SSN notice in the client PDF" do
+            get :show, format: :pdf
+            pdf_text = extract_pdf_text(response)
+
+            expect(response).to be_successful
+            expect(pdf_text).to include("Your Social Security number was securely sent to")
+          end
+        end
+
+        context "when the agency does not include the full SSN" do
+          before do
+            allow(ClientAgencyConfig.instance[cbv_flow.client_agency_id]).to receive(:include_full_ssn).and_return(false)
+          end
+
+          it "does not show the full SSN notice in the client PDF" do
+            get :show, format: :pdf
+            pdf_text = extract_pdf_text(response)
+
+            expect(pdf_text).not_to include("Your Social Security number was securely sent to")
+          end
+        end
       end
 
       context "for Tim (a gig worker with two gigs)" do

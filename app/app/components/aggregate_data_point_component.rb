@@ -155,10 +155,36 @@ class AggregateDataPointComponent < ViewComponent::Base
     }
   end
 
-  def direct_deposit_account(last_four)
+  def direct_deposit_account(last_four, number = nil)
+    {
+      label: deposit_account_label("direct_deposit_account_label", number),
+      value: last_four
+    }
+  end
+
+  def payout_card_account(last_four, number = nil)
+    {
+      label: deposit_account_label("payout_card_account_label", number),
+      value: last_four
+    }
+  end
+
+  def no_deposit_accounts
     {
       label: I18n.t("cbv.payment_details.show.direct_deposit_account_label"),
-      value: I18n.t("cbv.payment_details.show.direct_deposit_account_value", last_four: last_four)
+      value: I18n.t("cbv.payment_details.show.no_deposit_accounts_found")
     }
+  end
+
+  private
+
+  # When there is more than one account of a given type, each gets a numbered
+  # label (e.g. "...account 1", "...account 2"); a lone account is unnumbered.
+  def deposit_account_label(key_base, number)
+    if number
+      I18n.t("cbv.payment_details.show.#{key_base}_numbered", number: number)
+    else
+      I18n.t("cbv.payment_details.show.#{key_base}")
+    end
   end
 end

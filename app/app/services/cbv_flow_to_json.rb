@@ -224,7 +224,7 @@ class CbvFlowToJson
   def direct_deposit_accounts_for(paystub)
     return [] unless @current_agency.include_direct_deposit_last_4
 
-    paystub.direct_deposit_accounts || []
+    (paystub.direct_deposit_accounts || []).map(&:to_output)
   end
 
   def build_gig_payments(gigs)

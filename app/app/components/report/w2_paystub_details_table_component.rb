@@ -71,7 +71,34 @@ class Report::W2PaystubDetailsTableComponent < ViewComponent::Base
   end
 
   def show_direct_deposit_accounts?
-    @show_direct_deposit_accounts && @paystub.direct_deposit_accounts.present?
+    @show_direct_deposit_accounts
+  end
+
+  # Builds the data-point argument lists for the direct deposit / payout card
+  # rows. ACH (bank) accounts render first, then payout cards; within each type
+  # the accounts are numbered only when there is more than one. When there are
+  # no accounts at all, a single "No deposit accounts found" row is shown.
+  def direct_deposit_account_data_points
+    accounts = @paystub.direct_deposit_accounts || []
+    ach_accounts = accounts.select(&:ach?)
+    card_accounts = accounts.select(&:card?)
+
+    return [ [ :no_deposit_accounts ] ] if ach_accounts.empty? && card_accounts.empty?
+
+    account_rows(:direct_deposit_account, ach_accounts) +
+      account_rows(:payout_card_account, card_accounts)
+  end
+
+  def account_rows(field, accounts)
+    numbered = accounts.size > 1
+
+    accounts.each_with_index.map do |account, index|
+      if numbered
+        [ field, account.last_four, index + 1 ]
+      else
+        [ field, account.last_four ]
+      end
+    end
   end
 
   def earnings_sort_order(earnings)

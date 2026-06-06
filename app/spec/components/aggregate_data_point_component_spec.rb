@@ -52,16 +52,40 @@ RSpec.describe AggregateDataPointComponent, type: :component do
   end
 
   describe "#direct_deposit_account" do
-    it "renders the label" do
-      expect(
-        render_inline(described_class.new(:direct_deposit_account, "1234"))
-      ).to have_text(I18n.t("cbv.payment_details.show.direct_deposit_account_label"))
+    it "renders the unnumbered label and last four" do
+      component = render_inline(described_class.new(:direct_deposit_account, "1234"))
+
+      expect(component).to have_text(I18n.t("cbv.payment_details.show.direct_deposit_account_label"))
+      expect(component).to have_text("1234")
     end
 
-    it "renders the interpolated last four value" do
+    it "renders a numbered label when a number is given" do
       expect(
-        render_inline(described_class.new(:direct_deposit_account, "1234"))
-      ).to have_text(I18n.t("cbv.payment_details.show.direct_deposit_account_value", last_four: "1234"))
+        render_inline(described_class.new(:direct_deposit_account, "1234", 2))
+      ).to have_text(I18n.t("cbv.payment_details.show.direct_deposit_account_label_numbered", number: 2))
+    end
+  end
+
+  describe "#payout_card_account" do
+    it "renders the unnumbered label and last four" do
+      component = render_inline(described_class.new(:payout_card_account, "9122"))
+
+      expect(component).to have_text(I18n.t("cbv.payment_details.show.payout_card_account_label"))
+      expect(component).to have_text("9122")
+    end
+
+    it "renders a numbered label when a number is given" do
+      expect(
+        render_inline(described_class.new(:payout_card_account, "9122", 2))
+      ).to have_text(I18n.t("cbv.payment_details.show.payout_card_account_label_numbered", number: 2))
+    end
+  end
+
+  describe "#no_deposit_accounts" do
+    it "renders the not-found message" do
+      expect(
+        render_inline(described_class.new(:no_deposit_accounts))
+      ).to have_text(I18n.t("cbv.payment_details.show.no_deposit_accounts_found"))
     end
   end
 

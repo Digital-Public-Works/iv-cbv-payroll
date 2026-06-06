@@ -302,12 +302,13 @@ es:
         additional_information_placeholder: Introduzca hasta 1000 caracteres
         continue: Continuar
         deductions: 'Deducción: %{category} (%{tax})'
-        direct_deposit_account_label: Cuenta(s) de depósito directo
-        direct_deposit_account_value: que termina en %{last_four}
+        direct_deposit_account_label: XXX - Últimos 4 dígitos de la cuenta de depósito directo
+        direct_deposit_account_label_numbered: XXX - Últimos 4 dígitos de la cuenta de depósito directo %{number}
         employment_end_date: Fecha de finalización de la relación laboral
         employment_information_table_header: Información sobre el empleo
         employment_start_date: Fecha de inicio del empleo
         employment_status: Estatus del empleo
+        full_ssn_notice: XXX - Su número de Seguro Social se enviará de forma segura a %{agency_acronym} para confirmar su identidad. Verify My Income no conservará ni almacenará esta información.
         header: Revise la información de pago de %{employer_name}
         header_no_employer_name: Su información de pago de su empleador
         hourly_rate: Monto de compensación
@@ -316,6 +317,7 @@ es:
           one: "%{count} hora"
           other: "%{count} horas"
         hours_paid: "%{category}: Horas pagadas"
+        no_deposit_accounts_found: XXX - No se encontraron cuentas de depósito
         none_found: No encontramos ningún pago de este empleador en los últimos %{report_data_range}.
         none_found_description: Esto usualmente ocurre cuando usted no ha recibido ingresos por este trabajo en los últimos %{report_data_range}. Si cree que esto es un error, agregue un comentario en la casilla de comentarios adicionales. De lo contrario, continúe en la página siguiente.
         number_of_hours_worked: Número de horas trabajadas
@@ -328,6 +330,8 @@ es:
         pay_period_value: "%{start_date} al %{end_date}"
         payment_hours: "%{amount} horas"
         payments_and_deductions_table_header: Pagos y deducciones
+        payout_card_account_label: XXX - Últimos 4 dígitos de la cuenta de tarjeta de pago
+        payout_card_account_label_numbered: XXX - Últimos 4 dígitos de la cuenta de tarjeta de pago %{number}
         subheader_html: Hemos recopilado sus registros de pago del último %{report_data_range}, desde el %{start_date} hasta el %{end_date}.<br>Por favor, revise su información. Si falta información o si es incorrecta, deja un comentario para %{agency_acronym}. Su comentario se incluirá en su reporte de ingresos.
         unknown: Desconocido
     submits:
@@ -360,6 +364,7 @@ es:
             date_range: Rango de fechas para el informe de ingresos
             description: Hemos recopilado información de sus ingresos con su consentimiento y la hemos enviado a %{agency_acronym}. Cualquier ingreso adicional que no pudo añadir a este informe debe compartirse por separado con %{agency_acronym}.
             employment_payment_details: Detalles de empleo y pago
+            full_ssn_notice: XXX - Su número de Seguro Social se envió de forma segura a %{agency_acronym} para confirmar su identidad. Verify My Income no conserva ni almacena esta información.
             header: Informe de verificación de ingresos
             self_employment: Empleo independiente
           footer:

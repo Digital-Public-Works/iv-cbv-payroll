@@ -80,7 +80,7 @@ class Cbv::PreviewController < ApplicationController
           formats: [ :pdf ],
           layout: "pdf",
           locals: {
-            is_caseworker: is_not_production? && params[:is_caseworker],
+            is_caseworker: is_not_production? && ActiveModel::Type::Boolean.new.cast(params[:is_caseworker]),
             aggregator_report: @aggregator_report
           },
           footer: { right: t("cbv.submits.show.pdf.footer.page_footer"), font_size: 10 },
@@ -96,7 +96,7 @@ class Cbv::PreviewController < ApplicationController
 
   def submit_pdf_as_html
     # Render the PDF template as HTML for debugging (no wkhtmltopdf conversion)
-    is_caseworker = is_not_production? && params[:is_caseworker]
+    is_caseworker = is_not_production? && ActiveModel::Type::Boolean.new.cast(params[:is_caseworker])
 
     # Render the PDF template and layout manually
     html_content = render_to_string(

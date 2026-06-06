@@ -327,7 +327,10 @@ RSpec.describe CbvFlowToJson do
     describe "direct deposit accounts" do
       let(:dda_argyle_report) do
         report = build(:argyle_report, :with_argyle_account)
-        report.paystubs.first.direct_deposit_accounts = [ "1111", "2222" ]
+        report.paystubs.first.direct_deposit_accounts = [
+          Aggregators::ResponseObjects::PaymentAccount.new(account_type: "ach_deposit_account", last_four: "1111"),
+          Aggregators::ResponseObjects::PaymentAccount.new(account_type: "card", last_four: "9122")
+        ]
         report
       end
 
@@ -339,8 +342,11 @@ RSpec.describe CbvFlowToJson do
           allow(mock_client_agency).to receive(:include_direct_deposit_last_4).and_return(true)
         end
 
-        it "gets direct_deposit_accounts as an array on each W-2 payment" do
-          expect(w2_record[:w2_payments].first[:direct_deposit_accounts]).to eq([ "1111", "2222" ])
+        it "gets direct_deposit_accounts as typed objects on each W-2 payment" do
+          expect(w2_record[:w2_payments].first[:direct_deposit_accounts]).to eq([
+            { type: "ach", last_four: "1111" },
+            { type: "card", last_four: "9122" }
+          ])
         end
 
         it "emits an empty array when a paystub has no direct deposit accounts" do

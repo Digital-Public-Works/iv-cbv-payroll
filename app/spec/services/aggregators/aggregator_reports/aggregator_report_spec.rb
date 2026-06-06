@@ -300,7 +300,10 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
     let(:report) do
       r = build(:argyle_report, :with_argyle_account)
       r.payroll_accounts.first.cbv_flow = cbv_flow
-      r.paystubs.first.direct_deposit_accounts = [ "1111", "2222" ]
+      r.paystubs.first.direct_deposit_accounts = [
+        Aggregators::ResponseObjects::PaymentAccount.new(account_type: "ach_deposit_account", last_four: "1111"),
+        Aggregators::ResponseObjects::PaymentAccount.new(account_type: "card", last_four: "9122")
+      ]
       r
     end
 
@@ -318,11 +321,14 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
         allow(client_agency).to receive(:include_direct_deposit_last_4).and_return(true)
       end
 
-      it "gets last four under each paystub" do
+      it "gets typed direct deposit accounts under each paystub" do
         first_employment = report.income_report[:employments].first
         first_paystub = first_employment[:paystubs].first
 
-        expect(first_paystub[:direct_deposit_accounts]).to eq([ "1111", "2222" ])
+        expect(first_paystub[:direct_deposit_accounts]).to eq([
+          { type: "ach", last_four: "1111" },
+          { type: "card", last_four: "9122" }
+        ])
       end
 
       it "gets an empty array when a paystub has no direct deposit accounts" do

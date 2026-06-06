@@ -240,7 +240,13 @@ RSpec.describe Aggregators::ResponseObjects::Paystub, type: :model do
         }
       end
 
-      it 'extracts last 4 from a single destination' do
+      # Maps the parsed PaymentAccount objects into [category, last_four] tuples
+      # for concise assertions.
+      def account_tuples(paystub)
+        paystub.direct_deposit_accounts.map { |account| [ account.category, account.last_four ] }
+      end
+
+      it 'parses an ACH (direct deposit) destination into an ach account' do
         response = base_argyle_response.merge(
           "destinations" => [
             { "ach_deposit_account" => { "account_number" => "xxxxxx1111" } }
@@ -249,20 +255,37 @@ RSpec.describe Aggregators::ResponseObjects::Paystub, type: :model do
 
         paystub = described_class.from_argyle(response)
 
-        expect(paystub.direct_deposit_accounts).to eq([ "1111" ])
+        expect(account_tuples(paystub)).to eq([ [ "ach", "1111" ] ])
       end
 
-      it 'extracts last 4 from multiple destinations, preserving order' do
+      it 'parses a card destination into a card account' do
+        response = base_argyle_response.merge(
+          "destinations" => [
+            { "card" => { "name" => "Payout Card", "number" => "xxxxxx9122" } }
+          ]
+        )
+
+        paystub = described_class.from_argyle(response)
+
+        expect(account_tuples(paystub)).to eq([ [ "card", "9122" ] ])
+      end
+
+      it 'parses mixed ACH and card destinations, preserving order' do
         response = base_argyle_response.merge(
           "destinations" => [
             { "ach_deposit_account" => { "account_number" => "xxxxxx1111" } },
+            { "card" => { "number" => "xxxxxx9122" } },
             { "ach_deposit_account" => { "account_number" => "xxxxxxxxxx2222" } }
           ]
         )
 
         paystub = described_class.from_argyle(response)
 
-        expect(paystub.direct_deposit_accounts).to eq([ "1111", "2222" ])
+        expect(account_tuples(paystub)).to eq([
+          [ "ach", "1111" ],
+          [ "card", "9122" ],
+          [ "ach", "2222" ]
+        ])
       end
 
       it 'returns an empty array when destinations key is missing' do
@@ -278,17 +301,17 @@ RSpec.describe Aggregators::ResponseObjects::Paystub, type: :model do
         expect(paystub.direct_deposit_accounts).to eq([])
       end
 
-      it 'skips destinations with no ach_deposit_account' do
+      it 'skips destinations with neither an ach_deposit_account nor a card' do
         response = base_argyle_response.merge(
           "destinations" => [
-            { "ach_deposit_account" => nil },
+            { "ach_deposit_account" => nil, "card" => nil },
             { "ach_deposit_account" => { "account_number" => "xxxxxx9999" } }
           ]
         )
 
         paystub = described_class.from_argyle(response)
 
-        expect(paystub.direct_deposit_accounts).to eq([ "9999" ])
+        expect(account_tuples(paystub)).to eq([ [ "ach", "9999" ] ])
       end
 
       it 'skips destinations whose account_number has no digits' do
@@ -311,7 +334,7 @@ RSpec.describe Aggregators::ResponseObjects::Paystub, type: :model do
         )
         paystub = described_class.from_argyle(response)
 
-        expect(paystub.direct_deposit_accounts).to eq([ "4321" ])
+        expect(account_tuples(paystub)).to eq([ [ "ach", "4321" ] ])
       end
     end
   end
