@@ -14,6 +14,7 @@ module Aggregators::ResponseObjects
     earnings
     employment_id
     implied_base_rate_in_dollars
+    payroll_document_id
   ]
 
   Paystub = Struct.new(*PAYSTUB_FIELDS, keyword_init: true) do
@@ -68,7 +69,8 @@ module Aggregators::ResponseObjects
           )
         end,
         employment_id: response_body["employment"],
-        implied_base_rate_in_dollars: Aggregators::FormatMethods::Argyle.paystub_implied_base_rate_in_dollars(response_body)
+        implied_base_rate_in_dollars: Aggregators::FormatMethods::Argyle.paystub_implied_base_rate_in_dollars(response_body),
+        payroll_document_id: response_body["payroll_document"]
       )
     end
 

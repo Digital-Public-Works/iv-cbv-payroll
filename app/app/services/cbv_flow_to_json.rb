@@ -46,11 +46,22 @@ class CbvFlowToJson
     {
       report_metadata: build_report_metadata,
       client_information: build_client_information,
-      employment_records: build_employment_records
-    }
+      employment_records: build_employment_records,
+      attachments: build_attachments
+    }.compact
   end
 
   private
+
+  def build_attachments
+    return nil unless @current_agency.include_paystubs
+
+    stem = TransmissionFilename.stem(@cbv_flow, @current_agency)
+    {
+      report_filename: "#{stem}.pdf",
+      paystubs_filename: "#{stem}_paystubs.pdf"
+    }
+  end
 
   def build_report_metadata
     {
@@ -72,7 +83,13 @@ class CbvFlowToJson
       method = entry.method.to_sym
       next unless TransmissionFilename::EXTENSIONS.key?(method)
 
-      hash[method] = TransmissionFilename.for(@cbv_flow, @current_agency, method)
+      remote_directory = TransmissionFilename.remote_directory_from_config(method_type: method, configuration: entry.configuration)
+      hash[method] = TransmissionFilename.full_path(
+        cbv_flow: @cbv_flow,
+        agency: @current_agency,
+        method_type: method,
+        remote_directory: remote_directory
+      )
     end
   end
 

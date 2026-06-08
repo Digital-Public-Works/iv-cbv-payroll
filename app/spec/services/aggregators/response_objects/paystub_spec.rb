@@ -93,6 +93,17 @@ RSpec.describe Aggregators::ResponseObjects::Paystub, type: :model do
       expect(paystub.earnings.first.name).to eq("Regular")
     end
 
+    it 'populates payroll_document_id when the field is present' do
+      response = argyle_response.merge("payroll_document" => "doc-abc-123")
+      paystub = described_class.from_argyle(response)
+      expect(paystub.payroll_document_id).to eq("doc-abc-123")
+    end
+
+    it 'leaves payroll_document_id nil when the field is missing' do
+      paystub = described_class.from_argyle(argyle_response)
+      expect(paystub.payroll_document_id).to be_nil
+    end
+
     it 'logs paystub to MixPanel when parsing' do
       tracker_instance = instance_double(GenericEventTracker)
       allow(GenericEventTracker).to receive(:new).and_return(tracker_instance)

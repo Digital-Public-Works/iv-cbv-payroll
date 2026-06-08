@@ -362,6 +362,10 @@ es:
             self_employment: Empleo independiente
           footer:
             page_footer: Informe de verificación de ingresos | Página [page] de [topage]
+          paystubs_cover:
+            footer: Las imágenes de los talones de pago aparecen en la página siguiente y fueron enviadas a %{agency_name}.
+            header: 'Informe de Verificación de Ingresos: Imágenes de talones de pago'
+            intro: 'Hay imágenes de talones de pago para los siguientes trabajos:'
           shared:
             additional_jobs_to_report: "¿El cliente tiene trabajos adicionales que verificará por separado?"
             additional_jobs_to_report_html: "¿El cliente tiene trabajos adicionales que verificará por separado? <sup>1</sup>"

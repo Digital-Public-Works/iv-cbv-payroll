@@ -30,7 +30,7 @@ RSpec.describe CsvToSftpReportDelivererJob, type: :job do
           agency = ClientAgencyConfig.instance[partner_id]
           allow(agency).to receive(:has_transmission_method?).with("sftp").and_return(true)
           allow(agency).to receive(:transmission_configuration_for).with("sftp").and_return(
-            { "sftp_directory" => "test" }.with_indifferent_access
+            { "path_prefix" => "test" }.with_indifferent_access
           )
 
           expect(sftp_gateway).to receive(:upload_data) do |raw_csv, filename|

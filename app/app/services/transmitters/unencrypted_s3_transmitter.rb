@@ -1,5 +1,6 @@
 class Transmitters::UnencryptedS3Transmitter
   include Transmitter
+  include Transmitters::Concerns::PaystubsOutput
   include TarFileCreatable
   include CsvHelper
 
@@ -15,6 +16,10 @@ class Transmitters::UnencryptedS3Transmitter
       { name: "#{@file_stem}.pdf", content: pdf_output&.content },
       { name: "#{@file_stem}.csv", content: csv_content.string }
     ]
+
+    if (paystubs = paystubs_output)
+      file_data << { name: "#{@file_stem}_paystubs.pdf", content: paystubs.content }
+    end
     tar_tempfile = create_tar_file(file_data)
 
     upload_tempfile = nil
@@ -61,6 +66,15 @@ class Transmitters::UnencryptedS3Transmitter
       pdf_number_of_pages: pdf_output.page_count
     )
 
+    if (paystubs = paystubs_output)
+      data.merge!(
+        paystubs_filename: "#{@file_stem}_paystubs.pdf",
+        paystubs_filetype: "application/pdf",
+        paystubs_filesize: paystubs.file_size,
+        paystubs_number_of_pages: paystubs.page_count
+      )
+    end
+
     create_csv(data)
   end
 
@@ -92,6 +106,11 @@ class Transmitters::UnencryptedS3Transmitter
 
   # this is defined as an instance method to allow encrypted_s3_transmitter subclass to override
   def upload_key
-    TransmissionFilename.for(@cbv_flow, @current_agency, :unencrypted_s3)
+    TransmissionFilename.full_path(
+      cbv_flow: @cbv_flow,
+      agency: @current_agency,
+      method_type: :unencrypted_s3,
+      remote_directory: @transmission_config["path_prefix"]
+    )
   end
 end

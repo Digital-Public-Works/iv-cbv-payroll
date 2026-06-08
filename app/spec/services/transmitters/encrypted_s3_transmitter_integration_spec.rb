@@ -45,6 +45,7 @@ RSpec.describe Transmitters::EncryptedS3Transmitter, integration: true do
     allow(mock_client_agency).to receive(:timezone).and_return("America/New_York")
     allow(mock_client_agency).to receive(:partner_identifier_name).and_return("case_number")
     allow(mock_client_agency).to receive(:applicant_attributes).and_return({})
+    allow(mock_client_agency).to receive(:include_paystubs).and_return(false)
 
     stub_pdf_generation(label: "EncryptedS3Transmitter integration test")
   end
@@ -76,7 +77,7 @@ RSpec.describe Transmitters::EncryptedS3Transmitter, integration: true do
       expect(File.basename(pdf_name, ".pdf")).to eq(File.basename(csv_name, ".csv"))
 
       expect(pdf_bytes.byteslice(0, 5)).to eq("%PDF-")
-      expect(PDF::Reader.new(StringIO.new(pdf_bytes)).page_count).to be >= 1
+      expect(CombinePDF.parse(pdf_bytes).pages.count).to be >= 1
 
       meta = parse_metadata_csv(csv_bytes)
       expect(meta["case_number"]).to eq("S3ENC1")
@@ -85,6 +86,30 @@ RSpec.describe Transmitters::EncryptedS3Transmitter, integration: true do
       expect(meta["pdf_filetype"]).to eq("application/pdf")
       expect(meta["pdf_filesize"].to_i).to eq(pdf_bytes.bytesize)
       expect(meta["pdf_number_of_pages"].to_i).to be >= 1
+    end
+
+    context "when path_prefix is configured" do
+      let(:transmission_method_configuration) do
+        {
+          "bucket" => bucket,
+          "region" => "us-east-1",
+          "aws_access_key_id" => "s3test",
+          "aws_secret_access_key" => "s3test",
+          "endpoint" => ENV.fetch("S3_ENDPOINT", "http://localhost:9000"),
+          "force_path_style" => true,
+          "public_key" => @public_key,
+          "path_prefix" => "encrypted"
+        }
+      end
+
+      it "uploads the encrypted object under the prefixed key" do
+        expect { subject.deliver }.not_to raise_error
+
+        s3 = s3_client_from(transmission_method_configuration)
+        keys = s3.list_objects_v2(bucket: bucket).contents.map(&:key)
+        key = keys.grep(%r{\Aencrypted/VMI_[A-Z0-9]{8}_\d{8}_ConfS3ENC1\.tar\.gz\.gpg\z}).max
+        expect(key).not_to be_nil, "no prefixed VMI tar.gz.gpg landed in the bucket; saw: #{keys.inspect}"
+      end
     end
 
     it "raises when public_key is missing" do

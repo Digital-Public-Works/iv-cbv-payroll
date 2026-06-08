@@ -15,12 +15,28 @@ class PartnerConfigLoader
     invitation_valid_days_default
     pay_income_days_w2 pay_income_days_gig
     report_customization_show_earnings_list
+    include_paystubs
     weekly_report_enabled weekly_report_recipients weekly_report_variant
     include_invitation_details_on_weekly_report
     partner_identifier_name
   ].freeze
 
   REQUIRED_ATTRS = %w[partner_id name timezone pay_income_days_w2 pay_income_days_gig partner_identifier_name].freeze
+
+  # Structural top-level keys (beyond the column attrs above) that the loader understands.
+  # Any top-level key NOT in PARTNER_CONFIG_ATTRS or this list is rejected by
+  # #validate_no_unknown_keys so that typos / stale formats (e.g. the singular
+  # `transmission_method` or a top-level `transmission_configs`) fail loudly
+  # rather than being silently ignored.
+  STRUCTURAL_TOP_LEVEL_KEYS = %w[transmission_methods application_attributes translations].freeze
+  KNOWN_TOP_LEVEL_KEYS = (PARTNER_CONFIG_ATTRS + STRUCTURAL_TOP_LEVEL_KEYS).freeze
+  TRANSMISSION_METHOD_KEYS = %w[method_type configs].freeze
+  TRANSMISSION_CONFIG_KEYS = %w[key value encrypted].freeze
+  APPLICATION_ATTRIBUTE_KEYS = %w[
+    name description required data_type form_field_type
+    show_on_applicant_form show_on_caseworker_form show_on_caseworker_report
+    redactable redact_type
+  ].freeze
 
   # Subdomain prefixes reserved for non-partner infrastructure. A partner
   # claiming one of these would never receive traffic — DNS for the
@@ -69,6 +85,7 @@ class PartnerConfigLoader
     @errors = []
     @warnings = []
 
+    validate_no_unknown_keys
     validate_required_attrs
     validate_transmission_methods
     validate_pay_income_days
@@ -212,6 +229,37 @@ class PartnerConfigLoader
   # ---------------------------------------------------------------------------
   # Validation helpers
   # ---------------------------------------------------------------------------
+
+  # Reject any key the loader does not recognize, so a typo or a stale format
+  # fails loudly instead of being silently dropped on apply. Covers the
+  # top level plus the structured `transmission_methods[].configs[]` and
+  # `application_attributes[]` sections. Translation keys are data, not schema,
+  # so they are intentionally not checked here.
+  def validate_no_unknown_keys
+    (@yaml_data.keys.map(&:to_s) - KNOWN_TOP_LEVEL_KEYS).sort.each do |key|
+      @errors << "Unknown top-level key: '#{key}'"
+    end
+
+    Array(@yaml_data[:transmission_methods]).each_with_index do |tm, i|
+      next unless tm.respond_to?(:keys)
+      (tm.keys.map(&:to_s) - TRANSMISSION_METHOD_KEYS).sort.each do |key|
+        @errors << "transmission_methods[#{i}]: unknown key '#{key}'"
+      end
+      Array(tm[:configs]).each_with_index do |tc, j|
+        next unless tc.respond_to?(:keys)
+        (tc.keys.map(&:to_s) - TRANSMISSION_CONFIG_KEYS).sort.each do |key|
+          @errors << "transmission_methods[#{i}].configs[#{j}]: unknown key '#{key}'"
+        end
+      end
+    end
+
+    Array(@yaml_data[:application_attributes]).each_with_index do |attr, i|
+      next unless attr.respond_to?(:keys)
+      (attr.keys.map(&:to_s) - APPLICATION_ATTRIBUTE_KEYS).sort.each do |key|
+        @errors << "application_attributes[#{i}]: unknown key '#{key}'"
+      end
+    end
+  end
 
   def validate_required_attrs
     REQUIRED_ATTRS.each do |attr|
