@@ -136,7 +136,6 @@ module Aggregators::AggregatorReports
         max_paystubs: max_paystubs,
         lookback_days: @fetched_days
       })
-      raise error
     end
 
     def transform_identities(identities_json)
