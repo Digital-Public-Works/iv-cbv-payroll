@@ -173,6 +173,24 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
         ]
       )
     end
+
+    it 'does not raise when summary[:identity] is null' do
+      existing_summary = report.summarize_by_employer
+      account_id = existing_summary.keys.first
+      existing_summary[account_id] = existing_summary[account_id].merge(
+        identity: nil,
+        has_identity_data: true
+      )
+      allow(report).to receive(:summarize_by_employer).and_return(existing_summary)
+
+      expect { report.income_report }.not_to raise_error
+      employment = report.income_report[:employments].first
+      expect(employment[:applicant_first_name]).to be_nil
+      expect(employment[:applicant_last_name]).to be_nil
+      expect(employment[:applicant_full_name]).to be_nil
+      expect(employment[:applicant_ssn]).to be_nil
+      expect(employment[:employer_name]).to eq("Cool Company")
+    end
   end
 
   describe '#income_report SSN flag' do
@@ -180,14 +198,10 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
     let(:full_ssn) { "123-45-6789" }
     let(:cbv_flow) { create(:cbv_flow, has_other_jobs: false, additional_information: { comment: "test" }) }
 
-    let(:client_agency) do
-      instance_double(ClientAgencyConfig::ClientAgency,
-        id: "sandbox",
-        applicant_attributes: {},
-        include_full_ssn: false,
-        include_direct_deposit_last_4: false
-      )
-    end
+    # Use the real agency config so creating the cbv_flow/applicant exercises the
+    # actual applicant-attribute validation. Only the output flag is stubbed,
+    # per-context, on this same (memoized) object that #income_report reads.
+    let(:client_agency) { ClientAgencyConfig.instance[cbv_flow.client_agency_id] }
 
     let(:stub_fetcher) { instance_double(Aggregators::Argyle::FullSsnFetcher) }
 
@@ -199,9 +213,6 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
     end
 
     before do
-      allow(ClientAgencyConfig.instance).to receive(:[])
-        .with(cbv_flow.client_agency_id)
-        .and_return(client_agency)
       allow(Aggregators::Argyle::FullSsnFetcher).to receive(:new).and_return(stub_fetcher)
     end
 
@@ -229,7 +240,6 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
       end
 
       it "uses the unmasked SSN" do
-        expect(client_agency.include_full_ssn).to eq(true) # TEMP
         report.income_report[:employments].each do |employment|
           expect(employment[:applicant_ssn]).to eq(full_ssn)
         end
@@ -265,24 +275,15 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
   describe '#income_report direct deposit accounts' do
     let(:cbv_flow) { create(:cbv_flow, has_other_jobs: false, additional_information: { comment: "test comment" }) }
 
-    let(:client_agency) do
-      instance_double(ClientAgencyConfig::ClientAgency,
-        id: "sandbox",
-        applicant_attributes: {},
-        include_full_ssn: false,
-        include_direct_deposit_last_4: false
-      )
-    end
+    # Use the real agency config (see SSN flag block above); only the output flag
+    # is stubbed per-context on the same object that #income_report reads.
+    let(:client_agency) { ClientAgencyConfig.instance[cbv_flow.client_agency_id] }
 
     let(:report) do
       r = build(:argyle_report, :with_argyle_account)
       r.payroll_accounts.first.cbv_flow = cbv_flow
       r.paystubs.first.direct_deposit_accounts = [ "1111", "2222" ]
       r
-    end
-
-    before do
-      allow(ClientAgencyConfig.instance).to receive(:[]).and_return(client_agency)
     end
 
     context "when include_direct_deposit_last_4 is true" do

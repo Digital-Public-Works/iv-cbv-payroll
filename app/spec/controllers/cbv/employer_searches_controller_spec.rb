@@ -75,6 +75,70 @@ RSpec.describe Cbv::EmployerSearchesController do
       end
     end
 
+    context "when user searches for an unemployment-related term" do
+      before do
+        argyle_stub_request_employer_search_response('bob')
+      end
+
+      render_views
+
+      it "renders the unemployment search tips alert" do
+        get :show, params: { query: "unemployed" }
+        expect(response).to be_successful
+        expect(response.body).to include("Are you unemployed?")
+        expect(response.body).to include("Go back to search")
+      end
+
+      it "still renders search results below the tips" do
+        get :show, params: { query: "unemployed" }
+        expect(response).to be_successful
+        expect(response.body).to include("Results")
+      end
+
+      it "tracks ApplicantAccessedUnemployedHelp with search source" do
+        allow(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+        allow(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantSearchedForEmployer", anything, anything)
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with(
+          "ApplicantAccessedUnemployedHelp", anything, hash_including(
+            cbv_applicant_id: cbv_flow.cbv_applicant_id,
+            cbv_flow_id: cbv_flow.id,
+            invitation_id: cbv_flow.cbv_flow_invitation_id,
+            unemployed_tips_source: "search"
+          )
+        )
+        get :show, params: { query: "unemployed" }
+      end
+
+      it "renders the go back link with correct tracking attributes" do
+        get :show, params: { query: "fired" }
+
+        html = Capybara.string(response.body)
+        go_back_link = html.find("[data-element-name='go_back_to_search_from_unemployment_tips']")
+        expect(go_back_link["data-track-event"]).to eq("ApplicantClosedUnemployedHelp")
+        expect(go_back_link["data-context-unemployed-tips-source"]).to eq("search")
+      end
+
+      it "matches Spanish terms" do
+        get :show, params: { query: "Despedido" }
+        expect(response).to be_successful
+        expect(response.body).to include("Are you unemployed?")
+      end
+    end
+
+    context "when user searches for a non-unemployment term" do
+      before do
+        argyle_stub_request_employer_search_response('bob')
+      end
+
+      render_views
+
+      it "does not render the unemployment search tips" do
+        get :show, params: { query: "walmart" }
+        expect(response).to be_successful
+        expect(response.body).not_to include("Are you unemployed?")
+      end
+    end
+
     context "when there are no employer search results" do
       before do
         argyle_stub_request_employer_search_response('bob')

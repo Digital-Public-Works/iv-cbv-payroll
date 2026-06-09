@@ -24,10 +24,10 @@ RSpec.describe PdfService do
 
   describe "#generate" do
     context "when PDF generation succeeds" do
-      let(:pdf_binary)  { "%PDF-1.4 FAKEPDFDATA" }
-      let(:page_count)  { 3 }
-      let(:pdf_reader)  { instance_double(PDF::Reader, page_count: page_count) }
-      let(:wicked_pdf)  { instance_double(WickedPdf) }
+      let(:pdf_binary)       { "%PDF-1.4 FAKEPDFDATA" }
+      let(:page_count)       { 3 }
+      let(:wicked_pdf)       { instance_double(WickedPdf) }
+      let(:combine_pdf_doc)  { instance_double(CombinePDF::PDF, pages: Array.new(page_count)) }
 
       before do
         allow(WickedPdf).to receive(:new).and_return(wicked_pdf)
@@ -35,9 +35,7 @@ RSpec.describe PdfService do
                                .with(html_content)
                                .and_return(pdf_binary)
 
-        allow(PDF::Reader).to receive(:new)
-                                .with(instance_of(StringIO))
-                                .and_return(pdf_reader)
+        allow(CombinePDF).to receive(:parse).and_return(combine_pdf_doc)
       end
 
       it "returns a PdfGenerationResult with the expected attributes" do

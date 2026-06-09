@@ -17,7 +17,12 @@ namespace :partner do
   task :deliver_csv_reports, [ :partner_id ] => :environment do |_t, args|
     partner_id = args.fetch(:partner_id)
     agency = ClientAgencyConfig.instance[partner_id]
-    config = agency.transmission_method_configuration.with_indifferent_access
+    unless agency.has_transmission_method?("sftp")
+      Rails.logger.info "#{partner_id} has no sftp transmission method configured, not enqueuing job"
+      next
+    end
+
+    config = agency.transmission_configuration_for("sftp")
     unless config.fetch("csv_summary_reports_enabled", true)
       Rails.logger.info "#{partner_id} CSV summary delivery disabled, not enqueuing job"
       next
@@ -41,12 +46,5 @@ namespace :partner do
       Rails.logger.info "  CbvFlow id = #{cbv_flow.id}"
       MatchAgencyNamesJob.perform_now(cbv_flow.id)
     end
-  end
-
-  desc "redact case numbers for a partner"
-  task :redact_case_numbers, [ :partner_id ] => :environment do |_t, args|
-    partner_id = args.fetch(:partner_id)
-    Rails.logger.info "Redacting case-numbers for #{partner_id}..."
-    DataRetentionService.redact_case_numbers_by_agency(partner_id)
   end
 end

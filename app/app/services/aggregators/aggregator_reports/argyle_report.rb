@@ -5,6 +5,18 @@ module Aggregators::AggregatorReports
     include ActiveModel::Validations::Callbacks
     include Warnable
 
+    class NoValidAccountsError < StandardError; end
+    class PaystubLimitExceededError < StandardError; end
+
+    DISCONNECTED_STATES = %w[disconnected]
+
+    # Upper bound on how many paystubs we expect to retrieve for a single
+    # account, expressed as a multiple of the lookback window in days. Even
+    # daily pay would not exceed one paystub per day, so 2x is a generous
+    # guardrail — exceeding it signals a data anomaly (e.g. duplicate paystubs
+    # or runaway pagination) that we want surfaced in New Relic.
+    MAX_PAYSTUBS_PER_LOOKBACK_DAY = 2
+
     validates_with Aggregators::Validators::UsefulReportValidator, on: :useful_report
 
     attr_reader :argyle_service
@@ -14,7 +26,45 @@ module Aggregators::AggregatorReports
       @argyle_service = argyle_service
     end
 
+    def fetch
+      return false unless is_ready_to_fetch?
+
+      discard_accounts_missing_in_argyle
+      raise NoValidAccountsError, "All Argyle accounts have been removed or disconnected" if @payroll_accounts.empty?
+      fetch_report_data
+    end
+
     private
+
+    def discard_accounts_missing_in_argyle
+      @payroll_accounts = @payroll_accounts.reject do |payroll_account|
+        next false unless payroll_account.is_a?(PayrollAccount::Argyle)
+
+        missing = account_missing_in_argyle?(payroll_account)
+        if missing
+          Rails.logger.info(
+            "ArgyleReport: discarding payroll_account #{payroll_account.id} " \
+            "(aggregator_account_id=#{payroll_account.aggregator_account_id}) — no longer present/connected in Argyle"
+          )
+          payroll_account.discard!
+        end
+
+        missing
+      end
+    end
+
+    def account_missing_in_argyle?(payroll_account)
+      account_json = @argyle_service.fetch_account_api(account: payroll_account.aggregator_account_id)
+      DISCONNECTED_STATES.include?(account_json.dig("connection", "status"))
+    rescue Faraday::ResourceNotFound
+      true
+    rescue => ex
+      Rails.logger.warn(
+        "ArgyleReport: pre-flight check failed for payroll_account #{payroll_account.id} " \
+        "(aggregator_account_id=#{payroll_account.aggregator_account_id}): #{ex.class} #{ex.message}"
+      )
+      false
+    end
 
     def fetch_report_data_for_account(payroll_account)
       identities_json = @argyle_service.fetch_identities_api(
@@ -37,6 +87,7 @@ module Aggregators::AggregatorReports
         from_start_date: from_date,
         to_start_date: to_date
       )
+      check_paystub_volume(paystubs_json, payroll_account)
       gigs_json = @argyle_service.fetch_gigs_api(
         account: payroll_account.aggregator_account_id,
         from_start_datetime: from_date,
@@ -60,6 +111,32 @@ module Aggregators::AggregatorReports
           warnings: self.warnings.full_messages.join(", ")
         })
       end
+    end
+
+    # Guardrail against retrieving an anomalously large number of paystubs.
+    # The cap is the lookback window (in days) x MAX_PAYSTUBS_PER_LOOKBACK_DAY.
+    # If the retrieved count reaches the cap, we surface the error to New Relic.
+    # We are not blocked the flow, so the user can still continue and finish, but we will want to look into why this happened.
+    def check_paystub_volume(paystubs_json, payroll_account)
+      max_paystubs = @fetched_days.to_i * MAX_PAYSTUBS_PER_LOOKBACK_DAY
+      return if max_paystubs.zero?
+
+      paystub_count = paystubs_json["results"].size
+      return if paystub_count < max_paystubs
+
+      error = PaystubLimitExceededError.new(
+        "Retrieved #{paystub_count} paystubs for account " \
+        "#{payroll_account.aggregator_account_id}, reaching the max of #{max_paystubs} " \
+        "(#{@fetched_days} lookback days x #{MAX_PAYSTUBS_PER_LOOKBACK_DAY})"
+      )
+      Rails.logger.error(error.message)
+      NewRelic::Agent.notice_error(error, custom_params: {
+        cbv_flow_id: payroll_account&.cbv_flow_id,
+        aggregator_account_id: payroll_account.aggregator_account_id,
+        paystub_count: paystub_count,
+        max_paystubs: max_paystubs,
+        lookback_days: @fetched_days
+      })
     end
 
     def transform_identities(identities_json)

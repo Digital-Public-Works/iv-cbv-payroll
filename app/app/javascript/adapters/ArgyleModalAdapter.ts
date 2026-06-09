@@ -1,9 +1,14 @@
 import { trackUserAction, fetchArgyleToken } from "@js/utilities/api.js"
 import { getDocumentLocale } from "@js/utilities/getDocumentLocale.js"
 import { ModalAdapter } from "./ModalAdapter.js"
-import { argyleUIEventToTrackingName, namespaceTrackingProperties } from "./argyleTracking.js"
+import {
+  argyleUIEventToTrackingName,
+  isArgyleErrorEvent,
+  namespaceTrackingProperties,
+} from "./argyleTracking.js"
 
 export default class ArgyleModalAdapter extends ModalAdapter {
+  private seenError = false
   async open() {
     const locale = getDocumentLocale()
 
@@ -71,6 +76,16 @@ export default class ArgyleModalAdapter extends ModalAdapter {
   }
 
   async onUIEvent(payload: ArgyleUIEvent) {
+    if (isArgyleErrorEvent(payload)) {
+      this.seenError = true
+    } else if (payload.name === "success - opened") {
+      this.seenError = false
+    }
+
+    if (payload.name === "link closed" && !this.seenError) {
+      return
+    }
+
     await trackUserAction(argyleUIEventToTrackingName(payload), {
       "argyle.eventName": payload.name,
       ...namespaceTrackingProperties(payload.properties),

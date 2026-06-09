@@ -102,6 +102,8 @@ RSpec.configure do |config|
     partners = [ nil, :az_des, :la_ldh, :pa_dhs ]
 
     PartnerApplicationAttribute.delete_all
+    PartnerTransmissionConfig.delete_all
+    PartnerTransmissionMethod.delete_all
     PartnerConfig.delete_all
 
     @sandbox = PartnerConfig.find_by(partner_id: 'sandbox') || FactoryBot.create(:partner_config)
@@ -174,7 +176,7 @@ RSpec.configure do |config|
       { name: 'beacon_id', description: "Your WELID", form_field_type: 'text_field' },
       { name: 'agency_id_number', description: "Client's agency ID number", form_field_type: 'text_field' },
       { name: 'client_id_number', description: "CIN", form_field_type: 'text_field' },
-      { name: 'snap_application_date', description: "SNAP application or recertification interview date", form_field_type: 'date_picker', data_type: 'date' }
+      { name: 'snap_application_date', description: "SNAP application or recertification interview date", form_field_type: 'date_picker' }
     ].each do |attrs|
       FactoryBot.create(:partner_application_attribute,
         partner_config: sandbox_config,

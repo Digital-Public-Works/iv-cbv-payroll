@@ -46,15 +46,27 @@ class CbvFlowToJson
     {
       report_metadata: build_report_metadata,
       client_information: build_client_information,
-      employment_records: build_employment_records
-    }
+      employment_records: build_employment_records,
+      attachments: build_attachments
+    }.compact
   end
 
   private
 
+  def build_attachments
+    return nil unless @current_agency.include_paystubs
+
+    stem = TransmissionFilename.stem(@cbv_flow, @current_agency)
+    {
+      report_filename: "#{stem}.pdf",
+      paystubs_filename: "#{stem}_paystubs.pdf"
+    }
+  end
+
   def build_report_metadata
     {
       confirmation_code: @cbv_flow.confirmation_code,
+      filenames: build_filenames,
       report_date_range: {
         start_date: @aggregator_report.from_date.strftime("%Y-%m-%d"),
         end_date: @aggregator_report.to_date.strftime("%Y-%m-%d")
@@ -63,13 +75,31 @@ class CbvFlowToJson
     }
   end
 
+  # Build a hash of the filenames the partner should expect on the
+  # partner's file transmitters (SFTP and/or S3).
+  # Non-file transmitters (webhook, shared_email, json) are ignored.
+  def build_filenames
+    @current_agency.transmission_methods.each_with_object({}) do |entry, hash|
+      method = entry.method.to_sym
+      next unless TransmissionFilename::EXTENSIONS.key?(method)
+
+      remote_directory = TransmissionFilename.remote_directory_from_config(method_type: method, configuration: entry.configuration)
+      hash[method] = TransmissionFilename.full_path(
+        cbv_flow: @cbv_flow,
+        agency: @current_agency,
+        method_type: method,
+        remote_directory: remote_directory
+      )
+    end
+  end
+
   def build_client_information
-    # get all configured agency partner metadata properties
-    agency_partner_metadata = CbvApplicant.build_agency_partner_metadata(@current_agency.id) do |attr|
+    # get all configured agency custom attribute properties
+    custom_attributes = CbvApplicant.build_custom_attributes(@current_agency.id) do |attr|
       @cbv_flow.cbv_applicant.public_send(attr)
     end
 
-    agency_partner_metadata.merge(
+    custom_attributes.merge(
       additional_jobs_to_report: @cbv_flow.has_other_jobs
     )
   end
@@ -218,7 +248,7 @@ class CbvFlowToJson
   end
 
   def build_earnings(earnings)
-    earnings.map do |earning|
+    earnings.filter { |earning| earning.amount.present? }.map do |earning|
       {
         name: earning.name,
         amount: cents_to_dollars(earning.amount)

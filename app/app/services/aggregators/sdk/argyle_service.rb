@@ -40,10 +40,16 @@ module Aggregators::Sdk
     GIGS_ENDPOINT = "gigs"
     SHIFTS_ENDPOINT = "shifts"
     WEBHOOKS_ENDPOINT = "webhooks"
+    PAYROLL_DOCUMENTS_ENDPOINT = "payroll-documents"
+
+    # Timeout (seconds) for retrieving a single paystub document file from the
+    # signed storage URL. These downloads can be large, so they get a longer
+    # budget than the default 5s API request timeout.
+    PAYSTUB_RETRIEVAL_TIMEOUT = 60
 
     attr_reader :webhook_secret
 
-    # Factory method to return MockArgyleService when environment is "mock"
+    # Factory method to return MockArgyleService when environment is "mock".
     def self.new(environment, api_key_id = nil, api_key_secret = nil, webhook_secret = nil, fixture_user: nil)
       if environment.to_s == "mock" || environment.to_sym == :mock
         require_relative "mock_argyle_service"
@@ -218,6 +224,35 @@ module Aggregators::Sdk
       raise ArgumentError if user.nil? && account.nil?
       params = { user: user, account: account }.compact
       @http.get(build_url(EMPLOYMENTS_ENDPOINT), params).body
+    end
+
+    # https://docs.argyle.com/api-reference/payroll-documents#list
+    def fetch_payroll_documents_api(account: nil, user: nil, employment: nil, limit: 200)
+      params = { account: account, user: user, employment: employment, limit: limit }.compact
+      with_pagination do
+        @http.get(build_url(PAYROLL_DOCUMENTS_ENDPOINT), params).body
+      end
+    end
+
+    # https://docs.argyle.com/api-reference/payroll-documents#retrieve
+    def fetch_payroll_document_api(id:)
+      @http.get(build_url("#{PAYROLL_DOCUMENTS_ENDPOINT}/#{id}")).body
+    end
+
+    # Returns [bytes, content_type] for the file at file_url.
+    # Argyle responds with a 302 to a GCS signed URL on a different host.
+    # Step 1: authenticated request to get the redirect location.
+    # Step 2: unauthenticated request to the signed GCS URL.
+    def fetch_payroll_document_file(file_url:)
+      redirect_resp = @http.get(file_url)
+      storage_url = redirect_resp.headers["location"]
+      raise "fetch_payroll_document_file: no redirect location returned for #{file_url}" if storage_url.blank?
+
+      conn = Faraday.new(request: { timeout: PAYSTUB_RETRIEVAL_TIMEOUT }) do |c|
+        c.response :raise_error
+      end
+      resp = conn.get(storage_url)
+      [ resp.body, resp.headers["content-type"] ]
     end
 
     def build_url(endpoint)

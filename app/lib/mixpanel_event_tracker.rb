@@ -17,16 +17,15 @@ class MixpanelEventTracker
       tracker_attrs.merge!({ "$ip": request_attributes.remote_ip })
     end
 
-    # For caseworker events, use the "user_id" attribute as the distinct_id
-    # For client events, use the "cbv_applicant_id" attribute as the distinct_id as it currently best
-    # represents the concept of a unique user.
+    # Tie the invitation creation MP event to the applicant it is being created for to help reporting.
+    # TODO: this will need an update if the caseworker portal is re-activated at any point
     user_id = attributes.fetch(:user_id, "")
     applicant_id = attributes.fetch(:cbv_applicant_id, "")
     prefix = ENV["MIXPANEL_DISTINCT_ID_PREFIX"].present? ? "#{ENV["MIXPANEL_DISTINCT_ID_PREFIX"]}-" : ""
-    if user_id.present?
-      distinct_id = "#{prefix}caseworker-#{user_id}"
-    elsif applicant_id.present?
+    if applicant_id.present?
       distinct_id = "#{prefix}applicant-#{applicant_id}"
+    elsif user_id.present?
+      distinct_id = "#{prefix}caseworker-#{user_id}"
     end
 
     # This creates a profile for a distinct user

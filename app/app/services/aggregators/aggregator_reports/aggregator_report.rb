@@ -100,9 +100,9 @@ module Aggregators::AggregatorReports
         report[:has_other_jobs] = payroll_accounts.first.cbv_flow.has_other_jobs
         report[:employments] = summarize_by_employer.map do |account_id, summary|
           {
-            applicant_first_name: summary[:identity].first_name,
-            applicant_last_name: summary[:identity].last_name,
-            applicant_full_name: summary[:identity].full_name,
+            applicant_first_name: summary[:identity]&.first_name,
+            applicant_last_name: summary[:identity]&.last_name,
+            applicant_full_name: summary[:identity]&.full_name,
             applicant_ssn: computed_ssn(account_id, summary[:identity], current_agency, fetcher, cbv_flow),
             applicant_extra_comments: cbv_flow.additional_information["comment"],
             employer_name: summary[:employment].employer_name,

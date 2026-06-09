@@ -36,14 +36,23 @@ RSpec.describe Transmitters::WebhookTransmitter do
     )
   end
 
+  let(:configured_methods) do
+    [
+      ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(method: "sftp", configuration: {}),
+      ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(method: "webhook", configuration: {})
+    ]
+  end
+
   before do
-    allow(mock_client_agency).to receive(:transmission_method_configuration).and_return(transmission_method_configuration)
     allow(mock_client_agency).to receive(:id).and_return("sandbox")
+    allow(mock_client_agency).to receive(:timezone).and_return("America/New_York")
+    allow(mock_client_agency).to receive(:transmission_methods).and_return(configured_methods)
+    allow(mock_client_agency).to receive(:include_paystubs).and_return(false)
     allow(CbvApplicant).to receive(:valid_attributes_for_agency).with("sandbox").and_return([ "case_number" ])
     allow(Rails.logger).to receive(:error)
   end
 
-  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report) }
+  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
 
   describe "#deliver" do
     context "when agency responds with 200" do
@@ -120,6 +129,41 @@ RSpec.describe Transmitters::WebhookTransmitter do
 
         stub_request(:post, webhook_url).to_return(status: 200, body: '{"status": "ok"}')
         subject.deliver
+      end
+    end
+
+    context "include_paystubs payload" do
+      context "when disabled" do
+        before { allow(mock_client_agency).to receive(:include_paystubs).and_return(false) }
+
+        it "omits the attachments block" do
+          captured = nil
+          stub_request(:post, webhook_url)
+            .with { |req| captured = JSON.parse(req.body); true }
+            .to_return(status: 200, body: '{"status": "ok"}')
+
+          subject.deliver
+          expect(captured).not_to have_key("attachments")
+          expect(captured).not_to have_key("paystub_pdf")
+        end
+      end
+
+      context "when enabled" do
+        before { allow(mock_client_agency).to receive(:include_paystubs).and_return(true) }
+
+        it "exposes filenames only — no PDF bytes are sent over the webhook" do
+          captured = nil
+          stub_request(:post, webhook_url)
+            .with { |req| captured = JSON.parse(req.body); true }
+            .to_return(status: 200, body: '{"status": "ok"}')
+
+          subject.deliver
+          expect(captured["attachments"]).to be_a(Hash)
+          expect(captured["attachments"]["report_filename"]).to match(/\AVMI_\w+_\d{8}_ConfWEBHOOK123\.pdf\z/)
+          expect(captured["attachments"]["paystubs_filename"]).to match(/\AVMI_\w+_\d{8}_ConfWEBHOOK123_paystubs\.pdf\z/)
+          expect(captured).not_to have_key("paystub_pdf")
+          expect(captured).not_to have_key("report_pdf")
+        end
       end
     end
   end
