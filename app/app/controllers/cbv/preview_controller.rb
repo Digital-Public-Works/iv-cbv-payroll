@@ -211,7 +211,24 @@ class Cbv::PreviewController < ApplicationController
 
   def current_agency
     return unless @cbv_flow.present? && @cbv_flow.client_agency_id.present?
-    @current_agency ||= ClientAgencyConfig.instance[@cbv_flow.client_agency_id]
+
+    @current_agency ||= PreviewAgencyConfig.new(
+      ClientAgencyConfig.instance[@cbv_flow.client_agency_id],
+      include_full_ssn: params[:include_full_ssn] == "true",
+      include_direct_deposit_last_4: params[:include_direct_deposit_last_4] == "true"
+    )
+  end
+
+  # Wraps the real agency config so preview-only toggles can override the
+  # sensitive-output flags without mutating the shared, cached config instance.
+  class PreviewAgencyConfig < SimpleDelegator
+    attr_reader :include_full_ssn, :include_direct_deposit_last_4
+
+    def initialize(agency, include_full_ssn: false, include_direct_deposit_last_4: false)
+      super(agency)
+      @include_full_ssn = include_full_ssn
+      @include_direct_deposit_last_4 = include_direct_deposit_last_4
+    end
   end
 
   def argyle

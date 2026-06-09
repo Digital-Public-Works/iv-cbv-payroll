@@ -127,6 +127,7 @@
                   [ "GPL Tolliver", "gpl_tolliver" ],
                   [ "Multiple Akira", "multiple_akira" ],
                   [ "Multiple Neil", "multiple_neil" ],
+                  [ "Multiple Direct Deposits (Dee Deposito)", "multiple_direct_deposits" ],
                   [ "Multi-Year Mileage (2025/2026)", "multi_year_mileage" ]
                 ],
                 params[:fixture_user] || "bob"
@@ -169,6 +170,30 @@
                              [ "2", "2" ]
                            ],
                            params[:count_of_valid_accounts] || "1"
+                         ),
+                         class: "preview-bar__select",
+                         data: { action: "change->preview-form#submit" } %>
+
+          <label for="include_full_ssn" class="preview-bar__label margin-left-2 margin-right-1">Full SSN?</label>
+          <%= select_tag :include_full_ssn,
+                         options_for_select(
+                           [
+                             [ "False (default)", "false" ],
+                             [ "True", "true" ]
+                           ],
+                           params[:include_full_ssn] || "false"
+                         ),
+                         class: "preview-bar__select",
+                         data: { action: "change->preview-form#submit" } %>
+
+          <label for="include_direct_deposit_last_4" class="preview-bar__label margin-left-2 margin-right-1">Direct deposit last 4?</label>
+          <%= select_tag :include_direct_deposit_last_4,
+                         options_for_select(
+                           [
+                             [ "False (default)", "false" ],
+                             [ "True", "true" ]
+                           ],
+                           params[:include_direct_deposit_last_4] || "false"
                          ),
                          class: "preview-bar__select",
                          data: { action: "change->preview-form#submit" } %>
