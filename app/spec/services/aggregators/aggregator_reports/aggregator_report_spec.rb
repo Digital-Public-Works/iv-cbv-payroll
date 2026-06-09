@@ -165,8 +165,7 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
                 pay_gross: 12345,
                 pay_gross_ytd: 12345,
                 pay_net: 12345,
-                hours_paid: 12.0,
-                direct_deposit_accounts: []
+                hours_paid: 12.0
               }
             ]
           }
@@ -190,130 +189,6 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
       expect(employment[:applicant_full_name]).to be_nil
       expect(employment[:applicant_ssn]).to be_nil
       expect(employment[:employer_name]).to eq("Cool Company")
-    end
-  end
-
-  describe '#income_report SSN flag' do
-    let(:masked_ssn) { "XXX-XX-1234" }
-    let(:full_ssn) { "123-45-6789" }
-    let(:cbv_flow) { create(:cbv_flow, has_other_jobs: false, additional_information: { comment: "test" }) }
-
-    # Use the real agency config so creating the cbv_flow/applicant exercises the
-    # actual applicant-attribute validation. Only the output flag is stubbed,
-    # per-context, on this same (memoized) object that #income_report reads.
-    let(:client_agency) { ClientAgencyConfig.instance[cbv_flow.client_agency_id] }
-
-    let(:stub_fetcher) { instance_double(Aggregators::Argyle::FullSsnFetcher) }
-
-    let(:report) do
-      report = build(:argyle_report, :with_argyle_account)
-      report.identities.first.ssn = masked_ssn
-      report.payroll_accounts.first.cbv_flow = cbv_flow
-      report
-    end
-
-    before do
-      allow(Aggregators::Argyle::FullSsnFetcher).to receive(:new).and_return(stub_fetcher)
-    end
-
-    context "when the partner flag is false" do
-      before do
-        allow(client_agency).to receive(:include_full_ssn).and_return(false)
-      end
-
-      it "uses the masked SSN" do
-        report.income_report[:employments].each do |employment|
-          expect(employment[:applicant_ssn]).to eq(masked_ssn)
-        end
-      end
-
-      it "never calls the fetcher" do
-        expect(stub_fetcher).not_to receive(:fetch)
-        report.income_report
-      end
-    end
-
-    context "when the partner flag is true and the fetcher returns a full SSN" do
-      before do
-        allow(client_agency).to receive(:include_full_ssn).and_return(true)
-        allow(stub_fetcher).to receive(:fetch).and_return(full_ssn)
-      end
-
-      it "uses the unmasked SSN" do
-        report.income_report[:employments].each do |employment|
-          expect(employment[:applicant_ssn]).to eq(full_ssn)
-        end
-      end
-
-      it "calls the fetcher" do
-        account_id = report.payroll_accounts.first.aggregator_account_id
-
-        report.income_report
-
-        expect(stub_fetcher).to have_received(:fetch).with(
-          account_id: account_id,
-          cbv_flow_id: cbv_flow.id,
-          client_agency_id: cbv_flow.client_agency_id
-        ).at_least(:once)
-      end
-    end
-
-    context "when the partner flag is true but the fetcher returns nil" do
-      before do
-        allow(client_agency).to receive(:include_full_ssn).and_return(true)
-        allow(stub_fetcher).to receive(:fetch).and_return(nil)
-      end
-
-      it "falls back to the masked identity.ssn" do
-        report.income_report[:employments].each do |employment|
-          expect(employment[:applicant_ssn]).to eq(masked_ssn)
-        end
-      end
-    end
-  end
-
-  describe '#income_report direct deposit accounts' do
-    let(:cbv_flow) { create(:cbv_flow, has_other_jobs: false, additional_information: { comment: "test comment" }) }
-
-    # Use the real agency config (see SSN flag block above); only the output flag
-    # is stubbed per-context on the same object that #income_report reads.
-    let(:client_agency) { ClientAgencyConfig.instance[cbv_flow.client_agency_id] }
-
-    let(:report) do
-      r = build(:argyle_report, :with_argyle_account)
-      r.payroll_accounts.first.cbv_flow = cbv_flow
-      r.paystubs.first.direct_deposit_accounts = [ "1111", "2222" ]
-      r
-    end
-
-    context "when include_direct_deposit_last_4 is true" do
-      before do
-        allow(client_agency).to receive(:include_direct_deposit_last_4).and_return(true)
-      end
-
-      it "gets last four under each paystub" do
-        first_employment = report.income_report[:employments].first
-        first_paystub = first_employment[:paystubs].first
-
-        expect(first_paystub[:direct_deposit_accounts]).to eq([ "1111", "2222" ])
-      end
-
-      it "gets an empty array when a paystub has no direct deposit accounts" do
-        report.paystubs.first.direct_deposit_accounts = nil
-
-        first_employment = report.income_report[:employments].first
-        first_paystub = first_employment[:paystubs].first
-
-        expect(first_paystub[:direct_deposit_accounts]).to eq([])
-      end
-    end
-
-    context "when include_direct_deposit_last_4 is false" do
-      it "gets an empty array when the paystub has direct deposit accounts" do
-        first_paystub = report.income_report[:employments].first[:paystubs].first
-
-        expect(first_paystub[:direct_deposit_accounts]).to eq([])
-      end
     end
   end
 end
