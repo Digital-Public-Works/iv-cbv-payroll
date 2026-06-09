@@ -7,7 +7,7 @@ class Cbv::PreviewController < ApplicationController
   before_action :ensure_non_production_environment
   before_action :setup_preview_flow
   before_action :override_has_account_with_required_data
-  before_action :set_aggregator_report, only: %i[payment_details summary submit submit_pdf_as_html validation_failures]
+  before_action :set_aggregator_report, only: %i[payment_details summary submit submit_pdf_as_html validation_failures transmitted_json]
   before_action :relax_csp_for_html_preview
 
   helper_method :current_agency, :employer_name, :gross_pay, :employment_start_date,
@@ -92,6 +92,16 @@ class Cbv::PreviewController < ApplicationController
           }
       end
     end
+  end
+
+  # Renders the JSON payload that would be transmitted to the partner agency
+  # (the same hash built by CbvFlowToJson for the webhook/JSON transmitters).
+  # Useful for previewing how the sensitive-output toggles (Full SSN, direct
+  # deposit last 4) change what actually gets sent.
+  def transmitted_json
+    @payroll_account = @cbv_flow.payroll_accounts.first
+    @json_payload = CbvFlowToJson.new(@cbv_flow, current_agency, @aggregator_report).to_h
+    render template: "cbv/preview/transmitted_json"
   end
 
   def submit_pdf_as_html

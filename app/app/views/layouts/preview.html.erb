@@ -94,7 +94,8 @@
               [ "Payment Details", cbv_flow_preview_payment_details_path ],
               [ "Summary", cbv_flow_preview_summary_path ],
               [ "Submit (HTML)", cbv_flow_preview_submit_path ],
-              [ "Submit (PDF as HTML)", cbv_flow_preview_submit_pdf_as_html_path ]
+              [ "Submit (PDF as HTML)", cbv_flow_preview_submit_pdf_as_html_path ],
+              [ "Transmitted JSON", cbv_flow_preview_transmitted_json_path ]
             ]
              current_route = preview_routes.find { |_, path| request.path == path }&.last || request.path %>
 
