@@ -141,11 +141,8 @@ module Aggregators::FormatMethods::Argyle
       next unless payout_card_destination?(destination)
 
       card = destination["card"]
-      # Argyle masks the card number; we only keep the trailing 4 digits.
-      # The exact field name on the card object is not documented publicly,
-      # so try the most likely keys before falling back to the card itself.
-      raw = card && (card["last_four"] || card["number"] || card["account_number"] || card["card_number"])
-      last_four_digits(raw)
+      # Argyle's card.card_number is typically obfuscated; keep only the trailing 4 digits.
+      last_four_digits(card && card["card_number"])
     end
   end
 

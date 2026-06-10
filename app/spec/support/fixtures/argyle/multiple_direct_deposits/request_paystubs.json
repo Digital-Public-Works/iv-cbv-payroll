@@ -569,8 +569,9 @@
                     "amount": "2230.75",
                     "ach_deposit_account": null,
                     "card": {
-                        "number": "xxxxxxxxxxxx4444",
-                        "type": "Visa"
+                        "card_number": "xxxxxxxxxxxx4444",
+                        "card_name": "Visa",
+                        "is_platform_card": false
                     },
                     "method": "Pay Card",
                     "metadata": {}
@@ -918,8 +919,9 @@
                     "amount": "2230.75",
                     "ach_deposit_account": null,
                     "card": {
-                        "number": "xxxxxxxxxxxx5678",
-                        "type": "Visa"
+                        "card_number": "xxxxxxxxxxxx5678",
+                        "card_name": "Visa",
+                        "is_platform_card": false
                     },
                     "method": "Pay Card",
                     "metadata": {}
@@ -1279,8 +1281,9 @@
                     "amount": "2230.75",
                     "ach_deposit_account": null,
                     "card": {
-                        "number": "xxxxxxxxxxxx6789",
-                        "type": "Visa"
+                        "card_number": "xxxxxxxxxxxx6789",
+                        "card_name": "Visa",
+                        "is_platform_card": false
                     },
                     "method": "Pay Card",
                     "metadata": {}
@@ -1290,8 +1293,9 @@
                     "amount": "2230.75",
                     "ach_deposit_account": null,
                     "card": {
-                        "number": "xxxxxxxxxxxx7890",
-                        "type": "Visa"
+                        "card_number": "xxxxxxxxxxxx7890",
+                        "card_name": "Visa",
+                        "is_platform_card": false
                     },
                     "method": "Pay Card",
                     "metadata": {}

@@ -328,7 +328,7 @@ RSpec.describe Aggregators::ResponseObjects::Paystub, type: :model do
       it 'does not treat payout card destinations as direct deposit accounts' do
         response = base_argyle_response.merge(
           "destinations" => [
-            { "card" => { "number" => "xxxxxxxx5678" } }
+            { "card" => { "card_number" => "xxxxxxxx5678" } }
           ]
         )
 
@@ -356,7 +356,7 @@ RSpec.describe Aggregators::ResponseObjects::Paystub, type: :model do
       it 'extracts last 4 from a card destination' do
         response = base_argyle_response.merge(
           "destinations" => [
-            { "card" => { "number" => "xxxxxxxx5678" } }
+            { "card" => { "card_number" => "xxxxxxxx5678" } }
           ]
         )
 
@@ -368,8 +368,8 @@ RSpec.describe Aggregators::ResponseObjects::Paystub, type: :model do
       it 'extracts last 4 from multiple card destinations, preserving order' do
         response = base_argyle_response.merge(
           "destinations" => [
-            { "card" => { "number" => "xxxx5678" } },
-            { "card" => { "last_four" => "6789" } }
+            { "card" => { "card_number" => "xxxx5678" } },
+            { "card" => { "card_number" => "6789" } }
           ]
         )
 
@@ -382,7 +382,7 @@ RSpec.describe Aggregators::ResponseObjects::Paystub, type: :model do
         response = base_argyle_response.merge(
           "destinations" => [
             { "ach_deposit_account" => { "account_number" => "xxxxxx1111" } },
-            { "card" => { "number" => "xxxxxxxx5678" } }
+            { "card" => { "card_number" => "xxxxxxxx5678" } }
           ]
         )
 
