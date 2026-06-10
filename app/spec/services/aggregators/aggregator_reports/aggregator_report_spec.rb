@@ -165,7 +165,8 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
                 pay_gross: 12345,
                 pay_gross_ytd: 12345,
                 pay_net: 12345,
-                hours_paid: 12.0
+                hours_paid: 12.0,
+                direct_deposit_accounts: []
               }
             ]
           }
