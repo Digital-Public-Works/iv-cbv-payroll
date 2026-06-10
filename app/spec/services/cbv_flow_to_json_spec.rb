@@ -350,10 +350,11 @@ RSpec.describe CbvFlowToJson do
       end
     end
 
-    describe "direct deposit accounts" do
+    describe "deposit accounts" do
       let(:dda_argyle_report) do
         report = build(:argyle_report, :with_argyle_account)
         report.paystubs.first.direct_deposit_accounts = [ "1111", "2222" ]
+        report.paystubs.first.payout_card_accounts = [ "3333", "4444" ]
         report
       end
 
@@ -369,10 +370,20 @@ RSpec.describe CbvFlowToJson do
           expect(w2_record[:w2_payments].first[:direct_deposit_accounts]).to eq([ "1111", "2222" ])
         end
 
+        it "gets payout_card_accounts as an array on each W-2 payment" do
+          expect(w2_record[:w2_payments].first[:payout_card_accounts]).to eq([ "3333", "4444" ])
+        end
+
         it "emits an empty array when a paystub has no direct deposit accounts" do
           dda_argyle_report.paystubs.first.direct_deposit_accounts = nil
 
           expect(w2_record[:w2_payments].first[:direct_deposit_accounts]).to eq([])
+        end
+
+        it "emits an empty array when a paystub has no payout card accounts" do
+          dda_argyle_report.paystubs.first.payout_card_accounts = nil
+
+          expect(w2_record[:w2_payments].first[:payout_card_accounts]).to eq([])
         end
       end
 
@@ -383,6 +394,10 @@ RSpec.describe CbvFlowToJson do
 
         it "gets an empty array when the paystub has direct deposit accounts" do
           expect(w2_record[:w2_payments].first[:direct_deposit_accounts]).to eq([])
+        end
+
+        it "gets an empty array when the paystub has payout card accounts" do
+          expect(w2_record[:w2_payments].first[:payout_card_accounts]).to eq([])
         end
       end
     end

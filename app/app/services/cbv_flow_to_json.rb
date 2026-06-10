@@ -227,7 +227,8 @@ class CbvFlowToJson
         gross_pay_ytd: cents_to_dollars(paystub.gross_pay_ytd) || 0,
         gross_pay_line_items: build_earnings(paystub.earnings || []),
         deductions: build_deductions(paystub.deductions || []),
-        direct_deposit_accounts: direct_deposit_accounts_for(paystub)
+        direct_deposit_accounts: direct_deposit_accounts_for(paystub),
+        payout_card_accounts: payout_card_accounts_for(paystub)
       }
     end
   end
@@ -236,6 +237,12 @@ class CbvFlowToJson
     return [] unless @current_agency.include_direct_deposit_last_4
 
     paystub.direct_deposit_accounts || []
+  end
+
+  def payout_card_accounts_for(paystub)
+    return [] unless @current_agency.include_direct_deposit_last_4
+
+    paystub.payout_card_accounts || []
   end
 
   def build_gig_payments(gigs)
