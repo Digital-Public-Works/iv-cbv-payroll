@@ -15,6 +15,7 @@ module Aggregators::ResponseObjects
     employment_id
     implied_base_rate_in_dollars
     direct_deposit_accounts
+    payout_card_accounts
     payroll_document_id
   ]
 
@@ -71,6 +72,7 @@ module Aggregators::ResponseObjects
         end,
         employment_id: response_body["employment"],
         direct_deposit_accounts: Aggregators::FormatMethods::Argyle.direct_deposit_accounts(response_body["destinations"]),
+        payout_card_accounts: Aggregators::FormatMethods::Argyle.payout_card_accounts(response_body["destinations"]),
         implied_base_rate_in_dollars: Aggregators::FormatMethods::Argyle.paystub_implied_base_rate_in_dollars(response_body),
         payroll_document_id: response_body["payroll_document"]
       )

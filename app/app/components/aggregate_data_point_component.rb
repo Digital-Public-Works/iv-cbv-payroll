@@ -155,10 +155,33 @@ class AggregateDataPointComponent < ViewComponent::Base
     }
   end
 
-  def direct_deposit_account(last_four)
+  def direct_deposit_account(last_four, index = nil, is_caseworker = false)
     {
-      label: I18n.t("cbv.payment_details.show.direct_deposit_account_label"),
-      value: I18n.t("cbv.payment_details.show.direct_deposit_account_value", last_four: last_four)
+      label: deposit_account_label("direct_deposit_account", index, is_caseworker),
+      value: last_four
     }
+  end
+
+  def payout_card_account(last_four, index = nil, is_caseworker = false)
+    {
+      label: deposit_account_label("payout_card_account", index, is_caseworker),
+      value: last_four
+    }
+  end
+
+  def no_deposit_accounts
+    {
+      label: I18n.t("cbv.payment_details.show.deposit_accounts.none"),
+      value: nil
+    }
+  end
+
+  def deposit_account_label(account_type, index, is_caseworker)
+    audience = is_caseworker ? "caseworker" : "applicant"
+    if index
+      I18n.t("cbv.payment_details.show.deposit_accounts.#{account_type}.#{audience}.label_numbered", number: index)
+    else
+      I18n.t("cbv.payment_details.show.deposit_accounts.#{account_type}.#{audience}.label")
+    end
   end
 end

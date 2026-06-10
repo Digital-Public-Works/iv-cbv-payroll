@@ -81,7 +81,8 @@ class Cbv::PreviewController < ApplicationController
           layout: "pdf",
           locals: {
             is_caseworker: is_not_production? && params[:is_caseworker],
-            aggregator_report: @aggregator_report
+            aggregator_report: @aggregator_report,
+            current_agency: current_agency
           },
           footer: { right: t("cbv.submits.show.pdf.footer.page_footer"), font_size: 10 },
           margin: {
@@ -115,7 +116,9 @@ class Cbv::PreviewController < ApplicationController
       layout: "pdf",
       locals: {
         is_caseworker: is_caseworker,
-        aggregator_report: @aggregator_report
+        aggregator_report: @aggregator_report,
+        # See #submit: pass the preview agency so toggles apply to the report.
+        current_agency: current_agency
       }
     )
 

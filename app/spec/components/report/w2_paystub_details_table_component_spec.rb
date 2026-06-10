@@ -558,41 +558,92 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
     end
 
     context "when show_direct_deposit_accounts is true" do
-      let(:paystub) do
-        build_paystub(
-          direct_deposit_accounts: [ "1111", "2222" ],
-          deductions: [
-            OpenStruct.new(category: "Tax", tax: "pre-tax", amount: 10000)
-          ]
-        )
-      end
+      let(:deductions) { [ OpenStruct.new(category: "Tax", tax: "pre-tax", amount: 10000) ] }
 
-      subject do
+      def render_paystub(direct_deposit_accounts: [], payout_card_accounts: [], is_caseworker: false)
         render_inline(
           described_class.new(
-            paystub,
+            build_paystub(
+              direct_deposit_accounts: direct_deposit_accounts,
+              payout_card_accounts: payout_card_accounts,
+              deductions: deductions
+            ),
             income: income,
+            is_caseworker: is_caseworker,
             show_direct_deposit_accounts: true
           )
         )
       end
 
-      it "renders the direct deposit account label" do
-        expect(subject.to_html).to include I18n.t("cbv.payment_details.show.direct_deposit_account_label")
+      context "with a single direct deposit account" do
+        subject { render_paystub(direct_deposit_accounts: [ "1111" ]) }
+
+        it "renders the unnumbered direct deposit label and bare last four" do
+          html = subject.to_html
+          expect(html).to include I18n.t("cbv.payment_details.show.deposit_accounts.direct_deposit_account.applicant.label")
+          expect(html).not_to include I18n.t("cbv.payment_details.show.deposit_accounts.direct_deposit_account.applicant.label_numbered", number: 1)
+          expect(html).to include "1111"
+        end
       end
 
-      it "renders a row for each last-four" do
-        expect(subject.to_html).to include "1111"
-        expect(subject.to_html).to include "2222"
+      context "with multiple direct deposit accounts" do
+        subject { render_paystub(direct_deposit_accounts: [ "1111", "2222" ]) }
+
+        it "numbers each account in order" do
+          html = subject.to_html
+          expect(html).to include I18n.t("cbv.payment_details.show.deposit_accounts.direct_deposit_account.applicant.label_numbered", number: 1)
+          expect(html).to include I18n.t("cbv.payment_details.show.deposit_accounts.direct_deposit_account.applicant.label_numbered", number: 2)
+          expect(html.index("1111")).to be < html.index("2222")
+        end
       end
 
-      it "preserves the order of accounts" do
-        html = subject.to_html
-        expect(html.index("1111")).to be < html.index("2222")
+      context "with a single payout card account" do
+        subject { render_paystub(payout_card_accounts: [ "5678" ]) }
+
+        it "renders the unnumbered payout card label and bare last four" do
+          html = subject.to_html
+          expect(html).to include I18n.t("cbv.payment_details.show.deposit_accounts.payout_card_account.applicant.label")
+          expect(html).to include "5678"
+        end
       end
 
-      it "places direct deposit rows between net pay and deductions" do
-        html = subject.to_html
+      context "with both account types and multiples" do
+        subject { render_paystub(direct_deposit_accounts: [ "1111", "2222" ], payout_card_accounts: [ "5678", "6789" ]) }
+
+        it "lists all direct deposit accounts before any payout card accounts" do
+          html = subject.to_html
+          expect(html.index("2222")).to be < html.index("5678")
+        end
+
+        it "numbers the payout card accounts" do
+          html = subject.to_html
+          expect(html).to include I18n.t("cbv.payment_details.show.deposit_accounts.payout_card_account.applicant.label_numbered", number: 1)
+          expect(html).to include I18n.t("cbv.payment_details.show.deposit_accounts.payout_card_account.applicant.label_numbered", number: 2)
+        end
+      end
+
+      context "with no deposit accounts of either type" do
+        subject { render_paystub(direct_deposit_accounts: [], payout_card_accounts: []) }
+
+        it "renders the 'No deposit accounts found' line" do
+          expect(subject.to_html).to include I18n.t("cbv.payment_details.show.deposit_accounts.none")
+        end
+      end
+
+      context "when rendered for a caseworker (income report)" do
+        subject { render_paystub(direct_deposit_accounts: [ "1111" ], payout_card_accounts: [ "5678" ], is_caseworker: true) }
+
+        it "uses the longer 'Last 4 digits of' labels instead of the applicant labels" do
+          html = subject.to_html
+          expect(html).to include I18n.t("cbv.payment_details.show.deposit_accounts.direct_deposit_account.caseworker.label")
+          expect(html).to include I18n.t("cbv.payment_details.show.deposit_accounts.payout_card_account.caseworker.label")
+          expect(html).not_to include I18n.t("cbv.payment_details.show.deposit_accounts.direct_deposit_account.applicant.label")
+          expect(html).not_to include I18n.t("cbv.payment_details.show.deposit_accounts.payout_card_account.applicant.label")
+        end
+      end
+
+      it "places the deposit section between net pay and deductions" do
+        html = render_paystub(direct_deposit_accounts: [ "1111" ]).to_html
         net_pay_pos = html.index("$1,140.39") # from build_paystub default net_pay
         dda_pos     = html.index("1111")
         deduct_pos  = html.index("Deduction: Tax")
@@ -601,25 +652,20 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
         expect(dda_pos).to be < deduct_pos
       end
 
-      context "when the paystub has nil direct_deposit_accounts" do
-        let(:paystub) { build_paystub(direct_deposit_accounts: nil) }
-
-        it "does not render the direct deposit label" do
-          expect(subject.to_html).not_to include I18n.t("cbv.payment_details.show.direct_deposit_account_label")
-        end
-      end
-
-      context "when the paystub has an empty direct_deposit_accounts array" do
-        let(:paystub) { build_paystub(direct_deposit_accounts: []) }
-
-        it "does not render the direct deposit label" do
-          expect(subject.to_html).not_to include I18n.t("cbv.payment_details.show.direct_deposit_account_label")
-        end
+      it "treats nil account arrays as empty" do
+        html = render_inline(
+          described_class.new(
+            build_paystub(direct_deposit_accounts: nil, payout_card_accounts: nil),
+            income: income,
+            show_direct_deposit_accounts: true
+          )
+        ).to_html
+        expect(html).to include I18n.t("cbv.payment_details.show.deposit_accounts.none")
       end
     end
 
     context "when show_direct_deposit_accounts is false (default)" do
-      let(:paystub) { build_paystub(direct_deposit_accounts: [ "1111", "2222" ]) }
+      let(:paystub) { build_paystub(direct_deposit_accounts: [ "1111", "2222" ], payout_card_accounts: [ "5678" ]) }
 
       subject do
         render_inline(
@@ -627,10 +673,13 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
         )
       end
 
-      it "does not render direct deposit info even when the paystub has accounts" do
-        expect(subject.to_html).not_to include "1111"
-        expect(subject.to_html).not_to include "2222"
-        expect(subject.to_html).not_to include I18n.t("cbv.payment_details.show.direct_deposit_account_label")
+      it "does not render any deposit section" do
+        html = subject.to_html
+        expect(html).not_to include "1111"
+        expect(html).not_to include "5678"
+        expect(html).not_to include I18n.t("cbv.payment_details.show.deposit_accounts.direct_deposit_account.applicant.label")
+        expect(html).not_to include I18n.t("cbv.payment_details.show.deposit_accounts.payout_card_account.applicant.label")
+        expect(html).not_to include I18n.t("cbv.payment_details.show.deposit_accounts.none")
       end
     end
   end

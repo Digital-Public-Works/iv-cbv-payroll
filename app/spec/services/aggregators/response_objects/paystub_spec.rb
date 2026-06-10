@@ -324,6 +324,85 @@ RSpec.describe Aggregators::ResponseObjects::Paystub, type: :model do
 
         expect(paystub.direct_deposit_accounts).to eq([ "4321" ])
       end
+
+      it 'does not treat payout card destinations as direct deposit accounts' do
+        response = base_argyle_response.merge(
+          "destinations" => [
+            { "card" => { "number" => "xxxxxxxx5678" } }
+          ]
+        )
+
+        paystub = described_class.from_argyle(response)
+
+        expect(paystub.direct_deposit_accounts).to eq([])
+      end
+    end
+
+    context 'payout card accounts' do
+      let(:base_argyle_response) do
+        {
+          "account" => "67890",
+          "gross_pay" => "6000.34",
+          "net_pay" => "4800.56",
+          "gross_pay_ytd" => "24000.78",
+          "paystub_period" => { "start_date" => "2023-01-01", "end_date" => "2023-01-15" },
+          "paystub_date" => "2023-01-20",
+          "hours" => 80,
+          "gross_pay_list" => [],
+          "deduction_list" => []
+        }
+      end
+
+      it 'extracts last 4 from a card destination' do
+        response = base_argyle_response.merge(
+          "destinations" => [
+            { "card" => { "number" => "xxxxxxxx5678" } }
+          ]
+        )
+
+        paystub = described_class.from_argyle(response)
+
+        expect(paystub.payout_card_accounts).to eq([ "5678" ])
+      end
+
+      it 'extracts last 4 from multiple card destinations, preserving order' do
+        response = base_argyle_response.merge(
+          "destinations" => [
+            { "card" => { "number" => "xxxx5678" } },
+            { "card" => { "last_four" => "6789" } }
+          ]
+        )
+
+        paystub = described_class.from_argyle(response)
+
+        expect(paystub.payout_card_accounts).to eq([ "5678", "6789" ])
+      end
+
+      it 'keeps direct deposit and payout card destinations separate' do
+        response = base_argyle_response.merge(
+          "destinations" => [
+            { "ach_deposit_account" => { "account_number" => "xxxxxx1111" } },
+            { "card" => { "number" => "xxxxxxxx5678" } }
+          ]
+        )
+
+        paystub = described_class.from_argyle(response)
+
+        expect(paystub.direct_deposit_accounts).to eq([ "1111" ])
+        expect(paystub.payout_card_accounts).to eq([ "5678" ])
+      end
+
+      it 'returns an empty array when there are no card destinations' do
+        response = base_argyle_response.merge(
+          "destinations" => [
+            { "ach_deposit_account" => { "account_number" => "xxxxxx1111" } }
+          ]
+        )
+
+        paystub = described_class.from_argyle(response)
+
+        expect(paystub.payout_card_accounts).to eq([])
+      end
     end
   end
 end

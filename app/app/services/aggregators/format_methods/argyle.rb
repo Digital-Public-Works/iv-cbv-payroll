@@ -127,11 +127,40 @@ module Aggregators::FormatMethods::Argyle
     return [] if destinations.blank?
 
     destinations.filter_map do |destination|
-      account = destination["ach_deposit_account"]
-      next if account.blank?
+      next unless ach_deposit_destination?(destination)
 
-      account["account_number"].to_s&.gsub(/\D/, "")&.last(4)&.presence
+      account = destination["ach_deposit_account"]
+      last_four_digits(account && account["account_number"])
     end
+  end
+
+  def self.payout_card_accounts(destinations)
+    return [] if destinations.blank?
+
+    destinations.filter_map do |destination|
+      next unless payout_card_destination?(destination)
+
+      card = destination["card"]
+      # Argyle masks the card number; we only keep the trailing 4 digits.
+      # The exact field name on the card object is not documented publicly,
+      # so try the most likely keys before falling back to the card itself.
+      raw = card && (card["last_four"] || card["number"] || card["account_number"] || card["card_number"])
+      last_four_digits(raw)
+    end
+  end
+
+  def self.ach_deposit_destination?(destination)
+    destination["destination_type"] == "ach_deposit_account" ||
+      destination["ach_deposit_account"].present?
+  end
+
+  def self.payout_card_destination?(destination)
+    destination["destination_type"] == "card" ||
+      destination["card"].present?
+  end
+
+  def self.last_four_digits(value)
+    value.to_s.gsub(/\D/, "").last(4).presence
   end
 
   def self.seconds_to_hours(seconds)
