@@ -556,4 +556,63 @@ RSpec.describe PartnerConfigLoader do
       expect { described_class.export("nonexistent") }.to raise_error(ActiveRecord::RecordNotFound)
     end
   end
+
+  describe "output_configuration" do
+    it "rejects unknown keys within output_configuration" do
+      valid_yaml["output_configuration"] = { "bogus" => true }
+      yaml_file.reopen(yaml_file.path, "w")
+      yaml_file.write(valid_yaml.to_yaml)
+      yaml_file.rewind
+
+      loader = described_class.new(yaml_file.path)
+      loader.load!
+      loader.validate!
+
+      expect(loader.errors).to include(a_string_matching(/output_configuration: unknown key 'bogus'/))
+    end
+
+    it "creates a PartnerOutputConfiguration with the given flags on apply" do
+      valid_yaml["output_configuration"] = { "include_full_ssn" => true, "include_direct_deposit_last_4" => true }
+      yaml_file.reopen(yaml_file.path, "w")
+      yaml_file.write(valid_yaml.to_yaml)
+      yaml_file.rewind
+
+      loader = described_class.new(yaml_file.path)
+      loader.load!
+      loader.validate!
+      loader.apply!
+
+      output_configuration = PartnerConfig.find_by(partner_id: "test_partner").partner_output_configuration
+      expect(output_configuration).to be_present
+      expect(output_configuration.include_full_ssn).to be(true)
+      expect(output_configuration.include_direct_deposit_last_4).to be(true)
+    end
+
+    it "does not create an output configuration when the block is omitted" do
+      loader = described_class.new(yaml_file.path)
+      loader.load!
+      loader.validate!
+      loader.apply!
+
+      expect(PartnerConfig.find_by(partner_id: "test_partner").partner_output_configuration).to be_nil
+    end
+
+    it "exports the output configuration when present" do
+      valid_yaml["output_configuration"] = { "include_full_ssn" => true, "include_direct_deposit_last_4" => false }
+      yaml_file.reopen(yaml_file.path, "w")
+      yaml_file.write(valid_yaml.to_yaml)
+      yaml_file.rewind
+
+      loader = described_class.new(yaml_file.path)
+      loader.load!
+      loader.validate!
+      loader.apply!
+
+      data = described_class.export("test_partner")
+      expect(data["output_configuration"]).to eq(
+        "include_full_ssn" => true,
+        "include_direct_deposit_last_4" => false
+      )
+    end
+  end
 end
