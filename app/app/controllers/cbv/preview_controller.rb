@@ -80,7 +80,7 @@ class Cbv::PreviewController < ApplicationController
           formats: [ :pdf ],
           layout: "pdf",
           locals: {
-            is_caseworker: is_not_production? && params[:is_caseworker],
+            is_caseworker: is_not_production? && params[:is_caseworker] == "true",
             aggregator_report: @aggregator_report,
             current_agency: current_agency
           },
@@ -107,7 +107,7 @@ class Cbv::PreviewController < ApplicationController
 
   def submit_pdf_as_html
     # Render the PDF template as HTML for debugging (no wkhtmltopdf conversion)
-    is_caseworker = is_not_production? && params[:is_caseworker]
+    is_caseworker = is_not_production? && params[:is_caseworker] == "true"
 
     # Render the PDF template and layout manually
     html_content = render_to_string(
