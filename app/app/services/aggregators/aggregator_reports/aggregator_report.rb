@@ -124,7 +124,8 @@ module Aggregators::AggregatorReports
                 pay_gross_ytd: paystub.gross_pay_ytd,
                 pay_net: paystub.net_pay_amount,
                 hours_paid: paystub.hours,
-                direct_deposit_accounts: direct_deposit_accounts_for(paystub, current_agency) || []
+                direct_deposit_accounts: direct_deposit_accounts_for(paystub, current_agency) || [],
+                payout_card_accounts: payout_card_accounts_for(paystub, current_agency) || []
               }
             end
           }
@@ -304,6 +305,12 @@ module Aggregators::AggregatorReports
       return [] unless current_agency&.include_direct_deposit_last_4
 
       paystub.direct_deposit_accounts || []
+    end
+
+    def payout_card_accounts_for(paystub, current_agency)
+      return [] unless current_agency&.include_direct_deposit_last_4
+
+      paystub.payout_card_accounts || []
     end
   end
 end
