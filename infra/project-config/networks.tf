@@ -15,6 +15,10 @@ locals {
             source                    = "issued"
             subject_alternative_names = ["*.divt.app", "*.demo.divt.app"]
           }
+          "a11y.divt.app" = {
+            source                    = "issued"
+            subject_alternative_names = ["a11y.divt.app", "*.a11y.divt.app"]
+          }
         }
       }
 

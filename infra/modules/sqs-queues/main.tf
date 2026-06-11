@@ -1,6 +1,13 @@
 locals {
-  resolved_names = [for n in var.queue_names : "${n}"]
-  dlq_resolved   = var.dlq_name
+  # Resource naming strategy:
+  # - Standard environments (demo, prod): no suffix (backward compatible, no state migration)
+  # - New environments (a11y, preview): with suffix (prevents resource name conflicts)
+  #
+  # This allows multiple environments to coexist without shared resource conflicts,
+  # while maintaining backward compatibility for existing deployments.
+  suffix         = var.use_environment_suffix ? "_${var.environment_name}" : ""
+  resolved_names = [for n in var.queue_names : "${n}${local.suffix}"]
+  dlq_resolved   = "${var.dlq_name}${local.suffix}"
 }
 
 resource "aws_sqs_queue" "dicit_queues" {
@@ -24,7 +31,10 @@ resource "aws_sqs_queue" "dlq" {
   name                      = local.dlq_resolved
   message_retention_seconds = 1209600
   sqs_managed_sse_enabled   = true
-  lifecycle { prevent_destroy = true }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 
   redrive_allow_policy = jsonencode({ redrivePermission = "allowAll" })
 }

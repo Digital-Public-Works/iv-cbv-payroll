@@ -101,6 +101,22 @@ demo:
     local_decorating:
       enabled: true
 
+a11y:
+  <<: *default_settings
+  app_name: DiCIT VMI (a11y)
+  log_level: info
+  monitor_mode: true
+  application_logging:
+    enabled: true
+    # 'forwarding' determines if application logging goes through to newrelic
+    forwarding:
+      enabled: true
+      log_level: info
+    metrics:
+      enabled: true
+    local_decorating:
+      enabled: true
+
 production:
   <<: *default_settings
   app_name: DiCIT VMI (Production)
