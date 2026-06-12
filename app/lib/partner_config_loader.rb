@@ -16,6 +16,7 @@ class PartnerConfigLoader
     pay_income_days_w2 pay_income_days_gig
     report_customization_show_earnings_list
     include_paystubs
+    include_full_ssn include_direct_deposit_last_4
     weekly_report_enabled weekly_report_recipients weekly_report_variant
     include_invitation_details_on_weekly_report
     partner_identifier_name
@@ -28,11 +29,10 @@ class PartnerConfigLoader
   # #validate_no_unknown_keys so that typos / stale formats (e.g. the singular
   # `transmission_method` or a top-level `transmission_configs`) fail loudly
   # rather than being silently ignored.
-  STRUCTURAL_TOP_LEVEL_KEYS = %w[transmission_methods application_attributes translations output_configuration].freeze
+  STRUCTURAL_TOP_LEVEL_KEYS = %w[transmission_methods application_attributes translations].freeze
   KNOWN_TOP_LEVEL_KEYS = (PARTNER_CONFIG_ATTRS + STRUCTURAL_TOP_LEVEL_KEYS).freeze
   TRANSMISSION_METHOD_KEYS = %w[method_type configs].freeze
   TRANSMISSION_CONFIG_KEYS = %w[key value encrypted].freeze
-  OUTPUT_CONFIGURATION_KEYS = %w[include_full_ssn include_direct_deposit_last_4].freeze
   APPLICATION_ATTRIBUTE_KEYS = %w[
     name description required data_type form_field_type
     show_on_applicant_form show_on_caseworker_form show_on_caseworker_report
@@ -114,8 +114,7 @@ class PartnerConfigLoader
     partner_id = @yaml_data[:partner_id]
     changes = { config: nil, transmission_methods: { created: 0, updated: 0, deleted: 0 },
                 application_attributes: { created: 0, updated: 0, deleted: 0 },
-                translations: { created: 0, updated: 0, deleted: 0 },
-                output_configuration: { created: 0, updated: 0, deleted: 0 } }
+                translations: { created: 0, updated: 0, deleted: 0 } }
 
     ActiveRecord::Base.transaction do
       pc = PartnerConfig.find_or_initialize_by(partner_id: partner_id)
@@ -129,7 +128,6 @@ class PartnerConfigLoader
       changes[:transmission_methods] = reconcile_transmission_methods(pc)
       changes[:application_attributes] = reconcile_application_attributes(pc)
       changes[:translations] = reconcile_translations(pc)
-      changes[:output_configuration] = reconcile_output_configuration(pc)
     end
 
     ClientAgencyConfig.reset!
@@ -171,13 +169,6 @@ class PartnerConfigLoader
         "redactable" => attr.redactable,
         "redact_type" => attr.redact_type
       }.compact
-    end
-
-    if pc.partner_output_configuration
-      data["output_configuration"] = {
-        "include_full_ssn" => pc.partner_output_configuration.include_full_ssn,
-        "include_direct_deposit_last_4" => pc.partner_output_configuration.include_direct_deposit_last_4
-      }
     end
 
     data["translations"] = {}
@@ -267,13 +258,6 @@ class PartnerConfigLoader
       next unless attr.respond_to?(:keys)
       (attr.keys.map(&:to_s) - APPLICATION_ATTRIBUTE_KEYS).sort.each do |key|
         @errors << "application_attributes[#{i}]: unknown key '#{key}'"
-      end
-    end
-
-    output_configuration = @yaml_data[:output_configuration]
-    if output_configuration.respond_to?(:keys)
-      (output_configuration.keys.map(&:to_s) - OUTPUT_CONFIGURATION_KEYS).sort.each do |key|
-        @errors << "output_configuration: unknown key '#{key}'"
       end
     end
   end
@@ -452,29 +436,6 @@ class PartnerConfigLoader
         pc.partner_application_attributes.create!(attrs.merge(name: attr_data[:name]))
         counts[:created] += 1
       end
-    end
-
-    counts
-  end
-
-  # Upsert the partner's single output configuration.
-  def reconcile_output_configuration(pc)
-    counts = { created: 0, updated: 0, deleted: 0 }
-    data = @yaml_data[:output_configuration]
-    return counts if data.nil?
-
-    attrs = {
-      include_full_ssn: data.fetch(:include_full_ssn, false),
-      include_direct_deposit_last_4: data.fetch(:include_direct_deposit_last_4, false)
-    }
-
-    existing = pc.partner_output_configuration
-    if existing
-      existing.update!(attrs)
-      counts[:updated] += 1
-    else
-      pc.create_partner_output_configuration!(attrs)
-      counts[:created] += 1
     end
 
     counts

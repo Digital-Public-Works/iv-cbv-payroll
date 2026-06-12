@@ -135,16 +135,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_26_155906) do
     t.string "state_name"
     t.string "partner_identifier_name"
     t.boolean "include_paystubs", default: false, null: false
-    t.index ["partner_id"], name: "index_partner_configs_on_partner_id", unique: true
-  end
-
-  create_table "partner_output_configurations", force: :cascade do |t|
-    t.bigint "partner_config_id", null: false
-    t.boolean "include_direct_deposit_last_4", default: false, null: false
     t.boolean "include_full_ssn", default: false, null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["partner_config_id"], name: "index_partner_output_configurations_on_partner_config_id"
+    t.boolean "include_direct_deposit_last_4", default: false, null: false
+    t.index ["partner_id"], name: "index_partner_configs_on_partner_id", unique: true
   end
 
   create_table "partner_translations", force: :cascade do |t|
@@ -223,7 +216,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_26_155906) do
   add_foreign_key "cbv_flow_transmissions", "cbv_flows"
   add_foreign_key "cbv_flows", "cbv_flow_invitations"
   add_foreign_key "partner_application_attributes", "partner_configs"
-  add_foreign_key "partner_output_configurations", "partner_configs"
   add_foreign_key "partner_translations", "partner_configs"
   add_foreign_key "partner_transmission_configs", "partner_transmission_methods"
   add_foreign_key "partner_transmission_methods", "partner_configs"
