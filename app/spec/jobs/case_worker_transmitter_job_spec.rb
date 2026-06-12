@@ -9,7 +9,12 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
     )
   end
 
-  let(:agency) { instance_double(ClientAgencyConfig::ClientAgency) }
+  let(:agency) do
+    instance_double(ClientAgencyConfig::ClientAgency,
+                    include_full_ssn: false,
+                    include_direct_deposit_last_4: false)
+  end
+
   let(:transmission_methods) do
     [
       ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(

@@ -409,6 +409,22 @@ en:
         additional_information_placeholder: Enter up to 1000 characters
         continue: Continue
         deductions: 'Deduction: %{category} (%{tax})'
+        deposit_accounts:
+          direct_deposit_account:
+            applicant:
+              label: Direct deposit account
+              label_numbered: Direct deposit account %{number}
+            caseworker:
+              label: Last 4 digits of direct deposit account
+              label_numbered: Last 4 digits of direct deposit account %{number}
+          none: No deposit accounts found
+          payout_card_account:
+            applicant:
+              label: Payout card account
+              label_numbered: Payout card account %{number}
+            caseworker:
+              label: Last 4 digits of payout card account
+              label_numbered: Last 4 digits of payout card account %{number}
         employment_end_date: Employment end date
         employment_information_table_header: Employment information
         employment_start_date: Employment start date
@@ -433,6 +449,7 @@ en:
         pay_period_value: "%{start_date} to %{end_date}"
         payment_hours: "%{amount} hours"
         payments_and_deductions_table_header: Payments and deductions
+        ssn_disclaimer: Your Social Security number will be securely sent to %{agency_acronym} to confirm who you are. Verify My Income will not keep or store this information.
         subheader_html: We have gathered your payment records from the past %{report_data_range} from %{start_date} to %{end_date}.<br>Please review your information. If something is missing or inaccurate, add a comment for %{agency_acronym}. This will be included in your income report.
         unknown: Unknown
     submits:
@@ -481,6 +498,7 @@ en:
             employment_payment_details: Employment and Payment details
             header: Income Verification Report
             self_employment: Self-employment
+            ssn_disclaimer: Your Social Security number was securely sent to %{agency_acronym} to confirm who you are. Verify My Income does not keep or store this information.
           footer:
             page_footer: Income Verification Report | Page [page] of [topage]
           paystubs_cover:

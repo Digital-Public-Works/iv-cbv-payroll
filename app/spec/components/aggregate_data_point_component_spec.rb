@@ -51,6 +51,47 @@ RSpec.describe AggregateDataPointComponent, type: :component do
     end
   end
 
+  describe "#direct_deposit_account" do
+    it "renders the applicant label and the bare last four value by default" do
+      component = render_inline(described_class.new(:direct_deposit_account, "1234"))
+      expect(component).to have_text(I18n.t("cbv.payment_details.show.deposit_accounts.direct_deposit_account.applicant.label"))
+      expect(component).to have_text("1234")
+    end
+
+    it "renders the numbered applicant label when an index is given" do
+      expect(
+        render_inline(described_class.new(:direct_deposit_account, "1234", 2))
+      ).to have_text(I18n.t("cbv.payment_details.show.deposit_accounts.direct_deposit_account.applicant.label_numbered", number: 2))
+    end
+
+    it "renders the longer caseworker label when is_caseworker is true" do
+      component = render_inline(described_class.new(:direct_deposit_account, "1234", nil, true))
+      expect(component).to have_text(I18n.t("cbv.payment_details.show.deposit_accounts.direct_deposit_account.caseworker.label"))
+    end
+  end
+
+  describe "#payout_card_account" do
+    it "renders the applicant label and the bare last four value by default" do
+      component = render_inline(described_class.new(:payout_card_account, "5678"))
+      expect(component).to have_text(I18n.t("cbv.payment_details.show.deposit_accounts.payout_card_account.applicant.label"))
+      expect(component).to have_text("5678")
+    end
+
+    it "renders the numbered caseworker label when an index and is_caseworker are given" do
+      expect(
+        render_inline(described_class.new(:payout_card_account, "5678", 3, true))
+      ).to have_text(I18n.t("cbv.payment_details.show.deposit_accounts.payout_card_account.caseworker.label_numbered", number: 3))
+    end
+  end
+
+  describe "#no_deposit_accounts" do
+    it "renders the no-accounts label" do
+      expect(
+        render_inline(described_class.new(:no_deposit_accounts))
+      ).to have_text(I18n.t("cbv.payment_details.show.deposit_accounts.none"))
+    end
+  end
+
   describe "#pay_gross_ytd" do
     it "renders with valid amount" do
       expect(
