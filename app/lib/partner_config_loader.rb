@@ -19,6 +19,7 @@ class PartnerConfigLoader
     weekly_report_enabled weekly_report_recipients weekly_report_variant
     include_invitation_details_on_weekly_report
     partner_identifier_name
+    has_acronym
   ].freeze
 
   REQUIRED_ATTRS = %w[partner_id name timezone pay_income_days_w2 pay_income_days_gig partner_identifier_name].freeze

@@ -1,7 +1,7 @@
 <p><%= t(".other_ways_description", agency_name: agency_translation("shared.agency_full_name")) %></p>
 
 <ul>
-  <li><%= t(".other_ways_option_1_html", agency_portal_name: agency_translation("shared.agency_portal_name"), agency_website: agency_url) %></li>
+  <li><%= t(".other_ways_option_1_html", website_link: agency_website_link(label: agency_translation("shared.agency_portal_name"))) %></li>
   <li><%= t(".other_ways_option_2") %></li>
   <li><%= t(".other_ways_option_3", agency_acronym: agency_translation("shared.agency_acronym")) %></li>
 </ul>

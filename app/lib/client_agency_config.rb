@@ -148,6 +148,7 @@ class ClientAgencyConfig
       include_paystubs
       state_name
       partner_identifier_name
+      has_acronym
     ])
 
     def initialize(partner_config)
@@ -208,6 +209,8 @@ class ClientAgencyConfig
         partner_config.include_paystubs
       @state_name = partner_config.respond_to?(:state_name) ? partner_config.state_name : nil
       @partner_identifier_name = partner_config.partner_identifier_name
+      # respond_to? guards the pre-migration boot window, like the column guard above.
+      @has_acronym = partner_config.respond_to?(:has_acronym) ? partner_config.has_acronym : true
 
       raise ArgumentError.new("Client Agency missing id") if @id.blank?
       raise ArgumentError.new("Client Agency #{@id} missing required attribute `timezone`") if @timezone.blank?

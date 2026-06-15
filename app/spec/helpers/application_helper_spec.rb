@@ -92,6 +92,64 @@ RSpec.describe ApplicationHelper do
     end
   end
 
+  describe "#agency_name_with_acronym" do
+    let(:has_acronym) { true }
+    let(:current_agency) do
+      instance_double(ClientAgencyConfig::ClientAgency, id: "sandbox", has_acronym: has_acronym)
+    end
+
+    before do
+      without_partial_double_verification do
+        allow(helper).to receive(:current_agency).and_return(current_agency)
+      end
+    end
+
+    context "when the partner has an acronym" do
+      it "renders the full name with the acronym in parentheses" do
+        expect(helper.agency_name_with_acronym).to eq("CBV Test Agency (CBV)")
+      end
+    end
+
+    context "when the partner has no acronym" do
+      let(:has_acronym) { false }
+
+      it "renders just the full name, with no parentheses" do
+        expect(helper.agency_name_with_acronym).to eq("CBV Test Agency")
+      end
+    end
+  end
+
+  describe "#agency_website_link" do
+    let(:url) { "https://compass.example.gov" }
+    let(:current_agency) do
+      instance_double(ClientAgencyConfig::ClientAgency, id: "sandbox", agency_contact_website: url)
+    end
+
+    before do
+      without_partial_double_verification do
+        allow(helper).to receive(:current_agency).and_return(current_agency)
+      end
+    end
+
+    it "builds an external link with the configurable label and current markup" do
+      result = helper.agency_website_link
+      expect(result).to include(%(href="#{url}"), 'target="_blank"', 'rel="noopener noreferrer"', "the VMI website")
+      expect(result).to be_html_safe
+    end
+
+    it "uses a custom label when provided" do
+      expect(helper.agency_website_link(label: "Acme")).to include(">Acme</a>")
+    end
+
+    context "when the agency has no website" do
+      let(:url) { nil }
+
+      it "returns the label as plain text with no link" do
+        expect(helper.agency_website_link(label: "Acme")).to eq("Acme")
+      end
+    end
+  end
+
   describe "#feedback_form_url" do
     let(:current_agency) { nil }
     let(:params) { {} }

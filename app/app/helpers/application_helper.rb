@@ -66,6 +66,29 @@ module ApplicationHelper
     end
   end
 
+  # Agency name, with its acronym in parentheses only for partners that have one.
+  def agency_name_with_acronym
+    full_name = agency_translation("shared.agency_full_name")
+    return full_name if current_agency&.has_acronym == false
+
+    "#{full_name} (#{agency_translation('shared.agency_acronym')})"
+  end
+
+  # Builds the agency website link, matching the markup used inline today. The label
+  # is configurable per partner via shared.agency_website_link_label.
+  def agency_website_link(label: agency_website_link_label)
+    url = current_agency&.agency_contact_website
+    return label if url.blank?
+
+    link_to(label, url, target: "_blank", rel: "noopener noreferrer")
+  end
+
+  # The text for an agency website link/reference (e.g. "the COMPASS website").
+  def agency_website_link_label
+    agency_translation("shared.agency_website_link_label",
+      agency_portal_name: agency_translation("shared.agency_portal_name"))
+  end
+
   private
 
   # db translations should be forgiving on the keys used.

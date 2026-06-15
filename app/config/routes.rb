@@ -94,6 +94,10 @@ Rails.application.routes.draw do
       scope "/preview", as: :preview do
         root to: "preview#employer_search"
         get "employer_search", to: "preview#employer_search"
+        get "entry", to: "preview#entry"
+        get "expired_invitation", to: "preview#expired_invitation"
+        get "session_timeout", to: "preview#session_timeout"
+        get "success", to: "preview#success"
         get "synchronizations", to: "preview#synchronizations"
         get "synchronization_failures", to: "preview#synchronization_failures"
         get "validation_failures", to: "preview#validation_failures"

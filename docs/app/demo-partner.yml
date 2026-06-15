@@ -27,6 +27,8 @@ weekly_report_enabled: true
 weekly_report_recipients: test@example.com
 weekly_report_variant: invitations
 include_invitation_details_on_weekly_report: true
+# Set to false for partners with no acronym (e.g. Mirza, RealAMI).
+has_acronym: true
 transmission_methods:
 - method_type: sftp
   configs:

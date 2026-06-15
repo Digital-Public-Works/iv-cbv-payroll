@@ -35,6 +35,7 @@ pay_income_days_gig: 90
 report_customization_show_earnings_list: true
 partner_identifier_name: case_number
 weekly_report_enabled: false
+has_acronym: true
 transmission_methods:
 - method_type: webhook
   configs:
