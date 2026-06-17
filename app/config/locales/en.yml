@@ -784,7 +784,7 @@ en:
       pa_dhs: COMPASS
       sandbox: VMI
     # Link/reference text for the agency's website. Partners without a distinct
-    # portal (e.g. Mirza) override this to just their name.
+    # portal override this to just their name.
     agency_website_link_label:
       default: the %{agency_portal_name} website
     app_name:

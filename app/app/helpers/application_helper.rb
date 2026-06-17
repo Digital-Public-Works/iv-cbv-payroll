@@ -67,6 +67,7 @@ module ApplicationHelper
   end
 
   # Agency name, with its acronym in parentheses only for partners that have one.
+  # E.g. "West Carolina Department of Public Health (WC-DPH)"
   def agency_name_with_acronym
     full_name = agency_translation("shared.agency_full_name")
     return full_name if current_agency&.has_acronym == false
@@ -74,8 +75,7 @@ module ApplicationHelper
     "#{full_name} (#{agency_translation('shared.agency_acronym')})"
   end
 
-  # Builds the agency website link, matching the markup used inline today. The label
-  # is configurable per partner via shared.agency_website_link_label.
+  # A reusable anchor tag to the agency portal
   def agency_website_link(label: agency_website_link_label)
     url = current_agency&.agency_contact_website
     return label if url.blank?
@@ -84,6 +84,7 @@ module ApplicationHelper
   end
 
   # The text for an agency website link/reference (e.g. "the COMPASS website").
+  # Controlled via the partner translation key "agency_website_link_label"
   def agency_website_link_label
     agency_translation("shared.agency_website_link_label",
       agency_portal_name: agency_translation("shared.agency_portal_name"))
