@@ -193,6 +193,73 @@ RSpec.describe Api::UserEventsController, type: :controller do
       end
     end
 
+    context "when tracking an ApplicantRemovedArgyleAccount event" do
+      let(:event_name) { "ApplicantRemovedArgyleAccount" }
+      let(:aggregator_account_id) { "argyle-account-to-remove" }
+
+      let!(:payroll_account) do
+        create(:payroll_account, :argyle, cbv_flow: cbv_flow, aggregator_account_id: aggregator_account_id)
+      end
+
+      let(:event_attributes) do
+        # namespaceTrackingProperties on the JavaScript side prefixes with "argyle."
+        { "argyle.accountId" => aggregator_account_id, "argyle.userId" => "some-user" }
+      end
+
+      it "soft-deletes the payroll_account for the removed Argyle account" do
+        expect {
+          post :user_action, params: valid_params
+        }.to change { PayrollAccount.with_discarded.find(payroll_account.id).discarded? }.from(false).to(true)
+
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "does not discard a payroll_account belonging to a different cbv_flow" do
+        other_flow = create(:cbv_flow)
+        other_account = create(:payroll_account, :argyle, cbv_flow: other_flow, aggregator_account_id: aggregator_account_id)
+
+        post :user_action, params: valid_params
+
+        expect(PayrollAccount.with_discarded.find(payroll_account.id).discarded?).to be true
+        expect(PayrollAccount.with_discarded.find(other_account.id).discarded?).to be false
+      end
+
+      it "still tracks the analytics event even if discard fails" do
+        allow_any_instance_of(CbvFlow).to receive(:payroll_accounts).and_raise(StandardError, "crashme")
+
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with(
+          "ApplicantRemovedArgyleAccount", anything, hash_including("argyle.accountId" => aggregator_account_id)
+        )
+        expect(Rails.logger).to receive(:error).with(/Unable to discard payroll_account/)
+
+        post :user_action, params: valid_params
+
+        expect(response).to have_http_status(:ok)
+      end
+
+      context "when session has no cbv_flow" do
+        before { session[:cbv_flow_id] = nil }
+
+        it "does not raise and does not discard anything" do
+          post :user_action, params: valid_params
+
+          expect(response).to have_http_status(:ok)
+          expect(PayrollAccount.with_discarded.find(payroll_account.id).discarded?).to be false
+        end
+      end
+
+      context "when argyle.accountId is missing from attributes" do
+        let(:event_attributes) { { "argyle.userId" => "some-user" } }
+
+        it "does not raise and does not discard" do
+          post :user_action, params: valid_params
+
+          expect(response).to have_http_status(:ok)
+          expect(PayrollAccount.with_discarded.find(payroll_account.id).discarded?).to be false
+        end
+      end
+    end
+
     context "when tracking a ApplicantViewedHelpText event" do
       let(:event_name) { "ApplicantViewedHelpText" }
 

@@ -1,35 +1,28 @@
 <% content_for :title, t(".pdf.client.header") %>
 <% current_agency ||= ClientAgencyConfig.instance[@cbv_flow.client_agency_id] %>
 
-<strong>
-  <span class="cbv-header__pilot-name font-sans-md text-middle">
-    <%= t("shared.pilot_name") %>
-  </span>
-
-  <% if current_agency.present? %>
-    <span class="cbv-header__separator text-primary font-sans-md text-middle">|</span>
-
-    <% if current_agency&.logo_path.present? %>
-      <div class="display-inline-block text-middle">
-        <%= image_tag wicked_pdf_asset_base64(current_agency.logo_path), class: "cbv-header__agency-logo--#{current_agency.id}" %>
-      </div>
-    <% else %>
-      <span class="text-middle font-sans-md text-no-wrap"><%= agency_translation(".pdf.agency_header_name") %></span>
-    <% end %>
-  <% end %>
-</strong>
+<%= render "shared/pdf_report_header", current_agency: current_agency %>
 
 <h1><%= t(".pdf.client.header") %></h1>
 <% if is_caseworker %>
   <p><%= t(".pdf.caseworker.description") %></p>
-  <div class="usa-alert usa-alert--info">
-    <div class="usa-alert__body">
-      <p class="usa-alert__text">
-        <strong><%= t(".pdf.caseworker.how_to_header") %></strong>
-        <%= t(".pdf.caseworker.how_to") %>
-      </p>
-    </div>
-  </div>
+  <%= render "shared/pdf_info_box" do %>
+    <p class="margin-0"><strong><%= t("cbv.submits.show.pdf.caseworker.how_to_header") %></strong> <%= t("cbv.submits.show.pdf.caseworker.how_to") %></p>
+    <% if current_agency&.include_paystubs %>
+      <% paystub_employer_names = aggregator_report.summarize_by_employer
+           .select { |_, summary| summary[:paystubs]&.any? { |p| p.payroll_document_id.present? } }
+           .filter_map { |_, summary| summary[:employment]&.employer_name } %>
+      <% if paystub_employer_names.any? %>
+        <p class="margin-top-2 margin-bottom-0"><strong><%= t("cbv.submits.show.pdf.caseworker.paystubs_available_header") %></strong></p>
+        <ul class="margin-top-1 margin-bottom-0">
+          <% paystub_employer_names.each do |name| %>
+            <li><%= name %></li>
+          <% end %>
+        </ul>
+        <p class="margin-top-1 margin-bottom-0"><%= t("cbv.submits.show.pdf.caseworker.paystubs_separate_file") %></p>
+      <% end %>
+    <% end %>
+  <% end %>
 <% else %>
   <p><%= t(".pdf.client.description", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
 <% end %>
@@ -43,22 +36,24 @@
   <%= table.with_header do %>
     <h3 class="margin-0"><%= t(".pdf.shared.client_information") %></h3>
   <% end %>
-  <% @cbv_flow.cbv_applicant.applicant_attributes.each do |item| %>
+  <% agency = ClientAgencyConfig.instance[@cbv_flow.client_agency_id] %>
+  <% agency.applicant_attributes.select { |_, attr| attr.show_on_applicant_form }.each_key do |item| %>
+    <% item = item.to_sym %>
     <% if @cbv_flow.cbv_applicant[item].present? %>
       <% if item == :date_of_birth %>
-        <%= table.with_row(t("cbv.applicant_informations.#{@cbv_flow.client_agency_id}.fields.#{item}.super_one_html"), format_date(@cbv_flow.cbv_applicant[item])) %>
+        <%= table.with_row(agency_translation("cbv.applicant_informations.{agency}.fields.#{item}.super_one_html"), format_date(@cbv_flow.cbv_applicant[item])) %>
       <% else %>
-        <%= table.with_row(t("cbv.applicant_informations.#{@cbv_flow.client_agency_id}.fields.#{item}.super_one_html"), @cbv_flow.cbv_applicant[item]) %>
+        <%= table.with_row(agency_translation("cbv.applicant_informations.{agency}.fields.#{item}.super_one_html"), @cbv_flow.cbv_applicant[item]) %>
       <% end %>
     <% end %>
   <% end %>
 
   <% if is_caseworker %>
-    <% ClientAgency::CaseworkerReportSpecificFieldDecider.caseworker_specific_fields(@cbv_flow).each do |field_name, field_value| %>
+    <% ClientAgency::ReportFields.caseworker_specific_fields(@cbv_flow).each do |field_name, field_value| %>
       <%= table.with_row(t(field_name), field_value) %>
     <% end %>
   <% end %>
-  <% ClientAgency::CaseworkerReportSpecificFieldDecider.applicant_specific_fields(@cbv_flow).each do |field, value| %>
+  <% ClientAgency::ReportFields.applicant_specific_fields(@cbv_flow).each do |field, value| %>
     <%= table.with_row(t(field), value) %>
   <% end %>
 <% end %>
@@ -70,7 +65,8 @@
   <% if @cbv_flow.confirmation_code.present? %>
     <%= table.with_row(t(".pdf.shared.confirmation_code"), @cbv_flow.confirmation_code) %>
   <% end %>
-  <% unless current_agency?(:az_des) || current_agency?(:la_ldh) || current_agency?(:pa_dhs) %>
+  <% agency = ClientAgencyConfig.instance[@cbv_flow.client_agency_id] %>
+  <% if agency.applicant_attributes.key?("snap_application_date") %>
     <%= table.with_row(t(".application_or_recertification_date"), format_parsed_date(@cbv_flow.cbv_applicant.snap_application_date)) %>
   <% end %>
   <%= table.with_row(t(".pdf.client.date_created"), format_parsed_date(@cbv_flow.consented_to_authorized_use_at)) %>
@@ -105,7 +101,7 @@
         <%= t(".pdf.shared.employment_information") %>
       </h4>
     <% end %>
-    <% if is_caseworker && summary[:has_identity_data] %>
+    <% if is_caseworker && summary[:has_identity_data] && summary[:identity].present? %>
       <%= table.with_data_point(:client_full_name, summary[:identity].full_name) %>
       <%= table.with_data_point(:ssn, summary[:identity].ssn) %>
     <% end %>
@@ -153,5 +149,14 @@
     <% end %>
   <% else %>
     <%= render(Report::GigMonthlySummaryTableComponent.new(@aggregator_report, account_id, is_caseworker: is_caseworker, is_responsive: false, is_pdf: true, show_footnote: is_first_gig_job)) %>
+  <% end %>
+<% end %>
+
+<% if current_agency&.include_paystubs && !is_caseworker %>
+  <% employer_names = aggregator_report.summarize_by_employer
+       .select { |_, summary| summary[:paystubs]&.any? { |p| p.payroll_document_id.present? } }
+       .filter_map { |_, summary| summary[:employment]&.employer_name } %>
+  <% if employer_names.any? %>
+    <%= render "paystubs_cover_page", current_agency: current_agency, employer_names: employer_names %>
   <% end %>
 <% end %>

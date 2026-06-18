@@ -5,33 +5,12 @@ class CbvApplicant < ApplicationRecord
   after_initialize :set_applicant_attributes
   attr_reader :applicant_attributes, :required_applicant_attributes
 
-  # We use Single-Table Inheritance (STI) to create subclasses of this table
-  # logic to process subsets of the columns of this model relevant to each
-  # partner agency.
-  #
-  # The subclass is automatically instantiated by setting `client_agency_id`.
-  # For example, `client_agency_id = "sandbox"` will result in instantiating an
-  # instance of the CbvApplicant::Sandbox subclass, which contains all of its
-  # indexing data validations.
-  self.inheritance_column = "client_agency_id"
-
-  def self.sti_name
-    # "CbvApplicant::AzDes" => "az_des"
-    name.demodulize.underscore
-  end
-
-  def self.sti_class_for(type_name)
-    # technically user input, sanitize just in case. Also get github vulnerability checker to stop complaining
-    sanitized_input = ActionController::Base.helpers.sanitize(type_name)
-    # "sandbox" => CbvApplicant::Sandbox
-    CbvApplicant.const_get(sanitized_input.camelize)
-  end
-
   def self.valid_attributes_for_agency(client_agency_id)
-    sti_class_for(client_agency_id).const_get(:VALID_ATTRIBUTES)
+    agency = ClientAgencyConfig.instance[client_agency_id]
+    agency.applicant_attributes.keys.map(&:to_sym)
   end
 
-  def self.build_agency_partner_metadata(client_agency_id, &value_provider)
+  def self.build_custom_attributes(client_agency_id, &value_provider)
     valid_attributes_for_agency(client_agency_id).each_with_object({}) do |attr, hash|
       hash[attr.to_s] = value_provider.call(attr)
     end
@@ -58,6 +37,31 @@ class CbvApplicant < ApplicationRecord
     message: :invalid_date
   }
 
+  def agency_expected_names
+    return [] if redacted_at?
+    return [] unless income_changes.present?
+
+    Array(income_changes).map { |c| c["member_name"] }.uniq
+  end
+
+  def redact!(fields = nil)
+    fields_to_redact = fields || redactable_fields_from_config
+
+    apply_redaction!(fields_to_redact || {})
+
+    # always redact the partner_identifier
+    if partner_identifier.present?
+      self[:partner_identifier] = Redactable::REDACTION_REPLACEMENTS[:string]
+    end
+
+    if income_changes.present?
+      self[:income_changes] = redact_member_names_in_json(income_changes)
+    end
+
+    self[Redactable::REDACTED_TIMESTAMP_COLUMN] = Time.now
+    save(validate: false)
+  end
+
   def date_of_birth=(value)
     if value.is_a?(Hash)
       day = value["day"].to_i
@@ -73,9 +77,10 @@ class CbvApplicant < ApplicationRecord
     self[:snap_application_date] = parse_date(value)
   end
 
-  def has_applicant_attribute_missing?
-    @required_applicant_attributes.any? do |attr|
-      self[attr].nil?
+  # retrurns the names of any attributes that are nil. false, [], {} are valid values for an attribute
+  def missing_required_attributes
+    @required_applicant_attributes.select do |attr|
+      self.send(attr).nil?
     end
   end
 
@@ -84,14 +89,11 @@ class CbvApplicant < ApplicationRecord
   end
 
   def validate_required_applicant_attributes
-    missing_attrs = @required_applicant_attributes.reject do |attr|
-      self.send(attr).present?
-    end
+    missing_attrs = missing_required_attributes
 
-    if missing_attrs.any?
-      missing_attrs.each do |attr|
-        errors.add(attr, I18n.t("cbv.applicant_informations.#{client_agency_id}.fields.#{attr}.blank"))
-      end
+    missing_attrs.each do |attr|
+      errors.add(attr, I18n.t("cbv.applicant_informations.#{client_agency_id}.fields.#{attr}.blank",
+        default: I18n.t("cbv.applicant_informations.default.fields.#{attr}.blank", default: "is required")))
     end
 
     missing_attrs
@@ -107,11 +109,21 @@ class CbvApplicant < ApplicationRecord
     @required_applicant_attributes = get_required_applicant_attributes
   end
 
-  # Reset the applicant attributes to nil by removing any non-symbol keys i.e. { date_of_birth: [ :day, :month, :year ] }
-  # and then setting the attributes to nil.
+  # reset applicant custom attribute to nil
   def reset_applicant_attributes
-    clear_attributes = applicant_attributes.reject { |key| !key.is_a?(Symbol) }.index_with(nil)
-    update!(clear_attributes)
+    real_columns = self.class.column_names
+    applicant_attributes
+      .each do |key|
+        next unless key.is_a?(Symbol)
+        next if key == :snap_application_date
+
+        if real_columns.include?(key.to_s)
+          self[key] = nil
+        else
+          write_applicant_attribute(key, nil)
+        end
+      end
+    save!
   end
 
   def is_applicant_attribute_required?(attribute)
@@ -119,15 +131,50 @@ class CbvApplicant < ApplicationRecord
     .include?(attribute)
   end
 
-  # Override this in a subclass based on the indexing data.
-  #
-  # This returns an array of names the agency gave us expecting to need
-  # income verification.
-  def agency_expected_names
-    []
+  # logic to ensure that the jsonb column partner custom attributes can be accessed via reflection
+  def method_missing(method_name, *args, &block)
+    name = method_name.to_s
+    is_setter = name.end_with?("=")
+    attr_name = is_setter ? name.chomp("=") : name
+
+    if is_setter && writable_applicant_attribute?(attr_name)
+      write_applicant_attribute(attr_name, args.first)
+    elsif !is_setter && readable_applicant_attribute?(attr_name)
+      read_applicant_attribute(attr_name)
+    else
+      super
+    end
+  end
+
+  # dynamic property reading and writing for the jsonb attributes that are not actual entity columns in the db
+  def respond_to_missing?(method_name, include_private = false)
+    name = method_name.to_s
+    if name.end_with?("=")
+      writable_applicant_attribute?(name.chomp("=")) || super
+    else
+      readable_applicant_attribute?(name) || super
+    end
   end
 
   private
+
+  # verify that the attribute name being used here is actually defined as part of the partners custom attributes
+  def writable_applicant_attribute?(name)
+    dynamic_applicant_attribute?(name)
+  end
+
+  def readable_applicant_attribute?(name)
+    dynamic_applicant_attribute?(name)
+  end
+
+  def dynamic_applicant_attribute?(name)
+    return false if name.blank?
+    return false if self.class.column_names.include?(name)
+    cfg = agency_config
+    return false unless cfg
+    attrs = cfg.applicant_attributes
+    attrs.key?(name) || attrs.key?(name.to_sym)
+  end
 
   def parse_date(value)
     return value if value.is_a?(Date)
@@ -137,6 +184,68 @@ class CbvApplicant < ApplicationRecord
         Date.strptime(value, "%m/%d/%Y")
       rescue ArgumentError
         nil
+      end
+    end
+  end
+
+  def redactable_fields_from_config
+    return {} unless agency_config
+
+    agency_config.applicant_attributes
+      .select { |_name, attr| attr.redactable }
+      .each_with_object({}) { |(name, attr), h| h[name.to_sym] = attr.redact_type.to_sym }
+  end
+
+  def partner_identifier_redactable?
+    return false unless agency_config && agency_config.partner_identifier_name
+    attr = agency_config.applicant_attributes[agency_config.partner_identifier_name]
+    !!(attr && attr.redactable)
+  end
+
+  # Apply redaction to whatever backs each field — real columns get assigned
+  # directly; partner-defined attributes get routed through write_applicant_attribute
+  # so the jsonb / partner_identifier column is updated correctly.
+  def apply_redaction!(fields_to_redact)
+    real_columns = self.class.column_names
+    fields_to_redact.each do |field, type|
+      replacement = Redactable::REDACTION_REPLACEMENTS[type]
+      if real_columns.include?(field.to_s)
+        self[field] = replacement
+      else
+        write_applicant_attribute(field, replacement)
+      end
+    end
+  end
+
+  # Read a partner-defined applicant attribute. The value lives either in the
+  # `partner_identifier` column (if `name` matches the agency's
+  # `partner_identifier_name`) or in the `custom_attributes` jsonb.
+  # Real ActiveRecord columns (e.g. `snap_application_date`) take precedence
+  # via the `super` chain in method_missing.
+  def read_applicant_attribute(name)
+    name = name.to_s
+    return partner_identifier if name == agency_config&.partner_identifier_name.to_s
+    (custom_attributes || {})[name]
+  end
+
+  def write_applicant_attribute(name, value)
+    name = name.to_s
+    if name == agency_config&.partner_identifier_name.to_s
+      self.partner_identifier = value
+    else
+      self.custom_attributes = (custom_attributes || {}).merge(name => value)
+    end
+    value
+  end
+
+  def redact_member_names_in_json(json_array)
+    return json_array unless json_array.is_a?(Array)
+
+    json_array.map do |income_change|
+      next income_change unless income_change.is_a?(Hash)
+
+      income_change.with_indifferent_access.tap do |record|
+        record["member_name"] = Redactable::REDACTION_REPLACEMENTS[:string] if record.key?("member_name")
       end
     end
   end

@@ -9,6 +9,7 @@ class Report::EmploymentDetailsTableComponent< ViewComponent::Base
     @show_income = show_income
     @is_responsive = is_responsive
     @payroll_account = payroll_account
+    @report = report
 
     account_report = find_account_report(report)
     @employment = account_report&.employment
@@ -18,10 +19,18 @@ class Report::EmploymentDetailsTableComponent< ViewComponent::Base
   end
 
   def base_pay_match
-    Aggregators::AggregatorReports::Argyle::BasePayRateConsistencyChecker.new(income: @income, paystubs: @paystubs).match?
+    Aggregators::AggregatorReports::Argyle::BasePayRateConsistencyChecker.new(income: @income, paystubs: paystubs_in_range).match?
   end
 
   private
+
+  def paystubs_in_range
+    return @paystubs if @paystubs.nil?
+
+    from = parse_date_safely(@report.from_date)
+    to = parse_date_safely(@report.to_date)
+    @paystubs.select { |paystub| parse_date_safely(paystub.pay_date)&.between?(from, to) }
+  end
 
   def has_income_data?
     @payroll_account.job_succeeded?("income")

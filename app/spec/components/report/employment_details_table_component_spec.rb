@@ -228,6 +228,16 @@ RSpec.describe Report::EmploymentDetailsTableComponent, type: :component do
         it "renders employment details" do
           expect(subject.css("tbody tr:nth-child(3) th:nth-child(1)").to_html).to include "Employer phone"
         end
+
+        context "when the account's identity is missing (e.g. removed upstream)" do
+          before { argyle_report.identities = [] }
+
+          it "does not raise and omits the identity rows" do
+            expect { subject }.not_to raise_error
+            expect(subject.to_html).not_to include("Client full name")
+            expect(subject.to_html).not_to include("SSN")
+          end
+        end
       end
     end
 

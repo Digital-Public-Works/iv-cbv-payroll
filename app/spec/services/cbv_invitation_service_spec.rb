@@ -24,11 +24,9 @@ RSpec.describe CbvInvitationService, type: :service do
         )
 
         invitation = CbvFlowInvitation.last
-        expect(invitation).to have_attributes(
-          user: current_user,
-          cbv_applicant: have_attributes(
-            case_number: cbv_flow_invitation_params[:case_number]
-          )
+        expect(invitation.user).to eq(current_user)
+        expect(invitation.cbv_applicant.case_number).to eq(
+          cbv_flow_invitation_params[:cbv_applicant_attributes][:case_number]
         )
       end
 
@@ -71,11 +69,9 @@ RSpec.describe CbvInvitationService, type: :service do
         )
 
         invitation = CbvFlowInvitation.last
-        expect(invitation).to have_attributes(
-          user: current_user,
-          cbv_applicant: have_attributes(
-            case_number: cbv_flow_invitation_params[:case_number]
-          )
+        expect(invitation.user).to eq(current_user)
+        expect(invitation.cbv_applicant.case_number).to eq(
+          cbv_flow_invitation_params[:cbv_applicant_attributes][:case_number]
         )
       end
 
@@ -106,6 +102,49 @@ RSpec.describe CbvInvitationService, type: :service do
           'CaseworkerInvitedApplicantToFlow',
           nil,
           hash_including(invitation_id: invitation.id)
+        )
+      end
+    end
+
+    context 'metrics_attributes' do
+      it 'merges supplied metrics_attributes into the tracked event' do
+        service.invite(
+          cbv_flow_invitation_params,
+          current_user,
+          delivery_method: nil,
+          metrics_attributes: { "source" => "ops_console", "campaign" => "spring2026" }
+        )
+
+        expect(event_logger).to have_received(:track).with(
+          'CaseworkerInvitedApplicantToFlow',
+          nil,
+          hash_including("source" => "ops_console", "campaign" => "spring2026")
+        )
+      end
+
+      it 'does not let metrics_attributes overwrite system-set properties' do
+        service.invite(
+          cbv_flow_invitation_params,
+          current_user,
+          delivery_method: nil,
+          metrics_attributes: { invitation_id: "spoofed", user_id: "spoofed" }
+        )
+
+        invitation = CbvFlowInvitation.last
+        expect(event_logger).to have_received(:track).with(
+          'CaseworkerInvitedApplicantToFlow',
+          nil,
+          hash_including(invitation_id: invitation.id, user_id: current_user.id)
+        )
+      end
+
+      it 'still tracks the event when metrics_attributes is empty or omitted' do
+        service.invite(cbv_flow_invitation_params, current_user, delivery_method: nil)
+
+        expect(event_logger).to have_received(:track).with(
+          'CaseworkerInvitedApplicantToFlow',
+          nil,
+          hash_including(:invitation_id)
         )
       end
     end

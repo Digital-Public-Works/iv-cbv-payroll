@@ -3,13 +3,14 @@ require "rails_helper"
 RSpec.describe Transmitters::WebhookTransmitter, integration: true do
   let(:completed_at) { Time.find_zone("UTC").local(2025, 5, 1, 1) }
   let(:cbv_applicant) { create(:cbv_applicant, case_number: "ABC1234") }
+  let(:confirmation_code) { "WEBHOOK_BASE" }
   let(:cbv_flow) do
     create(:cbv_flow,
       :invited,
       :with_pinwheel_account,
       cbv_applicant: cbv_applicant,
       consented_to_authorized_use_at: completed_at,
-      confirmation_code: "WEBHOOK123"
+      confirmation_code: confirmation_code
     )
   end
 
@@ -32,9 +33,18 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
     )
   end
 
+  let(:configured_methods) do
+    [
+      ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(method: "encrypted_s3", configuration: {}),
+      ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(method: "webhook", configuration: {})
+    ]
+  end
+
   before do
-    allow(mock_client_agency).to receive(:transmission_method_configuration).and_return(transmission_method_configuration)
     allow(mock_client_agency).to receive(:id).and_return("sandbox")
+    allow(mock_client_agency).to receive(:timezone).and_return("America/New_York")
+    allow(mock_client_agency).to receive(:transmission_methods).and_return(configured_methods)
+    allow(mock_client_agency).to receive(:include_paystubs).and_return(false)
     allow(CbvApplicant).to receive(:valid_attributes_for_agency).with("sandbox").and_return([ "case_number" ])
 
     WebMock.allow_net_connect!
@@ -44,9 +54,11 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
     WebMock.disable_net_connect!
   end
 
-  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report) }
+  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
 
   describe "#deliver" do
+    let(:confirmation_code) { "WEBHOOK_DELIVER" }
+
     it "successfully delivers to a running reference server" do
       result = subject.deliver
       expect(result).to eq("ok")
@@ -74,6 +86,7 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
   end
 
   describe "pay_frequency nullable" do
+    let(:confirmation_code) { "WEBHOOK_PAYFREQ_NULL" }
     let(:argyle_report) { build(:argyle_report, :with_argyle_account) }
 
     before do
@@ -102,7 +115,39 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
     end
   end
 
+  describe "gross_pay_line_items with nil amounts are filtered out" do
+    let(:confirmation_code) { "WEBHOOK_NIL_EARNING" }
+    let(:pinwheel_report) { build(:pinwheel_report, :with_pinwheel_account) }
+
+    before do
+      allow(pinwheel_report).to receive(:paystubs).and_return([
+        Aggregators::ResponseObjects::Paystub.new(
+          account_id: "account1",
+          gross_pay_amount: 1111,
+          net_pay_amount: 1000,
+          gross_pay_ytd: 5555,
+          pay_period_start: "2021-09-01",
+          pay_period_end: "2021-09-15",
+          pay_date: "2021-09-20",
+          hours: 40,
+          earnings: [
+            Aggregators::ResponseObjects::Earning.new(name: "Regular", amount: 800),
+            Aggregators::ResponseObjects::Earning.new(name: "Bonus", amount: nil)
+          ],
+          deductions: []
+        )
+      ])
+    end
+
+    it "delivers successfully, excluding nil-amount earnings from the payload" do
+      result = subject.deliver
+      expect(result).to eq("ok")
+    end
+  end
+
   describe "server rejects invalid pay_frequency" do
+    let(:confirmation_code) { "WEBHOOK_BAD_PAYFREQ" }
+
     it "returns an error for an invalid pay_frequency value" do
       uri = URI(webhook_url)
       payload = CbvFlowToJson.new(cbv_flow, mock_client_agency, aggregator_report).to_h
@@ -127,6 +172,8 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
   end
 
   describe "server rejects wrong API key" do
+    let(:confirmation_code) { "WEBHOOK_BAD_APIKEY" }
+
     it "returns 401 for an incorrect API key" do
       uri = URI(webhook_url)
       payload = CbvFlowToJson.new(cbv_flow, mock_client_agency, aggregator_report).to_h
@@ -147,6 +194,34 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
       expect(res.code).to eq("401")
       error_body = JSON.parse(res.body)
       expect(error_body["error_code"]).to eq("AUTHENTICATION_ERROR")
+    end
+  end
+
+  describe "with bad credentials" do
+    let(:confirmation_code) { "WEBHOOK_BAD_CREDS_JOB" }
+
+    it "fails the transmission and records the error" do
+      bad_config = transmission_method_configuration.merge("api_key" => "wrong-api-key-value")
+      transmission = create(:cbv_flow_transmission,
+        cbv_flow: cbv_flow,
+        method_type: :webhook,
+        status: :pending,
+        configuration: bad_config
+      )
+
+      allow_any_instance_of(CbvFlowTransmissionJob).to receive(:set_aggregator_report).and_return(aggregator_report)
+      allow_any_instance_of(CbvFlowTransmissionJob).to receive(:event_logger)
+        .and_return(instance_double(GenericEventTracker, track: nil))
+
+      expect {
+        CbvFlowTransmissionJob.new.perform(transmission.id)
+      }.to raise_error(/Unexpected response from agency: 401/)
+
+      transmission.reload
+      expect(transmission).to be_failed
+      expect(transmission.last_error).to be_present
+      expect(transmission.succeeded_at).to be_nil
+      expect(cbv_flow.reload.transmitted_at).to be_nil
     end
   end
 end

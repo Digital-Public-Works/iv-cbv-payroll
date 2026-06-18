@@ -127,7 +127,10 @@ RSpec.describe WeeklyReportMailer, type: :mailer do
           weekly_report: {
             "recipient" => "test@azdes.gov",
             "report_variant" => "invitations"
-          }
+          },
+          include_invitation_details_on_weekly_report: true,
+          applicant_attributes: ClientAgencyConfig.instance["az_des"].applicant_attributes,
+          partner_identifier_name: "case_number"
         )
         allow_any_instance_of(WeeklyReportMailer).to receive(:client_agency_config).and_return({
           "az_des" => az_config
@@ -195,11 +198,14 @@ RSpec.describe WeeklyReportMailer, type: :mailer do
           weekly_report: {
             "recipient" => "test@padhs.gov",
             "report_variant" => "invitations"
-          }
+          },
+          include_invitation_details_on_weekly_report: true,
+          applicant_attributes: ClientAgencyConfig.instance["pa_dhs"].applicant_attributes,
+          partner_identifier_name: "case_number"
         )
         allow_any_instance_of(WeeklyReportMailer).to receive(:client_agency_config).and_return({
-                                                                                                 "pa_dhs" => pa_config
-                                                                                               })
+          "pa_dhs" => pa_config
+        })
       end
 
       it "includes incomplete flows" do
