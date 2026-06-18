@@ -90,6 +90,23 @@ RSpec.describe ApplicationHelper do
         end
       end
     end
+
+    context "when the translation is missing in development" do
+      let(:current_agency) { nil }
+
+      before do
+        allow(Rails.env).to receive(:development?).and_return(true)
+      end
+
+      it "raises for a non-optional key" do
+        expect { helper.agency_translation("missing_prefix") }
+          .to raise_error(/Missing agency translation/)
+      end
+
+      it "returns blank without raising for an optional key" do
+        expect(helper.agency_translation("shared.agency_acronym")).to be_empty
+      end
+    end
   end
 
   describe "#feedback_form_url" do

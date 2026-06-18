@@ -273,7 +273,7 @@ RSpec.describe PartnerConfigLoader do
     end
 
     it "warns on missing recommended translations" do
-      valid_yaml["translations"]["en"].delete("shared.agency_acronym")
+      valid_yaml["translations"]["en"].delete("shared.agency_full_name")
       yaml_file.reopen(yaml_file.path, "w")
       yaml_file.write(valid_yaml.to_yaml)
       yaml_file.rewind
@@ -282,7 +282,21 @@ RSpec.describe PartnerConfigLoader do
       loader.load!
       loader.validate!
       expect(loader.valid?).to be true
-      expect(loader.warnings).to include(/Missing recommended translation.*en.*shared\.agency_acronym/)
+      expect(loader.warnings).to include(/Missing recommended translation.*en.*shared\.agency_full_name/)
+    end
+
+    it "does not warn when the optional agency_acronym translation is absent" do
+      valid_yaml["translations"]["en"].delete("shared.agency_acronym")
+      valid_yaml["translations"]["es"].delete("shared.agency_acronym")
+      yaml_file.reopen(yaml_file.path, "w")
+      yaml_file.write(valid_yaml.to_yaml)
+      yaml_file.rewind
+
+      loader = described_class.new(yaml_file.path)
+      loader.load!
+      loader.validate!
+      expect(loader.valid?).to be true
+      expect(loader.warnings).not_to include(/shared\.agency_acronym/)
     end
 
     context "with $ENV_VAR references" do

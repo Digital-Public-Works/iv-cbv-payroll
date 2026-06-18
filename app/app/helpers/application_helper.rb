@@ -54,7 +54,8 @@ module ApplicationHelper
                      t(default_key, **options)
                    end
 
-    if translated.blank? && Rails.env.development?
+    if translated.blank? && Rails.env.development? &&
+        !ClientAgencyConfig::OPTIONAL_TRANSLATION_KEYS.include?(i18n_base_key)
       raise "Missing agency translation: #{i18n_key} (base: #{i18n_base_key}, default: #{default_key})"
     end
 
