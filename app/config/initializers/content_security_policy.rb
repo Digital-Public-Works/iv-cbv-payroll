@@ -10,7 +10,7 @@ Rails.application.configure do
     policy.font_src :self, "https://*.cloudinary.com"
     policy.form_action :self, "https://login.microsoftonline.com"
     policy.frame_ancestors :self
-    policy.img_src :self, :data, "https://*.cloudinary.com", "https://cdn.getpinwheel.com"
+    policy.img_src :self, :data, "https://*.cloudinary.com", "https://cdn.getpinwheel.com", "https://static.verifymyincome.org"
     policy.object_src :none
     policy.script_src :self, *%w[
       https://js-agent.newrelic.com
@@ -36,6 +36,8 @@ Rails.application.configure do
       "'sha256-WAyOw4V+FqDc35lQPyRADLBWbuNK8ahvYEaQIYF1+Ps='", # Pinwheel
       "'sha256-8Fd8AAaNByYvS/HuItVFketOItMHf2YiH+wvh8OVQOA='", # Pinwheel
       "'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU='"  # Argyle
+
+    policy.report_uri "/csp-reports"
   end
 
   #

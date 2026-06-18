@@ -1,6 +1,7 @@
 module Aggregators::ResponseObjects
   PAYSTUB_FIELDS = %i[
     account_id
+    id
     gross_pay_amount
     net_pay_amount
     gross_pay_ytd
@@ -12,6 +13,8 @@ module Aggregators::ResponseObjects
     hours
     earnings
     employment_id
+    implied_base_rate_in_dollars
+    payroll_document_id
   ]
 
   Paystub = Struct.new(*PAYSTUB_FIELDS, keyword_init: true) do
@@ -39,7 +42,15 @@ module Aggregators::ResponseObjects
     end
 
     def self.from_argyle(response_body)
+      begin
+        self.log_paystub_to_mixpanel(response_body)
+      rescue => ex
+        NewRelic::Agent.notice_error(ex)
+        Rails.logger.error "Error logging paystub to MixPanel: #{ex}"
+      end
+
       new(
+        id: response_body["id"],
         account_id: response_body["account"],
         gross_pay_amount: Aggregators::FormatMethods::Argyle.format_currency(response_body["gross_pay"]),
         net_pay_amount: Aggregators::FormatMethods::Argyle.format_currency(response_body["net_pay"]),
@@ -57,8 +68,27 @@ module Aggregators::ResponseObjects
             amount: Aggregators::FormatMethods::Argyle.format_currency(deduction["amount"]),
           )
         end,
-        employment_id: response_body["employment"]
+        employment_id: response_body["employment"],
+        implied_base_rate_in_dollars: Aggregators::FormatMethods::Argyle.paystub_implied_base_rate_in_dollars(response_body),
+        payroll_document_id: response_body["payroll_document"]
       )
+    end
+
+    # TODO: Tech Debt - this will need to be moved after PF-586 (https://app.asana.com/1/1210277703905441/project/1210563646012085/task/1213127420002904?focus=true)
+    # is complete and we are operating on an internal model instead of regenerating the synthetic hours as part of the view
+    def self.log_paystub_to_mixpanel(response_body)
+      gross_pay_total = response_body["gross_pay_list"]&.map { |item| item["hours"] || 0 }&.map(&:to_f)&.sum
+      synthetic_total_hours = Aggregators::FormatMethods::Argyle.synthetic_hours(response_body["gross_pay_list"])
+
+      GenericEventTracker.new.track(TrackEvent::ArgylePaystubHours, nil, {
+        time: Time.now.to_i,
+        argyle_total_hours: response_body["hours"],
+        gross_pay_sum: gross_pay_total,
+        synthetic_total_hours: synthetic_total_hours,
+        argyle_total_hours_matches_synthetic:
+          Aggregators::FormatMethods::Argyle.total_hours_match?(synthetic_total_hours, response_body["hours"]),
+        argyle_hours_null: response_body["hours"].nil?
+      })
     end
 
     alias_attribute :start, :pay_period_start

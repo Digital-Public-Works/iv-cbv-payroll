@@ -21,28 +21,53 @@ ARG RUBY_VERSION=3.4.5
 ##########################################################################################
 FROM registry.docker.com/library/ruby:$RUBY_VERSION AS base
 
-# Upgrade packages in base image to address security issues.
-# We should be able to remove these after upgrading the base image to a version
-# that has the upgraded versions by default.
+# Install RUNTIME-ONLY system dependencies and security patches.
+# This layer changes rarely, providing excellent cache reuse in CI.
+#
+# IMPORTANT: Only runtime libraries here (no -dev packages).
+# Build dependencies go in the BUILD stage.
 # hadolint ignore=DL3008
-RUN apt-get update -qq && \
+RUN set -eux; \
+    apt-get update -qq; \
+    apt-get upgrade -y libcurl3t64-gnutls; \
     apt-get install -y --no-install-recommends \
+      # Required for wkhtmltopdf (PDF generation)
+      libjpeg62-turbo \
+      libpng16-16t64 \
+      libxrender1 \
+      libfontconfig1 \
+      libfreetype6 \
+      libx11-6 \
+      # End wkhtmltopdf dependencies
       libtasn1-6 \
       libgnutls30 \
-      # CVE-2025-55154 CVE-2025-55298 \
-      imagemagick \
-    # CVE-2025-0395 \
-      libc-dev-bin \
-      # CVE-2025-31115 \
       liblzma5 \
-      # CVE-2025-37990 \
+      libxml2 \
+      libxslt1.1 \
+      libicu76 \
+      libexpat1 \
+      libsqlite3-0 \
+      libpq5 \
+      libgpgme11t64 \
+      openssl \
+      postgresql-client-17 \
+    ; \
+    apt-get purge -y --auto-remove \
       linux-libc-dev \
-      # CVE-2025-32415 CVE-2025-5222 \
-      libxml2 libxml2-dev icu-devtools libicu-dev libicu72 \
-      # CVE-2025-53367 \
-      libdjvulibre21 \
-      # CVE-2025-7424 \
-      libxslt1-dev \
+      libc-dev-bin \
+      libpq-dev \
+      libevent-dev \
+      libmariadb-dev \
+      libopenexr-dev \
+      libwmf-dev \
+      libdb5.3-dev \
+      dpkg-dev \
+      x11proto-dev \
+      xtrans-dev \
+      imagemagick \
+      imagemagick-7.q16 \
+      libmagickcore-dev \
+      libmagickwand-dev \
     ; \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
@@ -64,25 +89,40 @@ EXPOSE 3000
 ##########################################################################################
 FROM base AS build
 
-# Install packages needed to build gems
+# Install BUILD-TIME dependencies needed to compile gems and assets.
+# This includes -dev packages with headers/build tools.
+# This layer also changes rarely, providing good cache reuse.
+# hadolint ignore=DL3008
 RUN set -eux; \
     apt-get update -qq && \
     apt-get install -y --no-install-recommends \
-      libexpat1=2.5.0-1+deb12u2 \
-      libsqlite3-0=3.40.1-2+deb12u2 \
-      libperl5.36=5.36.0-7+deb12u3 \
-      perl=5.36.0-7+deb12u3 \
-      perl-base=5.36.0-7+deb12u3 \
-      perl-modules-5.36=5.36.0-7+deb12u3 \
-    ; \
-    apt-get install --no-install-recommends -y \
-      build-essential=12.12 \
-      git=1:2.47.3-0+deb13u1 \
-      libpq-dev=17.6-0+deb13u1 \
-      npm=9.2.0~ds1-3 \
-      pkg-config=1.8.1-4 \
+      build-essential \
+      git \
+      curl \
+      pkg-config \
+      libc-dev-bin \
+      linux-libc-dev \
+      libxml2-dev \
+      libxslt1-dev \
+      libicu-dev \
+      icu-devtools \
+      libpq-dev \
+      libperl5.40 \
+      perl \
+      perl-base \
+      perl-modules-5.40 \
     ; \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+
+ENV NODENV_ROOT /opt/nodenv
+ENV PATH "$NODENV_ROOT/bin:$PATH"
+COPY .node-version .
+RUN git clone https://github.com/nodenv/nodenv.git "${NODENV_ROOT}" && \
+    mkdir -p "${NODENV_ROOT}/plugins" && \
+    git clone https://github.com/nodenv/node-build.git "${NODENV_ROOT}/plugins/node-build" && \
+    nodenv install "$(cat .node-version)" -v && \
+    nodenv global "$(cat .node-version)"
+ENV PATH "$NODENV_ROOT/shims:$PATH"
 
 # Copy application code
 COPY . .
@@ -116,7 +156,7 @@ RUN set -eux; \
     apt-get update -qq && \
     apt-get install --no-install-recommends -y \
       postgresql-client-17 \
-      graphviz=2.42.4-3 \
+      graphviz \
     ; \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
@@ -147,7 +187,6 @@ RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 ##########################################################################################
 FROM base AS release
 
-# Set the working directory so when we attach a shell we're in the project's root directory
 WORKDIR /rails
 
 # Copy the entrypoint script
@@ -159,62 +198,6 @@ RUN chmod +x /usr/bin/rails.sh
 ENV TMPDIR="/rails/tmp"
 ENV GNUPGHOME="/rails/tmp"
 ENV PIDFILE="/rails/tmp/pids/server.pid"
-
-# Install packages needed for deployment
-#
-# To debug a missing package version (i.e. if one of these versions gets
-# superceded in the upstream package repo), run:
-#
-#   docker run -ti registry.docker.com/library/ruby:3.3.5 bash
-#   apt-get install [package]
-#
-# and notice the version that was installed.
-# hadolint ignore=DL3008
-RUN set -eux; \
-    apt-get update -qq; \
-    apt-get install -y --no-install-recommends \
-    libgpgme11t64=1.24.2-3 \
-    libvips42=8.16.1-1+b1 \
-    openssl=3.5.1-1 \
-    postgresql-client-15=15.14-0+deb12u1 \
-    postgresql-client-17 \
-    python-is-python3=3.13.3-1 \
-    python3-venv=3.13.5-1 \
-    python3-pip=25.1.1+dfsg-1 \
-    ; \
-    # Bring vulnerable libs up to the Fixed-In versions that the vulnerability scans require
-    apt-get install -y --no-install-recommends --only-upgrade \
-    libexpat1=2.5.0-1+deb12u2 \
-    libglib2.0-0=2.74.6-2+deb12u7 \
-    libglib2.0-bin=2.74.6-2+deb12u7 \
-    libglib2.0-data=2.74.6-2+deb12u7 \
-    libglib2.0-dev=2.74.6-2+deb12u7 \
-    libglib2.0-dev-bin=2.74.6-2+deb12u7 \
-    libgssapi-krb5-2=1.20.1-2+deb12u4 \
-    libkrb5-3=1.20.1-2+deb12u4 \
-    libkrb5support0=1.20.1-2+deb12u4 \
-    libk5crypto3=1.20.1-2+deb12u4 \
-    libkadm5clnt-mit12=1.20.1-2+deb12u4 \
-    libkadm5srv-mit12=1.20.1-2+deb12u4 \
-    libkdb5-10=1.20.1-2+deb12u4 \
-    libgssrpc4=1.20.1-2+deb12u4 \
-    libsqlite3-0=3.40.1-2+deb12u2 \
-    libopenjp2-7=2.5.0-2+deb12u2 \
-    libperl5.36=5.36.0-7+deb12u3 \
-    perl=5.36.0-7+deb12u3 \
-    perl-base=5.36.0-7+deb12u3 \
-    perl-modules-5.36=5.36.0-7+deb12u3 \
-    mariadb-common=1:10.11.14-0+deb12u2 \
-    libmariadb3=1:10.11.14-0+deb12u2 \
-    libmariadb-dev=1:10.11.14-0+deb12u2 \
-    libmariadb-dev-compat=1:10.11.14-0+deb12u2 \
-    ; \
-    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*; \
-    python3 -m venv /opt/aws-cli-venv && \
-    /opt/aws-cli-venv/bin/pip install --no-cache-dir --upgrade pip && \
-    /opt/aws-cli-venv/bin/pip install --no-cache-dir "setuptools>=78.1.1" && \
-    /opt/aws-cli-venv/bin/pip install --no-cache-dir awscli && \
-    ln -s /opt/aws-cli-venv/bin/aws /usr/local/bin/aws
 
 # Remove unneeded stdlib gems if present. Uninstall executibles, all versions, ignore if not installed
 RUN gem uninstall -x -aIx debug || true && \
@@ -229,9 +212,11 @@ COPY bin/db-migrate /usr/bin/
 COPY --from=release-build /usr/local/bundle /usr/local/bundle
 COPY --from=release-build /rails /rails
 
-# Clean up any unused gems and ensure we have the correct versions
-RUN bundle clean --force && \
-    bundle install --no-cache
+# Clean up any unused gems (no need to reinstall, artifacts already copied)
+RUN bundle clean --force
+
+# Remove node_modules from the release image — assets are already precompiled
+RUN rm -rf /rails/node_modules
 
 # Ensure all necessary directories exist
 RUN mkdir -p /rails/tmp/pids /rails/log /rails/db

@@ -7,7 +7,7 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
 
   let(:account) { "abc123" }
   let!(:payroll_account) do
-    create(:payroll_account, :argyle_fully_synced, pinwheel_account_id: account)
+    create(:payroll_account, :argyle_fully_synced, aggregator_account_id: account)
   end
   let(:days_ago_to_fetch) { 90 }
   let(:days_ago_to_fetch_for_gig) { 90 }
@@ -28,6 +28,45 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
 
   around do |ex|
     Timecop.freeze(today, &ex)
+  end
+
+  describe "#check_paystub_volume (anomalous-paystub-count guardrail)" do
+    let(:report) do
+      Aggregators::AggregatorReports::ArgyleReport.new(
+        payroll_accounts: [ payroll_account ],
+        argyle_service: argyle_service,
+        days_to_fetch_for_w2: days_ago_to_fetch,
+        days_to_fetch_for_gig: days_ago_to_fetch_for_gig
+      )
+    end
+
+    before do
+      # cap = @fetched_days * MAX_PAYSTUBS_PER_LOOKBACK_DAY(2) = 10
+      report.instance_variable_set(:@fetched_days, 5)
+      allow(Rails.logger).to receive(:error)
+      allow(NewRelic::Agent).to receive(:notice_error)
+    end
+
+    it "surfaces an over-cap count to New Relic WITHOUT raising (report generation continues)" do
+      over_cap = { "results" => Array.new(10) { {} } } # 10 >= cap(10) -> fires
+
+      expect {
+        report.send(:check_paystub_volume, over_cap, payroll_account)
+      }.not_to raise_error
+
+      expect(NewRelic::Agent).to have_received(:notice_error).with(
+        an_instance_of(Aggregators::AggregatorReports::ArgyleReport::PaystubLimitExceededError),
+        custom_params: hash_including(paystub_count: 10, max_paystubs: 10, lookback_days: 5)
+      )
+    end
+
+    it "does nothing when the count is under the cap" do
+      under_cap = { "results" => Array.new(3) { {} } } # 3 < cap(10)
+
+      report.send(:check_paystub_volume, under_cap, payroll_account)
+
+      expect(NewRelic::Agent).not_to have_received(:notice_error)
+    end
   end
 
   describe '#fetch_report_data' do
@@ -158,6 +197,75 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
       end
     end
 
+
+    describe "Hours validations that trigger warnings" do
+      {
+        "high_hours_paystubs.json" => "hours outside expected range",
+        "high_hours_gross_pay_list_paystubs.json" => "hours outside expected range in gross pay list"
+      }.each do |fixture, reason|
+        context "with #{reason} (#{fixture})" do
+          before do
+            allow(argyle_service).to receive(:fetch_paystubs_api)
+              .and_return(argyle_load_relative_json_file("invalid_hours", fixture))
+
+            allow(NewRelic::EventLogger).to receive(:track)
+            argyle_report.send(:fetch_report_data)
+          end
+
+          it "generates a warning" do
+            expect(argyle_report.warnings).not_to be_empty
+          end
+
+          it "includes the correct warning message" do
+            expect(argyle_report.warnings[:hours].size).to eq(1)
+            expect(argyle_report.warnings[:hours]).to include(match(/Invalid value received for hours/i))
+          end
+
+          it "sends a warning to New Relic" do
+            expect(NewRelic::EventLogger).to have_received(:track).with(
+              TrackEvent::ArgyleDataUnexpectedHours,
+              hash_including(
+                time: anything,
+                cbv_flow_id: kind_of(Integer),
+                warnings: a_string_matching(/Invalid value received for hours/i)
+              )
+            )
+          end
+        end
+      end
+    end
+
+    describe "Hours validations that do not trigger warnings" do
+      {
+        "empty_hours_paystubs.json" => "empty hours",
+        "null_hours_in_gross_pay_list_paystubs.json" => "null hours in gross pay list",
+        "empty_hours_gross_pay_list_paystubs.json" => "empty hours in gross pay list",
+        "negative_hours_paystubs.json" => "negative values",
+        "negative_hours_gross_pay_list_paystubs.json" => "negative values in gross pay list"
+      }.each do |fixture, reason|
+        context "with #{reason} (#{fixture})" do
+          before do
+            allow(argyle_service).to receive(:fetch_paystubs_api)
+              .and_return(argyle_load_relative_json_file("invalid_hours", fixture))
+
+            allow(NewRelic::EventLogger).to receive(:track)
+            argyle_report.send(:fetch_report_data)
+          end
+
+          it "does not generate a warning" do
+            expect(argyle_report.warnings).to be_empty
+          end
+
+          it "does not send a warning to New Relic" do
+            expect(NewRelic::EventLogger).not_to have_received(:track).with(
+              anything,
+              anything
+            )
+          end
+        end
+      end
+    end
+
     describe '#fetch_gigs' do
       context "for Bob, a Uber driver" do
         before do
@@ -213,6 +321,124 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
     end
   end
 
+  describe '#fetch' do
+    let(:argyle_report) do
+      described_class.new(
+        payroll_accounts: [ payroll_account ],
+        argyle_service: argyle_service,
+        days_to_fetch_for_w2: days_ago_to_fetch,
+        days_to_fetch_for_gig: days_ago_to_fetch_for_gig
+      )
+    end
+
+    def discarded_in_db?(record)
+      PayrollAccount.with_discarded.find(record.id).discarded?
+    end
+
+    context "when Argyle returns an account" do
+      it "does not discard the payroll_account" do
+        argyle_report.fetch
+        expect(discarded_in_db?(payroll_account)).to be false
+      end
+
+      it "still fetches report data" do
+        argyle_report.fetch
+        expect(argyle_service).to have_received(:fetch_identities_api).with(account: account)
+      end
+    end
+
+    context "when Argyle does not return an account" do
+      let(:other_account_id) { "missing-account-id" }
+
+      let!(:other_payroll_account) do
+        create(:payroll_account, :argyle_fully_synced, cbv_flow: payroll_account.cbv_flow, aggregator_account_id: other_account_id)
+      end
+
+      let(:argyle_report) do
+        described_class.new(
+          payroll_accounts: [ payroll_account, other_payroll_account ],
+          argyle_service: argyle_service,
+          days_to_fetch_for_w2: days_ago_to_fetch,
+          days_to_fetch_for_gig: days_ago_to_fetch_for_gig
+        )
+      end
+
+      before do
+        allow(argyle_service).to receive(:fetch_account_api).with(account: account).and_return(account_json)
+        allow(argyle_service).to receive(:fetch_account_api)
+          .with(account: other_account_id)
+          .and_raise(Faraday::ResourceNotFound.new(nil, nil))
+      end
+
+      it "discards the missing account and leaves the valid one alone" do
+        argyle_report.fetch
+        expect(discarded_in_db?(other_payroll_account)).to be true
+        expect(discarded_in_db?(payroll_account)).to be false
+      end
+
+      it "removes the missing account from @payroll_accounts so its data is not fetched" do
+        argyle_report.fetch
+        expect(argyle_service).not_to have_received(:fetch_identities_api).with(account: other_account_id)
+      end
+    end
+
+    context "when Argyle reports the account as disconnected" do
+      let(:disconnected_account_json) do
+        account_json.deep_dup.tap { |j| j["connection"]["status"] = "disconnected" }
+      end
+
+      before do
+        allow(argyle_service).to receive(:fetch_account_api).and_return(disconnected_account_json)
+      end
+
+      it "discards the disconnected account" do
+        expect { argyle_report.fetch }.to raise_error(Aggregators::AggregatorReports::ArgyleReport::NoValidAccountsError)
+        expect(discarded_in_db?(payroll_account)).to be true
+      end
+    end
+
+    context "when Argyle reports an error status" do
+      let(:error_account_json) do
+        account_json.deep_dup.tap { |j| j["connection"]["status"] = "error" }
+      end
+
+      before do
+        allow(argyle_service).to receive(:fetch_account_api).and_return(error_account_json)
+      end
+
+      it "does not discard the account" do
+        argyle_report.fetch
+        expect(discarded_in_db?(payroll_account)).to be false
+      end
+    end
+
+    context "when calling Argyle throws an error" do
+      before do
+        allow(argyle_service).to receive(:fetch_account_api).and_raise(StandardError, "argyle is down")
+      end
+
+      it "does not discard the account" do
+        argyle_report.fetch
+        expect(discarded_in_db?(payroll_account)).to be false
+      end
+    end
+
+    context "when no accounts are connected" do
+      before do
+        allow(argyle_service).to receive(:fetch_account_api).and_raise(Faraday::ResourceNotFound.new(nil, nil))
+      end
+
+      it "raises NoValidAccountsError" do
+        expect { argyle_report.fetch }.to raise_error(Aggregators::AggregatorReports::ArgyleReport::NoValidAccountsError)
+      end
+
+      it "discards the disconnected account and raises" do
+        expect { argyle_report.fetch }.to raise_error(Aggregators::AggregatorReports::ArgyleReport::NoValidAccountsError)
+        expect(discarded_in_db?(payroll_account)).to be true
+      end
+    end
+  end
+
   describe "#days_since_last_paydate" do
     let(:argyle_report) do
       described_class.new(
@@ -248,54 +474,6 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
       it "returns the latest date when dates available, compared to current time" do
         expect(argyle_report.days_since_last_paydate).to eq(30)
       end
-    end
-  end
-
-  describe '#most_recent_paystub_with_address' do
-    it('returns nil when no paystubs returned') do
-      paystubs = { "results" => [] }
-      expect(Aggregators::AggregatorReports::ArgyleReport.most_recent_paystub_with_address(paystubs)).to be_nil
-    end
-
-    it 'returns nil when no employer_address is present' do
-      paystubs = {
-        "results" => [
-          {
-            "employer_address" => nil,
-            "paystub_date" => "2021-01-15"
-          }
-        ]
-      }
-      expect(Aggregators::AggregatorReports::ArgyleReport.most_recent_paystub_with_address(paystubs)).to be_nil
-    end
-
-    it 'returns nil when employer_address.line1 is nil' do
-      paystubs = {
-        "results" => [
-          {
-            "employer_address" => { "line1" => nil },
-            "paystub_date" => "2021-01-15"
-          }
-        ]
-      }
-      expect(Aggregators::AggregatorReports::ArgyleReport.most_recent_paystub_with_address(paystubs)).to be_nil
-    end
-
-    it 'returns the most recent paystub with a valid employer_address' do
-      paystubs = {
-        "results" => [
-          {
-            "employer_address" => { "line1" => "123 Main St" },
-            "paystub_date" => "2021-01-15"
-          },
-          {
-            "employer_address" => { "line1" => "456 Elm St" },
-            "paystub_date" => "2021-02-15"
-          }
-        ]
-      }
-      result = Aggregators::AggregatorReports::ArgyleReport.most_recent_paystub_with_address(paystubs)
-      expect(result["employer_address"]["line1"]).to eq("456 Elm St")
     end
   end
 
@@ -367,7 +545,7 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
     context "busy_joe, an employee with multiple employments" do
       let(:account) { "01959b15-8b7f-5487-212d-2c0f50e3ec96" }
       let!(:payroll_account_2) do
-        create(:payroll_account, :argyle_fully_synced, pinwheel_account_id: account)
+        create(:payroll_account, :argyle_fully_synced, aggregator_account_id: account)
       end
 
       let(:argyle_report) { Aggregators::AggregatorReports::ArgyleReport.new(
@@ -398,6 +576,35 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
         expect(monthly_summary.keys).to match_array([ "2025-03" ])
         expect(monthly_summary["2025-03"][:paystubs].length).to eq(2)
       end
+    end
+  end
+
+  describe 'valid fixture: valid identity, valid employer, gig worker, no paystubs' do
+    let(:argyle_service) { instance_double(Aggregators::Sdk::ArgyleService) }
+    let(:payroll_account) { create(:payroll_account, :argyle_fully_synced) }
+    let(:argyle_report) do
+      described_class.new(
+        payroll_accounts: [ payroll_account ],
+        argyle_service: argyle_service,
+        days_to_fetch_for_w2: days_ago_to_fetch,
+        days_to_fetch_for_gig: days_ago_to_fetch
+      )
+    end
+
+    it 'A gig with valid identity and employer is valid even with no paystubs' do
+      identities_json = argyle_load_relative_json_file('masked_prod_gig_validation_pass', 'request_identity.json')
+      empty_response = { "results" => [] }
+
+      allow(argyle_service).to receive(:fetch_identities_api).and_return(identities_json)
+      allow(argyle_service).to receive(:fetch_paystubs_api).and_return(empty_response)
+      allow(argyle_service).to receive(:fetch_account_api).and_return(empty_response)
+      allow(argyle_service).to receive(:fetch_gigs_api).and_return(empty_response)
+
+      argyle_report.fetch
+
+      expect(argyle_report.valid?(:useful_report)).to be true
+
+      expect(argyle_report.errors.full_messages).to be_empty
     end
   end
 end

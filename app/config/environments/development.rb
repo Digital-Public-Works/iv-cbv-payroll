@@ -22,6 +22,7 @@ Rails.application.configure do
 
   config.hosts << ".ngrok-free.app"
   config.hosts << ".ngrok.app"
+  config.hosts << ".ngrok-free.dev"
 
   routes.default_url_options[:host] = ENV.fetch("DOMAIN_NAME", "localhost")
   routes.default_url_options[:port] = ENV.fetch("PORT", 3000)
@@ -62,7 +63,7 @@ Rails.application.configure do
 
   # Highlight code that triggered database queries in logs.
   config.active_record.verbose_query_logs = true
-  config.solid_queue.connects_to = { database: { writing: :queue } }
+
   # Suppress logger output for asset requests.
   config.assets.quiet = true
 

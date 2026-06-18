@@ -43,13 +43,29 @@ class Cbv::ApplicantInformationsController < Cbv::BaseController
       attr == :date_of_birth ? { date_of_birth: [ :day, :month, :year ] } : attr
     }
 
-    params.fetch("cbv_applicant_#{@cbv_flow.client_agency_id}", {}).permit(cbv_applicant: permitted)
+    parsed = params.fetch("cbv_applicant_#{@cbv_flow.client_agency_id}", {})
+                   .permit(cbv_applicant: permitted)
+
+    # HTML forms send "" for empty inputs. CbvApplicant treats only literal
+    # `nil` as missing, so coerce blank scalar values to nil before
+    # mass-assignment to preserve form-validation UX. API callers (which
+    # don't go through this controller) can still send any non-nil value.
+    cbv_attrs = parsed[:cbv_applicant]
+    if cbv_attrs.is_a?(ActionController::Parameters)
+      cbv_attrs.each do |key, val|
+        cbv_attrs[key] = nil if val.is_a?(String) && val.empty?
+      end
+    end
+
+    parsed
   end
 
   def redirect_when_info_present
     return if params[:force_show] == "true"
 
-    redirect_to next_path unless @cbv_applicant.has_applicant_attribute_missing?
+    return unless params[:skip_edit] == "true"
+
+    redirect_to next_path if @cbv_applicant.missing_required_attributes.empty?
   end
 
   def redirect_when_in_invitation_flow
@@ -66,14 +82,16 @@ class Cbv::ApplicantInformationsController < Cbv::BaseController
         time: Time.now.to_i,
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,
         client_agency_id: current_agency&.id,
-        cbv_flow_id: @cbv_flow.id
+        cbv_flow_id: @cbv_flow.id,
+        device_id: @cbv_flow.device_id
       })
     else
       event_logger.track(TrackEvent::ApplicantAccessedInformationPage, request, {
         time: Time.now.to_i,
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,
         client_agency_id: current_agency&.id,
-        cbv_flow_id: @cbv_flow.id
+        cbv_flow_id: @cbv_flow.id,
+        device_id: @cbv_flow.device_id
       })
     end
   end
@@ -84,6 +102,7 @@ class Cbv::ApplicantInformationsController < Cbv::BaseController
       cbv_applicant_id: @cbv_flow.cbv_applicant_id,
       cbv_flow_id: @cbv_flow.id,
       client_agency_id: current_agency&.id,
+      device_id: @cbv_flow.device_id,
       error_string: error_string
     })
   end
@@ -94,6 +113,7 @@ class Cbv::ApplicantInformationsController < Cbv::BaseController
       cbv_applicant_id: @cbv_flow.cbv_applicant_id,
       cbv_flow_id: @cbv_flow.id,
       client_agency_id: current_agency&.id,
+      device_id: @cbv_flow.device_id,
       invitation_id: @cbv_flow.cbv_flow_invitation_id,
       identity_age_range_applicant: get_age_range(@cbv_applicant.date_of_birth)
     })

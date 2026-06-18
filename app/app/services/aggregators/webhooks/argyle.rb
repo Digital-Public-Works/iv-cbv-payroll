@@ -42,6 +42,12 @@ module Aggregators::Webhooks
         job: %w[]
       },
 
+      "accounts.removed" => {
+        status: :success,
+        type: :non_partial,
+        job: %w[]
+      },
+
       # The *.fully_synced events may take a long time to return; so we'll
       # store them for measurement purposes, but not tie any jobs' success to
       # their completion.

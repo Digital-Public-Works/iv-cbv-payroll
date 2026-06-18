@@ -28,6 +28,7 @@ resource "aws_s3_bucket" "access_logs" {
   # checkov:skip=CKV2_AWS_62:Event notification not necessary for this bucket expecially due to likely use of lifecycle rules
   # checkov:skip=CKV_AWS_18:Access logging was not considered necessary for this bucket
   # checkov:skip=CKV_AWS_144:Not considered critical to the point of cross region replication
+  # checkov:skip=CKV_AWS_145:AES256 encryption is sufficient; KMS not required
   # checkov:skip=CKV_AWS_300:Known issue where Checkov gets confused by multiple rules
   # checkov:skip=CKV_AWS_21:Bucket versioning is not worth it in this use case
 }
@@ -104,9 +105,8 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "encryption" {
   bucket = aws_s3_bucket.access_logs.id
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "aws:kms"
+      sse_algorithm = "AES256"
     }
-    bucket_key_enabled = true
   }
 }
 

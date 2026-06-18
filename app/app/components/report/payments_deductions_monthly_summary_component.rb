@@ -6,16 +6,17 @@ class Report::PaymentsDeductionsMonthlySummaryComponent < ViewComponent::Base
 
   attr_reader :employer_name
 
-  def initialize(report, payroll_account, is_responsive: true, is_w2_worker:, pay_frequency_text:)
+  def initialize(report, payroll_account, is_responsive: true, is_w2_worker:, income:, show_earnings_items: false)
     @aggregator_report = report
 
     # Note: payroll_account may either be the ID or the payroll_account object
-    @account_id = payroll_account.class == String ? payroll_account : payroll_account.pinwheel_account_id
+    @account_id = payroll_account.class == String ? payroll_account : payroll_account.aggregator_account_id
     @payroll_account_report = @aggregator_report.find_account_report(@account_id)
     @monthly_summary_data = @aggregator_report.summarize_by_month[@account_id]
     @is_responsive = is_responsive
     @is_w2_worker = is_w2_worker
-    @pay_frequency_text = pay_frequency_text
+    @income = income
+    @show_earnings_items = show_earnings_items
   end
 
   def before_render

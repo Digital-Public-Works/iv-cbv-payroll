@@ -45,9 +45,29 @@ RSpec.describe Cbv::EntriesController do
         )
       end
 
+      it "successfully starts the flow with a 10-character token" do
+        expect(invitation.auth_token.length).to eq(10)
+
+        get :show, params: { token: invitation.auth_token }
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Review pay from your job")
+      end
+
+      it "successfully starts the flow with a 36-character legacy token" do
+        legacy_uuid = SecureRandom.alphanumeric(36)
+        invitation.update_column(:auth_token, legacy_uuid)
+
+        expect(invitation.reload.auth_token).to eq(legacy_uuid)
+        expect(invitation.auth_token.length).to eq(36)
+
+        get :show, params: { token: invitation.auth_token }
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Review pay from your job")
+      end
+
       context "with multiple cbv flows" do
         it "sends multiple related tracking events" do
-          expect(EventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
+          expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
             cbv_flow_id: be_a(Integer),
             time: be_a(Integer),
             invitation_id: invitation.id,
@@ -55,15 +75,15 @@ RSpec.describe Cbv::EntriesController do
             seconds_since_invitation: seconds_since_invitation
           ))
 
-          expect(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, hash_including(
+          expect(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, hash_including(
             user_agent: be_a(String),
             invitation_id: invitation.id,
             cbv_flow_id: be_a(Integer),
             client_agency_id: invitation.client_agency_id,
-            path: "/cbv/entry"
+            path: a_string_starting_with("/start/")
           ))
 
-          expect(EventTrackingJob).to receive(:perform_later).with("ApplicantViewedAgreement", anything, hash_including(
+          expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantViewedAgreement", anything, hash_including(
             cbv_flow_id: be_a(Integer),
             time: be_a(Integer),
             invitation_id: invitation.id,
@@ -78,7 +98,7 @@ RSpec.describe Cbv::EntriesController do
       it "sends events with metadata" do
         request.headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
           cbv_flow_id: be_a(Integer),
           time: be_a(Integer),
           invitation_id: invitation.id,
@@ -86,15 +106,15 @@ RSpec.describe Cbv::EntriesController do
           seconds_since_invitation: seconds_since_invitation
         ))
 
-        expect(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, hash_including(
           user_agent: be_a(String),
           invitation_id: invitation.id,
           cbv_flow_id: be_a(Integer),
           client_agency_id: invitation.client_agency_id,
-          path: "/cbv/entry"
+          path: a_string_starting_with("/start/")
         ))
 
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantViewedAgreement", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantViewedAgreement", anything, hash_including(
           cbv_flow_id: be_a(Integer),
           time: be_a(Integer),
           invitation_id: invitation.id,
@@ -105,15 +125,15 @@ RSpec.describe Cbv::EntriesController do
       end
 
       it "tracks a CbvPageView event with Mixpanel (from the base controller)" do
-        expect(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, hash_including(
           invitation_id: invitation.id,
           cbv_flow_id: be_a(Integer),
           client_agency_id: invitation.client_agency_id,
-          path: "/cbv/entry"
+          path: a_string_starting_with("/start/")
         ))
 
-        allow(EventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, anything)
-        allow(EventTrackingJob).to receive(:perform_later).with("ApplicantViewedAgreement", anything, anything)
+        allow(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, anything)
+        allow(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantViewedAgreement", anything, anything)
 
         request.headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
         get :show, params: { token: invitation.auth_token }
@@ -122,8 +142,8 @@ RSpec.describe Cbv::EntriesController do
       it "includes origin information in ApplicantViewedAgreement event when set" do
         session[:cbv_origin] = "mail"
 
-        allow(EventTrackingJob).to receive(:perform_later)
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantViewedAgreement", anything, hash_including(
+        allow(MixpanelEventTrackingJob).to receive(:perform_later)
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantViewedAgreement", anything, hash_including(
           origin: "mail"
         ))
 
@@ -133,8 +153,8 @@ RSpec.describe Cbv::EntriesController do
       it "includes origin information in ApplicantAgreed event when agreeing" do
         session[:cbv_origin] = "sms"
 
-        allow(EventTrackingJob).to receive(:perform_later)
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantAgreed", anything, hash_including(
+        allow(MixpanelEventTrackingJob).to receive(:perform_later)
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantAgreed", anything, hash_including(
           origin: "sms"
         ))
 
@@ -157,43 +177,20 @@ RSpec.describe Cbv::EntriesController do
           let!(:connected_account) do
             create(:payroll_account,
               cbv_flow: existing_cbv_flow,
-              pinwheel_account_id: SecureRandom.uuid,
+              aggregator_account_id: SecureRandom.uuid,
               created_at: 4.minutes.ago
             )
           end
 
-          context "when an agency doesn't allow invitation reuse" do
-            before do
-              allow_any_instance_of(ClientAgencyConfig::ClientAgency)
-                .to receive(:allow_invitation_reuse)
-                .and_return(false)
-            end
+          it "creates a new CbvFlow object" do
+            expect { get :show, params: { token: invitation.auth_token } }
+              .to change { session[:cbv_flow_id] }
+                .from(nil)
+                .to(be_an(Integer))
+              .and change(CbvFlow, :count).by(1)
 
-            it "redirects to the expired invitation URL" do
-              expect { get :show, params: { token: invitation.auth_token } }
-                .not_to change { session[:cbv_flow_id] }
-
-              expect(response).to redirect_to(cbv_flow_expired_invitation_path(client_agency_id: invitation.client_agency_id))
-            end
-          end
-
-          context "when an agency allows invitation reuse" do
-            before do
-              allow_any_instance_of(ClientAgencyConfig::ClientAgency)
-                .to receive(:allow_invitation_reuse)
-                .and_return(true)
-            end
-
-            it "creates a new CbvFlow object" do
-              expect { get :show, params: { token: invitation.auth_token } }
-                .to change { session[:cbv_flow_id] }
-                  .from(nil)
-                  .to(be_an(Integer))
-                .and change(CbvFlow, :count).by(1)
-
-              expect(assigns(:cbv_flow)).to be_present
-              expect(assigns(:cbv_flow).cbv_flow_invitation).to eq(invitation)
-            end
+            expect(assigns(:cbv_flow)).to be_present
+            expect(assigns(:cbv_flow).cbv_flow_invitation).to eq(invitation)
           end
         end
       end
@@ -248,6 +245,111 @@ RSpec.describe Cbv::EntriesController do
         get :show
 
         expect(response).to redirect_to(root_url(cbv_flow_timeout: true))
+      end
+    end
+  end
+
+  describe 'invitation flow limit' do
+    let(:user) { create(:user) }
+    let(:cbv_applicant) { create(:cbv_applicant, client_agency_id: 'sandbox') }
+    let(:invitation) do
+      create(:cbv_flow_invitation,
+             user: user,
+             cbv_applicant: cbv_applicant,
+             client_agency_id: 'sandbox'
+      )
+    end
+
+    before do
+      allow(CbvFlowInvitation).to receive(:find_by).with(auth_token: invitation.auth_token).and_return(invitation)
+      allow(NewRelic::EventLogger).to receive(:track)
+    end
+
+    context 'when invitation has not reached limit' do
+      before do
+        create_list(:cbv_flow, 99, cbv_flow_invitation: invitation, cbv_applicant: cbv_applicant)
+      end
+
+      it 'allows access' do
+        get :show, params: { token: invitation.auth_token }
+        expect(response).not_to redirect_to(root_url)
+      end
+
+      it 'does not record NewRelic event' do
+        get :show, params: { token: invitation.auth_token }
+        expect(NewRelic::EventLogger).not_to have_received(:track).with("InvitationLimitReached", anything)
+      end
+    end
+
+    context 'when invitation has reached limit' do
+      before do
+        create_list(:cbv_flow, 100, cbv_flow_invitation: invitation, cbv_applicant: cbv_applicant)
+      end
+
+      it 'redirects to root with alert' do
+        get :show, params: { token: invitation.auth_token }
+
+        expect(response).to redirect_to(root_url)
+        expect(flash[:alert]).to eq(I18n.t('cbv.error_invitation_limit_reached'))
+      end
+
+      it 'records NewRelic custom event with correct attributes' do
+        get :show, params: { token: invitation.auth_token }
+
+        expect(NewRelic::EventLogger).to have_received(:track).with(
+          "InvitationLimitReached",
+          {
+            invitation_id: invitation.id,
+            cbv_flow_count: 100
+          }
+        )
+      end
+
+      it 'logs warning message' do
+        expect(Rails.logger).to receive(:warn).with("Invitation #{invitation.id} reached flow limit")
+
+        get :show, params: { token: invitation.auth_token }
+      end
+    end
+
+    context 'when invitation has exceeded limit' do
+      before do
+        create_list(:cbv_flow, 105, cbv_flow_invitation: invitation, cbv_applicant: cbv_applicant)
+      end
+
+      it 'redirects to root with alert' do
+        get :show, params: { token: invitation.auth_token }
+
+        expect(response).to redirect_to(root_url)
+        expect(flash[:alert]).to eq(I18n.t('cbv.error_invitation_limit_reached'))
+      end
+
+      it 'records NewRelic custom event with actual count' do
+        get :show, params: { token: invitation.auth_token }
+
+        expect(NewRelic::EventLogger).to have_received(:track).with(
+          "InvitationLimitReached",
+          {
+            invitation_id: invitation.id,
+            cbv_flow_count: 105
+          }
+        )
+      end
+    end
+
+    context 'when multiple requests hit the limit' do
+      before do
+        create_list(:cbv_flow, 100, cbv_flow_invitation: invitation, cbv_applicant: cbv_applicant)
+      end
+
+      it 'records NewRelic event for each request' do
+        get :show, params: { token: invitation.auth_token }
+        get :show, params: { token: invitation.auth_token }
+
+        expect(NewRelic::EventLogger).to have_received(:track).with(
+          "InvitationLimitReached",
+          anything
+        ).twice
       end
     end
   end

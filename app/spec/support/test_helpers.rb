@@ -101,7 +101,7 @@ module TestHelpers
   end
 
   def stub_client_agency_config_value(client_agency_id, key, value)
-    client_agency_config = Rails.application.config.client_agencies[client_agency_id]
+    client_agency_config = ClientAgencyConfig.instance[client_agency_id]
     allow(client_agency_config).to receive(key.to_sym).and_return(value)
   end
 
@@ -114,11 +114,8 @@ module TestHelpers
   end
 
   def extract_pdf_text(response)
-    pdf = PDF::Reader.new(StringIO.new(response.body))
-    pdf_text = ""
-    pdf.pages.each do |page|
-      pdf_text += page.text.gsub(/\s+/, ' ')
-    end
-    pdf_text
+    reader = PDF::Reader.new(StringIO.new(response.body))
+    text = reader.pages.map(&:text).join("\n")
+    text.gsub(/\s+/, ' ').strip # Normalize all whitespace to single spaces
   end
 end

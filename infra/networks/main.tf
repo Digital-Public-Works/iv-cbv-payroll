@@ -79,6 +79,7 @@ module "network" {
   num_availability_zones                  = local.network_config.num_availability_zones
   single_nat_gateway                      = local.network_config.single_nat_gateway
   enable_command_execution                = local.enable_command_execution
+  enable_vpc_endpoint_interfaces          = local.network_config.enable_vpc_endpoint_interfaces
 }
 
 module "domain" {

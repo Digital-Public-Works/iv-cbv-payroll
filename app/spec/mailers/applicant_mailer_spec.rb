@@ -2,11 +2,9 @@ require "rails_helper"
 require "active_support/testing/time_helpers"
 
 RSpec.describe ApplicantMailer, type: :mailer do
-  include ActiveSupport::Testing::TimeHelpers
-
   describe "invitation email" do
     before do
-      travel_to Time.new(2024, 7, 7, 12, 0, 0, "-04:00")
+      travel_to Time.use_zone("America/New_York") { Time.zone.local(2024, 7, 7, 12, 0, 0) }
     end
 
     after do

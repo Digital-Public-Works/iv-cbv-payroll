@@ -18,11 +18,17 @@ module Aggregators::Sdk
         api_key_id: ENV["ARGYLE_API_TOKEN_ID"],
         api_key_secret: ENV["ARGYLE_API_TOKEN_SECRET"],
         webhook_secret: ENV["ARGYLE_WEBHOOK_SECRET"]
+      },
+      mock: {
+        base_url: "http://localhost:3000",
+        api_key_id: "mock",
+        api_key_secret: "mock",
+        webhook_secret: "mock"
       }
     }
 
     # See: https://console.argyle.com/flows
-    FLOW_ID = "BXSHLUUJ"
+    FLOW_ID = "EV7MFL8Y"
 
     EMPLOYER_SEARCH_ENDPOINT = "employer-search"
     PAYSTUBS_ENDPOINT = "paystubs"
@@ -34,10 +40,30 @@ module Aggregators::Sdk
     GIGS_ENDPOINT = "gigs"
     SHIFTS_ENDPOINT = "shifts"
     WEBHOOKS_ENDPOINT = "webhooks"
+    PAYROLL_DOCUMENTS_ENDPOINT = "payroll-documents"
+
+    # Timeout (seconds) for retrieving a single paystub document file from the
+    # signed storage URL. These downloads can be large, so they get a longer
+    # budget than the default 5s API request timeout.
+    PAYSTUB_RETRIEVAL_TIMEOUT = 60
 
     attr_reader :webhook_secret
 
-    def initialize(environment, api_key_id = nil, api_key_secret = nil, webhook_secret = nil)
+    # Factory method to return MockArgyleService when environment is "mock".
+    def self.new(environment, api_key_id = nil, api_key_secret = nil, webhook_secret = nil, fixture_user: nil)
+      if environment.to_s == "mock" || environment.to_sym == :mock
+        require_relative "mock_argyle_service"
+        MockArgyleService.allocate.tap do |instance|
+          instance.send(:initialize, environment, api_key_id, api_key_secret, webhook_secret, fixture_user: fixture_user)
+        end
+      else
+        super
+      end
+    end
+
+    def initialize(environment, api_key_id = nil, api_key_secret = nil, webhook_secret = nil, fixture_user: nil)
+      # Note: fixture_user is accepted but unused here. It's used by MockArgyleService
+      # and needs to be in this signature so the factory method's `super` call works.
       @environment = ENVIRONMENTS.fetch(environment.to_sym) { |env| raise KeyError.new("ArgyleService unknown environment: #{env}") }
       @api_key_id = api_key_id || @environment[:api_key_id]
       @api_key_secret = api_key_secret || @environment[:api_key_secret]
@@ -133,9 +159,9 @@ module Aggregators::Sdk
       @http.get(build_url("#{ACCOUNTS_ENDPOINT}/#{account}")).body
     end
 
-    # https://docs.argyle.com/api-reference/accounts#delete
-    def delete_account_api(account:)
-      @http.delete(build_url("#{ACCOUNTS_ENDPOINT}/#{account}")).body
+    # https://docs.argyle.com/api-reference/users#delete
+    def delete_user(argyle_user_id:)
+      @http.delete(build_url("#{USERS_ENDPOINT}/#{argyle_user_id}")).body
     end
 
     # https://docs.argyle.com/api-reference/paystubs#list
@@ -198,6 +224,35 @@ module Aggregators::Sdk
       raise ArgumentError if user.nil? && account.nil?
       params = { user: user, account: account }.compact
       @http.get(build_url(EMPLOYMENTS_ENDPOINT), params).body
+    end
+
+    # https://docs.argyle.com/api-reference/payroll-documents#list
+    def fetch_payroll_documents_api(account: nil, user: nil, employment: nil, limit: 200)
+      params = { account: account, user: user, employment: employment, limit: limit }.compact
+      with_pagination do
+        @http.get(build_url(PAYROLL_DOCUMENTS_ENDPOINT), params).body
+      end
+    end
+
+    # https://docs.argyle.com/api-reference/payroll-documents#retrieve
+    def fetch_payroll_document_api(id:)
+      @http.get(build_url("#{PAYROLL_DOCUMENTS_ENDPOINT}/#{id}")).body
+    end
+
+    # Returns [bytes, content_type] for the file at file_url.
+    # Argyle responds with a 302 to a GCS signed URL on a different host.
+    # Step 1: authenticated request to get the redirect location.
+    # Step 2: unauthenticated request to the signed GCS URL.
+    def fetch_payroll_document_file(file_url:)
+      redirect_resp = @http.get(file_url)
+      storage_url = redirect_resp.headers["location"]
+      raise "fetch_payroll_document_file: no redirect location returned for #{file_url}" if storage_url.blank?
+
+      conn = Faraday.new(request: { timeout: PAYSTUB_RETRIEVAL_TIMEOUT }) do |c|
+        c.response :raise_error
+      end
+      resp = conn.get(storage_url)
+      [ resp.body, resp.headers["content-type"] ]
     end
 
     def build_url(endpoint)
