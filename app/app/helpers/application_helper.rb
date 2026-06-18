@@ -42,7 +42,11 @@ module ApplicationHelper
     end
 
     # Look for the translation in the database first; if not found there, look in the locale files.
-    translated = db_translation(i18n_key, **options) || db_translation(i18n_base_key, **options)
+    # Expand leading-dot ("lazy") keys (e.g. ".checkbox") to their fully-qualified path first,
+    # because DB translations are stored under the full key (e.g. "cbv.entries.show.checkbox").
+    # Without this, a partial key would never match a DB row and would silently fall back to YAML.
+    translated = db_translation(scope_key_by_partial(i18n_key), **options) ||
+      db_translation(scope_key_by_partial(i18n_base_key), **options)
 
     translated ||= if I18n.exists?(scope_key_by_partial(i18n_key))
                      t(i18n_key, **options)
@@ -132,6 +136,11 @@ module ApplicationHelper
 
   def feedback_form_url
     APPLICANT_FEEDBACK_FORM
+  end
+
+  def page_title
+    parts = [ content_for(:title).presence, t("shared.pilot_name") ].compact
+    safe_join(parts, " | ")
   end
 
   def survey_form_url

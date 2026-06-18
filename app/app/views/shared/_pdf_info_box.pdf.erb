@@ -1,16 +1,21 @@
+<%#
+  Layout uses floated divs rather than a <table>. wkhtmltopdf's old WebKit draws
+  the cell borders of a `border-collapse: collapse` table as near-black (#1b1b1b)
+  hairline fills even when the cells set `border: 0`. At sub-pixel width those
+  hairlines anti-alias to a faint gray rectangle around/inside the box in some
+  PDF viewers — the "gray border" this partial used to show. Floats draw no such
+  hairlines. (Modern flexbox doesn't lay out reliably in wkhtmltopdf, so we float
+  the icon, clear it with `overflow: hidden`, and force the alert body to block.)
+%>
 <div class="usa-alert usa-alert--info usa-alert--no-icon bg-info-lighter border-left-1 border-info">
-  <div class="usa-alert__body padding-y-0 padding-x-1">
-    <table class="border-0 bg-transparent width-full" style="border-collapse:collapse">
-      <tr class="border-0 bg-transparent">
-        <td class="border-0 bg-transparent text-top width-3 padding-top-1 padding-bottom-0 padding-x-1">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V11H13V17ZM13 9H11V7H13V9Z" fill="#1B1B1B"/>
-          </svg>
-        </td>
-        <td class="border-0 bg-transparent text-top">
-          <%= yield %>
-        </td>
-      </tr>
-    </table>
+  <div class="usa-alert__body padding-y-1 padding-x-2" style="display:block">
+    <div style="float:left; width:24px; margin-right:12px;" aria-hidden="true">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V11H13V17ZM13 9H11V7H13V9Z" fill="#1B1B1B"/>
+      </svg>
+    </div>
+    <div style="overflow:hidden">
+      <%= yield %>
+    </div>
   </div>
 </div>

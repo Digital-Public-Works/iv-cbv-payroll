@@ -113,9 +113,8 @@ module Aggregators::AggregatorReports
 
     # Guardrail against retrieving an anomalously large number of paystubs.
     # The cap is the lookback window (in days) x MAX_PAYSTUBS_PER_LOOKBACK_DAY.
-    # If the retrieved count reaches the cap, we surface the error to New Relic
-    # and raise to hard fail — we'd rather abort report generation than let an
-    # erroneously large set of paystubs get processed and crash the app.
+    # If the retrieved count reaches the cap, we surface the error to New Relic.
+    # We are not blocked the flow, so the user can still continue and finish, but we will want to look into why this happened.
     def check_paystub_volume(paystubs_json, payroll_account)
       max_paystubs = @fetched_days.to_i * MAX_PAYSTUBS_PER_LOOKBACK_DAY
       return if max_paystubs.zero?
@@ -136,7 +135,6 @@ module Aggregators::AggregatorReports
         max_paystubs: max_paystubs,
         lookback_days: @fetched_days
       })
-      raise error
     end
 
     def transform_identities(identities_json)
