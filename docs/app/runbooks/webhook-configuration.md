@@ -150,14 +150,6 @@ Different client agencies may use different provider environments. Configure bas
 - Uses environment specified in `SANDBOX_ARGYLE_ENVIRONMENT`
 - Uses environment specified in `SANDBOX_PINWHEEL_ENVIRONMENT`
 
-### Arizona DES Agency
-- Uses environment specified in `AZ_DES_ARGYLE_ENVIRONMENT`
-- Uses environment specified in `AZ_DES_PINWHEEL_ENVIRONMENT`
-
-### Louisiana LDH Agency
-- Uses environment specified in `LA_LDH_ARGYLE_ENVIRONMENT`
-- Uses environment specified in `LA_LDH_PINWHEEL_ENVIRONMENT`
-
 ## Webhook URL Patterns
 
 Webhooks are delivered to standard endpoints:

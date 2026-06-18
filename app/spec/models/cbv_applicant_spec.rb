@@ -9,24 +9,30 @@ RSpec.describe CbvApplicant, type: :model do
     end
   end
 
-  describe "#has_applicant_attribute_missing?" do
+  describe "#missing_required_attributes" do
     before do
+      # Include a subset of attributes for testing, mark first_name as required for test purposes
       allow_any_instance_of(ClientAgencyConfig::ClientAgency).to receive(:applicant_attributes).and_return(
-        { first_name: "required" }
+        {
+          "case_number" => "required",
+          "first_name" => "required",
+          "middle_name" => "",
+          "last_name" => ""
+        }
       )
     end
 
     let(:cbv_applicant) { create(:cbv_applicant, first_name: nil) }
-    it "returns true if a field missing" do
+    it "includes the missing required attribute names" do
       cbv_applicant.set_applicant_attributes
       expect(cbv_applicant.required_applicant_attributes).to be_present
-      expect(cbv_applicant.has_applicant_attribute_missing?).to eq(true)
+      expect(cbv_applicant.missing_required_attributes).to include(:first_name)
     end
 
-    it "returns false if a field not missing" do
+    it "returns an empty array when all required attributes are present" do
       cbv_applicant.set_applicant_attributes
       cbv_applicant.first_name = "Dean Venture"
-      expect(cbv_applicant.has_applicant_attribute_missing?).to eq(false)
+      expect(cbv_applicant.missing_required_attributes).to be_empty
     end
   end
 
@@ -34,7 +40,7 @@ RSpec.describe CbvApplicant, type: :model do
     let(:date_of_birth) { build(:cbv_applicant).date_of_birth }
 
     it "returns an array of symbols containing the missing field keys" do
-      cbv_applicant_without_case_number = build(:cbv_applicant, :sandbox, middle_name: nil)
+      cbv_applicant_without_case_number = build(:cbv_applicant, :sandbox, middle_name: nil, case_number: nil)
       cbv_applicant_without_case_number.set_applicant_attributes
       expect(cbv_applicant_without_case_number.required_applicant_attributes).to be_present
       expect(cbv_applicant_without_case_number.case_number).to be_nil
@@ -53,6 +59,149 @@ RSpec.describe CbvApplicant, type: :model do
       valid_cbv_applicant.set_applicant_attributes
       valid_cbv_applicant.validate_required_applicant_attributes
       expect(valid_cbv_applicant.errors).to be_empty
+    end
+
+    context "partner where case_number is required (az_des)" do
+      let(:applicant) { build(:cbv_applicant, :az_des, case_number: nil) }
+
+      it "reports case_number as missing" do
+        applicant.set_applicant_attributes
+        missing = applicant.validate_required_applicant_attributes
+
+        expect(missing).to include(:case_number)
+        expect(applicant.errors[:case_number]).to include(
+          I18n.t("cbv.applicant_informations.default.fields.case_number.blank")
+        )
+      end
+    end
+
+    context "partner where case_number is optional (la_ldh)" do
+      let(:applicant) { build(:cbv_applicant, :la_ldh, case_number: nil) }
+
+      it "does not report case_number as missing" do
+        applicant.set_applicant_attributes
+        missing = applicant.validate_required_applicant_attributes
+
+        expect(missing).not_to include(:case_number)
+        expect(applicant).to be_valid
+      end
+    end
+  end
+
+  describe "#redact!" do
+    context "partner with string-redactable fields" do
+      let(:applicant) { create(:cbv_applicant, :az_des) }
+
+      it "redacts all sensitive PII fields" do
+        applicant.redact!
+
+        expect(applicant).to have_attributes(
+          first_name: "REDACTED",
+          middle_name: "REDACTED",
+          last_name: "REDACTED",
+          case_number: "REDACTED" # partner_identifier is always redacted
+        )
+      end
+
+      it "redacts specific fields when given" do
+        applicant.redact!({ case_number: :string })
+
+        expect(applicant.case_number).to eq("REDACTED")
+      end
+    end
+
+    context "partner with date-redactable fields" do
+      let(:applicant) { create(:cbv_applicant, :la_ldh) }
+
+      it "redacts date_of_birth" do
+        applicant.redact!
+
+        expect(applicant).to have_attributes(
+          date_of_birth: Date.new(1990, 1, 1),
+          case_number: "REDACTED" # partner_identifier is always redacted
+        )
+      end
+    end
+
+    context "partner with no applicant-level redactable fields (e.g. pa_dhs)" do
+      let(:applicant) { create(:cbv_applicant, :pa_dhs) }
+
+      it "marks the applicant redacted without raising" do
+        expect { applicant.redact! }.not_to raise_error
+        expect(applicant.reload.redacted_at).to be_within(1.second).of(Time.now)
+      end
+
+      it "always redacts the partner_identifier (case_number), even when not configured redactable" do
+        expect(applicant.partner_identifier).to be_present
+        applicant.redact!
+
+        expect(applicant.reload.partner_identifier).to eq("REDACTED")
+      end
+
+      it "still redacts member_name in income_changes JSON" do
+        applicant.redact!
+
+        expect(applicant.income_changes).to be_present
+        applicant.income_changes.each do |ic|
+          expect(ic["member_name"]).to eq("REDACTED")
+        end
+      end
+    end
+
+    context "income_changes redaction" do
+      let(:applicant) { create(:cbv_applicant, :az_des) }
+
+      it "redacts member_name in income_changes JSON" do
+        applicant.redact!
+
+        expect(applicant.income_changes).to be_present
+        applicant.income_changes.each do |ic|
+          expect(ic["member_name"]).to eq("REDACTED")
+          expect(ic["employer_name"]).not_to eq("REDACTED")
+        end
+      end
+
+      it "handles non-array income_changes" do
+        applicant.income_changes = "this is not an array"
+        applicant.redact!
+
+        expect(applicant.income_changes).to eq("this is not an array")
+      end
+
+      it "handles nil/missing member_name" do
+        applicant.income_changes = [
+          { "member_name" => nil, "employer_name" => "Test Company" },
+          { "employer_name" => "Missing Company" }
+        ]
+
+        applicant.redact!
+
+        expect(applicant.income_changes).to eq([
+          { "member_name" => "REDACTED", "employer_name" => "Test Company" },
+          { "employer_name" => "Missing Company" }
+        ])
+      end
+    end
+  end
+
+  describe "#agency_expected_names" do
+    it "returns unique member names from income_changes" do
+      applicant = create(:cbv_applicant, :az_des)
+
+      expect(applicant.agency_expected_names).to eq([ "Mark Scout" ])
+    end
+
+    it "returns empty array when income_changes is blank" do
+      applicant = create(:cbv_applicant, :la_ldh)
+
+      expect(applicant.agency_expected_names).to eq([])
+    end
+
+    it "returns empty array when redacted" do
+      applicant = create(:cbv_applicant, :az_des)
+      applicant.redact!
+
+      expect(applicant.agency_expected_names).to eq([])
     end
   end
 
@@ -138,8 +287,11 @@ RSpec.describe CbvApplicant, type: :model do
         before do
           allow_any_instance_of(ClientAgencyConfig::ClientAgency).to receive(:applicant_attributes).and_return(
             {
-              first_name: { "required" => true },
-              date_of_birth: { "required" => true, "type" => "date" }
+              "case_number" => { "required" => false },
+              "first_name" => { "required" => true },
+              "middle_name" => { "required" => false },
+              "last_name" => { "required" => false },
+              "date_of_birth" => { "required" => true, "type" => "date" }
             }
           )
         end

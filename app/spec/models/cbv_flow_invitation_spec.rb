@@ -132,7 +132,8 @@ RSpec.describe CbvFlowInvitation, type: :model do
     let(:agency_time_zone) { "America/New_York" }
 
     let(:partner_app_attributes) do
-      PartnerApplicationAttribute.where(partner_config: client_agency_id).each_with_object({}) do |attr, h|
+      partner = PartnerConfig.find_by(partner_id: client_agency_id)
+      PartnerApplicationAttribute.where(partner_config: partner).each_with_object({}) do |attr, h|
         h[attr.name] = attr
       end.with_indifferent_access
     end
@@ -142,7 +143,8 @@ RSpec.describe CbvFlowInvitation, type: :model do
         invitation_valid_days: invitation_valid_days,
         applicant_attributes: partner_app_attributes,
         require_applicant_information_on_invitation: true,
-        timezone: "America/New_York"
+        timezone: "America/New_York",
+        partner_identifier_name: "case_number"
       )
     end
 
@@ -216,7 +218,8 @@ RSpec.describe CbvFlowInvitation, type: :model do
     let(:invitation_sent_at) { Time.use_zone(agency_time_zone) { Time.zone.local(2024, 8,  1, 12, 0, 0) } }
 
     let(:partner_app_attributes) do
-      PartnerApplicationAttribute.where(partner_config: client_agency_id).each_with_object({}) do |attr, h|
+      partner = PartnerConfig.find_by(partner_id: client_agency_id)
+      PartnerApplicationAttribute.where(partner_config: partner).each_with_object({}) do |attr, h|
         h[attr.name] = attr
       end.with_indifferent_access
     end
@@ -226,7 +229,8 @@ RSpec.describe CbvFlowInvitation, type: :model do
         invitation_valid_days: invitation_valid_days,
         applicant_attributes: partner_app_attributes,
         require_applicant_information_on_invitation: true,
-        timezone: "America/New_York"
+        timezone: "America/New_York",
+        partner_identifier_name: "case_number"
       )
     end
 

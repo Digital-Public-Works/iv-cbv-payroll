@@ -174,9 +174,8 @@ class Cbv::PreviewController < ApplicationController
   def create_synced_flow(client_agency_id)
     cbv_applicant = CbvApplicant.create!(
       client_agency_id: client_agency_id,
-      first_name: "Preview",
-      last_name: "User",
-      case_number: "PREVIEW123",
+      partner_identifier: "PREVIEW123",
+      custom_attributes: { "first_name" => "Preview", "last_name" => "User" },
       snap_application_date: Date.current
     )
 

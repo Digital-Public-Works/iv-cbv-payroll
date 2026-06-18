@@ -201,6 +201,29 @@ en:
         radio_no: No, I don’t have another job that meets one of these criteria
         radio_yes: Yes, I have another job that meets one of these criteria
     applicant_informations:
+      default:
+        fields:
+          case_number:
+            blank: Enter your case number.
+            prompt: Case number
+            super_one_html: Case number<sup>1</sup>
+          date_of_birth:
+            blank: Enter your date of birth.
+            help_text: 'For example: January 19 2000'
+            prompt: Date of birth
+            super_one_html: Date of birth<sup>1</sup>
+          first_name:
+            blank: Enter your first name.
+            prompt: First name
+            super_one_html: First name<sup>1</sup>
+          last_name:
+            blank: Enter your last name.
+            prompt: Last name
+            super_one_html: Last name<sup>1</sup>
+          middle_name:
+            blank: Enter your middle name.
+            prompt: Middle name
+            super_one_html: Middle name<sup>1</sup>
       la_ldh:
         fields:
           case_number:
@@ -262,6 +285,19 @@ en:
         search: Search
         select: Select
         type_the_full_name_tooltip: Type the full name using letters or numbers
+        unemployment_search_tips:
+          go_back: Go back to search
+          heading: Are you unemployed?
+        unemployment_tips:
+          close_message: Close this message
+          link_text: I am currently unemployed
+          tip1_description: Payroll records show the last time you were paid. If your job used a payroll company you can use those records to prove your job ended.
+          tip1_heading: If your job ended recently
+          tip2_description: Use Verify My Income to log into the payroll system of your last job to send your pay information to %{agency_full_name}.
+          tip2_heading: How to prove your job ended
+          tip2_tip: 'Tip: HR may have emailed you about how to log into the payroll system when your job ended.'
+          tip3_description: Ask a manager or supervisor from your previous job to write a letter that shows when your job ended and when you were last paid. Submit that letter to %{agency_full_name}.
+          tip3_heading: If you can’t log into the payroll system
     entries:
       create:
         error: You must check the agreement checkbox to proceed.
@@ -271,18 +307,22 @@ en:
           pa_dhs: I agree that Verify My Income can access my income, including W-2 and/or gig work information. After reviewing my income details, I can choose to share my income with the PA Department of Human Services (DHS). If shared, DHS will use my income details to determine my benefits. I understand that Verify My Income will not have ongoing access to my income details.
         continue: Get started
         header: Let's verify your income
-        step1: Search and sign into your employer or online payroll provider.
-        step1_description: Use the login credentials you have for viewing your online pay stub. We won’t share or keep your login information. If you work for an app, like Uber, this would be the same login when you sign into the Uber app.
-        step2: Review your payment information.
-        step2_description: You will be able to preview and approve everything that is shared with %{agency_acronym}.
-        step3: Submit your payment information.
-        step3_description: We’ll automatically send it to %{agency_acronym}. This will help you prove your income and can help %{agency_acronym} get to a decision faster.
-        subheader_html: 'We’ll send your payment records from your employer(s) to %{agency_full_name} (%{agency_acronym}) to verify your income. <strong>Most people complete this process in about 5 minutes.</strong> Just follow these steps:'
+        step1: Find your employer or payroll company
+        step1_description: Payroll or gig companies like ADP, Workday, Uber, or Lyft have information about your pay. Find your job and use the same login you use to check your pay stubs online.
+        step1_note: Verify My Income will not keep or share your login information.
+        step2: Review pay from your job
+        step2_description: After you log in, Verify My Income pulls your recent paychecks into a single report. You can check the details and add comments to the report before you allow it to be sent to %{agency_full_name}.
+        step2_note: You can also add more jobs to your report if you need to.
+        step3: Submit your income report
+        step3_description: Your pay information gets sent directly to %{agency_acronym}. When you finish, you can save a copy of your report. You can also share a link with other household members to verify their pay, too.
+        subheader: Verify My Income helps you prove your income. You can combine your pay into one report so you don't need to upload pay stubs. After you review your report, you can send it directly to %{agency_full_name}.
+        time_estimate: Most people can find, connect and review one job in about 5 minutes.
         what_if_i_cant_use_this_body_1: If you need to verify your income and can’t use this tool, then you’ll need to share your income information for this job directly with %{agency_portal_name}.
         what_if_i_cant_use_this_body_2_html:
           default: Visit the <a href="%{agency_url}" target="_blank" rel="noopener noreferrer">%{agency_portal_name} website</a> for more information on how to submit documents.
           la_ldh: 'You can: <ul><li>Upload documents through the Self Service Portal online at <a href="https://mymedicaid.la.gov/" target="_blank" rel="noopener noreferrer">https://mymedicaid.la.gov/</a></li><li>Send documents through US Mail: Louisiana Medicaid/LaCHIP, P.O. Box 91283, Baton Rouge, LA 70821-9278</li><li>Email documents: <a href="mailto:MyMedicaid@la.gov">MyMedicaid@la.gov</a></li><li>Bring your documents to the Medicaid office of choice.</li></ul>'
         what_if_i_cant_use_this_title: What if I can't use this tool?
+        what_youll_do: What you’ll do
         who_is_this_for_body: You can use this tool if you have earned income in the last 90 days (even if you’re no longer working), and you can access your paystubs online or work for an app-based company like Uber, Lyft or Amazon Flex.
         who_is_this_for_title: Who is this tool for?
     error_invalid_link: Invalid link used to begin CBV. Try clicking the link again or contact your caseworker for help.
@@ -426,6 +466,8 @@ en:
             how_to: This report includes payment information from the past 90 days. In most cases, you only need to review income from the last 30 days for eligibility purposes. Use data beyond the 30-day period only if necessary. Key fields for income verification are highlighted in yellow.
             how_to_header: 'How to use this report:'
             pay_period: Pay period (%{pay_frequency})
+            paystubs_available_header: 'Pay stub images are available for the following employers:'
+            paystubs_separate_file: Pay stub images are provided in a separate file for reference.
             snap_agency_id: SNAP Agency ID
             ssn: SSN
             staff_beacon_id_wel_id: Staff BEACON ID (WELID)
@@ -441,6 +483,10 @@ en:
             self_employment: Self-employment
           footer:
             page_footer: Income Verification Report | Page [page] of [topage]
+          paystubs_cover:
+            footer: The pay stub images are shown on the next page, and have been shared with %{agency_name}.
+            header: 'Income Verification Report: Pay stub images'
+            intro: 'There are pay stub images for these jobs:'
           shared:
             additional_jobs_to_report: Does the client have additional jobs they will verify separately?
             additional_jobs_to_report_html: Does the client have additional jobs they will verify separately?<sup>1</sup>
@@ -780,22 +826,28 @@ en:
     report_data_range:
       ninety_days: 90 days
       six_months: 6 months
-    reporting_purpose:
-      az_des: Mid Approval Contact form
-      la_ldh: benefits
-      pa_dhs: SNAP Renewal
-      sandbox: benefits
     select_placeholder: "- Select -"
     skip_link: Skip to main content
   time:
     formats:
       default: "%Y-%m-%d"
+  transmitters:
+    paystubs_caseworker_cover:
+      additional_jobs: Does the client have additional jobs they will verify separately?
+      client_and_report_information: Client and Report Information
+      client_information: Client information
+      confirmation_code: Confirmation code
+      consent_timestamp: Agreement Consent Timestamp
+      date_range: Date range for the income report
+      employer_list_intro: 'Verify My Income pulled pay stubs from the client''s payroll account(s). Pay stubs are available for the jobs listed below:'
+      report_created: Date the income report was created
+      report_details: Report details
+      supplement_body: The income report is a separate file. It shows monthly summaries of the pay stubs in this file, and any client comments. Review the report for more complete information about the client's jobs.
+      supplement_heading: This file is a supplement to the Income Verification Report
+      title: 'Income Verification Report: Pay stub images'
   us_form_with:
     boolean_false: 'No'
     boolean_true: 'Yes'
     date_picker_format: 'Format: mm/dd/yyyy'
     optional: Optional
     tax_id_format: 'Format: 123456789'
-  users:
-    omniauth_callbacks:
-      authentication_successful: You are signed in.

@@ -1,0 +1,60 @@
+name: rspec integration tests
+
+on:
+  pull_request:
+    paths:
+      - 'app/**'
+      - '.github/workflows/rspec-integration.yml'
+  push:
+    branches: ['main', 'release-demo', 'release-prod']
+
+permissions:
+  contents: read
+
+jobs:
+  rspec-integration:
+    name: Rspec (integration)
+    runs-on: ubuntu-22.04
+    services:
+      postgres:
+        image: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports: ["5432:5432"]
+        env:
+          POSTGRES_DB: iv_cbv_payroll_test
+          POSTGRES_USER: cidbuser
+          POSTGRES_PASSWORD: postgres
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: setup
+        uses: ./.github/actions/setup-project
+        with:
+          rails_env: test
+
+      - name: Start integration stack
+        working-directory: app
+        run: docker compose -f docker-compose.integration.yml up -d --build --wait --wait-timeout 120
+
+      - name: Run integration specs
+        working-directory: app
+        env:
+          RAILS_ENV: test
+          DATABASE_URL: ${{ steps.setup.outputs.database_url }}
+          RAILS_MASTER_KEY: 0f5db7adba61669d4cc45dfa6b2464d7
+        run: bundle exec rake integration:rspec:all
+
+      - name: Dump compose logs on failure
+        if: failure()
+        working-directory: app
+        run: docker compose -f docker-compose.integration.yml logs
+
+      - name: Tear down compose stack
+        if: always()
+        working-directory: app
+        run: docker compose -f docker-compose.integration.yml down -v

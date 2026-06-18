@@ -32,14 +32,6 @@ RSpec.describe Cbv::SummariesController do
   before do
     allow(MixpanelEventTracker).to receive(:new).and_return(mixpanel_event_stub)
     allow(mixpanel_event_stub).to receive(:track)
-    allow(mock_client_agency).to receive(:transmission_method_configuration).and_return({
-      "bucket"            => "test-bucket",
-      "region"            => "us-west-2",
-      "access_key_id"     => "SOME_ACCESS_KEY",
-      "secret_access_key" => "SOME_SECRET_ACCESS_KEY",
-      "public_key"        => @public_key
-    })
-
     cbv_applicant.update(snap_application_date: current_time)
 
     cbv_flow.payroll_accounts.first.update(aggregator_account_id: "03e29160-f7e7-4a28-b2d8-813640e030d3")

@@ -2,10 +2,12 @@ class Cbv::EmployerSearchesController < Cbv::BaseController
   before_action :check_webhooks_initialization_in_development
   after_action :track_accessed_search_event, only: :show
   after_action :track_applicant_searched_event, only: :show
+  after_action :track_unemployment_search_event, only: :show
 
   def show
     @query = search_params[:query]
     @employers = @query.blank? ? [] : provider_search(@query)
+    @show_unemployment_tips = UnemploymentSearchDetector.match?(@query)
     @has_payroll_account = @cbv_flow.payroll_accounts.any?
     @selected_tab = search_params[:type] || "payroll"
 
@@ -69,6 +71,20 @@ class Cbv::EmployerSearchesController < Cbv::BaseController
       client_agency_id: current_agency&.id,
       device_id: @cbv_flow.device_id,
       invitation_id: @cbv_flow.cbv_flow_invitation_id
+    })
+  end
+
+  def track_unemployment_search_event
+    return unless @show_unemployment_tips
+
+    event_logger.track(TrackEvent::ApplicantAccessedUnemployedHelp, request, {
+      time: Time.now.to_i,
+      cbv_applicant_id: @cbv_flow.cbv_applicant_id,
+      cbv_flow_id: @cbv_flow.id,
+      client_agency_id: current_agency&.id,
+      device_id: @cbv_flow.device_id,
+      invitation_id: @cbv_flow.cbv_flow_invitation_id,
+      unemployed_tips_source: "search"
     })
   end
 

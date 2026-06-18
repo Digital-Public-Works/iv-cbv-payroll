@@ -25,7 +25,7 @@ Follow these steps to perform a load test:
     * ECS service (app-dev) = 5-10 containers (tasks)
     * DB cluster (app-dev) = 5-10 ACUs
 3. Pause the "default" queue so we don't track a ton of useless Mixpanel events during the test.
-    * https://demo.divt.app/jobs      (un/pw in 1Password)
+    * In the AWS Console, find the demo SQS queue and either purge it or temporarily stop the Shoryuken worker ECS service.
 
 ### Running the tests
 

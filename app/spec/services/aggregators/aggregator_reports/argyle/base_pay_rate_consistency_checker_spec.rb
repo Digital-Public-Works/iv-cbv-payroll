@@ -60,5 +60,17 @@ RSpec.describe Aggregators::AggregatorReports::Argyle::BasePayRateConsistencyChe
 
       it { is_expected.to be false }
     end
+
+    context "when paystubs is nil" do
+      let(:paystubs) { nil }
+
+      it { is_expected.to be true }
+    end
+
+    context "when paystubs is an empty array" do
+      let(:paystubs) { [] }
+
+      it { is_expected.to be true }
+    end
   end
 end
