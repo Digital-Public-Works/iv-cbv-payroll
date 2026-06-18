@@ -431,7 +431,7 @@ en:
         client_comment_description: Additional information provided by the client about income from this job
         client_comment_title: Client Comments
         consent_checkbox_label_html:
-          default: 'Check this box to confirm: <ul class="margin-y-2"><li>The information provided by you is true and complete to the best of your knowledge.</li><li>You agree to inform the %{agency_full_name} (%{agency_acronym}) of any income not reflected in this report or any discrepancies found in the information gathered with this tool.</li><li>You understand that providing accurate and complete information is your responsibility, and any false or omitted information may have legal consequences.</li></ul> By sending this report, you authorize its use for income verification by authorized %{agency_acronym} personnel.'
+          default: 'Check this box to confirm: <ul class="margin-y-2"><li>The information provided by you is true and complete to the best of your knowledge.</li><li>You agree to inform %{agency_name_with_acronym} of any income not reflected in this report or any discrepancies found in the information gathered with this tool.</li><li>You understand that providing accurate and complete information is your responsibility, and any false or omitted information may have legal consequences.</li></ul> By sending this report, you authorize its use for income verification by authorized %{agency_acronym} personnel.'
         legal_header: Legal agreement
         none_found: We didn't find any payments from this employer.
         none_found_confirmed: We've confirmed that there are no recent payments from this employer. This happens when the client hasn't received income from this job.

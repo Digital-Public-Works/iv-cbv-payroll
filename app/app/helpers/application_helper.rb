@@ -85,6 +85,15 @@ module ApplicationHelper
     end
   end
 
+  # Agency name with its acronym in parentheses (e.g. "West Carolina Department of Public Health (WC-DPH)").
+  # Partners with no acronym render just the full name, with no parens.
+  def agency_name_with_acronym
+    full_name = agency_translation("shared.agency_full_name")
+    return full_name unless has_acronym?
+
+    "#{full_name} (#{agency_translation("shared.agency_acronym")})"
+  end
+
   private
 
   # db translations should be forgiving on the keys used.

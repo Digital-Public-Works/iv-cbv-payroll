@@ -162,6 +162,29 @@ RSpec.describe ApplicationHelper do
     end
   end
 
+  describe "#agency_name_with_acronym" do
+    before do
+      allow(helper).to receive(:agency_translation).with("shared.agency_full_name").and_return("ACME Corporation")
+      allow(helper).to receive(:agency_translation).with("shared.agency_acronym").and_return(acronym)
+    end
+
+    context "when the partner has a distinct acronym" do
+      let(:acronym) { "ACME" }
+
+      it "renders the full name with the acronym in parentheses" do
+        expect(helper.agency_name_with_acronym).to eq("ACME Corporation (ACME)")
+      end
+    end
+
+    context "when the partner has no acronym" do
+      let(:acronym) { nil }
+
+      it "renders just the full name, with no parentheses" do
+        expect(helper.agency_name_with_acronym).to eq("ACME Corporation")
+      end
+    end
+  end
+
   describe "#feedback_form_url" do
     let(:current_agency) { nil }
     let(:params) { {} }
