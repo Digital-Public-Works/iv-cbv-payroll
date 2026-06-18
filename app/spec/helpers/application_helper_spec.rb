@@ -185,6 +185,37 @@ RSpec.describe ApplicationHelper do
     end
   end
 
+  describe "#agency_website_link" do
+    let(:url) { "https://compass.example.gov" }
+    let(:current_agency) do
+      instance_double(ClientAgencyConfig::ClientAgency, id: "sandbox", agency_contact_website: url)
+    end
+
+    before do
+      without_partial_double_verification do
+        allow(helper).to receive(:current_agency).and_return(current_agency)
+      end
+    end
+
+    it "builds an external link labeled with the default 'the … website' wording" do
+      result = helper.agency_website_link
+      expect(result).to include(%(href="#{url}"), 'target="_blank"', 'rel="noopener noreferrer"', ">the VMI website</a>")
+      expect(result).to be_html_safe
+    end
+
+    it "uses a custom label when provided" do
+      expect(helper.agency_website_link(label: "Acme")).to include(">Acme</a>")
+    end
+
+    context "when the agency has no website" do
+      let(:url) { nil }
+
+      it "returns the label as plain text with no link" do
+        expect(helper.agency_website_link(label: "Acme")).to eq("Acme")
+      end
+    end
+  end
+
   describe "#feedback_form_url" do
     let(:current_agency) { nil }
     let(:params) { {} }

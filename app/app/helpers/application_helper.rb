@@ -94,6 +94,20 @@ module ApplicationHelper
     "#{full_name} (#{agency_translation("shared.agency_acronym")})"
   end
 
+  # A reusable anchor tag to the agency portal
+  def agency_website_link(label: agency_website_link_label)
+    url = current_agency&.agency_contact_website
+    return label if url.blank?
+
+    link_to(label, url, target: "_blank", rel: "noopener noreferrer")
+  end
+
+  # The text for an agency website link/reference (e.g. "the COMPASS website").
+  def agency_website_link_label
+    t("shared.agency_website_link_label",
+      agency_portal_name: agency_translation("shared.agency_portal_name"))
+  end
+
   private
 
   # db translations should be forgiving on the keys used.

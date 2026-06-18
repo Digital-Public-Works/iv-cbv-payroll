@@ -309,7 +309,7 @@ en:
         time_estimate: Most people can find, connect and review one job in about 5 minutes.
         what_if_i_cant_use_this_body_1: If you need to verify your income and can’t use this tool, then you’ll need to share your income information for this job directly with %{agency_portal_name}.
         what_if_i_cant_use_this_body_2_html:
-          default: Visit the <a href="%{agency_url}" target="_blank" rel="noopener noreferrer">%{agency_portal_name} website</a> for more information on how to submit documents.
+          default: Visit %{website_link} for more information on how to submit documents.
           la_ldh: 'You can: <ul><li>Upload documents through the Self Service Portal online at <a href="https://mymedicaid.la.gov/" target="_blank" rel="noopener noreferrer">https://mymedicaid.la.gov/</a></li><li>Send documents through US Mail: Louisiana Medicaid/LaCHIP, P.O. Box 91283, Baton Rouge, LA 70821-9278</li><li>Email documents: <a href="mailto:MyMedicaid@la.gov">MyMedicaid@la.gov</a></li><li>Bring your documents to the Medicaid office of choice.</li></ul>'
         what_if_i_cant_use_this_title: What if I can't use this tool?
         what_youll_do: What you’ll do
@@ -322,7 +322,7 @@ en:
     error_no_access: We weren't able to load payroll data for this account. Please click the link you received from your SNAP agency to try again.
     expired_invitations:
       show:
-        body_1_html: If you still need to verify your income, please submit your income information by visiting the <a href="%{agency_url}" target="_blank" rel="noopener noreferrer">%{agency_portal_name} website</a>.
+        body_1_html: If you still need to verify your income, please submit your income information by visiting %{website_link}.
         cta_button_html:
           la_ldh: <a href="%{agency_url}" class="usa-button" target="_blank" rel="noopener noreferrer">Visit LDH's website</a>
           sandbox: <a href="https://www.mass.gov/guides/how-to-contact-dta" class="usa-button" target="_blank" rel="noopener noreferrer">Learn more at CBV Test Agency</a>
@@ -500,7 +500,7 @@ en:
         survey: Take the 5 question survey
         whats_next: What's next?
         whats_next_1_li_1: If you couldn’t find a job or don’t get paystubs, verify your income to %{agency_acronym} online, in person, or by mail.
-        whats_next_1_li_2_html: Go to the <a href="%{agency_website}" target="_blank" rel="noopener noreferrer">%{agency_portal_name} website</a>
+        whats_next_1_li_2_html: Go to %{website_link}
         whats_next_1_title: Verify other income, if needed.
         whats_next_2_li_1_html: We’d like to hear more about your experience using this site.
         whats_next_2_title: Help make this experience better.
@@ -530,7 +530,7 @@ en:
         description: 'We were unable to connect to your employer''s system due to an error. To continue, you can:'
         option_1: Go back to employer search to retry adding this employer.
         option_2: Go back to employer search to add another job.
-        option_3: Submit your income information for this employer by visiting the %{agency_portal_name} website.
+        option_3: Submit your income information for this employer by visiting %{website_label}.
         title: We couldn't access your employer information
     synchronizations:
       indicators:
@@ -547,14 +547,14 @@ en:
       other_ways_no_employer:
         go_to_agency_portal: Go to %{agency_portal_name}
         other_ways_description: 'If there is not another account to log into, you will need to submit income for this job outside of Verify My Income. You can submit the last 30 days of income to %{agency_name} by:'
-        other_ways_option_1_html: Using the document uploader in <a href="%{agency_website}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
+        other_ways_option_1_html: Using the document uploader in %{website_link}.
         other_ways_option_2: Mailing or faxing printed income documents
         other_ways_option_3: Taking income documents to a %{agency_acronym} office
         try_searching_again: Try searching again
       other_ways_with_employer:
         continue_to_income_summary: Continue to Income Summary
         more_options: More options
-        more_options_1_html: Using the document uploader in <a href="%{agency_website}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
+        more_options_1_html: Using the document uploader in %{website_link}.
         more_options_2: Mailing or faxing printed income documents
         more_options_3: Taking income documents to a %{agency_acronym} office
         more_options_text: 'You can submit the last 30 days of income to %{agency_name} by:'
@@ -751,7 +751,7 @@ en:
       heading: Do you need more time?
     page:
       description: Sessions end after 30 minutes of being away from the page. This helps keep your information safe.
-      info_box_html: To verify your income return to <a href="%{agency_contact_website}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
+      info_box_html: To verify your income return to %{website_link}.
       title: Your session has timed out
   shared:
     agency_acronym:
@@ -763,6 +763,7 @@ en:
     agency_portal_name:
       la_ldh: LDH
       sandbox: VMI
+    agency_website_link_label: the %{agency_portal_name} website
     app_name:
       sandbox: CBVApp
     banner:
