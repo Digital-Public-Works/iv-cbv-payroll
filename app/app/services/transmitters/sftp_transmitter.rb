@@ -1,11 +1,27 @@
 class Transmitters::SftpTransmitter
   include Transmitter
+  include Transmitters::Concerns::PaystubsOutput
 
   def deliver
-    config = current_agency.transmission_method_configuration.with_indifferent_access
-    sftp_gateway = SftpGateway.new(config)
-    filename = current_agency.pdf_filename(cbv_flow, cbv_flow.consented_to_authorized_use_at)
-    sftp_gateway.upload_data(StringIO.new(pdf_output.content), "#{config["sftp_directory"]}/#{filename}.pdf")
+    sftp_gateway = SftpGateway.new(@transmission_config)
+    path = TransmissionFilename.full_path(
+      cbv_flow: cbv_flow,
+      agency: current_agency,
+      method_type: :sftp,
+      remote_directory: @transmission_config["path_prefix"]
+    )
+    sftp_gateway.upload_data(StringIO.new(pdf_output.content), path)
+
+    if (paystubs = paystubs_output)
+      paystubs_path = TransmissionFilename.full_path(
+        cbv_flow: cbv_flow,
+        agency: current_agency,
+        method_type: :sftp,
+        remote_directory: @transmission_config["path_prefix"],
+        suffix: "_paystubs"
+      )
+      sftp_gateway.upload_data(StringIO.new(paystubs.content), paystubs_path)
+    end
   end
 
   def pdf_output

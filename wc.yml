@@ -21,6 +21,7 @@ weekly_report_enabled: true
 weekly_report_recipients: west_carolina@example.org
 weekly_report_variant: invitations
 include_invitation_details_on_weekly_report: true
+include_paystubs: false
 transmission_method: sftp
 partner_identifier_name: case_number
 transmission_configs:
@@ -33,7 +34,7 @@ transmission_configs:
 - key: url
   encrypted: false
   value:
-- key: sftp_directory
+- key: path_prefix
   encrypted: false
   value:
 application_attributes:
@@ -82,8 +83,6 @@ translations:
     shared.agency_full_name: 'West Carolina'
     shared.header.cbv_flow_title: 'West Carolina'
     shared.header.preheader: 'West Carolina'
-    shared.benefit: 'West Carolina Assistance'
-    shared.reporting_purpose: 'West Carolina'
     shared.agency_portal_name: 'WC Portal'
     cbv.expired_invitations.show.cta_button_html: 'Expired Invitation'
   es:
@@ -91,7 +90,5 @@ translations:
     shared.agency_full_name: 'West Carolina'
     shared.header.cbv_flow_title: 'West Carolina'
     shared.header.preheader: 'West Carolina'
-    shared.benefit: 'Asistencia de West Carolina'
-    shared.reporting_purpose: 'WC'
     shared.agency_portal_name: 'Portal de WC'
     cbv.expired_invitations.show.cta_button_html: 'Invitación Expirada'

@@ -10,7 +10,7 @@ class CbvApplicant < ApplicationRecord
     agency.applicant_attributes.keys.map(&:to_sym)
   end
 
-  def self.build_agency_partner_metadata(client_agency_id, &value_provider)
+  def self.build_custom_attributes(client_agency_id, &value_provider)
     valid_attributes_for_agency(client_agency_id).each_with_object({}) do |attr, hash|
       hash[attr.to_s] = value_provider.call(attr)
     end
@@ -47,11 +47,12 @@ class CbvApplicant < ApplicationRecord
   def redact!(fields = nil)
     fields_to_redact = fields || redactable_fields_from_config
 
-    if fields_to_redact.blank? && partner_identifier_redactable? == false && agency_partner_metadata.blank?
-      raise "No fields to redact for #{client_agency_id}"
-    end
-
     apply_redaction!(fields_to_redact || {})
+
+    # always redact the partner_identifier
+    if partner_identifier.present?
+      self[:partner_identifier] = Redactable::REDACTION_REPLACEMENTS[:string]
+    end
 
     if income_changes.present?
       self[:income_changes] = redact_member_names_in_json(income_changes)
@@ -218,13 +219,13 @@ class CbvApplicant < ApplicationRecord
 
   # Read a partner-defined applicant attribute. The value lives either in the
   # `partner_identifier` column (if `name` matches the agency's
-  # `partner_identifier_name`) or in the `agency_partner_metadata` jsonb.
+  # `partner_identifier_name`) or in the `custom_attributes` jsonb.
   # Real ActiveRecord columns (e.g. `snap_application_date`) take precedence
   # via the `super` chain in method_missing.
   def read_applicant_attribute(name)
     name = name.to_s
     return partner_identifier if name == agency_config&.partner_identifier_name.to_s
-    (agency_partner_metadata || {})[name]
+    (custom_attributes || {})[name]
   end
 
   def write_applicant_attribute(name, value)
@@ -232,7 +233,7 @@ class CbvApplicant < ApplicationRecord
     if name == agency_config&.partner_identifier_name.to_s
       self.partner_identifier = value
     else
-      self.agency_partner_metadata = (agency_partner_metadata || {}).merge(name => value)
+      self.custom_attributes = (custom_attributes || {}).merge(name => value)
     end
     value
   end

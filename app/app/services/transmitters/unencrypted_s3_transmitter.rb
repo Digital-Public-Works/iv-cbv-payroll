@@ -1,26 +1,25 @@
 class Transmitters::UnencryptedS3Transmitter
   include Transmitter
+  include Transmitters::Concerns::PaystubsOutput
   include TarFileCreatable
   include CsvHelper
 
   def deliver
-    config = @current_agency.transmission_method_configuration
+    config = @transmission_config
     pre_deliver_check(config)
 
-    time_now = Time.now
-    beginning_date = @aggregator_report.from_date.to_date.strftime("%b")
-    ending_date = @aggregator_report.to_date.to_date.strftime("%b%Y")
-    @file_name = "IncomeReport_#{@cbv_flow.cbv_applicant.partner_identifier}_" \
-      "#{beginning_date}-#{ending_date}_" \
-      "Conf#{@cbv_flow.confirmation_code}_" \
-      "#{time_now.strftime('%Y%m%d%H%M%S')}"
+    @file_stem = TransmissionFilename.stem(@cbv_flow, @current_agency)
 
     csv_content = generate_csv
 
     file_data = [
-      { name: "#{@file_name}.pdf", content: pdf_output&.content },
-      { name: "#{@file_name}.csv", content: csv_content.string }
+      { name: "#{@file_stem}.pdf", content: pdf_output&.content },
+      { name: "#{@file_stem}.csv", content: csv_content.string }
     ]
+
+    if (paystubs = paystubs_output)
+      file_data << { name: "#{@file_stem}_paystubs.pdf", content: paystubs.content }
+    end
     tar_tempfile = create_tar_file(file_data)
 
     upload_tempfile = nil
@@ -28,7 +27,7 @@ class Transmitters::UnencryptedS3Transmitter
       gzipped_tempfile = gzip_file(tar_tempfile)
       upload_tempfile = prepare_upload(gzipped_tempfile, config)
 
-      S3Service.new(config).upload_file(upload_tempfile.path, "#{@file_name}.#{upload_extension}")
+      S3Service.new(config).upload_file(upload_tempfile.path, upload_key)
     rescue => ex
       Rails.logger.error "Failed to transmit to caseworker: #{ex.message}"
       raise
@@ -61,11 +60,20 @@ class Transmitters::UnencryptedS3Transmitter
       report_date_created: payroll_account&.created_at&.strftime("%m/%d/%Y"),
       confirmation_code: @cbv_flow.confirmation_code,
       consent_timestamp: @cbv_flow.consented_to_authorized_use_at&.strftime("%m/%d/%Y %H:%M:%S"),
-      pdf_filename: "#{@file_name}.pdf",
+      pdf_filename: "#{@file_stem}.pdf",
       pdf_filetype: "application/pdf",
       pdf_filesize: pdf_output.file_size,
       pdf_number_of_pages: pdf_output.page_count
     )
+
+    if (paystubs = paystubs_output)
+      data.merge!(
+        paystubs_filename: "#{@file_stem}_paystubs.pdf",
+        paystubs_filetype: "application/pdf",
+        paystubs_filesize: paystubs.file_size,
+        paystubs_number_of_pages: paystubs.page_count
+      )
+    end
 
     create_csv(data)
   end
@@ -96,6 +104,13 @@ class Transmitters::UnencryptedS3Transmitter
   # by default a no-op; subclass can transform (encrypted_s3 encrypts here)
   def prepare_upload(tempfile, _config); tempfile; end
 
-  # file extension appended after the IncomeReport_..._<timestamp> stem.
-  def upload_extension; "tar.gz"; end
+  # this is defined as an instance method to allow encrypted_s3_transmitter subclass to override
+  def upload_key
+    TransmissionFilename.full_path(
+      cbv_flow: @cbv_flow,
+      agency: @current_agency,
+      method_type: :unencrypted_s3,
+      remote_directory: @transmission_config["path_prefix"]
+    )
+  end
 end

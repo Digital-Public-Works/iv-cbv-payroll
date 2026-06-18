@@ -42,7 +42,8 @@ class ClientAgencyConfig
   def initialize(load_all_agency_configs)
     # This runs during bootup even before migrations. this is a temp guard until these migrations are made
     # TODO: make this less brittle
-    return unless ActiveRecord::Base.connection.column_exists?(:partner_configs, :partner_identifier_name)
+    return unless ActiveRecord::Base.connection.column_exists?(:partner_configs, :partner_identifier_name) &&
+      ActiveRecord::Base.connection.data_source_exists?(:partner_transmission_methods)
 
     @client_agencies = PartnerConfig.all.each_with_object({}) do |config, h|
       next unless load_all_agency_configs ||
@@ -73,7 +74,8 @@ class ClientAgencyConfig
       end
     end
 
-    validate_partner_translations if ActiveRecord::Base.connection.data_source_exists?(:partner_translations)
+    validate_partner_translations if defined?(::PartnerTranslation) &&
+      ActiveRecord::Base.connection.data_source_exists?(:partner_translations)
   end
 
   REQUIRED_TRANSLATION_KEYS = %w[
@@ -81,8 +83,6 @@ class ClientAgencyConfig
       shared.agency_full_name
       shared.header.cbv_flow_title
       shared.header.preheader
-      shared.benefit
-      shared.reporting_purpose
     ].freeze
 
   def validate_partner_translations
@@ -95,13 +95,13 @@ class ClientAgencyConfig
       %w[en es].each do |locale|
         REQUIRED_TRANSLATION_KEYS.each do |base_key|
           full_key = "#{base_key}.#{partner_id}"
-          has_db = PartnerTranslation.exists?(partner_config: config, locale: locale, key: base_key) ||
-            PartnerTranslation.exists?(partner_config: config, locale: locale, key: full_key)
+          has_db = ::PartnerTranslation.exists?(partner_config: config, locale: locale, key: base_key) ||
+            ::PartnerTranslation.exists?(partner_config: config, locale: locale, key: full_key)
           has_locale = I18n.exists?(full_key, locale.to_sym)
 
           unless has_db || has_locale
             default_key = "#{base_key}.default"
-            has_db_default = PartnerTranslation.exists?(partner_config: config, locale: locale, key: default_key)
+            has_db_default = ::PartnerTranslation.exists?(partner_config: config, locale: locale, key: default_key)
             has_locale_default = I18n.exists?(default_key, locale.to_sym)
 
             unless has_db_default || has_locale_default
@@ -118,6 +118,8 @@ class ClientAgencyConfig
   public
 
   class ClientAgency
+    TransmissionMethodEntry = Struct.new(:method, :configuration, keyword_init: true)
+
     attr_reader(*%i[
       id
       agency_name
@@ -136,14 +138,14 @@ class ClientAgencyConfig
       argyle_environment
       staff_portal_enabled
       sso
-      transmission_method
-      transmission_method_configuration
+      transmission_methods
       weekly_report
       applicant_attributes
       generic_links_disabled
       report_customization_show_earnings_list
       require_applicant_information_on_invitation
       include_invitation_details_on_weekly_report
+      include_paystubs
       state_name
       partner_identifier_name
     ])
@@ -164,11 +166,25 @@ class ClientAgencyConfig
       @pilot_ended = partner_config.pilot_ended
       @argyle_environment = partner_config.argyle_environment || "sandbox"
 
-      @transmission_method = partner_config.transmission_method
+      @transmission_methods = partner_config.partner_transmission_methods.map do |ptm|
+        config = ptm.partner_transmission_configs.each_with_object({}) do |txc, h|
+          h[txc.key] = txc.value
+        end.with_indifferent_access
 
-      @transmission_method_configuration = partner_config.partner_transmission_configs.each_with_object({}) do |txc, h|
-        h[txc.key] = txc.value
-      end.with_indifferent_access
+        TransmissionMethodEntry.new(method: ptm.method_type, configuration: config)
+      end
+
+      @transmission_methods.each do |entry|
+        method_type = entry.method.to_sym
+        next unless TransmissionFilename::EXTENSIONS.key?(method_type)
+        # remote_directory_for validates that path_prefix is valid for method_type
+        TransmissionFilename.remote_directory_for(
+          method_type: method_type,
+          remote_directory: entry.configuration["path_prefix"]
+        )
+      rescue ArgumentError => e
+        raise ArgumentError.new("Client Agency #{@id}: #{e.message}")
+      end
 
       @staff_portal_enabled = partner_config.staff_portal_enabled
       @weekly_report = {
@@ -188,6 +204,8 @@ class ClientAgencyConfig
       @require_applicant_information_on_invitation = partner_config.partner_application_attributes.exists?(required: true)
       @include_invitation_details_on_weekly_report = partner_config.respond_to?(:include_invitation_details_on_weekly_report) &&
         partner_config.include_invitation_details_on_weekly_report
+      @include_paystubs = partner_config.respond_to?(:include_paystubs) &&
+        partner_config.include_paystubs
       @state_name = partner_config.respond_to?(:state_name) ? partner_config.state_name : nil
       @partner_identifier_name = partner_config.partner_identifier_name
 
@@ -196,17 +214,23 @@ class ClientAgencyConfig
       raise ArgumentError.new("Client Agency #{@id} missing required attribute `name`") if @agency_name.blank?
       raise ArgumentError.new("Client Agency #{@id} invalid value for pay_income_days.w2") unless VALID_PAY_INCOME_DAYS.include?(@pay_income_days[:w2])
       raise ArgumentError.new("Client Agency #{@id} invalid value for pay_income_days.gig") unless VALID_PAY_INCOME_DAYS.include?(@pay_income_days[:gig])
-      raise ArgumentError.new("Client Agency #{@id} missing required attribute `transmission_method`") if @transmission_method.blank?
       raise ArgumentError.new("Client Agency #{@id} missing required attribute `partner_identifier_name`") if @partner_identifier_name.blank?
+      raise ArgumentError.new("Client Agency #{@id} must have at least one transmission method configured") if @transmission_methods.empty?
     end
 
-    def pdf_filename(cbv_flow, time)
-      time = time.in_time_zone(timezone)
+    # Returns true if this agency has the given transmission method configured.
+    def has_transmission_method?(method_type)
+      @transmission_methods.any? { |tm| tm.method == method_type.to_s }
+    end
 
-      padded_identifier = cbv_flow.cbv_applicant.partner_identifier.to_s.rjust(8, "0")
-      "CBVPilot_#{padded_identifier}_" \
-        "#{time.strftime('%Y%m%d')}_" \
-        "Conf#{cbv_flow.confirmation_code}"
+    # Returns the configuration hash for a specific transmission method type.
+    def transmission_configuration_for(method_type)
+      entry = @transmission_methods.find { |tm| tm.method == method_type.to_s }
+      entry&.configuration || {}.with_indifferent_access
+    end
+
+    def self.case_number(cbv_flow)
+      cbv_flow.cbv_applicant.case_number.rjust(8, "0")
     end
 
     def format_timestamp(time)

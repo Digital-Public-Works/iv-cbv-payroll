@@ -1,5 +1,5 @@
 class PartnerTransmissionConfig < ApplicationRecord
-  belongs_to :partner_config
+  belongs_to :partner_transmission_method
 
   validates :key, presence: true
 

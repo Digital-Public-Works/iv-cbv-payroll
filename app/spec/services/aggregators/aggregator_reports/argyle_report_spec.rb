@@ -30,6 +30,45 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
     Timecop.freeze(today, &ex)
   end
 
+  describe "#check_paystub_volume (anomalous-paystub-count guardrail)" do
+    let(:report) do
+      Aggregators::AggregatorReports::ArgyleReport.new(
+        payroll_accounts: [ payroll_account ],
+        argyle_service: argyle_service,
+        days_to_fetch_for_w2: days_ago_to_fetch,
+        days_to_fetch_for_gig: days_ago_to_fetch_for_gig
+      )
+    end
+
+    before do
+      # cap = @fetched_days * MAX_PAYSTUBS_PER_LOOKBACK_DAY(2) = 10
+      report.instance_variable_set(:@fetched_days, 5)
+      allow(Rails.logger).to receive(:error)
+      allow(NewRelic::Agent).to receive(:notice_error)
+    end
+
+    it "surfaces an over-cap count to New Relic WITHOUT raising (report generation continues)" do
+      over_cap = { "results" => Array.new(10) { {} } } # 10 >= cap(10) -> fires
+
+      expect {
+        report.send(:check_paystub_volume, over_cap, payroll_account)
+      }.not_to raise_error
+
+      expect(NewRelic::Agent).to have_received(:notice_error).with(
+        an_instance_of(Aggregators::AggregatorReports::ArgyleReport::PaystubLimitExceededError),
+        custom_params: hash_including(paystub_count: 10, max_paystubs: 10, lookback_days: 5)
+      )
+    end
+
+    it "does nothing when the count is under the cap" do
+      under_cap = { "results" => Array.new(3) { {} } } # 3 < cap(10)
+
+      report.send(:check_paystub_volume, under_cap, payroll_account)
+
+      expect(NewRelic::Agent).not_to have_received(:notice_error)
+    end
+  end
+
   describe '#fetch_report_data' do
     let(:argyle_report) do
       Aggregators::AggregatorReports::ArgyleReport.new(
