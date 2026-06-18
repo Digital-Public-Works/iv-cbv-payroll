@@ -10,7 +10,7 @@
   <li><%= t(".option_2") %></li>
   <li><%= t(".option_3", agency_portal_name: agency_translation("shared.agency_portal_name")) %></li>
   <% if @cbv_flow.has_account_with_required_data? %>
-    <li><%= t("cbv.missing_results.show.continue_to_review", agency_acronym: agency_translation("shared.agency_acronym")) %></li>
+    <li><%= t("cbv.missing_results.show.continue_to_review", agency_acronym: agency_acronym_or_full_name) %></li>
   <% end %>
 </ol>
 

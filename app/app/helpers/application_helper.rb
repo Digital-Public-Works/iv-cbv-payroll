@@ -71,6 +71,20 @@ module ApplicationHelper
     end
   end
 
+  # `shared.agency_acronym` is optional (see ClientAgencyConfig::OPTIONAL_TRANSLATION_KEYS)
+  def has_acronym?
+    agency_translation("shared.agency_acronym").present?
+  end
+
+  # The agency acronym when the partner has one, otherwise the full agency name.
+  def agency_acronym_or_full_name
+    if has_acronym?
+      agency_translation("shared.agency_acronym")
+    else
+      agency_translation("shared.agency_full_name")
+    end
+  end
+
   private
 
   # db translations should be forgiving on the keys used.

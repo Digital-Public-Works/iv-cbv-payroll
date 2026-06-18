@@ -24,7 +24,7 @@
     <% end %>
   <% end %>
 <% else %>
-  <p><%= t(".pdf.client.description", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
+  <p><%= t(".pdf.client.description", agency_acronym: agency_acronym_or_full_name) %></p>
 <% end %>
 
 <h2><%= t(".pdf.client.client_report_information") %></h2>

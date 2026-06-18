@@ -109,6 +109,59 @@ RSpec.describe ApplicationHelper do
     end
   end
 
+  describe "#has_acronym?" do
+    before do
+      allow(helper).to receive(:agency_translation).with("shared.agency_acronym").and_return(acronym)
+    end
+
+    context "when the acronym is set" do
+      let(:acronym) { "ACME" }
+
+      it "returns true" do
+        expect(helper.has_acronym?).to be true
+      end
+    end
+
+    context "when the acronym is blank" do
+      let(:acronym) { "" }
+
+      it "returns false" do
+        expect(helper.has_acronym?).to be false
+      end
+    end
+
+    context "when the acronym is never set" do
+      let(:acronym) { nil }
+
+      it "returns false" do
+        expect(helper.has_acronym?).to be false
+      end
+    end
+  end
+
+  describe "#agency_acronym_or_full_name" do
+    before do
+      allow(helper).to receive(:agency_translation).with("shared.agency_full_name").and_return("Full Agency Name")
+      allow(helper).to receive(:agency_translation).with("shared.agency_acronym").and_return(acronym)
+    end
+
+    context "when the partner has an acronym" do
+      let(:acronym) { "ACME" }
+
+      it "returns the acronym" do
+        expect(helper.agency_acronym_or_full_name).to eq("ACME")
+      end
+    end
+
+    context "when the partner has no acronym" do
+      let(:acronym) { nil }
+
+      it "returns the full agency name" do
+        expect(helper.agency_acronym_or_full_name).to eq("Full Agency Name")
+      end
+    end
+  end
+
   describe "#feedback_form_url" do
     let(:current_agency) { nil }
     let(:params) { {} }
