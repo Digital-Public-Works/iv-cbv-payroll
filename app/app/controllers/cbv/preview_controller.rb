@@ -94,6 +94,28 @@ class Cbv::PreviewController < ApplicationController
     end
   end
 
+  def entry
+    render_as("entries")
+  end
+
+  def applicant_information
+    render_as("applicant_informations")
+  end
+
+  def expired_invitation
+    render_as("expired_invitations")
+  end
+
+  def session_timeout
+    render template: "cbv/sessions/timeout"
+  end
+
+  def success
+    @cbv_flow.confirmation_code ||= "PREVIEW0000"
+    @invitation_link = root_url
+    render_as("successes")
+  end
+
   def submit_pdf_as_html
     # Render the PDF template as HTML for debugging (no wkhtmltopdf conversion)
     is_caseworker = is_not_production? && params[:is_caseworker]
