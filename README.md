@@ -18,6 +18,7 @@ Most developers on the team code using macOS, so we recommend that platform if p
 1. Install homebrew dependencies: `brew bundle`
    * rbenv
    * nodenv
+   * python@3
    * [redis]()
    * [jq](https://stedolan.github.io/jq/)
    * [PostgreSQL](https://www.postgresql.org/)
@@ -40,7 +41,7 @@ Most developers on the team code using macOS, so we recommend that platform if p
    * Close & re-open your terminal
 
 **The following commands must be run in the app directory**
-1. Install Ruby: `rbenv install`
+1. Install Ruby: `rbenv install` and then `rbenv rehash`
 1. Install NodeJS `nodenv install`
 1. Install Ruby dependencies: `bundle install`
 1. Install JS dependencies
@@ -48,6 +49,14 @@ Most developers on the team code using macOS, so we recommend that platform if p
    * `npm install`
 1. Start postgres:
    * `brew services start postgresql@12`
+1. Set up moto for local SQS (mock AWS services)
+   * **First, navigate to repo root**: `cd ..`
+   * Create Python virtual environment: `python3 -m venv .venv`
+   * Activate the virtual environment: `source .venv/bin/activate`
+   * Install moto with server support: `pip install 'moto[server]'`
+   * Navigate back to app directory: `cd app`
+   * Make the moto scripts executable: `chmod +x bin/moto_run.sh bin/moto_sqs_queues.sh bin/wait_for_queues.sh`
+   * **Note**: The `bin/moto_run.sh` script will automatically detect and activate this virtual environment when you run `bin/dev`. The `.env` file is pre-configured to use moto instead of real AWS services in local development.
 1. Get development credentials from 1Password: search for "CBV .env.local secrets" and copy its ".env.local" section into a file called that in the app directory.
 1. Create database: `bin/rails db:create`
 1. Run migrations: `bin/rails db:migrate`
@@ -95,18 +104,20 @@ To run locally, use `bin/dev`
 
 To run database migrations on the test environment that is used by rpec tests, run `RAILS_ENV=test bin/rails db:schema:load`
 
-### JSON API Receiver (for testing)
+### JSON API Testing
 
-To test the JSON Push API integration, you can run the receiver:
+1. **Create an API key for the agency you want to test:**
+   ```bash
+   cd app
+   rails 'users:create_api_token[agency_name]'
+   ```
 
-```bash
-cd app
-bin/api-test
-```
+2. **Run the standalone test receiver:**
+   ```bash
+   JSON_API_KEY=$(rails runner "puts User.api_key_for_agency('agency_name')") ruby lib/json_api_receiver.rb
+   ```
 
-This starts a test server on port 4567 that logs incoming JSON data.
-
-**For e2e testing:** Run `rails db:seed` to create the matching API key in your database for the transmitter.
+This starts a standalone test server on port 4567 that logs incoming JSON data and verifies HMAC signatures. The receiver is completely independent and can be used as a reference implementation for agencies building their own JSON API endpoints.
 
 ## Branching model
 When beginning work on a feature, create a new branch based off of `main` and make the commits for that feature there.
@@ -337,6 +348,23 @@ We achieve End-to-End (E2E) testing by using `capybara` (which in turn uses `sel
 See the [E2E testing documentation](/docs/e2e/e2e-checks.md) for more information.
 
 When writing E2E tests, use the `verify_page` helper when possible to ensure that the page meets our sitewide requirements: it has no missing translations and it passes accessibility checks (per WCAG 2.1 A & AA).
+
+## Integration Testing (Webhook)
+
+Integration tests validate webhook transmission against a running reference server. They are excluded from default test runs and CI.
+
+**Prerequisites:**
+1. Clone and start the [webhook API reference implementation](https://github.com/Digital-Public-Works/dicit-webhook-api-ref-impl) on `localhost:9292`
+2. Set the `WEBHOOK_TEST_API_KEY` environment variable to match the server's `VMI_API_KEY` (defaults to `my-secure-guid`)
+
+**Running integration tests:**
+```bash
+# Run all integration tests
+INTEGRATION_RUN_TESTS=1 bundle exec rspec --tag integration
+
+# Run just the webhook integration spec
+INTEGRATION_RUN_TESTS=1 bundle exec rspec spec/services/transmitters/webhook_transmitter_integration_spec.rb
+```
 
 ## Coding style and linters
 

@@ -1,4 +1,5 @@
 require "csv"
+require "combine_pdf"
 require "tempfile"
 require "zlib"
 
@@ -7,6 +8,7 @@ class Cbv::SubmitsController < Cbv::BaseController
   include GpgEncryptable
   include TarFileCreatable
   include CsvHelper
+  include NonProductionAccessible
 
   before_action :set_aggregator_report, only: %i[show update]
   before_action :check_aggregator_report, only: %i[show update]
@@ -25,23 +27,15 @@ class Cbv::SubmitsController < Cbv::BaseController
           client_agency_id: current_agency&.id,
           cbv_applicant_id: @cbv_flow.cbv_applicant_id,
           cbv_flow_id: @cbv_flow.id,
+          device_id: @cbv_flow.device_id,
           invitation_id: @cbv_flow.cbv_flow_invitation_id,
           locale: I18n.locale
         })
 
-        render pdf: "#{@cbv_flow.id}",
-          layout: "pdf",
-          locals: {
-            is_caseworker: allow_caseworker_override_param? && params[:is_caseworker],
-            aggregator_report: @aggregator_report
-          },
-          footer: { right: t(".pdf.footer.page_footer"), font_size: 10 },
-          margin: {
-            top: 10,
-            bottom: 10,
-            left: 10,
-            right: 10
-          }
+        send_data generate_client_pdf,
+          type: "application/pdf",
+          disposition: "inline",
+          filename: "#{@cbv_flow.id}.pdf"
       end
     end
 
@@ -70,6 +64,48 @@ class Cbv::SubmitsController < Cbv::BaseController
 
   private
 
+  def generate_client_pdf
+    html = render_to_string(
+      template: "cbv/submits/show",
+      formats: [ :pdf ],
+      layout: "layouts/pdf",
+      locals: {
+        is_caseworker: is_not_production? && params[:is_caseworker],
+        aggregator_report: @aggregator_report
+      }
+    )
+
+    report_pdf = WickedPdf.new.pdf_from_string(
+      html,
+      footer: { right: t("cbv.submits.show.pdf.footer.page_footer"), font_size: 10 },
+      margin: { top: 10, bottom: 10, left: 10, right: 10 }
+    )
+
+    # If this agency is not configured to include paystubs, just return the report without the paystubs.
+    # The code below this return adds the paystubs + cover page to the report.
+    return report_pdf unless current_agency&.include_paystubs
+
+    begin
+      paystubs_result = Aggregators::PaystubsPdfService.new(
+        cbv_flow: @cbv_flow,
+        argyle_service: Aggregators::Sdk::ArgyleService.new(current_agency.argyle_environment)
+      ).generate
+      merge_pdfs(report_pdf, paystubs_result.content)
+    rescue Aggregators::PaystubsPdfService::NoPaystubsError => e
+      Rails.logger.warn "Client PDF download: no paystub documents found; omitting paystubs section: #{e.message}"
+      report_pdf
+    end
+  end
+
+  def merge_pdfs(pdf1_bytes, pdf2_bytes)
+    return pdf2_bytes if pdf1_bytes.blank?
+    return pdf1_bytes if pdf2_bytes.blank?
+
+    target = CombinePDF.new
+    [ pdf1_bytes, pdf2_bytes ].each { |bytes| target << CombinePDF.parse(bytes) }
+    target.to_pdf
+  end
+
   def check_aggregator_report
     if @aggregator_report.nil?
       Rails.logger.error "Aggregator report nil for #{@cbv_flow.id}. Investigate, as we didn't think it should be possible to get here because at least one account should be usable."
@@ -88,6 +124,7 @@ class Cbv::SubmitsController < Cbv::BaseController
       client_agency_id: current_agency&.id,
       cbv_flow_id: cbv_flow.id,
       cbv_applicant_id: cbv_flow.cbv_applicant_id,
+      device_id: @cbv_flow.device_id,
       invitation_id: cbv_flow.cbv_flow_invitation_id,
       flow_started_seconds_ago: (Time.now - cbv_flow.created_at).to_i,
       locale: I18n.locale
@@ -101,9 +138,5 @@ class Cbv::SubmitsController < Cbv::BaseController
       (Time.now.to_i % 36 ** 3).to_s(36).tr("OISB", "0158").rjust(3, "0"),
       cbv_flow.id.to_s.rjust(4, "0")
     ].compact.join.upcase
-  end
-
-  def allow_caseworker_override_param?
-    Rails.env.development? || Rails.env.test? || demo_mode?
   end
 end

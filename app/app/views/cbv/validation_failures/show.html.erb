@@ -1,0 +1,17 @@
+<h1><%= t(".not_enough_information") %></h1>
+<p>
+  <%= t(".not_enough_information_description") %>
+</p>
+
+<h2><%= t(".options_next_steps") %></h2>
+
+<h3><%= t(".try_different_credentials") %></h3>
+<p><%= t(".try_different_credentials_description") %></p>
+
+<h3><%= t(".other_ways") %></h3>
+
+<% if @cbv_flow.has_account_with_required_data? %>
+  <%= render("other_ways_with_employer") %>
+<% else %>
+  <%= render("other_ways_no_employer") %>
+<% end %>

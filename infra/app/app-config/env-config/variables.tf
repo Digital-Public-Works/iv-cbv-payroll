@@ -98,9 +98,9 @@ variable "service_desired_instance_count" {
   default = 1
 }
 
-variable "solidqueue_desired_instance_count" {
+variable "shoryuken_desired_instance_count" {
   type        = number
-  description = "Number of SolidQueue worker instances to run"
+  description = "Number of Shoryuken worker instances to run"
   default     = 1
 }
 
@@ -116,6 +116,12 @@ variable "service_override_extra_environment_variables" {
     Map from environment variable name to environment variable value
   EOT
   default     = {}
+}
+
+variable "database_snapshot_identifier" {
+  description = "Specifies whether or not to create this cluster from a snapshot. You can use either the name or ARN when specifying a DB cluster snapshot, or the ARN when specifying a DB snapshot."
+  default     = null
+  nullable    = true
 }
 
 variable "database_serverless_min_capacity" {

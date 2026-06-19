@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_09_15_183520) do
+ActiveRecord::Schema[7.2].define(version: 2026_06_15_120100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -24,10 +24,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_15_183520) do
   end
 
   create_table "cbv_applicants", force: :cascade do |t|
-    t.string "case_number"
-    t.string "first_name"
-    t.string "middle_name"
-    t.string "last_name"
     t.string "agency_id_number"
     t.string "client_id_number"
     t.date "snap_application_date"
@@ -38,8 +34,10 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_15_183520) do
     t.string "client_agency_id"
     t.jsonb "income_changes"
     t.date "date_of_birth"
-    t.uuid "case_guid"
     t.string "doc_id"
+    t.jsonb "custom_attributes", default: {}, null: false
+    t.string "partner_identifier"
+    t.index ["partner_identifier"], name: "index_cbv_applicants_on_partner_identifier"
   end
 
   create_table "cbv_flow_invitations", force: :cascade do |t|
@@ -53,8 +51,22 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_15_183520) do
     t.string "language"
     t.bigint "cbv_applicant_id"
     t.datetime "expires_at", precision: nil
+    t.index ["auth_token"], name: "index_cbv_flow_invitations_on_auth_token", unique: true, where: "(redacted_at IS NULL)"
     t.index ["cbv_applicant_id"], name: "index_cbv_flow_invitations_on_cbv_applicant_id"
     t.index ["user_id"], name: "index_cbv_flow_invitations_on_user_id"
+  end
+
+  create_table "cbv_flow_transmissions", force: :cascade do |t|
+    t.bigint "cbv_flow_id", null: false
+    t.integer "method_type", null: false
+    t.integer "status", default: 0, null: false
+    t.jsonb "configuration", default: {}, null: false
+    t.datetime "succeeded_at"
+    t.text "last_error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cbv_flow_id", "method_type"], name: "idx_cbv_flow_transmissions_on_flow_and_method", unique: true
+    t.index ["cbv_flow_id"], name: "index_cbv_flow_transmissions_on_cbv_flow_id"
   end
 
   create_table "cbv_flows", force: :cascade do |t|
@@ -73,13 +85,90 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_15_183520) do
     t.bigint "cbv_applicant_id"
     t.string "argyle_user_id"
     t.boolean "has_other_jobs"
+    t.string "device_id"
     t.index ["cbv_applicant_id"], name: "index_cbv_flows_on_cbv_applicant_id"
     t.index ["cbv_flow_invitation_id"], name: "index_cbv_flows_on_cbv_flow_invitation_id"
   end
 
+  create_table "partner_application_attributes", force: :cascade do |t|
+    t.bigint "partner_config_id", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.boolean "required", default: true, null: false
+    t.integer "data_type", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "show_on_caseworker_report", default: false, null: false
+    t.boolean "redactable", default: false, null: false
+    t.string "redact_type"
+    t.string "form_field_type", default: "text_field"
+    t.boolean "show_on_applicant_form", default: true, null: false
+    t.boolean "show_on_caseworker_form", default: true, null: false
+    t.index ["partner_config_id"], name: "index_partner_application_attributes_on_partner_config_id"
+  end
+
+  create_table "partner_configs", force: :cascade do |t|
+    t.string "partner_id", null: false
+    t.boolean "active_demo", default: false, null: false
+    t.boolean "active_prod", default: false, null: false
+    t.string "timezone", null: false
+    t.string "name", null: false
+    t.string "website"
+    t.string "domain"
+    t.string "logo_path"
+    t.string "argyle_environment"
+    t.boolean "staff_portal_enabled", default: false, null: false
+    t.boolean "pilot_ended", default: false, null: false
+    t.string "default_origin"
+    t.boolean "generic_links_enabled", default: false, null: false
+    t.boolean "invitation_links_enabled", default: false, null: false
+    t.integer "pay_income_days_w2"
+    t.integer "pay_income_days_gig"
+    t.integer "invitation_valid_days_default"
+    t.boolean "weekly_report_enabled", default: false, null: false
+    t.text "weekly_report_recipients"
+    t.string "weekly_report_variant"
+    t.boolean "report_customization_show_earnings_list", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "include_invitation_details_on_weekly_report", default: false, null: false
+    t.string "state_name"
+    t.string "partner_identifier_name"
+    t.boolean "include_paystubs", default: false, null: false
+    t.index ["partner_id"], name: "index_partner_configs_on_partner_id", unique: true
+  end
+
+  create_table "partner_translations", force: :cascade do |t|
+    t.bigint "partner_config_id", null: false
+    t.string "locale"
+    t.string "key"
+    t.text "value"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["partner_config_id"], name: "index_partner_translations_on_partner_config_id"
+  end
+
+  create_table "partner_transmission_configs", force: :cascade do |t|
+    t.string "key", null: false
+    t.text "value"
+    t.boolean "is_encrypted", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "partner_transmission_method_id", null: false
+    t.index ["partner_transmission_method_id"], name: "idx_on_partner_transmission_method_id_917bdbc05f"
+  end
+
+  create_table "partner_transmission_methods", force: :cascade do |t|
+    t.bigint "partner_config_id", null: false
+    t.integer "method_type", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["partner_config_id"], name: "index_partner_transmission_methods_on_partner_config_id"
+  end
+
   create_table "payroll_accounts", force: :cascade do |t|
     t.bigint "cbv_flow_id", null: false
-    t.string "pinwheel_account_id"
+    t.string "aggregator_account_id"
     t.datetime "income_synced_at", precision: nil
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -87,129 +176,9 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_15_183520) do
     t.string "type", default: "pinwheel", null: false
     t.string "synchronization_status", default: "unknown"
     t.datetime "redacted_at"
-    t.string "aggregator_account_id"
+    t.datetime "discarded_at"
     t.index ["cbv_flow_id"], name: "index_payroll_accounts_on_cbv_flow_id"
-  end
-
-  create_table "solid_queue_blocked_executions", force: :cascade do |t|
-    t.bigint "job_id", null: false
-    t.string "queue_name", null: false
-    t.integer "priority", default: 0, null: false
-    t.string "concurrency_key", null: false
-    t.datetime "expires_at", null: false
-    t.datetime "created_at", null: false
-    t.index ["concurrency_key", "priority", "job_id"], name: "index_solid_queue_blocked_executions_for_release"
-    t.index ["expires_at", "concurrency_key"], name: "index_solid_queue_blocked_executions_for_maintenance"
-    t.index ["job_id"], name: "index_solid_queue_blocked_executions_on_job_id", unique: true
-  end
-
-  create_table "solid_queue_claimed_executions", force: :cascade do |t|
-    t.bigint "job_id", null: false
-    t.bigint "process_id"
-    t.datetime "created_at", null: false
-    t.index ["job_id"], name: "index_solid_queue_claimed_executions_on_job_id", unique: true
-    t.index ["process_id", "job_id"], name: "index_solid_queue_claimed_executions_on_process_id_and_job_id"
-  end
-
-  create_table "solid_queue_failed_executions", force: :cascade do |t|
-    t.bigint "job_id", null: false
-    t.text "error"
-    t.datetime "created_at", null: false
-    t.index ["job_id"], name: "index_solid_queue_failed_executions_on_job_id", unique: true
-  end
-
-  create_table "solid_queue_jobs", force: :cascade do |t|
-    t.string "queue_name", null: false
-    t.string "class_name", null: false
-    t.text "arguments"
-    t.integer "priority", default: 0, null: false
-    t.string "active_job_id"
-    t.datetime "scheduled_at"
-    t.datetime "finished_at"
-    t.string "concurrency_key"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["active_job_id"], name: "index_solid_queue_jobs_on_active_job_id"
-    t.index ["class_name"], name: "index_solid_queue_jobs_on_class_name"
-    t.index ["finished_at"], name: "index_solid_queue_jobs_on_finished_at"
-    t.index ["queue_name", "finished_at"], name: "index_solid_queue_jobs_for_filtering"
-    t.index ["scheduled_at", "finished_at"], name: "index_solid_queue_jobs_for_alerting"
-  end
-
-  create_table "solid_queue_pauses", force: :cascade do |t|
-    t.string "queue_name", null: false
-    t.datetime "created_at", null: false
-    t.index ["queue_name"], name: "index_solid_queue_pauses_on_queue_name", unique: true
-  end
-
-  create_table "solid_queue_processes", force: :cascade do |t|
-    t.string "kind", null: false
-    t.datetime "last_heartbeat_at", null: false
-    t.bigint "supervisor_id"
-    t.integer "pid", null: false
-    t.string "hostname"
-    t.text "metadata"
-    t.datetime "created_at", null: false
-    t.string "name", null: false
-    t.index ["last_heartbeat_at"], name: "index_solid_queue_processes_on_last_heartbeat_at"
-    t.index ["name", "supervisor_id"], name: "index_solid_queue_processes_on_name_and_supervisor_id", unique: true
-    t.index ["supervisor_id"], name: "index_solid_queue_processes_on_supervisor_id"
-  end
-
-  create_table "solid_queue_ready_executions", force: :cascade do |t|
-    t.bigint "job_id", null: false
-    t.string "queue_name", null: false
-    t.integer "priority", default: 0, null: false
-    t.datetime "created_at", null: false
-    t.index ["job_id"], name: "index_solid_queue_ready_executions_on_job_id", unique: true
-    t.index ["priority", "job_id"], name: "index_solid_queue_poll_all"
-    t.index ["queue_name", "priority", "job_id"], name: "index_solid_queue_poll_by_queue"
-  end
-
-  create_table "solid_queue_recurring_executions", force: :cascade do |t|
-    t.bigint "job_id", null: false
-    t.string "task_key", null: false
-    t.datetime "run_at", null: false
-    t.datetime "created_at", null: false
-    t.index ["job_id"], name: "index_solid_queue_recurring_executions_on_job_id", unique: true
-    t.index ["task_key", "run_at"], name: "index_solid_queue_recurring_executions_on_task_key_and_run_at", unique: true
-  end
-
-  create_table "solid_queue_recurring_tasks", force: :cascade do |t|
-    t.string "key", null: false
-    t.string "schedule", null: false
-    t.string "command", limit: 2048
-    t.string "class_name"
-    t.text "arguments"
-    t.string "queue_name"
-    t.integer "priority", default: 0
-    t.boolean "static", default: true, null: false
-    t.text "description"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["key"], name: "index_solid_queue_recurring_tasks_on_key", unique: true
-    t.index ["static"], name: "index_solid_queue_recurring_tasks_on_static"
-  end
-
-  create_table "solid_queue_scheduled_executions", force: :cascade do |t|
-    t.bigint "job_id", null: false
-    t.string "queue_name", null: false
-    t.integer "priority", default: 0, null: false
-    t.datetime "scheduled_at", null: false
-    t.datetime "created_at", null: false
-    t.index ["job_id"], name: "index_solid_queue_scheduled_executions_on_job_id", unique: true
-    t.index ["scheduled_at", "priority", "job_id"], name: "index_solid_queue_dispatch_all"
-  end
-
-  create_table "solid_queue_semaphores", force: :cascade do |t|
-    t.string "key", null: false
-    t.integer "value", default: 1, null: false
-    t.datetime "expires_at", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["expires_at"], name: "index_solid_queue_semaphores_on_expires_at"
-    t.index ["key", "value"], name: "index_solid_queue_semaphores_on_key_and_value"
-    t.index ["key"], name: "index_solid_queue_semaphores_on_key", unique: true
+    t.index ["discarded_at"], name: "index_payroll_accounts_on_discarded_at"
   end
 
   create_table "users", force: :cascade do |t|
@@ -242,13 +211,12 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_15_183520) do
   end
 
   add_foreign_key "cbv_flow_invitations", "users"
+  add_foreign_key "cbv_flow_transmissions", "cbv_flows"
   add_foreign_key "cbv_flows", "cbv_flow_invitations"
+  add_foreign_key "partner_application_attributes", "partner_configs"
+  add_foreign_key "partner_translations", "partner_configs"
+  add_foreign_key "partner_transmission_configs", "partner_transmission_methods"
+  add_foreign_key "partner_transmission_methods", "partner_configs"
   add_foreign_key "payroll_accounts", "cbv_flows"
-  add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
-  add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
-  add_foreign_key "solid_queue_failed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
-  add_foreign_key "solid_queue_ready_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
-  add_foreign_key "solid_queue_recurring_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
-  add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "webhook_events", "payroll_accounts"
 end

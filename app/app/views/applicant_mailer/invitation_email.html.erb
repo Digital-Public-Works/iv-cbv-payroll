@@ -17,7 +17,7 @@
 
       <p><%= agency_translation(".body_1", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
       <p><%= agency_translation(".body_2_html", deadline: format_date(@cbv_flow_invitation.expires_at_local.to_s)) %></p>
-      <p><%= agency_translation(".body_3", app_name: agency_translation("shared.app_name")) %></p>
+      <p><%= agency_translation(".body_3", agency_portal: agency_translation("shared.agency_portal")) %></p>
 
       <p>
         <%= t(".button_caption") %>

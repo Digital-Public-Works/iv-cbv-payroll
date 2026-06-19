@@ -14,12 +14,13 @@ export default class extends Controller {
   }
 
   async connect() {
-    this.errorHandler = this.element.addEventListener("turbo:frame-missing", this.onTurboError)
+    this.element.addEventListener("turbo:frame-missing", this.onTurboError)
+    this.element.addEventListener("turbo:submit-start", this.onSearchStart)
   }
 
   disconnect() {
-    this.element.removeEventListener("turbo:frame-missing", this.errorHandler)
-    delete this.ModalAdapter
+    this.element.removeEventListener("turbo:frame-missing", this.onTurboError)
+    this.element.removeEventListener("turbo:submit-start", this.onSearchStart)
   }
 
   onTurboError(event) {
@@ -30,6 +31,12 @@ export default class extends Controller {
     event.preventDefault()
   }
 
+  onSearchStart(event) {
+    const submitter = event.detail.formSubmission?.submitter
+
+    if (submitter) submitter.disabled = false
+  }
+
   onSuccess(accountId) {
     this.userAccountIdTarget.value = accountId
     this.formTarget.submit()
@@ -37,10 +44,16 @@ export default class extends Controller {
 
   async select(event) {
     this.disableButtons()
-    const { responseType, id, name, isDefaultOption, providerName } = event.target.dataset
+    const { responseType, id, name, isDefaultOption, providerName } = event.currentTarget.dataset
 
-    this.adapter = createModalAdapter(providerName)
-    this.adapter.init({
+    const adapter = createModalAdapter(providerName)
+
+    if (!adapter) {
+      console.error(`Could not find adapter for provider: ${providerName}`)
+      return
+    }
+
+    adapter.init({
       requestData: {
         responseType,
         id,
@@ -51,7 +64,7 @@ export default class extends Controller {
       onSuccess: this.onSuccess.bind(this),
       onExit: this.onExit.bind(this),
     })
-    await this.adapter.open()
+    await adapter.open()
   }
 
   disableButtons() {

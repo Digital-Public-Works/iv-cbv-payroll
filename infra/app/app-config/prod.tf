@@ -11,6 +11,7 @@ module "prod_config" {
   has_incident_management_service = local.has_incident_management_service
   enable_identity_provider        = local.enable_identity_provider
 
+
   database_serverless_min_capacity = 1.0
   database_serverless_max_capacity = 5.0
   backup_retention_period          = 7
@@ -19,10 +20,10 @@ module "prod_config" {
   # These numbers are a starting point based on this article
   # Update the desired instance size and counts based on the project's specific needs
   # https://conchchow.medium.com/aws-ecs-fargate-compute-capacity-planning-a5025cb40bd0
-  service_cpu                       = 1024
-  service_memory                    = 4096
-  service_desired_instance_count    = 1
-  solidqueue_desired_instance_count = 1
+  service_cpu                      = 1024
+  service_memory                   = 4096
+  service_desired_instance_count   = 1
+  shoryuken_desired_instance_count = 2
 
   # Create DNS records for these `additional_domains` in the default hosted
   # zone (this is necessary to support CBV agency subdomains).

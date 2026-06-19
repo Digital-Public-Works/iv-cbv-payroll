@@ -8,22 +8,24 @@ class CbvFlowInvitation < ApplicationRecord
   # to be of practical use here.
   EMAIL_REGEX = /\A([\w+\-].?)+@[a-z\d\-]+(\.[a-z\d\-]+)*\.[a-z\d\-]+\z/i
 
-  INVITATION_VALIDITY_TIME_ZONE = "America/New_York"
+  MAX_FLOWS_PER_INVITATION = 100
 
   VALID_LOCALES = Rails.application.config.i18n.available_locales.map(&:to_s).freeze
+
+  attr_accessor :expiration_days, :expiration_date
 
   belongs_to :user
   belongs_to :cbv_applicant, optional: true
   has_many :cbv_flows
 
-  has_secure_token :auth_token, length: 36
+  has_secure_token :auth_token, length: 10
 
   accepts_nested_attributes_for :cbv_applicant
 
   before_create :set_expires_at, if: :new_record?
   before_validation :normalize_language
 
-  validates :client_agency_id, inclusion: Rails.application.config.client_agencies.client_agency_ids
+  validates :client_agency_id, inclusion: { in: ->(_) { ClientAgencyConfig.instance.client_agency_ids } }
   validates :email_address, format: { with: EMAIL_REGEX, message: :invalid_format }
   validates_associated :cbv_applicant
   validates :language, inclusion: {
@@ -31,7 +33,10 @@ class CbvFlowInvitation < ApplicationRecord
     message: :invalid_format,
     case_sensitive: false
   }
-  validate :applicant_information
+  validate :applicant_information, :validate_expiration_params
+  validates :expiration_days,
+            numericality: { only_integer: true, greater_than_or_equal_to: 1 },
+            allow_nil: true
 
   include Redactable
   has_redactable_fields(
@@ -42,7 +47,7 @@ class CbvFlowInvitation < ApplicationRecord
   scope :unstarted, -> { left_outer_joins(:cbv_flows).where(cbv_flows: { id: nil }) }
 
   def expires_at_local
-    expires_at&.in_time_zone(INVITATION_VALIDITY_TIME_ZONE)
+    expires_at&.in_time_zone(agency_time_zone)
   end
 
   def expired?
@@ -53,8 +58,12 @@ class CbvFlowInvitation < ApplicationRecord
     cbv_flows.any?(&:complete?)
   end
 
+  def at_flow_limit?
+    cbv_flows.count >= MAX_FLOWS_PER_INVITATION
+  end
+
   def to_url(origin: nil)
-    client_agency = Rails.application.config.client_agencies[client_agency_id]
+    client_agency = ClientAgencyConfig.instance[client_agency_id]
     raise ArgumentError.new("Client Agency #{client_agency_id} not found") unless client_agency
 
     url_params = {
@@ -65,7 +74,9 @@ class CbvFlowInvitation < ApplicationRecord
     }
     url_params[:origin] = origin if origin.present?
 
-    Rails.application.routes.url_helpers.cbv_flow_entry_url(url_params.compact)
+    url = Rails.application.routes.url_helpers.start_flow_url(url_params.compact)
+    # safe add of '?' at the end of the URL for partners adding the &origin param.
+    url.include?("?") ? url : "#{url}?"
   end
 
   def normalize_language
@@ -73,26 +84,70 @@ class CbvFlowInvitation < ApplicationRecord
   end
 
   def applicant_information
-    # TODO: this configuration needs to be in the agency config file, not a hardcoded exception case here
-    return if client_agency_id == "az_des" || client_agency_id == "pa_dhs" || client_agency_id == "la_ldh"
+    return unless cbv_applicant.present?
 
-    errors.add(:'cbv_applicant.first_name', I18n.t("activerecord.errors.models.cbv_applicant.attributes.first_name.blank")) if cbv_applicant.first_name.blank?
-    errors.add(:'cbv_applicant.last_name', I18n.t("activerecord.errors.models.cbv_applicant.attributes.last_name.blank")) if cbv_applicant.last_name.blank?
-    errors.add(:'cbv_applicant.snap_application_date', I18n.t("activerecord.errors.models.cbv_applicant.attributes.snap_application_date.invalid_date")) if cbv_applicant.snap_application_date.blank?
+    cbv_applicant.required_applicant_attributes.each do |attr|
+      next if cbv_applicant.send(attr).present?
+
+      errors.add(
+        :"cbv_applicant.#{attr}",
+        I18n.t(
+          "activerecord.errors.models.cbv_applicant.attributes.#{attr}.blank",
+          default: "is required"
+        )
+      )
+    end
+  end
+
+  def validate_expiration_params
+    if expiration_days.present? && expiration_date.present?
+      errors.add(:base, "Provide either expiration_days or expiration_date, but not both.")
+      return
+    end
+
+    if expiration_date.present?
+      begin
+        parsed_date = Time.iso8601(expiration_date.to_s)
+
+        if parsed_date < Time.current
+          errors.add(:expiration_date, "cannot be in the past")
+        elsif parsed_date > 1.year.from_now
+          errors.add(:expiration_date, "cannot be more than 1 year in the future")
+        end
+      rescue ArgumentError
+        errors.add(:expiration_date, "must be a full ISO8601 datetime with a timezone")
+      end
+      return
+    end
+
+    # expiration_days is also validated using a numericality validator above
+    if expiration_days.present? && (Time.current + expiration_days.to_i.days) > 1.year.from_now
+      errors.add(:expiration_days, "cannot be more than 1 year in the future")
+    end
   end
 
   private
-
   def set_expires_at
     self.expires_at ||= calculate_expires_at
   end
 
-  # Invitations are valid until 11:59pm Eastern Time on the (e.g.) 14th day
-  # after sending the invitation.
   def calculate_expires_at
-    end_of_day_sent = created_at.in_time_zone(INVITATION_VALIDITY_TIME_ZONE).end_of_day
-    days_valid_for = Rails.application.config.client_agencies[client_agency_id].invitation_valid_days
+    Time.use_zone(agency_config.timezone) do
+      if expiration_date.present?
+        Time.zone.parse(expiration_date)
+      elsif expiration_days.present?
+        (created_at || Time.current).end_of_day + expiration_days.to_i.days
+      else
+        (created_at || Time.current).end_of_day + agency_config.invitation_valid_days.days
+      end
+    end
+  end
 
-    end_of_day_sent + days_valid_for.days
+  def agency_config
+    ClientAgencyConfig.instance[client_agency_id]
+  end
+
+  def agency_time_zone
+    agency_config.timezone
   end
 end

@@ -1,8 +1,14 @@
 import { trackUserAction, fetchArgyleToken } from "@js/utilities/api.js"
 import { getDocumentLocale } from "@js/utilities/getDocumentLocale.js"
 import { ModalAdapter } from "./ModalAdapter.js"
+import {
+  argyleUIEventToTrackingName,
+  isArgyleErrorEvent,
+  namespaceTrackingProperties,
+} from "./argyleTracking.js"
 
 export default class ArgyleModalAdapter extends ModalAdapter {
+  private seenError = false
   async open() {
     const locale = getDocumentLocale()
 
@@ -25,13 +31,22 @@ export default class ArgyleModalAdapter extends ModalAdapter {
           onAccountConnected: this.onSuccess.bind(this),
           onTokenExpired: this.onTokenExpired.bind(this),
           onAccountCreated: async (payload) => {
-            await trackUserAction("ApplicantCreatedArgyleAccount", payload)
+            await trackUserAction(
+              "ApplicantCreatedArgyleAccount",
+              namespaceTrackingProperties(payload)
+            )
           },
           onAccountError: async (payload) => {
-            await trackUserAction("ApplicantEncounteredArgyleAccountError", payload)
+            await trackUserAction(
+              "ApplicantEncounteredArgyleAccountCallbackError",
+              namespaceTrackingProperties(payload)
+            )
           },
           onAccountRemoved: async (payload) => {
-            await trackUserAction("ApplicantRemovedArgyleAccount", payload)
+            await trackUserAction(
+              "ApplicantRemovedArgyleAccount",
+              namespaceTrackingProperties(payload)
+            )
           },
           onUIEvent: async (payload) => {
             await this.onUIEvent(payload)
@@ -60,58 +75,21 @@ export default class ArgyleModalAdapter extends ModalAdapter {
     await this.onExit()
   }
 
-  async onUIEvent(payload: ArgyeUIEvent) {
-    switch (payload.name) {
-      case "search - opened":
-        await trackUserAction("ApplicantViewedArgyleDefaultProviderSearch", payload)
-        break
-      case "login - opened":
-        switch (payload.properties.errorCode) {
-          case "auth_required":
-            await trackUserAction("ApplicantEncounteredArgyleAuthRequiredLoginError", payload)
-            break
-          case "connection_unavailable":
-            await trackUserAction(
-              "ApplicantEncounteredArgyleConnectionUnavailableLoginError",
-              payload
-            )
-            break
-          case "expired_credentials":
-            await trackUserAction("ApplicantEncounteredArgyleExpiredCredentialsLoginError", payload)
-            break
-          case "invalid_auth":
-            await trackUserAction("ApplicantEncounteredArgyleInvalidAuthLoginError", payload)
-            break
-          case "invalid_credentials":
-            await trackUserAction("ApplicantEncounteredArgyleInvalidCredentialsLoginError", payload)
-            break
-          case "mfa_cancelled_by_the_user":
-            await trackUserAction("ApplicantEncounteredArgyleMfaCanceledLoginError", payload)
-            break
-          default:
-            await trackUserAction("ApplicantViewedArgyleLoginPage", payload)
-            break
-        }
-        break
-      case "search - link item selected":
-        await trackUserAction("ApplicantViewedArgyleProviderConfirmation", payload)
-        break
-      case "search - term updated":
-        await trackUserAction("ApplicantUpdatedArgyleSearchTerm", {
-          term: payload.properties.term,
-          tab: payload.properties.tab,
-          payload: payload,
-        })
-        break
-      case "login - form submitted":
-        await trackUserAction("ApplicantAttemptedArgyleLogin", payload)
-        break
-      case "mfa - opened":
-        await trackUserAction("ApplicantAccessedArgyleModalMFAScreen", payload)
-        break
-      default:
-        break
+  async onUIEvent(payload: ArgyleUIEvent) {
+    if (isArgyleErrorEvent(payload)) {
+      this.seenError = true
+    } else if (payload.name === "success - opened") {
+      this.seenError = false
     }
+
+    if (payload.name === "link closed" && !this.seenError) {
+      return
+    }
+
+    await trackUserAction(argyleUIEventToTrackingName(payload), {
+      "argyle.eventName": payload.name,
+      ...namespaceTrackingProperties(payload.properties),
+    })
   }
 
   async onSuccess(eventPayload: ArgyleAccountData) {

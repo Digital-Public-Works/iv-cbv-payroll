@@ -118,6 +118,11 @@ data "aws_iam_policy" "migrator_db_access_policy" {
   name  = local.database_config.migrator_access_policy_name
 }
 
+data "aws_iam_policy" "static_assets_access" {
+  count = var.environment_name == "prod" ? 1 : 0
+  name  = "dpw-${module.project_config.project_name}-static-assets-access"
+}
+
 resource "aws_iam_policy" "email_access_policy" {
   name        = "${local.service_config.service_name}-email-access"
   description = "Allows the app service to send emails with AWS SES"
@@ -163,9 +168,21 @@ data "aws_route53_zone" "zone" {
   name  = local.network_config.domain_config.hosted_zone
 }
 
+module "sqs_queues" {
+  source = "../../modules/sqs-queues"
+
+  queue_names                = ["report_sender", "mixpanel_events", "newrelic_events"]
+  dlq_name                   = "dead_letter_queue"
+  visibility_timeout_seconds = 75 # ~30s job → 2x+buffer
+  receive_wait_time_seconds  = 10
+  message_retention_seconds  = 345600 # 4 days
+  max_receive_count          = 5
+}
+
 module "service" {
   source       = "../../modules/service"
   service_name = local.service_config.service_name
+  queue_arns   = module.sqs_queues.queue_arns
 
   image_repository_arn = local.build_repository_config.repository_arn
   image_repository_url = local.build_repository_config.repository_url
@@ -181,11 +198,11 @@ module "service" {
   certificate_arn    = local.service_config.enable_https ? data.aws_acm_certificate.certificate[0].arn : null
   additional_domains = local.service_config.additional_domains
 
-  cpu                               = local.service_config.cpu
-  memory                            = local.service_config.memory
-  desired_instance_count            = local.is_temporary ? 1 : local.service_config.desired_instance_count
-  solidqueue_desired_instance_count = local.service_config.solidqueue_desired_instance_count
-  enable_command_execution          = local.service_config.enable_command_execution
+  cpu                              = local.service_config.cpu
+  memory                           = local.service_config.memory
+  desired_instance_count           = local.is_temporary ? 1 : local.service_config.desired_instance_count
+  shoryuken_desired_instance_count = local.service_config.shoryuken_desired_instance_count
+  enable_command_execution         = local.service_config.enable_command_execution
 
   aws_services_security_group_id = data.aws_security_groups.aws_services.ids[0]
 
@@ -207,8 +224,12 @@ module "service" {
 
   extra_environment_variables = merge(
     {
-      BUCKET_NAME = local.storage_config.bucket_name
+      BUCKET_NAME           = local.storage_config.bucket_name
+      STATIC_ASSETS_CDN_URL = "https://static.verifymyincome.org"
     },
+    var.environment_name == "prod" ? {
+      STATIC_ASSETS_BUCKET_NAME = "dpw-${module.project_config.project_name}-static-assets"
+    } : {},
     local.ssm_env_vars,
     local.identity_provider_environment_variables,
     local.service_config.extra_environment_variables
@@ -227,9 +248,13 @@ module "service" {
 
   extra_policies = merge(
     {
-      storage_access = module.storage.access_policy_arn,
-      email_access   = aws_iam_policy.email_access_policy.arn,
+      storage_access    = module.storage.access_policy_arn,
+      email_access      = aws_iam_policy.email_access_policy.arn,
+      sqs_queues_access = module.service.sqs_access_policy_arn
     },
+    var.environment_name == "prod" ? {
+      static_assets_access = data.aws_iam_policy.static_assets_access[0].arn,
+    } : {},
     module.app_config.enable_identity_provider ? {
       identity_provider_access = module.identity_provider_client[0].access_policy_arn,
     } : {}

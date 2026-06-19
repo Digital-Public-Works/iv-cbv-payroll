@@ -50,6 +50,7 @@ __check_defined = \
 	infra-update-app-database-roles \
 	infra-update-app-database \
 	infra-update-app-service \
+	infra-update-app-static-assets \
 	infra-update-current-account \
 	infra-update-network \
 	infra-validate-modules \
@@ -59,9 +60,7 @@ __check_defined = \
 	release-image-name \
 	release-image-tag \
 	release-publish \
-	release-run-database-migrations \
-	e2e-setup \
-	e2e-test
+	release-run-database-migrations
 
 infra-set-up-account: ## Configure and create resources for current AWS profile and save tfbackend file to infra/accounts/$ACCOUNT_NAME.ACCOUNT_ID.s3.tfbackend
 	@:$(call check_defined, ACCOUNT_NAME, human readable name for account e.g. "prod" or the AWS account alias)
@@ -117,6 +116,10 @@ infra-update-app-database-roles: ## Create or update database roles and schemas 
 	@:$(call check_defined, APP_NAME, the name of subdirectory of /infra that holds the application's infrastructure code)
 	@:$(call check_defined, ENVIRONMENT, the name of the application environment e.g. "prod" or "staging")
 	./bin/create-or-update-database-roles $(APP_NAME) $(ENVIRONMENT)
+
+infra-update-app-static-assets: ## Create or update $APP_NAME's static assets infrastructure (S3 + CloudFront)
+	@:$(call check_defined, APP_NAME, the name of subdirectory of /infra that holds the application's infrastructure code)
+	./bin/terraform-init-and-apply infra/$(APP_NAME)/static-assets shared
 
 infra-update-app-service: ## Create or update $APP_NAME's web service module
 	@:$(call check_defined, APP_NAME, the name of subdirectory of /infra that holds the application's infrastructure code)

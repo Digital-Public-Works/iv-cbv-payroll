@@ -17,7 +17,7 @@ class Cbv::PaymentDetailsController < Cbv::BaseController
 
   def show
     account_id = params[:user][:account_id]
-    @payroll_account = @cbv_flow.payroll_accounts.find_by(pinwheel_account_id: account_id)
+    @payroll_account = @cbv_flow.payroll_accounts.find_by(aggregator_account_id: account_id)
 
     # security check - make sure the account_id is associated with the current cbv_flow_id
     if @payroll_account.nil?
@@ -25,11 +25,13 @@ class Cbv::PaymentDetailsController < Cbv::BaseController
     end
 
     set_aggregator_report_for_account(@payroll_account)
-    unless @aggregator_report.valid?(:useful_report)
-      return redirect_to cbv_flow_synchronization_failures_path
-    end
 
-    @payroll_account_report = @aggregator_report.find_account_report(account_id)
+    result = Aggregators::AccountReportService.new(@aggregator_report, @payroll_account).validate
+    unless result.valid?
+      return redirect_to cbv_flow_validation_failures_path(user: { account_id: @payroll_account.aggregator_account_id })
+    end
+    @payroll_account_report = result.account_report
+
     @is_w2_worker = @payroll_account_report.employment.employment_type == :w2
     @account_comment = account_comment
   end
@@ -127,9 +129,10 @@ class Cbv::PaymentDetailsController < Cbv::BaseController
       cbv_applicant_id: @cbv_flow.cbv_applicant_id,
       cbv_flow_id: @cbv_flow.id,
       client_agency_id: current_agency&.id,
+      device_id: @cbv_flow.device_id,
       invitation_id: @cbv_flow.cbv_flow_invitation_id,
-      pinwheel_account_id: @payroll_account.id,
-      payments_length: @payroll_account_report.paystubs.length,
+      aggregator_account_id: @payroll_account.id,
+      payments_length: @payroll_account_report&.paystubs&.length,
       has_employment_data: has_employment_data?,
       has_paystubs_data: has_paystubs_data?,
       has_income_data: has_income_data?
@@ -144,6 +147,7 @@ class Cbv::PaymentDetailsController < Cbv::BaseController
       cbv_applicant_id: @cbv_flow.cbv_applicant_id,
       cbv_flow_id: @cbv_flow.id,
       client_agency_id: current_agency&.id,
+      device_id: @cbv_flow.device_id,
       invitation_id: @cbv_flow.cbv_flow_invitation_id,
       additional_information_length: comment_data ? comment_data["comment"].length : 0
     })

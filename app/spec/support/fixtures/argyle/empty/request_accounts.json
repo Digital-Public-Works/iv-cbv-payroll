@@ -1,0 +1,44 @@
+{
+  "results": [
+    {
+      "id": "empty-account-id",
+      "user": "empty-user-id",
+      "employers": [],
+      "item": "item_empty",
+      "source": "argyle_sandbox",
+      "created_at": "2025-05-06T19:35:49.110616Z",
+      "updated_at": "2025-05-06T19:37:29.834320Z",
+      "scanned_at": "2025-05-06T19:37:19.690128Z",
+      "connection": {
+        "status": "connected",
+        "error_code": null,
+        "error_message": null,
+        "updated_at": "2025-05-06T19:35:56.599174Z"
+      },
+      "availability": {
+        "identities": {
+          "status": "synced",
+          "updated_at": "2025-05-06T19:37:29.623256Z"
+        },
+        "paystubs": {
+          "status": "synced",
+          "updated_at": "2025-05-06T19:37:29.395723Z",
+          "available_count": 0,
+          "available_from": null,
+          "available_to": null
+        },
+        "gigs": {
+          "status": "synced",
+          "updated_at": "2025-05-06T19:37:29.557002Z",
+          "available_count": 0,
+          "available_from": null,
+          "available_to": null
+        }
+      },
+      "ongoing_refresh": {
+        "status": "disabled"
+      }
+    }
+  ],
+  "next": null
+}

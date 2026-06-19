@@ -8,7 +8,7 @@ class GenericEventTracker
     else
       request_data = nil
     end
-    EventTrackingJob.perform_later(event_type, request_data, merged_attributes)
+    MixpanelEventTrackingJob.perform_later(event_type, request_data, merged_attributes)
   rescue => ex
     Rails.logger.error "Unable to track event (#{event_type}): #{ex}, line: #{ex.backtrace&.first}"
     raise unless Rails.env.production?

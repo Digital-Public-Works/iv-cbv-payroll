@@ -21,7 +21,7 @@ Bundler.require(*Rails.groups)
 
 module IvCbvPayroll
   class Application < Rails::Application
-    config.active_job.queue_adapter = :solid_queue
+    config.active_job.queue_adapter = :shoryuken
     config.i18n.available_locales = [ :en, :es ]
     config.i18n.fallbacks = [ :en ]
     # Initialize configuration defaults for originally generated Rails version.
@@ -44,21 +44,12 @@ module IvCbvPayroll
     config.autoload_paths += %W[#{config.root}/app/helpers]
     config.autoload_paths += %W[#{config.root}/app/controllers/concerns]
 
-    # CBV configuration
-    config.client_agencies = ClientAgencyConfig.new(Rails.root.join("config", "client-agency-config"),
-                                                    (Rails.env == "development" || Rails.env == "test"))
-    config.supported_providers = (ENV["SUPPORTED_PROVIDERS"] || "pinwheel")&.split(",")&.map(&:to_sym)
-    config.cbv_session_expires_after = 30.minutes
-
     # Configure allowed hosts
-    config.hosts << ENV["DOMAIN_NAME"]
+    base = ENV["DOMAIN_NAME"]
+    config.hosts << base
+    # allow any subdomain, will use rails routing to determine if it is valid or not
+    config.hosts << ".#{base}"
     config.hosts << ".ec2-rdns.amazonaws.com"
-
-    # Configure allowed hosts from the files in client-agency-config
-    config.client_agencies.client_agency_ids.each do |agency_id|
-      agency = config.client_agencies[agency_id]
-      config.hosts << "#{agency.agency_domain}.#{ENV["DOMAIN_NAME"]}"
-    end
 
     # Health check endpoints should be accessible from any host
     config.host_authorization = {
@@ -69,5 +60,13 @@ module IvCbvPayroll
     config.active_record.encryption.primary_key = ENV["ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY"]
     config.active_record.encryption.deterministic_key = ENV["ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY"]
     config.active_record.encryption.key_derivation_salt = ENV["ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT"]
+
+    # This is tech debt. Supported providers is a required env variable, but should be configured elsewhere.
+    config.supported_providers = (ENV["SUPPORTED_PROVIDERS"] || "pinwheel")&.split(",")&.map(&:to_sym)
+    config.cbv_session_expires_after = 30.minutes
+  end
+
+  def self.client_agencies
+    @client_agencies ||= ClientAgencyConfig.instance((Rails.env == "development" || Rails.env == "test"))
   end
 end

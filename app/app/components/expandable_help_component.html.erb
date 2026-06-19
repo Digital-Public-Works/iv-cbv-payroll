@@ -1,0 +1,28 @@
+<div class="usa-accordion <%= margin_class %>">
+  <div class="usa-accordion__heading">
+    <button
+      type="button"
+      class="usa-accordion__button padding-y-1 bg-white border position-relative z-100"
+      aria-expanded="false"
+      aria-controls="<%= content_id %>"
+      data-action="click->click-tracker#track"
+      data-element-type="<%= ClickTracker::ElementType::ExpandableHelpAccordion %>"
+      data-element-name="<%= element_name %>"
+      <%= "data-track-event=#{track_event}" if track_event %>
+    >
+      <%= trigger_label %>
+    </button>
+  </div>
+  <div id="<%= content_id %>" class="usa-accordion__content padding-0" hidden>
+    <div class="usa-summary-box radius-0 border-top-0" role="region" aria-labelledby="<%= heading_id %>">
+      <div class="usa-summary-box__body">
+        <h4 class="usa-summary-box__heading font-body-sm" id="<%= heading_id %>">
+          <%= heading %>
+        </h4>
+        <div class="usa-summary-box__text">
+          <%= content %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -46,25 +46,91 @@ module Aggregators::AggregatorReports
       @has_fetched = all_successful
     end
 
-    AccountReportStruct = Struct.new(:identity, :income, :employment, :paystubs, :gigs)
     def find_account_report(account_id)
       account_employment = pick_employment(@employments, @paystubs, account_id)
       employment_filter = employment_filter_for(account_id, account_employment&.employment_matching_id)
 
       # Note that, once we filter by employment match, we do not yet have a good solution for displaying multiple
       # incomes or identities at this time. We just take the first.
-      AccountReportStruct.new(
-        @identities.filter(&employment_filter).first,
-        @incomes.filter(&employment_filter).first,
-        account_employment,
-        @paystubs.filter(&employment_filter),
-        @gigs.find_all { |gig| gig.account_id == account_id }
+      filtered_paystubs = @paystubs.filter(&employment_filter)
+
+      null_employment_paystubs = @paystubs.select(&null_employment_filter)
+      notify_flagged_paystubs(null_employment_paystubs)
+
+      report = AccountReport.new(
+        identity: @identities.filter(&employment_filter).first,
+        income: @incomes.filter(&employment_filter).first,
+        employment: account_employment,
+        paystubs: filtered_paystubs,
+        gigs: @gigs.find_all { |gig| gig.account_id == account_id }
       )
+
+      log_report_hours_to_mixpanel(report)
+
+      report
+    end
+
+    def log_report_hours_to_mixpanel(report)
+      GenericEventTracker.new.track(TrackEvent::ArgyleReportHours, nil, {
+        time: Time.now.to_i,
+        total_paystubs: report&.paystubs&.size,
+        paystubs_with_argyle_hours_null: report&.paystubs&.select { |s| s&.hours.nil? }.size
+      })
+    end
+
+    def notify_flagged_paystubs(paystubs_to_report)
+      paystubs_to_report.each do |paystub|
+        event_logger.track(TrackEvent::ApplicantPaystubHasNullEmploymentID, nil,
+          time: Time.now.to_i,
+          paystub_id: paystub&.id
+        )
+      end
+    end
+
+    def event_logger
+      @event_logger ||= GenericEventTracker.new
+    end
+
+    def income_report
+      {}.tap do |report|
+        report[:has_other_jobs] = payroll_accounts.first.cbv_flow.has_other_jobs
+        report[:employments] = summarize_by_employer.map do |_, summary|
+          cbv_flow = payroll_accounts.first.cbv_flow
+          {
+            applicant_first_name: summary[:identity]&.first_name,
+            applicant_last_name: summary[:identity]&.last_name,
+            applicant_full_name: summary[:identity]&.full_name,
+            applicant_ssn: summary[:identity]&.ssn,
+            applicant_extra_comments: cbv_flow.additional_information["comment"],
+            employer_name: summary[:employment].employer_name,
+            employer_phone: summary[:employment].employer_phone_number,
+            employer_address: summary[:employment]&.employer_address,
+            employment_status: summary[:employment]&.status,
+            employment_type: summary[:employment]&.employment_type,
+            employment_start_date: summary[:employment]&.start_date,
+            employment_end_date: summary[:employment]&.termination_date,
+            pay_frequency: summary[:income]&.pay_frequency,
+            compensation_amount: summary[:income]&.compensation_amount,
+            compensation_unit: summary[:income]&.compensation_unit,
+            paystubs: summary[:paystubs].map do |paystub|
+              {
+                pay_date: paystub.pay_date,
+                pay_period_start: paystub.pay_period_start,
+                pay_period_end: paystub.pay_period_end,
+                pay_gross: paystub.gross_pay_amount,
+                pay_gross_ytd: paystub.gross_pay_ytd,
+                pay_net: paystub.net_pay_amount,
+                hours_paid: paystub.hours
+              }
+            end
+          }
+        end
+      end
     end
 
     def summarize_by_employer
       @payroll_accounts.each_with_object({}) do |payroll_account, hash|
-        account_id = payroll_account.pinwheel_account_id
+        account_id = payroll_account.aggregator_account_id
         account_report = find_account_report(account_id)
         has_income_data = payroll_account.job_succeeded?("income")
         has_employment_data = payroll_account.job_succeeded?("employment")
@@ -90,7 +156,7 @@ module Aggregators::AggregatorReports
 
       @payroll_accounts
         .each_with_object({}) do |payroll_account, hash|
-          account_id = payroll_account.pinwheel_account_id
+          account_id = payroll_account.aggregator_account_id
           account_report = find_account_report(account_id)
           paystubs = account_report.paystubs
           gigs = account_report.gigs
@@ -160,14 +226,26 @@ module Aggregators::AggregatorReports
       end
     end
 
+    def base_pay_match
+      # only include paystubs that would be shown on the report anyway, to avoid 'see paystubs below' when there are no paystubs shown
+      paystubs_in_range = @paystubs.select { |paystub| parse_date_safely(paystub.pay_date)&.between?(from_date, to_date) }
+      Argyle::BasePayRateConsistencyChecker.new(income: @incomes.first, paystubs: paystubs_in_range).match?
+    end
+
     private
 
     def employment_filter_for(account_id, employment_matching_id)
       # Create a filter that filters any entities that don't match the account id and the employment id.
-      # If the entity doesn't have an employment id, allow it (eg for Pinwheel)
       lambda do |item|
-        item.account_id == account_id &&
-          (item.employment_id.nil? || item.employment_id == employment_matching_id)
+        item.account_id == account_id && item.employment_id == employment_matching_id
+      end
+    end
+
+    # TODO: Tech Debt - this should migrate to the forthcoming Data Quality Service.
+    def null_employment_filter
+      # Create a filter that selects any entities that have null employment_id.
+      lambda do |item|
+        item.employment_id.blank?
       end
     end
 
@@ -178,7 +256,7 @@ module Aggregators::AggregatorReports
       relevant_employments = employments.select { |e| e[:account_id] == account_id }
       if relevant_employments.empty?
         Rails.logger.error("No employments found that match account_id #{account_id}")
-        raise "No employments found that match account_id #{account_id}"
+        return nil
       end
 
       # Pick the employment with the latest update when considering the start_date,

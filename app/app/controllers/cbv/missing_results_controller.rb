@@ -11,7 +11,9 @@ class Cbv::MissingResultsController < Cbv::BaseController
       cbv_applicant_id: @cbv_flow.cbv_applicant_id,
       client_agency_id: current_agency&.id,
       cbv_flow_id: @cbv_flow.id,
-      invitation_id: @cbv_flow.cbv_flow_invitation_id
+      device_id: @cbv_flow.device_id,
+      invitation_id: @cbv_flow.cbv_flow_invitation_id,
+      version: "v2"
     })
   end
 end

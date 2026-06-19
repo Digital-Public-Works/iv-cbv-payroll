@@ -1,0 +1,353 @@
+{
+    "results": [
+        {
+            "id": "6798b682-5ade-3ff3-8033-e0451132e3b1",
+            "account": "01956d5f-cb8d-af2f-9232-38bce8531f58",
+            "payroll_document": "01956d60-224b-39bb-1fdf-8a3cb5471749",
+            "deduction_list": [
+                {
+                    "amount": "45.57",
+                    "name": "Dental",
+                    "tax_classification": null,
+                    "amount_ytd": "45.57"
+                },
+                {
+                    "amount": "15.19",
+                    "name": "Garnishment",
+                    "tax_classification": "post_tax",
+                    "amount_ytd": "67.89"
+                },
+                {
+                    "amount": null,
+                    "name": "Nil Deduction Amount",
+                    "tax_classification": "post_tax",
+                    "amount_ytd": null
+                }
+            ],
+            "filing_status": [
+                {
+                    "type": "federal",
+                    "location": null,
+                    "status": "single"
+                },
+                {
+                    "type": "local",
+                    "location": "New York",
+                    "status": "single"
+                }
+            ],
+            "tax_list": [
+                {
+                    "amount": "167.09",
+                    "name": "CA State Income Tax",
+                    "type": "state",
+                    "amount_ytd": "463.15"
+                },
+                {
+                    "amount": "151.90",
+                    "name": "MEDICARE",
+                    "type": "fica",
+                    "amount_ytd": "151.90"
+                }
+            ],
+            "status": "completed",
+            "paystub_date": "2025-03-03T00:00:00Z",
+            "paystub_period": {
+                "start_date": "2025-02-10T00:00:00Z",
+                "end_date": "2025-02-24T00:00:00Z"
+            },
+            "currency": "USD",
+            "gross_pay": "1518.97",
+            "deductions": "60.76",
+            "taxes": "318.99",
+            "net_pay": "1140.39",
+            "reimbursements": "1.17",
+            "hours": "65.59",
+            "fees": null,
+            "net_pay_ytd": "6781.06",
+            "gross_pay_ytd": "8197.38",
+            "metadata": {},
+            "employer": "Whole Foods",
+            "employer_address": {
+                "city": "Seattle",
+                "state": "WA",
+                "country": "US",
+                "postal_code": "98109",
+                "line1": "202 Westlake Ave N",
+                "line2": null
+            },
+            "created_at": "2025-03-06T21:32:51.840Z",
+            "updated_at": "2025-03-06T21:32:51.840Z",
+            "destinations": [],
+            "hours_ytd": "342.16",
+            "deductions_ytd": "253.02",
+            "taxes_ytd": "1169.17",
+            "gross_pay_list": [
+                {
+                    "name": "Regular",
+                    "type": "base",
+                    "start_date": "2025-02-10",
+                    "end_date": "2025-02-24",
+                    "rate": "23.1599",
+                    "hours": "65.5861",
+                    "amount": "1518.97",
+                    "hours_ytd": "342.1600",
+                    "amount_ytd": "7924.45"
+                },
+                {
+                    "name": "Commission",
+                    "type": "commission",
+                    "start_date": null,
+                    "end_date": null,
+                    "rate": null,
+                    "hours": null,
+                    "amount": null,
+                    "hours_ytd": null,
+                    "amount_ytd": "272.93"
+                }
+            ],
+            "gross_pay_list_totals": {
+                "base": {
+                    "amount": "1518.97",
+                    "amount_ytd": "7924.45",
+                    "hours": "65.5861",
+                    "hours_ytd": "342.1600",
+                    "rate_implied": "23.1600",
+                    "rate_implied_ytd": "23.1600"
+                },
+                "overtime": null,
+                "commission": {
+                    "amount": null,
+                    "amount_ytd": "272.93",
+                    "hours": null,
+                    "hours_ytd": null,
+                    "rate_implied": null,
+                    "rate_implied_ytd": null
+                },
+                "bonus": null,
+                "other": null
+            },
+            "employment": "defea132-21cb-32bf-84d1-9aa11d4976fa"
+        },
+        {
+            "id": "8b155165-ba1e-35a6-a3ab-cb744cb40ab7",
+            "account": "01956d5f-cb8d-af2f-9232-38bce8531f58",
+            "payroll_document": "01956d60-221f-fff0-039e-c46331fd408b",
+            "deduction_list": [
+                {
+                    "amount": "54.70",
+                    "name": "401K",
+                    "tax_classification": "pre_tax",
+                    "amount_ytd": "54.70"
+                }
+            ],
+            "filing_status": [
+                {
+                    "type": "federal",
+                    "location": null,
+                    "status": "married filing separately"
+                }
+            ],
+            "tax_list": [
+                {
+                    "amount": "109.40",
+                    "name": "Federal Income Tax",
+                    "type": "federal",
+                    "amount_ytd": "218.05"
+                }
+            ],
+            "status": "completed",
+            "paystub_date": "2025-02-17T00:00:00Z",
+            "paystub_period": {
+                "start_date": "2025-01-27T00:00:00Z",
+                "end_date": "2025-02-10T00:00:00Z"
+            },
+            "currency": "USD",
+            "gross_pay": "1367.52",
+            "deductions": "54.70",
+            "taxes": "109.40",
+            "net_pay": "1206.08",
+            "reimbursements": "2.66",
+            "hours": "59.05",
+            "fees": null,
+            "net_pay_ytd": "5640.67",
+            "gross_pay_ytd": "6678.41",
+            "metadata": {},
+            "employer": "Whole Foods",
+            "employer_address": {
+                "city": "Seattle",
+                "state": "WA",
+                "country": "US",
+                "postal_code": "98109",
+                "line1": "202 Westlake Ave N",
+                "line2": null
+            },
+            "created_at": "2025-03-06T21:32:51.958Z",
+            "updated_at": "2025-03-06T21:32:51.958Z",
+            "destinations": [],
+            "hours_ytd": "276.58",
+            "deductions_ytd": "192.26",
+            "taxes_ytd": "850.18",
+            "gross_pay_list": [
+                {
+                    "name": "Regular",
+                    "type": "base",
+                    "start_date": "2025-01-27",
+                    "end_date": "2025-02-10",
+                    "rate": "23.1600",
+                    "hours": "59.0467",
+                    "amount": "1367.52",
+                    "hours_ytd": "276.5800",
+                    "amount_ytd": "6405.48"
+                },
+                {
+                    "name": "Commission",
+                    "type": "commission",
+                    "start_date": null,
+                    "end_date": null,
+                    "rate": null,
+                    "hours": null,
+                    "amount": null,
+                    "hours_ytd": null,
+                    "amount_ytd": "272.93"
+                }
+            ],
+            "gross_pay_list_totals": {
+                "base": {
+                    "amount": "1367.52",
+                    "amount_ytd": "6405.48",
+                    "hours": "59.0467",
+                    "hours_ytd": "276.5800",
+                    "rate_implied": "23.1600",
+                    "rate_implied_ytd": "23.1600"
+                },
+                "overtime": null,
+                "commission": {
+                    "amount": null,
+                    "amount_ytd": "272.93",
+                    "hours": null,
+                    "hours_ytd": null,
+                    "rate_implied": null,
+                    "rate_implied_ytd": null
+                },
+                "bonus": null,
+                "other": null
+            },
+            "employment": "defea132-21cb-32bf-84d1-9aa11d4976fa"
+        },
+        {
+            "id": "bd2fbefb-5d8b-32f3-8e3f-a85de4811124",
+            "account": "01956d5f-cb8d-af2f-9232-38bce8531f58",
+            "payroll_document": "01956d60-21f4-349b-c8d2-e43fb98baa13",
+            "deduction_list": [
+                {
+                    "amount": "27.16",
+                    "name": "Roth",
+                    "tax_classification": "post_tax",
+                    "amount_ytd": "27.16"
+                }
+            ],
+            "filing_status": [
+                {
+                    "type": "federal",
+                    "location": null,
+                    "status": "single"
+                }
+            ],
+            "tax_list": [
+                {
+                    "amount": "108.65",
+                    "name": "Federal Income Tax",
+                    "type": "federal",
+                    "amount_ytd": "108.65"
+                },
+                {
+                    "amount": "162.97",
+                    "name": "OASDI",
+                    "type": "fica",
+                    "amount_ytd": "162.97"
+                }
+            ],
+            "status": "completed",
+            "paystub_date": "2025-02-03T00:00:00Z",
+            "paystub_period": {
+                "start_date": "2025-01-13T00:00:00Z",
+                "end_date": "2025-01-27T00:00:00Z"
+            },
+            "currency": "USD",
+            "gross_pay": "1631.01",
+            "deductions": "27.16",
+            "taxes": "271.62",
+            "net_pay": "1332.23",
+            "reimbursements": "0.00",
+            "hours": "58.64",
+            "fees": null,
+            "net_pay_ytd": "4434.59",
+            "gross_pay_ytd": "5310.89",
+            "metadata": {},
+            "employer": "Whole Foods",
+            "employer_address": {
+                "city": "Seattle",
+                "state": "WA",
+                "country": "US",
+                "postal_code": "98109",
+                "line1": "202 Westlake Ave N",
+                "line2": null
+            },
+            "created_at": "2025-03-06T21:32:51.940Z",
+            "updated_at": "2025-03-06T21:32:51.940Z",
+            "destinations": [],
+            "hours_ytd": "217.53",
+            "deductions_ytd": "137.56",
+            "taxes_ytd": "740.78",
+            "gross_pay_list": [
+                {
+                    "name": "Regular",
+                    "type": "base",
+                    "start_date": "2025-01-13",
+                    "end_date": "2025-01-27",
+                    "rate": "23.1600",
+                    "hours": "58.6390",
+                    "amount": "1358.08",
+                    "hours_ytd": "217.5300",
+                    "amount_ytd": "5037.96"
+                },
+                {
+                    "name": "Commission",
+                    "type": "commission",
+                    "start_date": "2025-01-21",
+                    "end_date": "2025-01-21",
+                    "rate": null,
+                    "hours": null,
+                    "amount": "272.93",
+                    "hours_ytd": null,
+                    "amount_ytd": "272.93"
+                }
+            ],
+            "gross_pay_list_totals": {
+                "base": {
+                    "amount": "1358.08",
+                    "amount_ytd": "5037.96",
+                    "hours": "58.6390",
+                    "hours_ytd": "217.5300",
+                    "rate_implied": "23.1600",
+                    "rate_implied_ytd": "23.1600"
+                },
+                "overtime": null,
+                "commission": {
+                    "amount": "272.93",
+                    "amount_ytd": "272.93",
+                    "hours": null,
+                    "hours_ytd": null,
+                    "rate_implied": null,
+                    "rate_implied_ytd": null
+                },
+                "bonus": null,
+                "other": null
+            },
+            "employment": "0330c637-af9a-4318-9ac1-e2e58fe5edfe"
+        }
+    ],
+    "next": null,
+    "previous": null
+}

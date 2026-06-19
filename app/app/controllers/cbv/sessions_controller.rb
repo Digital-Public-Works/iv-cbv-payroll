@@ -8,12 +8,28 @@ class Cbv::SessionsController < Cbv::BaseController
   end
 
   def end
-    if params[:timeout] == "true"
-      track_timeout_event
-      flash[:notice] = t("cbv.error_missing_token_html")
+    redirect_target = begin
+      client_agency_id = CbvFlow.find(session[:cbv_flow_id]).client_agency_id
+      cbv_flow_session_timeout_path(client_agency_id: client_agency_id)
+    rescue ActiveRecord::RecordNotFound
+      Rails.logger.info "Unable to find CbvFlow in sessions#end. Redirecting to root with timeout"
+      root_url(cbv_flow_timeout: true)
     end
 
-    session[:cbv_flow_id] = nil
-    redirect_to root_url
+    reset_cbv_session!
+    redirect_to redirect_target
+  end
+
+  def timeout
+    reset_cbv_session!
+    @current_agency = agency_config[params[:client_agency_id]]
+
+    unless @current_agency
+      redirect_to root_url(cbv_flow_timeout: true)
+    end
+  end
+
+  def current_agency
+    @current_agency
   end
 end

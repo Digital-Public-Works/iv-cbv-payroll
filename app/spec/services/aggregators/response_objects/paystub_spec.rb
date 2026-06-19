@@ -93,6 +93,46 @@ RSpec.describe Aggregators::ResponseObjects::Paystub, type: :model do
       expect(paystub.earnings.first.name).to eq("Regular")
     end
 
+    it 'populates payroll_document_id when the field is present' do
+      response = argyle_response.merge("payroll_document" => "doc-abc-123")
+      paystub = described_class.from_argyle(response)
+      expect(paystub.payroll_document_id).to eq("doc-abc-123")
+    end
+
+    it 'leaves payroll_document_id nil when the field is missing' do
+      paystub = described_class.from_argyle(argyle_response)
+      expect(paystub.payroll_document_id).to be_nil
+    end
+
+    it 'logs paystub to MixPanel when parsing' do
+      tracker_instance = instance_double(GenericEventTracker)
+      allow(GenericEventTracker).to receive(:new).and_return(tracker_instance)
+
+      expect(tracker_instance)
+        .to receive(:track)
+        .with("ArgylePaystubHours", nil, include(
+          time: anything,
+          argyle_total_hours: 80.0,
+          gross_pay_sum: 65.5861,
+          synthetic_total_hours: 65.5861,
+          argyle_total_hours_matches_synthetic: false,
+          argyle_hours_null: false
+        )).once
+
+      paystub = described_class.from_argyle(argyle_response)
+    end
+
+    it 'sends an error to New Relic when it cannot send to MixPanel' do
+      tracker_instance = instance_double(GenericEventTracker)
+      allow(GenericEventTracker).to receive(:new).and_raise(RuntimeError, "Test error")
+      allow(NewRelic::Agent).to receive(:notice_error)
+
+      paystub = described_class.from_argyle(argyle_response)
+
+      expect(NewRelic::Agent).to have_received(:notice_error)
+                                   .with(kind_of(RuntimeError))
+    end
+
     context 'with realistic USDS employee data structure' do
       let(:argyle_response) do
         {
@@ -138,6 +178,55 @@ RSpec.describe Aggregators::ResponseObjects::Paystub, type: :model do
         paystub = described_class.from_argyle(argyle_response)
 
         expect(paystub.hours).to eq(80)
+      end
+    end
+
+    context 'when synthetic hours and full argyle hours match within tolerance' do
+      let(:argyle_response) do
+        {
+          "account" => "67890",
+          "gross_pay" => "6000.34",
+          "net_pay" => "4800.56",
+          "gross_pay_ytd" => "24000.78",
+          "paystub_period" => { "start_date" => "2023-01-01", "end_date" => "2023-01-15" },
+          "paystub_date" => "2023-01-20",
+          "hours" => 80,
+          "gross_pay_list" => [
+            {
+              "name" => "Regular",
+              "type" => "base",
+              "start_date" => "2025-02-10",
+              "end_date" => "2025-02-24",
+              "rate" => "23.1599",
+              "hours" => "80.0099",
+              "amount" => "1518.97",
+              "hours_ytd" => "342.1600",
+              "amount_ytd" => "7924.45"
+            }
+          ],
+          "deduction_list" => [
+            { "name" => "tax", "amount" => "600.90" },
+            { "name" => "insurance", "amount" => "120.34" }
+          ]
+        }
+      end
+
+      it 'logs paystub to MixPanel with argyle_total_hours_matches_synthetic true' do
+        tracker_instance = instance_double(GenericEventTracker)
+        allow(GenericEventTracker).to receive(:new).and_return(tracker_instance)
+
+        expect(tracker_instance)
+          .to receive(:track)
+                .with("ArgylePaystubHours", nil, include(
+                  time: anything,
+                  argyle_total_hours: 80.0,
+                  gross_pay_sum: 80.0099,
+                  synthetic_total_hours: 80.0099,
+                  argyle_total_hours_matches_synthetic: true,
+                  argyle_hours_null: false
+                )).once
+
+        paystub = described_class.from_argyle(argyle_response)
       end
     end
   end

@@ -4,21 +4,23 @@ class WeeklyReportMailer < ApplicationMailer
 
   # Send email with a CSV file that reports on completed flows in past week
   def report_email
-    current_agency = client_agency_config[params[:client_agency_id]]
+    client_id    = params.fetch(:client_id)
+    # this needs to be @report_range as it is used in the view template
+    @report_range = params.fetch(:report_range)
+    recipient    = params.fetch(:recipient)
+
+    current_agency = client_agency_config[client_id]
     raise "Invalid `client_agency_id` parameter given: #{params[:client_agency_id].inspect}" unless current_agency.present?
 
-    raise "Missing `report_date` param" unless params[:report_date].present?
-    now = params[:report_date]
+    raise "Missing `report_range` param" unless @report_range.present?
 
-    raise "Missing `weekly_report.recipient` configuration for client agency: #{params[:client_agency_id]}" unless current_agency.weekly_report["recipient"]
-    @recipient = current_agency.weekly_report["recipient"]
+    raise "Missing `weekly_report.recipient` configuration for client agency: #{params[:client_agency_id]}" unless recipient
 
-    @report_range = now.prev_week.all_week
     csv_rows = weekly_report_data(current_agency, @report_range)
     attachments[report_filename(@report_range)] = generate_csv(csv_rows)
 
     mail(
-      to: @recipient,
+      to: recipient,
       subject: "CBV Pilot - Weekly Report Email",
     )
   end
@@ -39,9 +41,9 @@ class WeeklyReportMailer < ApplicationMailer
                        .includes(:cbv_flows, :cbv_applicant)
                        .flat_map do |invitation|
         if invitation.cbv_flows.any?
-          invitation.cbv_flows.map { |flow| build_record(flow, invitation.cbv_applicant, invitation, client_agency_id) }
+          invitation.cbv_flows.map { |flow| build_record(flow, invitation.cbv_applicant, invitation, current_agency) }
         else
-          [ build_record(nil, invitation.cbv_applicant, invitation, client_agency_id) ]
+          [ build_record(nil, invitation.cbv_applicant, invitation, current_agency) ]
         end
       end
     when "flows"
@@ -49,38 +51,31 @@ class WeeklyReportMailer < ApplicationMailer
              .completed
              .includes(:cbv_applicant, :cbv_flow_invitation)
              .map do |flow|
-        build_record(flow, flow.cbv_applicant, flow.cbv_flow_invitation, client_agency_id)
+        build_record(flow, flow.cbv_applicant, flow.cbv_flow_invitation, current_agency)
       end
     else
       raise "Unknown report variant: #{report_variant}"
     end
   end
 
-  def build_record(flow, applicant, invitation, client_agency_id)
+  def build_record(flow, applicant, invitation, partner)
     base_fields = {
       started_at: flow&.created_at,
       transmitted_at: flow&.transmitted_at,
       completed_at: flow&.consented_to_authorized_use_at
     }
 
-    case client_agency_id
-    when "la_ldh"
-      base_fields.merge(case_number: applicant.case_number)
-    when "az_des"
-      base_fields.merge(
-        case_number: applicant.case_number,
-        email_address: invitation&.email_address,
-        invited_at: invitation&.created_at
-      )
-    when "pa_dhs"
-      base_fields.merge(
-        case_number: applicant.case_number,
-        email_address: invitation&.email_address,
-        invited_at: invitation&.created_at
-      )
-    else
-      base_fields
+    # add column header to represent the partner identifier
+    if partner.partner_identifier_name.present?
+      base_fields[partner.partner_identifier_name.to_sym] = applicant.partner_identifier
     end
+
+    if partner.include_invitation_details_on_weekly_report
+      base_fields[:email_address] = invitation&.email_address
+      base_fields[:invited_at] = invitation&.created_at
+    end
+
+    base_fields
   end
 
   def generate_csv(rows)

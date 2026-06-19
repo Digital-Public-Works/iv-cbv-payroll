@@ -28,7 +28,7 @@ RSpec.describe Report::EmploymentDetailsTableComponent, type: :component do
         :pinwheel_fully_synced,
         with_errored_jobs: errored_jobs,
         cbv_flow: cbv_flow,
-        pinwheel_account_id: account_id,
+        aggregator_account_id: account_id,
         supported_jobs: supported_jobs,
         )
     end
@@ -102,7 +102,7 @@ RSpec.describe Report::EmploymentDetailsTableComponent, type: :component do
         :payroll_account,
         :argyle_fully_synced,
         cbv_flow: cbv_flow,
-        pinwheel_account_id: account_id
+        aggregator_account_id: account_id
       )
     end
 
@@ -228,6 +228,40 @@ RSpec.describe Report::EmploymentDetailsTableComponent, type: :component do
         it "renders employment details" do
           expect(subject.css("tbody tr:nth-child(3) th:nth-child(1)").to_html).to include "Employer phone"
         end
+
+        context "when the account's identity is missing (e.g. removed upstream)" do
+          before { argyle_report.identities = [] }
+
+          it "does not raise and omits the identity rows" do
+            expect { subject }.not_to raise_error
+            expect(subject.to_html).not_to include("Client full name")
+            expect(subject.to_html).not_to include("SSN")
+          end
+        end
+      end
+    end
+
+    context "with joe_null, with a null value for base pay period" do
+      let(:account_id) { "01956d62-18a0-090f-bc09-2ac44b7edf99" }
+      let(:argyle_report) { Aggregators::AggregatorReports::ArgyleReport.new(payroll_accounts: [ payroll_account ], argyle_service: argyle_service, days_to_fetch_for_w2: 90, days_to_fetch_for_gig: 182) }
+      before do
+        argyle_stub_request_identities_response("joe_null_total_hours")
+        argyle_stub_request_paystubs_response("joe_null_total_hours")
+        argyle_stub_request_account_response("joe_null_total_hours")
+        argyle_stub_request_gigs_response("joe_null_total_hours")
+        argyle_report.fetch
+      end
+
+      around do |ex|
+        Timecop.freeze(Time.local(2025, 04, 1, 0, 0), &ex)
+      end
+
+      subject { render_inline(described_class.new(argyle_report, payroll_account, show_income: true)) }
+
+      it "renders help text next to Compensation Amonut due to a null base pay value" do
+        compensation_row = subject.css("tbody tr:nth-child(7)").to_html
+        expect(compensation_row).to include "Compensation amount"
+        expect(compensation_row).to include "Rate not available."
       end
     end
   end

@@ -1,0 +1,69 @@
+{
+  "id": "019b452d-2aaa-661f-ba79-6903bffe6079",
+  "user": "019b452c-ffac-051b-7c0b-6f477e375bca",
+  "employers": [
+    "Old ADP Employer, LLC"
+  ],
+  "item": "item_000026933",
+  "source": "myadp",
+  "created_at": "2025-12-22T08:29:06.701Z",
+  "updated_at": "2025-12-23T08:39:16.494Z",
+  "scanned_at": "2025-12-22T08:30:46.863Z",
+  "connection": {
+    "status": "error",
+    "error_code": "auth_required",
+    "error_message": "This user's connection has expired and requires re-authentication.",
+    "updated_at": "2025-12-23T08:39:15.990Z"
+  },
+  "direct_deposit_switch": {
+    "status": "idle",
+    "error_code": null,
+    "error_message": null,
+    "updated_at": "2025-12-22T08:29:07.768Z"
+  },
+  "availability": {
+    "gigs": {
+      "status": "synced",
+      "updated_at": "2025-12-22T08:30:36.664Z",
+      "available_count": 0,
+      "available_from": null,
+      "available_to": null
+    },
+    "shifts": {
+      "status": "synced",
+      "updated_at": "2025-12-22T08:30:36.664Z",
+      "available_count": 0,
+      "available_from": null,
+      "available_to": null
+    },
+    "paystubs": {
+      "status": "synced",
+      "updated_at": "2025-12-22T08:30:49.289Z",
+      "available_count": 17,
+      "available_from": "2023-12-01T00:00:00.000Z",
+      "available_to": "2025-12-18T00:00:00.000Z"
+    },
+    "payroll_documents": {
+      "status": "synced",
+      "updated_at": "2025-12-22T08:30:13.562Z"
+    },
+    "identities": {
+      "status": "synced",
+      "updated_at": "2025-12-22T08:30:17.285Z"
+    },
+    "ratings": {
+      "status": "synced",
+      "updated_at": "2025-12-22T08:30:13.591Z"
+    },
+    "vehicles": {
+      "status": "synced",
+      "updated_at": "2025-12-22T08:30:13.598Z"
+    },
+    "deposit_destinations": null,
+    "user_forms": null,
+    "user_uploads": null
+  },
+  "ongoing_refresh": {
+    "status": "disabled"
+  }
+}

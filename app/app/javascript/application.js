@@ -14,6 +14,14 @@ document.addEventListener("turbo:render", () => {
   const target = document.body
   Object.keys(components).forEach((key) => {
     const behavior = components[key]
+    // Clean up existing component state before reinitializing
+    // This prevents "Modal markup is missing ID" errors when modals
+    // are reinitialized after Turbo navigation
+    try {
+      behavior.off(target)
+    } catch (e) {
+      // Component may not have been initialized yet, ignore cleanup errors
+    }
     behavior.on(target)
   })
 })

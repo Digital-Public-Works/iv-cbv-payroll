@@ -1,0 +1,5 @@
+Descriptions of fixtures in this directory
+--
+null_hours_in_gross_pay_list_paystubs.json - Contains a redacted Workday paystubs response that includes null values for some entries in gross_pay_list.
+
+TBD - descriptions of the other fixtures

@@ -372,4 +372,14 @@ RSpec.describe Aggregators::Sdk::ArgyleService, type: :service do
       expect(stub).to have_been_requested
     end
   end
+
+  describe '#delete_argyle_user' do
+    let(:argyle_user_id) { '123' }
+
+    it 'makes a DELETE request to remove argyle user' do
+      stub = stub_request(:delete, "https://api-sandbox.argyle.com/v2/users/#{argyle_user_id}")
+      service.delete_user(argyle_user_id: argyle_user_id)
+      expect(stub).to have_been_requested
+    end
+  end
 end

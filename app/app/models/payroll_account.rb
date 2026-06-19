@@ -1,5 +1,6 @@
 class PayrollAccount < ApplicationRecord
-  before_save :update_aggregator_account_id
+  include Discard::Model
+  default_scope -> { kept }
 
   def self.sti_name
     # "PayrollAccount::Pinwheel" => "pinwheel"
@@ -59,10 +60,6 @@ class PayrollAccount < ApplicationRecord
   end
 
   private
-
-  def update_aggregator_account_id
-    self.aggregator_account_id = pinwheel_account_id
-  end
 
   def find_webhook_event(event_name, event_outcome = nil)
     webhook_events.find do |webhook_event|

@@ -1,0 +1,10 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`BackButtonController > calls trackUserAction with data attributes for back 1`] = `
+[
+  "ApplicantClickedBackButton",
+  {
+    "from_page": "blank",
+  },
+]
+`;

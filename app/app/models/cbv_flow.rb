@@ -1,8 +1,9 @@
 class CbvFlow < ApplicationRecord
   has_many :payroll_accounts, dependent: :destroy
+  has_many :cbv_flow_transmissions, dependent: :destroy
   belongs_to :cbv_flow_invitation, optional: true
   belongs_to :cbv_applicant, optional: true
-  validates :client_agency_id, inclusion: Rails.application.config.client_agencies.client_agency_ids
+  validates :client_agency_id, inclusion: { in: ->(_) { ClientAgencyConfig.instance.client_agency_ids } }
 
   accepts_nested_attributes_for :cbv_applicant
 
@@ -19,31 +20,37 @@ class CbvFlow < ApplicationRecord
     confirmation_code.present?
   end
 
-  def self.create_from_invitation(cbv_flow_invitation)
+  def self.create_from_invitation(cbv_flow_invitation, device_id)
     create(
       cbv_flow_invitation: cbv_flow_invitation,
       cbv_applicant: cbv_flow_invitation.cbv_applicant,
       client_agency_id: cbv_flow_invitation.client_agency_id,
+      device_id: device_id
     )
   end
 
-  def self.create_without_invitation(client_agency_id)
+  def self.create_without_invitation(client_agency_id, device_id)
     create(
       cbv_applicant: CbvApplicant.create(client_agency_id: client_agency_id),
-      client_agency_id: client_agency_id
+      client_agency_id: client_agency_id,
+      device_id: device_id
     )
   end
 
   def has_account_with_required_data?
-    payroll_accounts.any?(&:sync_succeeded?)
+    accounts_with_required_data.any?
+  end
+
+  def accounts_with_required_data
+    payroll_accounts.includes(:webhook_events).select(&:sync_succeeded?)
   end
 
   def fully_synced_payroll_accounts
-    payroll_accounts.select { |account| account.has_fully_synced? }
+    payroll_accounts.includes(:webhook_events).select { |account| account.has_fully_synced? }
   end
 
   def to_generic_url(origin: nil)
-    client_agency = Rails.application.config.client_agencies[client_agency_id]
+    client_agency = ClientAgencyConfig.instance[client_agency_id]
     raise ArgumentError.new("Client Agency #{client_agency_id} not found") unless client_agency
 
     url_params = {
