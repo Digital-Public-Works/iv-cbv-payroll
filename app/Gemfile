@@ -94,7 +94,7 @@ end
 
 group :development do
   # debase + ruby_core_source back RubyMine's classic "Ruby remote debug" (Debug Server) config — keep them.
-  gem "debase-ruby_core_source", "~> 3.3", ">= 3.3.1"
+  gem "debase-ruby_core_source", "~> 4.0"
   gem "debase", "~> 0.2.9", require: false
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
