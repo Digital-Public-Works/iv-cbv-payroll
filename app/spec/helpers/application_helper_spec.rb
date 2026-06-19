@@ -104,7 +104,7 @@ RSpec.describe ApplicationHelper do
       end
 
       it "returns blank without raising for an optional key" do
-        expect(helper.agency_translation("shared.agency_acronym")).to be_empty
+        expect(helper.agency_translation("shared.agency_acronym")).to be_blank
       end
     end
   end
