@@ -33,9 +33,6 @@ gem "stimulus-rails"
 gem "cssbundling-rails"
 gem "premailer-rails"
 
-# Build JSON APIs with ease [https://github.com/rails/jbuilder]
-gem "jbuilder"
-
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
 
@@ -74,6 +71,7 @@ gem "net-imap", "0.5.10"  # Fixing GHSA-j3g3-5qv5-52m
 gem "cgi", ">= 0.4.2"     # Fixing GHSA-mhwm-jh88-3gjf
 gem "thor", ">= 1.4.0"    # Fixing GHSA-mqcp-p2hv-vw6x
 gem "uri", ">= 1.0.4"     # Fixing CVE-2025-61594
+gem "ostruct"             # Required by wicked_pdf on Ruby 3.4+ (no longer a default gem; was previously loaded transitively via jbuilder)
 
 group :development, :test do
   gem "brakeman"
