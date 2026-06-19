@@ -134,6 +134,8 @@ ignore_missing:
     - "caseworker_mailer.summary_email.*"
     # Caseworker PDF strings that are only supported in English:
     - "cbv.submits.show.pdf.caseworker.*"
+    # Caseworker pay stub cover sheet (transmitted file) is only supported in English:
+    - "transmitters.paystubs_caseworker_cover.*"
     # LA wind down content
     - "pages.home.pilot_ended.la_ldh.*"
 
@@ -150,10 +152,13 @@ ignore_unused:
     - "aggregator_strings.*"                    # dynamically looked up aggregator translations
     - "help.show.*.intro"                       # dynamically looked up help translations
     - "help.show.credentials.security_message"  # dynamically looked up help translations
+    - "caseworker.cbv_flow_invitations.*.invite.*" # dynamically resolved per-agency caseworker form translations
+    - "cbv.applicant_informations.*.fields.*" # dynamically resolved per-agency applicant form translations
     - "cbv.submits.show.pdf.caseworker.*" #dynamically looked up translations
     - "cbv.submits.show.pdf.client.agency_id_number" #dynamically looked up translations
     - "cbv.submits.show.pdf.shared.additional_jobs_to_report" #dynamically used when applicant does not supply additional jobs
     - "cbv.submits.show.pdf.shared.additional_jobs_to_report_html" #dynamically used when applicant supplies additional jobs
+    - "pages.home.pilot_ended.la_ldh.body_bullet_3" # template usage is commented out pending la_ldh partial removal
 
 csv:
   # see: https://github.com/glebm/i18n-tasks/wiki/Custom-CSV-import-and-export-tasks

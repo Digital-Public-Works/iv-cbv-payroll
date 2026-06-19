@@ -24,7 +24,7 @@ RSpec.describe CspReportsController, type: :controller do
       end
 
       it 'records a custom event in New Relic' do
-        expect(NewRelic::Agent).to receive(:record_custom_event).with(
+        expect(NewRelic::EventLogger).to receive(:track).with(
           "CSPViolation",
           hash_including(
             document_uri: "https://example.com/page",
@@ -60,7 +60,7 @@ RSpec.describe CspReportsController, type: :controller do
       end
 
       it 'does not record a New Relic event' do
-        expect(NewRelic::Agent).not_to receive(:record_custom_event)
+        expect(NewRelic::EventLogger).not_to receive(:track)
 
         post :create, body: "not valid json"
       end
@@ -82,7 +82,7 @@ RSpec.describe CspReportsController, type: :controller do
       end
 
       it 'does not record a New Relic event' do
-        expect(NewRelic::Agent).not_to receive(:record_custom_event)
+        expect(NewRelic::EventLogger).not_to receive(:track)
 
         post :create, body: { "other-key" => "value" }.to_json
       end

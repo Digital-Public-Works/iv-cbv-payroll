@@ -34,9 +34,9 @@ RSpec.describe Cbv::OtherJobsController do
     end
 
     it 'tracks an event when has_other_jobs is true' do
-      allow(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+      allow(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
 
-      expect(EventTrackingJob).to receive(:perform_later).with("ApplicantContinuedFromOtherJobsPage", anything, hash_including(
+      expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantContinuedFromOtherJobsPage", anything, hash_including(
         time: be_a(Integer),
         cbv_flow_id: cbv_flow.id,
         client_agency_id: cbv_flow.client_agency_id,
@@ -46,9 +46,9 @@ RSpec.describe Cbv::OtherJobsController do
     end
 
     it 'tracks an event when has_other_jobs is false' do
-      allow(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+      allow(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
 
-      expect(EventTrackingJob).to receive(:perform_later).with("ApplicantContinuedFromOtherJobsPage", anything, hash_including(
+      expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantContinuedFromOtherJobsPage", anything, hash_including(
         time: be_a(Integer),
         cbv_flow_id: cbv_flow.id,
         client_agency_id: cbv_flow.client_agency_id,
@@ -58,9 +58,9 @@ RSpec.describe Cbv::OtherJobsController do
     end
 
     it 'does not track ApplicantContinuedFromOtherJobsPage event when no radio button is selected' do
-      allow(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+      allow(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
 
-      expect(EventTrackingJob).not_to receive(:perform_later).with("ApplicantContinuedFromOtherJobsPage", anything, anything)
+      expect(MixpanelEventTrackingJob).not_to receive(:perform_later).with("ApplicantContinuedFromOtherJobsPage", anything, anything)
       patch :update, params: { cbv_flow: { has_other_jobs: '' } }
     end
 
@@ -68,11 +68,11 @@ RSpec.describe Cbv::OtherJobsController do
       before do
         allow(Rails.env).to receive(:production?).and_return(true)
         allow(Rails.logger).to receive(:error)
-        allow(EventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+        allow(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
       end
 
       it 'continues when event tracking raises an exception' do
-        allow(EventTrackingJob).to receive(:perform_later).with("ApplicantContinuedFromOtherJobsPage", anything, anything).and_raise(StandardError)
+        allow(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantContinuedFromOtherJobsPage", anything, anything).and_raise(StandardError)
 
         patch :update, params: { cbv_flow: { has_other_jobs: 'true' } }
         expect(response).to redirect_to(cbv_flow_applicant_information_path)

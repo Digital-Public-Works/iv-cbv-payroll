@@ -57,13 +57,25 @@ module Aggregators::AggregatorReports
       null_employment_paystubs = @paystubs.select(&null_employment_filter)
       notify_flagged_paystubs(null_employment_paystubs)
 
-      AccountReport.new(
+      report = AccountReport.new(
         identity: @identities.filter(&employment_filter).first,
         income: @incomes.filter(&employment_filter).first,
         employment: account_employment,
         paystubs: filtered_paystubs,
         gigs: @gigs.find_all { |gig| gig.account_id == account_id }
       )
+
+      log_report_hours_to_mixpanel(report)
+
+      report
+    end
+
+    def log_report_hours_to_mixpanel(report)
+      GenericEventTracker.new.track(TrackEvent::ArgyleReportHours, nil, {
+        time: Time.now.to_i,
+        total_paystubs: report&.paystubs&.size,
+        paystubs_with_argyle_hours_null: report&.paystubs&.select { |s| s&.hours.nil? }.size
+      })
     end
 
     def notify_flagged_paystubs(paystubs_to_report)
@@ -85,8 +97,10 @@ module Aggregators::AggregatorReports
         report[:employments] = summarize_by_employer.map do |_, summary|
           cbv_flow = payroll_accounts.first.cbv_flow
           {
-            applicant_full_name: summary[:identity].full_name,
-            applicant_ssn: summary[:identity].ssn,
+            applicant_first_name: summary[:identity]&.first_name,
+            applicant_last_name: summary[:identity]&.last_name,
+            applicant_full_name: summary[:identity]&.full_name,
+            applicant_ssn: summary[:identity]&.ssn,
             applicant_extra_comments: cbv_flow.additional_information["comment"],
             employer_name: summary[:employment].employer_name,
             employer_phone: summary[:employment].employer_phone_number,
@@ -210,6 +224,12 @@ module Aggregators::AggregatorReports
       else
         @fetched_days
       end
+    end
+
+    def base_pay_match
+      # only include paystubs that would be shown on the report anyway, to avoid 'see paystubs below' when there are no paystubs shown
+      paystubs_in_range = @paystubs.select { |paystub| parse_date_safely(paystub.pay_date)&.between?(from_date, to_date) }
+      Argyle::BasePayRateConsistencyChecker.new(income: @incomes.first, paystubs: paystubs_in_range).match?
     end
 
     private

@@ -10,8 +10,8 @@ class Cbv::ExpiredInvitationsController < Cbv::BaseController
   private
 
   def current_agency
-    return unless Rails.application.config.client_agencies.client_agency_ids.include?(params[:client_agency_id])
+    return unless ClientAgencyConfig.client_agency_ids.include?(params[:client_agency_id])
 
-    Rails.application.config.client_agencies[params[:client_agency_id]]
+    ClientAgencyConfig.instance[params[:client_agency_id]]
   end
 end

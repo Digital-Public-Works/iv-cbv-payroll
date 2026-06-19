@@ -31,7 +31,7 @@
             "employer": "Conagra Brands",
             "base_pay": {
                 "amount": "65904.75",
-                "period": "annual",
+                "period": null,
                 "currency": "USD"
             },
             "pay_cycle": "monthly",

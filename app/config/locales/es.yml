@@ -94,6 +94,29 @@ es:
         radio_no: No, no tengo otro trabajo que cumpla con uno de estos criterios
         radio_yes: Sí, tengo otro trabajo que cumple con uno de estos criterios
     applicant_informations:
+      default:
+        fields:
+          case_number:
+            blank: Escriba su número de caso.
+            prompt: Número de caso
+            super_one_html: Número de caso<sup>1</sup>
+          date_of_birth:
+            blank: Escriba su fecha de nacimiento.
+            help_text: 'Por ejemplo: 19 de enero de 2000'
+            prompt: Fecha de nacimiento
+            super_one_html: Fecha de nacimiento<sup>1</sup>
+          first_name:
+            blank: Escriba su nombre.
+            prompt: Nombre
+            super_one_html: Nombre<sup>1</sup>
+          last_name:
+            blank: Escriba su apellido.
+            prompt: Apellido
+            super_one_html: Apellido<sup>1</sup>
+          middle_name:
+            blank: Escriba su segundo nombre.
+            prompt: Segundo nombre
+            super_one_html: Segundo nombre<sup>1</sup>
       la_ldh:
         fields:
           case_number:
@@ -155,27 +178,43 @@ es:
         search: Buscar
         select: Seleccione
         type_the_full_name_tooltip: Escribe el nombre completo usando letras o números
+        unemployment_search_tips:
+          go_back: Volver a la búsqueda
+          heading: "¿Está desempleado?"
+        unemployment_tips:
+          close_message: Cerrar este mensaje
+          link_text: Estoy desempleado
+          tip1_description: Sus recibos de sueldo muestran la última vez que le pagaron. Si su trabajo utilizó una empresa de nómina, puede usar esos registros para verificar que su trabajo terminó.
+          tip1_heading: Si su trabajo terminó recientemente
+          tip2_description: Use Verify My Income para iniciar sesión en el sistema de nómina de su último trabajo y enviar su información de pago a %{agency_full_name}.
+          tip2_heading: Cómo verificar que su trabajo terminó
+          tip2_tip: 'Consejo: Es posible que Recursos Humanos le haya enviado un email sobre cómo iniciar sesión en el sistema de nómina cuando su trabajo terminó.'
+          tip3_description: Pida a un(a) gerente o supervisor(a) de su trabajo anterior que escriba una carta que muestre cuándo terminó su trabajo y cuándo le pagaron por última vez. Envíe esa carta a %{agency_full_name}.
+          tip3_heading: Si no puede iniciar sesión en el sistema de nómina
     entries:
       create:
         error: Debe marcar la casilla de «acuerdo» para proceder.
       show:
         checkbox:
           default: Marque esta casilla para permitirnos acceder a su información de pago y compartirla con %{agency_full_name}. No usaremos la información para ningún otro propósito ni la volveremos a divulgar a ninguna otra parte.
-          pa_dhs: Acepto que Verificar Mis Ingresos acceda a mis ingresos, incluido el W-2 y/o información sobre trabajos temporales. Después de revisar la información de mis ingresos, puedo elegir compartir mis ingresos con el Departamento de Servicios Humanos (DHS) de PA. Si la comparto, el DHS utilizará la información de mis ingresos para determinar mis beneficios. Entiendo que Verificar mis ingresos no tendrá acceso continuo a mi información de ingresos.
         continue: Comenzar
         header: Verifiquemos sus ingresos
-        step1: Busque e inicie sesión en su empleador o proveedor de nómina en línea.
-        step1_description: Use las credenciales de inicio de sesión que tiene para ver su recibo de pago en línea. No compartiremos ni guardamos su información de inicio de sesión. Si trabaja para una aplicación, como Uber, este sería el mismo inicio de sesión cuando inicie sesión en la aplicación Uber.
-        step2: Revise su información de pago.
-        step2_description: Podrá hacer una vista previa y aprobar todo lo que se comparta con %{agency_acronym}.
-        step3: Envíe su información de pago.
-        step3_description: La enviaremos automáticamente a %{agency_acronym}. Esto lo ayudará a demostrar y comprobar sus ingresos y puede ayudar a %{agency_acronym} a tomar una decisión más rápida.
-        subheader_html: 'Enviaremos los registros de pago de su(s) empleador(es) a %{agency_full_name} (%{agency_acronym}) para verificar sus ingresos.<strong> La mayoría de las personas completan este proceso en aproximadamente 5 minutos.</strong> Solo siga estos pasos:'
+        step1: Encuentre su empleador o empresa de nómina (payroll company)
+        step1_description: Empresas como ADP, Workday, Uber o Lyft tienen información sobre sus pagos. Busque su trabajo y use el mismo usuario y contraseña que usa para ver sus recibos de pago en línea.
+        step1_note: Verify My Income no guarda ni comparte su usuario ni contraseña.
+        step2: Revise sus pagos
+        step2_description: Cuando inicie sesión, Verify My Income reúne sus talones de pago recientes en un solo informe. Puede revisar los detalles y agregar comentarios antes de enviarlo a %{agency_full_name}.
+        step2_note: También puede agregar más trabajos a su informe si necesita.
+        step3: Envíe su informe de ingresos
+        step3_description: Su información de pago se envía directamente a %{agency_acronym}. Al terminar, puede guardar una copia de su informe. También puede compartir un enlace con otras personas de su hogar para que también verifiquen sus ingresos.
+        subheader: Verify My Income le ayuda a comprobar sus ingresos. Puede combinar todos sus pagos en un solo informe, sin tener que subir recibos de pago. Después de revisar su informe, puede enviarlo directamente a %{agency_full_name}.
+        time_estimate: La mayoría de las personas pueden encontrar, conectar y revisar un trabajo en unos 5 minutos.
         what_if_i_cant_use_this_body_1: Si necesita verificar sus ingresos y no puede usar esta herramienta, deberá compartir, de manera directa, la información de sus ingresos para este trabajo con %{agency_portal_name}.
         what_if_i_cant_use_this_body_2_html:
           default: Para obtener más información sobre cómo enviar documentos, visite el sitio web de <a href="%{agency_url}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
           la_ldh: 'Usted puede: <ul><li>Subir documentos a través del Portal de Autoservicio en línea en <a href="https://mymedicaid.la.gov/" target="_blank" rel="noopener noreferrer">https://mymedicaid.la.gov/</a></li><li>Enviar documentos por correo postal: Louisiana Medicaid/LaCHIP, P.O. Box 91283, Baton Rouge, LA 70821-9278</li><li>Enviar documentos por correo electrónico: <a href="mailto:MyMedicaid@la.gov">MyMedicaid@la.gov</a></li><li>Llevar sus documentos a la oficina de Medicaid de su elección.</li></ul>'
         what_if_i_cant_use_this_title: "¿Qué debo hacer si no puedo usar esta herramienta?"
+        what_youll_do: Tres pasos simples
         who_is_this_for_body: Puede usar esta herramienta si ha recibido ingresos en los últimos 90 días (incluso si ya no está trabajando). Además, le recordamos que puede acceder a sus recibos de pago en línea si brinda servicios a través de plataformas digitales, como Uber, Lyft o Amazon Flex.
         who_is_this_for_title: "¿Quién puede usar este herramienta?"
     error_invalid_link: Se utilizó un enlace no válido para iniciar CBV. Vuelva a hacer clic en el enlace, o bien directamente póngase en contacto con su asistente de caso para obtener ayuda.
@@ -269,6 +308,7 @@ es:
         header: Revise la información de pago de %{employer_name}
         header_no_employer_name: Su información de pago de su empleador
         hourly_rate: Monto de compensación
+        hourly_rate_not_found: Tarifa de pago no disponible. Consulte los recibos de sueldo a continuación.
         hours:
           one: "%{count} hora"
           other: "%{count} horas"
@@ -289,21 +329,18 @@ es:
         unknown: Desconocido
     submits:
       show:
-        additional_information_title: "¿Existe algún otro detalle que le gustaría que su asistente de caso conozca en relación con sus ingresos?"
         application_or_recertification_date: SNAP application or recertification interview date
+        client_comment_description: Información adicional del cliente sobre los ingresos de este trabajo
+        client_comment_title: Comentarios del cliente
         consent_checkbox_label_html:
-          az_des: Marque esta casilla para confirmar, bajo pena de perjurio, que la información proporcionada es, a su leal saber y entender, verdadera y está completa.<ul class="margin-y-2"><li>Se compromete a informar %{agency_acronym} de cualquiera de lo siguiente:<ul><li>cualquier otro ingreso que no esté incluido en este informe;</li><li>o cualquier error que haya detectado en la información recopilada con esta herramienta.</li></ul></li><li>Comprende que usted es el único responsable de proporcionar información precisa y completa.</li><li>Por este motivo, cualquier información falsa o que no conste en el informe puede acarrear las siguientes consecuencias:<ul><li>un sobrepago, que debe reembolsar a %{agency_acronym};</li><li>o una inhabilitación para participar en el programa.</li></ul></li></ul>Al enviar este informe, autoriza su uso para fines de verificación de ingresos por parte de %{agency_acronym} y del personal autorizado de esta agencia.
           default: 'Marque esta casilla para confirmar lo siguiente: <ul class="margin-y-2"><li>La información proporcionada es, a su leal saber y entender, verdadera y está completa.</li><li>Se compromete a informar a %{agency_full_name} (%{agency_acronym}) de cualquier otro ingreso que no esté incluido en este informe o cualquier discrepancia que haya detectado en la información recopilada con esta herramienta.</li><li>Comprende que usted es el único responsable de proporcionar información precisa y completa. Por este motivo, cualquier información falsa o que no conste en el informe puede acarrear consecuencias legales.</li></ul> Al enviar este informe, autoriza su uso para fines de verificación de ingresos por parte del personal autorizado de %{agency_acronym}.'
-          pa_dhs: "<strong>Acepto y confirmo que:</strong><br><strong>Compartiré información precisa.</strong> La información que proporcioné es verdadera y completa a mi leal saber y entender. No compartiré el informe si algo en el mismo es incorrecto.<p><strong>Compartiré cualquier información faltante.</strong> Acepto informarle al Departamento de Servicios Humanos de PA sobre los ingresos que no estén en este informe. <p><strong>No compartiré información falsa.</strong> Entiendo que debo compartir información honesta. Entiendo que podría tener problemas legales si omito información.<p><strong>Compartiré la información de mis ingresos.</strong> Autorizo que la información sobre ingresos que me ha mostrado esta página web se comparta con el Departamento de Servicios Humanos de PA."
         legal_header: Acuerdo Legal
         none_found: No encontramos ningún pago de este empleador.
         none_found_confirmed: Hemos confirmado que no hay pagos recientes de este empleador. Esto sucede cuando el cliente no ha recibido ingresos de este trabajo.
         page_header: Envíe su reporte de ingresos
         pdf:
           agency_header_name:
-            az_des: Department of Economic Security
             la_ldh: Department of Health
-            pa_dhs: Department of Human Services
             sandbox: CBV Test Agency
           caseworker:
             doc_id: Doc ID
@@ -320,6 +357,10 @@ es:
             self_employment: Empleo independiente
           footer:
             page_footer: Informe de verificación de ingresos | Página [page] de [topage]
+          paystubs_cover:
+            footer: Las imágenes de los talones de pago aparecen en la página siguiente y fueron enviadas a %{agency_name}.
+            header: 'Informe de Verificación de Ingresos: Imágenes de talones de pago'
+            intro: 'Hay imágenes de talones de pago para los siguientes trabajos:'
           shared:
             additional_jobs_to_report: "¿El cliente tiene trabajos adicionales que verificará por separado?"
             additional_jobs_to_report_html: "¿El cliente tiene trabajos adicionales que verificará por separado? <sup>1</sup>"
@@ -425,6 +466,7 @@ es:
       employment_details_table:
         header:
           your_details: Sus datos
+        variable_base_pay: La tarifa de pago varía. Consulte los recibos de sueldo a continuación.
       monthly_summary_table:
         accrued_gross_earnings: Ganancias brutas acumuladas
         compact:
@@ -645,31 +687,21 @@ es:
       title: Su sesión ha terminado.
   shared:
     agency_acronym:
-      az_des: DES/FAA
       la_ldh: LDH
-      pa_dhs: DHS
       sandbox: CBV
     agency_full_name:
-      az_des: Departamento de Seguridad Económica de Arizona/Administración de Asistencia Familiar
       la_ldh: Departamento de Salud de Luisiana
-      pa_dhs: Departamento de Servicios Humanos
       sandbox: Agencia de pruebas CBV
     agency_portal_name:
-      az_des: DES/FAA
       la_ldh: LDH
-      pa_dhs: COMPASS
       sandbox: VMI
     app_name:
-      az_des: MyFamilyBenefits
-      pa_dhs: VerifyMyIncome
       sandbox: CBVApp
     banner:
       lock: Candado
       locked_padlock: Un candado cerrado
     benefit:
-      az_des: Asistencia Nutricional
       la_ldh: Medicaid
-      pa_dhs: Asistencia Nutricional
       sandbox: SNAP
     error_unauthorized: La URL a la que estás accediendo está prohibida para el usuario actual. Verifique que está conectado como el usuario correcto e intente acceder de nuevo a la URL.
     footer:
@@ -677,18 +709,14 @@ es:
     header:
       aria_label: Menú principal
       cbv_flow_title:
-        az_des: Departamento de Seguridad Económica
         la_ldh: Departamento de Salud
-        pa_dhs: Departamento de Servicios Humanos
         sandbox: Agencia de pruebas CBV
       close: Cerrar
       help: Ayuda
       log_out: Cerrar sesión
       preheader:
-        az_des: Un sitio web en colaboración con el Departamento de Seguridad Económica de Arizona.
         default: Un sitio web en colaboración con la Agencia de pruebas CBV.
         la_ldh: Un sitio web en colaboración con el Departamento de Salud de Luisiana
-        pa_dhs: Un sitio web en colaboración con el Departamento de Salud de Pensilvania
       primary: Menú principal
     languages:
       en: English
@@ -702,11 +730,6 @@ es:
     report_data_range:
       ninety_days: 90 días
       six_months: 6 meses
-    reporting_purpose:
-      az_des: Formulario de contacto para aprobaciones intermedias
-      la_ldh: beneficios
-      pa_dhs: Revisión de SNAP
-      sandbox: beneficios
     select_placeholder: "- Seleccione -"
     skip_link: Saltar al contenido principal
   time:
@@ -719,6 +742,3 @@ es:
     date_picker_format: 'Formato: mm/dd/aaaa'
     optional: Opcional
     tax_id_format: 'Formato: 123456789'
-  users:
-    omniauth_callbacks:
-      authentication_successful: Ha iniciado sesión.

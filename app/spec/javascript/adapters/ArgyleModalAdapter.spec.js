@@ -25,6 +25,9 @@ import {
   mockAccountErrorLimitError,
   mockAccountErrorSystemError,
   mockAccountErrorNoCode,
+  mockAccountErrorConnectionPendingConnecting,
+  mockAccountErrorConnectionPendingAwaitingUserAction,
+  mockAccountErrorConnectionPendingUpdating,
   mockErrorOpenedEvent,
   mockLinkClosedEvent,
   mockUnknownArgyleEvent,
@@ -279,6 +282,38 @@ describe("ArgyleModalAdapter", () => {
       expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBeUndefined()
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
+    it("logs ApplicantEncounteredArgyleConnectionPendingEvent for connectionStatus 'connecting'", async () => {
+      await triggers.triggerUIEvent(mockAccountErrorConnectionPendingConnecting)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe(
+        "ApplicantEncounteredArgyleConnectionPendingEvent"
+      )
+      expect(trackUserAction.mock.calls[1][1]["argyle.connectionStatus"]).toBe("connecting")
+      expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBeUndefined()
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
+    it("logs ApplicantEncounteredArgyleConnectionPendingEvent for connectionStatus 'awaiting_user_action'", async () => {
+      await triggers.triggerUIEvent(mockAccountErrorConnectionPendingAwaitingUserAction)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe(
+        "ApplicantEncounteredArgyleConnectionPendingEvent"
+      )
+      expect(trackUserAction.mock.calls[1][1]["argyle.connectionStatus"]).toBe(
+        "awaiting_user_action"
+      )
+      expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBeUndefined()
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
+    it("logs ApplicantEncounteredArgyleConnectionPendingEvent for connectionStatus 'updating'", async () => {
+      await triggers.triggerUIEvent(mockAccountErrorConnectionPendingUpdating)
+      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction.mock.calls[1][0]).toBe(
+        "ApplicantEncounteredArgyleConnectionPendingEvent"
+      )
+      expect(trackUserAction.mock.calls[1][1]["argyle.connectionStatus"]).toBe("updating")
+      expect(trackUserAction.mock.calls[1][1]["argyle.errorCode"]).toBeUndefined()
+      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+    })
 
     // New "error - opened" event test
     // Per Argyle docs: error - opened uses errorType, not errorCode
@@ -290,12 +325,39 @@ describe("ArgyleModalAdapter", () => {
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
 
-    // New "link closed" event test
-    it("logs ApplicantClosedArgyleLinkFromErrorScreen for link closed event", async () => {
+    // "link closed" event tests
+    it("does not log ApplicantClosedArgyleLinkFromErrorScreen on happy-path close", async () => {
       await triggers.triggerUIEvent(mockLinkClosedEvent)
-      expect(trackUserAction).toHaveBeenCalledTimes(2)
-      expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantClosedArgyleLinkFromErrorScreen")
-      expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
+      expect(trackUserAction).not.toHaveBeenCalledWith(
+        "ApplicantClosedArgyleLinkFromErrorScreen",
+        expect.anything()
+      )
+    })
+    it("logs ApplicantClosedArgyleLinkFromErrorScreen when closed after link error screen", async () => {
+      await triggers.triggerUIEvent(mockErrorOpenedEvent)
+      await triggers.triggerUIEvent(mockLinkClosedEvent)
+      expect(trackUserAction).toHaveBeenCalledTimes(3)
+      expect(trackUserAction.mock.calls[2][0]).toBe("ApplicantClosedArgyleLinkFromErrorScreen")
+      expect(trackUserAction.mock.calls[2][1]).toMatchSnapshot()
+    })
+    it("logs ApplicantClosedArgyleLinkFromErrorScreen when closed after account error screen", async () => {
+      await triggers.triggerUIEvent(mockAccountErrorAuthenticationError)
+      await triggers.triggerUIEvent(mockLinkClosedEvent)
+      expect(trackUserAction).toHaveBeenCalledTimes(3)
+      expect(trackUserAction.mock.calls[2][0]).toBe("ApplicantClosedArgyleLinkFromErrorScreen")
+    })
+    it("logs ApplicantClosedArgyleLinkFromErrorScreen when closed after login error", async () => {
+      await triggers.triggerUIEvent(mockApplicantEncounteredArgyleAuthRequiredLoginError)
+      await triggers.triggerUIEvent(mockLinkClosedEvent)
+      expect(trackUserAction).toHaveBeenCalledTimes(3)
+      expect(trackUserAction.mock.calls[2][0]).toBe("ApplicantClosedArgyleLinkFromErrorScreen")
+    })
+    it("does not log ApplicantClosedArgyleLinkFromErrorScreen when user recovered to success after error", async () => {
+      await triggers.triggerUIEvent(mockErrorOpenedEvent)
+      await triggers.triggerUIEvent(mockSuccessOpenedEvent)
+      await triggers.triggerUIEvent(mockLinkClosedEvent)
+      expect(trackUserAction).toHaveBeenCalledTimes(3)
+      expect(trackUserAction.mock.calls[2][0]).not.toBe("ApplicantClosedArgyleLinkFromErrorScreen")
     })
 
     // Unknown event test

@@ -263,6 +263,7 @@ class Webhooks::Argyle::EventsController < ApplicationController
         income_compensation_unit_present: !!report.incomes.first&.compensation_unit.present?,
         income_pay_frequency_present: !!report.incomes.first&.pay_frequency.present?,
         income_pay_frequency: report.incomes.first&.pay_frequency,
+        income_base_pay_paystub_match: Aggregators::AggregatorReports::Argyle::BasePayRateConsistencyChecker.new(income: report.incomes.first, paystubs: report.paystubs).match?,
 
         # Paystubs fields
         paystubs_success: payroll_account.job_succeeded?("paystubs"),

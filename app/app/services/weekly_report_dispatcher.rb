@@ -1,10 +1,11 @@
 require "csv"
 class WeeklyReportDispatcher
   # config is an instance of AgencyConfig, turned into a hash. See weekly_reports.rake for where this is used
-  def initialize(config:, event_logger:, nr: NewRelic::Agent, clock: -> { Time.current })
+  def initialize(config:, event_logger:, nr: NewRelic::Agent, nr_logger: NewRelic::EventLogger, clock: -> { Time.current })
     @config       = config
     @event_logger = event_logger
     @nr           = nr
+    @nr_logger    = nr_logger
     @clock        = clock                   # injectable clock for deterministic tests
   end
 
@@ -15,7 +16,7 @@ class WeeklyReportDispatcher
     agent_ids = enabled.keys
 
     # send newrelic event including how many we should send and which ones
-    @nr.record_custom_event(
+    @nr_logger.track(
       "WeeklyReportMailerStarted",
       {
         time: Time.current.to_i,
@@ -70,7 +71,7 @@ class WeeklyReportDispatcher
     end
 
     # record completed event with stats
-    @nr.record_custom_event(
+    @nr_logger.track(
       "WeeklyReportMailerCompleted",
       {
         time: Time.current.to_i,

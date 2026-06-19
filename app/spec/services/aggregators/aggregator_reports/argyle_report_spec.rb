@@ -30,6 +30,45 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
     Timecop.freeze(today, &ex)
   end
 
+  describe "#check_paystub_volume (anomalous-paystub-count guardrail)" do
+    let(:report) do
+      Aggregators::AggregatorReports::ArgyleReport.new(
+        payroll_accounts: [ payroll_account ],
+        argyle_service: argyle_service,
+        days_to_fetch_for_w2: days_ago_to_fetch,
+        days_to_fetch_for_gig: days_ago_to_fetch_for_gig
+      )
+    end
+
+    before do
+      # cap = @fetched_days * MAX_PAYSTUBS_PER_LOOKBACK_DAY(2) = 10
+      report.instance_variable_set(:@fetched_days, 5)
+      allow(Rails.logger).to receive(:error)
+      allow(NewRelic::Agent).to receive(:notice_error)
+    end
+
+    it "surfaces an over-cap count to New Relic WITHOUT raising (report generation continues)" do
+      over_cap = { "results" => Array.new(10) { {} } } # 10 >= cap(10) -> fires
+
+      expect {
+        report.send(:check_paystub_volume, over_cap, payroll_account)
+      }.not_to raise_error
+
+      expect(NewRelic::Agent).to have_received(:notice_error).with(
+        an_instance_of(Aggregators::AggregatorReports::ArgyleReport::PaystubLimitExceededError),
+        custom_params: hash_including(paystub_count: 10, max_paystubs: 10, lookback_days: 5)
+      )
+    end
+
+    it "does nothing when the count is under the cap" do
+      under_cap = { "results" => Array.new(3) { {} } } # 3 < cap(10)
+
+      report.send(:check_paystub_volume, under_cap, payroll_account)
+
+      expect(NewRelic::Agent).not_to have_received(:notice_error)
+    end
+  end
+
   describe '#fetch_report_data' do
     let(:argyle_report) do
       Aggregators::AggregatorReports::ArgyleReport.new(
@@ -169,7 +208,7 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
             allow(argyle_service).to receive(:fetch_paystubs_api)
               .and_return(argyle_load_relative_json_file("invalid_hours", fixture))
 
-            allow(NewRelic::Agent).to receive(:record_custom_event)
+            allow(NewRelic::EventLogger).to receive(:track)
             argyle_report.send(:fetch_report_data)
           end
 
@@ -183,7 +222,7 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
           end
 
           it "sends a warning to New Relic" do
-            expect(NewRelic::Agent).to have_received(:record_custom_event).with(
+            expect(NewRelic::EventLogger).to have_received(:track).with(
               TrackEvent::ArgyleDataUnexpectedHours,
               hash_including(
                 time: anything,
@@ -209,7 +248,7 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
             allow(argyle_service).to receive(:fetch_paystubs_api)
               .and_return(argyle_load_relative_json_file("invalid_hours", fixture))
 
-            allow(NewRelic::Agent).to receive(:record_custom_event)
+            allow(NewRelic::EventLogger).to receive(:track)
             argyle_report.send(:fetch_report_data)
           end
 
@@ -218,7 +257,7 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
           end
 
           it "does not send a warning to New Relic" do
-            expect(NewRelic::Agent).not_to have_received(:record_custom_event).with(
+            expect(NewRelic::EventLogger).not_to have_received(:track).with(
               anything,
               anything
             )
@@ -226,7 +265,6 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
         end
       end
     end
-
 
     describe '#fetch_gigs' do
       context "for Bob, a Uber driver" do
@@ -279,6 +317,124 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
                                              compensation_amount: 1945
           )
         end
+      end
+    end
+  end
+
+  describe '#fetch' do
+    let(:argyle_report) do
+      described_class.new(
+        payroll_accounts: [ payroll_account ],
+        argyle_service: argyle_service,
+        days_to_fetch_for_w2: days_ago_to_fetch,
+        days_to_fetch_for_gig: days_ago_to_fetch_for_gig
+      )
+    end
+
+    def discarded_in_db?(record)
+      PayrollAccount.with_discarded.find(record.id).discarded?
+    end
+
+    context "when Argyle returns an account" do
+      it "does not discard the payroll_account" do
+        argyle_report.fetch
+        expect(discarded_in_db?(payroll_account)).to be false
+      end
+
+      it "still fetches report data" do
+        argyle_report.fetch
+        expect(argyle_service).to have_received(:fetch_identities_api).with(account: account)
+      end
+    end
+
+    context "when Argyle does not return an account" do
+      let(:other_account_id) { "missing-account-id" }
+
+      let!(:other_payroll_account) do
+        create(:payroll_account, :argyle_fully_synced, cbv_flow: payroll_account.cbv_flow, aggregator_account_id: other_account_id)
+      end
+
+      let(:argyle_report) do
+        described_class.new(
+          payroll_accounts: [ payroll_account, other_payroll_account ],
+          argyle_service: argyle_service,
+          days_to_fetch_for_w2: days_ago_to_fetch,
+          days_to_fetch_for_gig: days_ago_to_fetch_for_gig
+        )
+      end
+
+      before do
+        allow(argyle_service).to receive(:fetch_account_api).with(account: account).and_return(account_json)
+        allow(argyle_service).to receive(:fetch_account_api)
+          .with(account: other_account_id)
+          .and_raise(Faraday::ResourceNotFound.new(nil, nil))
+      end
+
+      it "discards the missing account and leaves the valid one alone" do
+        argyle_report.fetch
+        expect(discarded_in_db?(other_payroll_account)).to be true
+        expect(discarded_in_db?(payroll_account)).to be false
+      end
+
+      it "removes the missing account from @payroll_accounts so its data is not fetched" do
+        argyle_report.fetch
+        expect(argyle_service).not_to have_received(:fetch_identities_api).with(account: other_account_id)
+      end
+    end
+
+    context "when Argyle reports the account as disconnected" do
+      let(:disconnected_account_json) do
+        account_json.deep_dup.tap { |j| j["connection"]["status"] = "disconnected" }
+      end
+
+      before do
+        allow(argyle_service).to receive(:fetch_account_api).and_return(disconnected_account_json)
+      end
+
+      it "discards the disconnected account" do
+        expect { argyle_report.fetch }.to raise_error(Aggregators::AggregatorReports::ArgyleReport::NoValidAccountsError)
+        expect(discarded_in_db?(payroll_account)).to be true
+      end
+    end
+
+    context "when Argyle reports an error status" do
+      let(:error_account_json) do
+        account_json.deep_dup.tap { |j| j["connection"]["status"] = "error" }
+      end
+
+      before do
+        allow(argyle_service).to receive(:fetch_account_api).and_return(error_account_json)
+      end
+
+      it "does not discard the account" do
+        argyle_report.fetch
+        expect(discarded_in_db?(payroll_account)).to be false
+      end
+    end
+
+    context "when calling Argyle throws an error" do
+      before do
+        allow(argyle_service).to receive(:fetch_account_api).and_raise(StandardError, "argyle is down")
+      end
+
+      it "does not discard the account" do
+        argyle_report.fetch
+        expect(discarded_in_db?(payroll_account)).to be false
+      end
+    end
+
+    context "when no accounts are connected" do
+      before do
+        allow(argyle_service).to receive(:fetch_account_api).and_raise(Faraday::ResourceNotFound.new(nil, nil))
+      end
+
+      it "raises NoValidAccountsError" do
+        expect { argyle_report.fetch }.to raise_error(Aggregators::AggregatorReports::ArgyleReport::NoValidAccountsError)
+      end
+
+      it "discards the disconnected account and raises" do
+        expect { argyle_report.fetch }.to raise_error(Aggregators::AggregatorReports::ArgyleReport::NoValidAccountsError)
+        expect(discarded_in_db?(payroll_account)).to be true
       end
     end
   end

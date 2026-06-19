@@ -13,7 +13,7 @@
 # each partner's configuration in the client-agency-config folder
 class ArgyleWebhooksManager
   def initialize(agency_id: "sandbox", logger: Rails.logger)
-    @agency_config = Rails.application.config.client_agencies[agency_id]
+    @agency_config = ClientAgencyConfig.instance[agency_id]
     @argyle = Aggregators::Sdk::ArgyleService.new(@agency_config.argyle_environment)
     @logger = logger
   end

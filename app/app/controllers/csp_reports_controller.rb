@@ -9,8 +9,8 @@ class CspReportsController < ApplicationController
       return head :bad_request
     end
 
-    # Log to New Relic as a custom event
-    NewRelic::Agent.record_custom_event("CSPViolation", {
+    # Log to New Relic
+    NewRelic::EventLogger.track(TrackEvent::CSPViolation, {
       document_uri: report["document-uri"],
       violated_directive: report["violated-directive"],
       blocked_uri: report["blocked-uri"],
