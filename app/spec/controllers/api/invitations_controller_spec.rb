@@ -12,15 +12,19 @@ RSpec.describe Api::InvitationsController do
 
     let(:valid_params) do
       attributes_for(:cbv_flow_invitation, client_agency_id).tap do |params|
-        params[:agency_partner_metadata] = attributes_for(:cbv_applicant, client_agency_id)
+        params[:custom_attributes] = attributes_for(:cbv_applicant, client_agency_id)
         # ensure that client_agency_id is not considered a valid param. it should be inferred from the api token
-        params[:agency_partner_metadata].delete(:client_agency_id)
+        params[:custom_attributes].delete(:client_agency_id)
         params.delete(:client_agency_id)
       end
     end
 
     before do
       request.headers["Authorization"] = "Bearer #{api_access_token_instance.access_token}"
+      PartnerApplicationAttribute.where.not(name: 'first_name').update_all(required: false)
+      PartnerApplicationAttribute.where(
+        partner_config_id: PartnerConfig.where(partner_id: %w[la_ldh az_des pa_dhs]).select(:id)
+      ).update_all(required: false)
     end
 
     subject do
@@ -39,10 +43,10 @@ RSpec.describe Api::InvitationsController do
 
 
     # TODO: See invitations_controller note on if we are including the echo-back metadata
-    # it "includes all agency_partner_metadata fields in the response" do
+    # it "includes all custom_attributes fields in the response" do
     #   subject
     #   parsed_response = JSON.parse(response.body)
-    #   expect(parsed_response["agency_partner_metadata"].keys.map(&:to_sym)).to match_array(
+    #   expect(parsed_response["custom_attributes"].keys.map(&:to_sym)).to match_array(
     #     CbvApplicant.valid_attributes_for_agency(client_agency_id.to_s)
     #   )
     # end
@@ -78,7 +82,7 @@ RSpec.describe Api::InvitationsController do
       let(:client_agency_id) { "la_ldh".to_sym }
       let(:valid_params) do
         attributes_for(:cbv_flow_invitation, client_agency_id).tap do |params|
-          params[:agency_partner_metadata] = {
+          params[:custom_attributes] = {
             doc_id: "ABC1234"
           }
         end
@@ -98,13 +102,13 @@ RSpec.describe Api::InvitationsController do
       end
 
       # TODO: See invitations_controller note on if we are including the echo-back metadata
-      # it "returns the expected agency_partner_metadata" do
+      # it "returns the expected custom_attributes" do
       #   subject
       #   parsed_response = JSON.parse(response.body)
-      #   expect(parsed_response["agency_partner_metadata"]).to eq(
-      #     "doc_id" => valid_params[:agency_partner_metadata][:doc_id],
-      #     "case_number" => valid_params[:agency_partner_metadata][:case_number],
-      #     "date_of_birth" => valid_params[:agency_partner_metadata][:date_of_birth],
+      #   expect(parsed_response["custom_attributes"]).to eq(
+      #     "doc_id" => valid_params[:custom_attributes][:doc_id],
+      #     "case_number" => valid_params[:custom_attributes][:case_number],
+      #     "date_of_birth" => valid_params[:custom_attributes][:date_of_birth],
       #   )
       # end
     end
@@ -128,14 +132,14 @@ RSpec.describe Api::InvitationsController do
 
     context "invalid params" do
       let(:invalid_params) do
-        valid_params[:agency_partner_metadata].delete(:first_name)
+        valid_params[:custom_attributes].delete(:first_name)
         valid_params
       end
 
-      it "returns unprocessable entity with structured error response" do
+      it "returns bad request with structured error response when a required attribute is missing" do
         post :create, params: invalid_params
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:bad_request)
         parsed_response = JSON.parse(response.body)
 
         # Check for structured error response
@@ -146,14 +150,58 @@ RSpec.describe Api::InvitationsController do
         error_fields = parsed_response["errors"].map { |e| e["field"] }
 
         expect(error_fields).not_to include("cbv_applicant")
-        expect(error_fields).to include("cbv_applicant.first_name")
+        expect(error_fields).to include("custom_attributes.first_name")
+      end
+    end
+
+    context "legacy agency_partner_metadata param" do
+      let(:legacy_params) do
+        valid_params.tap do |p|
+          p[:agency_partner_metadata] = p.delete(:custom_attributes)
+        end
+      end
+
+      it "is accepted and routed through the same invitation flow" do
+        expect {
+          post :create, params: legacy_params
+        }.to change(CbvFlowInvitation, :count).by(1)
+          .and change(CbvApplicant, :count).by(1)
+
+        expect(response).to have_http_status(:created)
+      end
+
+      it "emits the canonical custom_attributes prefix in error responses" do
+        legacy_params[:agency_partner_metadata].delete(:first_name)
+        post :create, params: legacy_params
+
+        expect(response).to have_http_status(:bad_request)
+        error_fields = JSON.parse(response.body)["errors"].map { |e| e["field"] }
+        expect(error_fields).to include("custom_attributes.first_name")
+        expect(error_fields).not_to include("agency_partner_metadata.first_name")
+      end
+    end
+
+    context "when both custom_attributes and agency_partner_metadata are supplied" do
+      let(:dual_params) do
+        valid_params.merge(
+          custom_attributes: valid_params[:custom_attributes].merge(case_number: "WINNER"),
+          agency_partner_metadata: valid_params[:custom_attributes].merge(case_number: "LOSER")
+        )
+      end
+
+      it "uses custom_attributes and ignores agency_partner_metadata" do
+        post :create, params: dual_params
+
+        expect(response).to have_http_status(:created)
+        invitation = CbvFlowInvitation.last
+        expect(invitation.cbv_applicant.case_number).to eq("WINNER")
       end
     end
 
     context "params not included in the agency's valid attributes" do
       let(:params_with_invalid_attributes) do
-        # client_id_number is only valid for certain agencies
-        valid_params[:agency_partner_metadata][:client_id_number] = "1234567"
+        # doc_id is not valid for sandbox
+        valid_params[:custom_attributes][:doc_id] = "1234567"
         valid_params
       end
 
@@ -163,7 +211,106 @@ RSpec.describe Api::InvitationsController do
         end.to change(CbvFlowInvitation, :count).by(1)
 
         invitation = CbvFlowInvitation.last
-        expect(invitation.cbv_applicant.client_id_number).to be_nil
+        expect(invitation.cbv_applicant.doc_id).to be_nil
+      end
+    end
+
+    context "with a malformed JSON body" do
+      it "returns a structured 400 explaining the parse failure" do
+        request.headers["Content-Type"] = "application/json"
+        request.headers["Authorization"] = "Bearer #{api_access_token_instance.access_token}"
+
+        # Missing comma between objects — invalid JSON
+        post :create, body: '{"custom_attributes": {"application_id": "1234"} "language": "en"}'
+
+        expect(response).to have_http_status(:bad_request)
+        parsed_response = JSON.parse(response.body)
+        expect(parsed_response["errors"]).to be_an(Array)
+        first = parsed_response["errors"].first
+        expect(first["field"]).to eq("body")
+        expect(first["message"]).to match(/Request body is not valid JSON/)
+      end
+
+      it "returns a structured 400 for a truncated body" do
+        request.headers["Content-Type"] = "application/json"
+        request.headers["Authorization"] = "Bearer #{api_access_token_instance.access_token}"
+
+        post :create, body: '{'
+
+        expect(response).to have_http_status(:bad_request)
+        parsed_response = JSON.parse(response.body)
+        expect(parsed_response["errors"].first["field"]).to eq("body")
+        expect(parsed_response["errors"].first["message"]).to match(/Request body is not valid JSON/)
+      end
+    end
+
+    context "with metrics_attributes" do
+      let(:fake_event_logger) { instance_double(GenericEventTracker, track: nil) }
+
+      before do
+        allow(GenericEventTracker).to receive(:new).and_return(fake_event_logger)
+      end
+
+      it "forwards keys with an ensured x- prefix (lowercased) to the CaseworkerInvitedApplicantToFlow event" do
+        params_with_metrics = valid_params.merge(metrics_attributes: {
+          "X-Request-ID" => "abc-123",
+          "Source" => "ops_console",
+          "campaign_id" => "42"
+        })
+
+        post :create, params: params_with_metrics
+
+        expect(response).to have_http_status(:created)
+        expect(fake_event_logger).to have_received(:track).with(
+          'CaseworkerInvitedApplicantToFlow',
+          nil,
+          hash_including(
+            "x-request-id" => "abc-123",
+            "x-source" => "ops_console",
+            "x-campaign_id" => "42"
+          )
+        )
+      end
+
+      it "does not double-prefix keys that already begin with x-" do
+        post :create, params: valid_params.merge(metrics_attributes: {
+          "x-trace" => "lower",
+          "X-Trace-Id" => "mixed-case"
+        })
+
+        expect(fake_event_logger).to have_received(:track).with(
+          'CaseworkerInvitedApplicantToFlow',
+          nil,
+          hash_including("x-trace" => "lower", "x-trace-id" => "mixed-case")
+        )
+      end
+
+      it "does not persist metrics_attributes anywhere on the invitation or applicant" do
+        post :create, params: valid_params.merge(metrics_attributes: { "trace" => "xyz" })
+
+        invitation = CbvFlowInvitation.last
+        expect(invitation.attributes).not_to include("trace")
+        expect(invitation.attributes).not_to include("x-trace")
+        expect(invitation.cbv_applicant.custom_attributes).not_to include("trace")
+        expect(invitation.cbv_applicant.custom_attributes).not_to include("x-trace")
+        expect(invitation.cbv_applicant.custom_attributes).not_to include("metrics_attributes")
+      end
+
+      it "creates the invitation normally when metrics_attributes is omitted" do
+        post :create, params: valid_params
+
+        expect(response).to have_http_status(:created)
+        expect(fake_event_logger).to have_received(:track).with(
+          'CaseworkerInvitedApplicantToFlow',
+          nil,
+          hash_including(:invitation_id)
+        )
+      end
+
+      it "tolerates an empty metrics_attributes hash" do
+        post :create, params: valid_params.merge(metrics_attributes: {})
+
+        expect(response).to have_http_status(:created)
       end
     end
 
@@ -195,22 +342,92 @@ RSpec.describe Api::InvitationsController do
       end
     end
 
-    it "computes expiration_date using the agency's timezone" do
-      travel_to(Time.zone.parse("2025-01-15 12:00:00")) do
-        subject
+    context "with optional expiration params" do
+      let(:valid_expiration_date) { 30.days.from_now.iso8601 }
+      let(:valid_expiration_days) { 21 }
+      let(:agency_config) { ClientAgencyConfig.instance[client_agency_id.to_s] }
+      let(:expiration_params) { {} }
+
+      before do
+        post :create, params: valid_params.merge(expiration_params)
       end
 
-      invitation = CbvFlowInvitation.last
-      parsed_response = JSON.parse(response.body)
+      context "when both an expiration date and expiration days are provided" do
+        let(:expiration_params) { { expiration_date: valid_expiration_date, expiration_days: valid_expiration_days } }
 
-      expiration_from_response = Date.parse(parsed_response["expiration_date"].to_s)
+        it "returns an error with a descriptive message" do
+          expect(response).to have_http_status(:unprocessable_entity)
+          parsed_response = JSON.parse(response.body)
+          expect(parsed_response["errors"][0]["message"]).to include("either expiration_days or expiration_date, but not both")
+        end
+      end
 
-      agency_config = ClientAgencyConfig.client_agencies[client_agency_id.to_s]
+      context "when only a valid expiration date is provided" do
+        let(:expiration_params) { { expiration_date: valid_expiration_date } }
 
-      expected_expiration_date =
-        (invitation.created_at.in_time_zone(agency_config.timezone) + agency_config.invitation_valid_days.days).to_date
+        it "creates an invitation with the provided expiration date" do
+          expect(response).to have_http_status(:success)
+          invitation = CbvFlowInvitation.last
+          actual_expires_at = invitation.expires_at
+          expected_expires_at = Time.zone.parse(valid_expiration_date)
 
-      expect(expiration_from_response).to eq(expected_expiration_date)
+          expect(actual_expires_at).to be_within(1.second).of(expected_expires_at)
+        end
+      end
+
+      context "when only a valid expiration days is provided" do
+        let(:expiration_params) { { expiration_days: valid_expiration_days } }
+
+        it "creates an invitation with the provided days from now" do
+          expect(response).to have_http_status(:success)
+          invitation = CbvFlowInvitation.last
+          actual_expires_at = invitation.expires_at
+          expected_expires_at = Time.current.in_time_zone(agency_config.timezone).end_of_day + valid_expiration_days.days
+          expect(actual_expires_at).to be_within(1.second).of(expected_expires_at)
+        end
+      end
+
+      context "that are invalid" do
+        context "with a date in the past" do
+          let(:expiration_params) { { expiration_date: 3.days.ago.iso8601 } }
+
+          it "returns an error with a descriptive message" do
+            expect(response).to have_http_status(:unprocessable_entity)
+            parsed_response = JSON.parse(response.body)
+            expect(parsed_response["errors"][0]["message"]).to include("cannot be in the past")
+          end
+        end
+
+        context "with a days value that is too large" do
+          let(:expiration_params) { { expiration_days: 400 } }
+
+          it "returns an error with a descriptive message" do
+              expect(response).to have_http_status(:unprocessable_entity)
+              parsed_response = JSON.parse(response.body)
+              expect(parsed_response["errors"][0]["message"]).to include("cannot be more than 1 year")
+            end
+        end
+
+        context "with a date too far in the future" do
+          let(:expiration_params) { { expiration_date: 367.days.from_now.iso8601 } }
+
+          it "returns an error with a descriptive message" do
+            expect(response).to have_http_status(:unprocessable_entity)
+            parsed_response = JSON.parse(response.body)
+            expect(parsed_response["errors"][0]["message"]).to include("cannot be more than 1 year")
+          end
+        end
+
+        context "with an invalid date format" do
+          let(:expiration_params) { { expiration_date: "not a date" } }
+
+          it "returns an error with a descriptive message" do
+            expect(response).to have_http_status(:unprocessable_entity)
+            parsed_response = JSON.parse(response.body)
+            expect(parsed_response["errors"][0]["message"]).to include("must be a full ISO8601 datetime")
+          end
+        end
+      end
     end
   end
 end

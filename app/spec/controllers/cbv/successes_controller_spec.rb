@@ -6,7 +6,7 @@ RSpec.describe Cbv::SuccessesController do
   describe "#show" do
     let(:cbv_flow) { create(:cbv_flow, :invited, confirmation_code: "ABC12345") }
     let(:cbv_flow_without_invitation) { create(:cbv_flow, confirmation_code: "ABC12345") }
-    let(:agency_config) { Rails.application.config.client_agencies["sandbox"] }
+    let(:agency_config) { ClientAgencyConfig.instance["sandbox"] }
 
     before do
       pinwheel_stub_request_end_user_paystubs_response

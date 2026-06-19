@@ -98,6 +98,124 @@ RSpec.configure do |config|
   # instead of true.
   config.use_transactional_fixtures = true
 
+  config.before(:suite) do
+    partners = [ nil, :az_des, :la_ldh, :pa_dhs ]
+
+    PartnerApplicationAttribute.delete_all
+    PartnerTransmissionConfig.delete_all
+    PartnerTransmissionMethod.delete_all
+    PartnerTranslation.delete_all
+    PartnerConfig.delete_all
+
+    @sandbox = PartnerConfig.find_by(partner_id: 'sandbox') || FactoryBot.create(:partner_config)
+
+    attributes = [
+      { name: 'first_name', trait: nil },
+      { name: 'middle_name', trait: :middle_name },
+      { name: 'last_name', trait: :last_name },
+      { name: 'date_of_birth', trait: :date_of_birth },
+      { name: 'case_number', trait: :case_number }
+    ]
+
+    partners.each do |partner|
+      p_id = case partner
+             when :az_des then 'az_des'
+             when :la_ldh then 'la_ldh'
+             when :pa_dhs then 'pa_dhs'
+             else 'sandbox'
+             end
+
+      config = PartnerConfig.find_by(partner_id: p_id) ||
+                (partner ? FactoryBot.create(:partner_config, partner) : FactoryBot.create(:partner_config))
+
+      attributes.each do |a_data|
+        unless PartnerApplicationAttribute.exists?(partner_config: config, name: a_data[:name])
+          if a_data[:trait]
+            FactoryBot.create(:partner_application_attribute, a_data[:trait], partner_config: config)
+          else
+            FactoryBot.create(:partner_application_attribute, partner_config: config)
+          end
+        end
+      end
+    end
+
+    # LA LDH needs to set case_number to optional and needs a doc_id PAA
+    la_ldh_config = PartnerConfig.find_by(partner_id: 'la_ldh')
+    PartnerApplicationAttribute.where(partner_config: la_ldh_config, name: 'case_number')
+      .update_all(required: false)
+
+    # LA LDH needs doc_id
+    FactoryBot.create(:partner_application_attribute,
+      partner_config: la_ldh_config,
+      name: 'doc_id',
+      description: 'Document ID',
+      required: false,
+      data_type: 'string',
+      redactable: false
+    )
+
+    # AZ DES and PA DHS need income_changes
+    az_des_config = PartnerConfig.find_by(partner_id: 'az_des')
+    pa_dhs_config = PartnerConfig.find_by(partner_id: 'pa_dhs')
+    PartnerApplicationAttribute.where(partner_config: az_des_config, name: 'case_number')
+      .update_all(required: true, show_on_caseworker_report: true)
+
+    [ az_des_config, pa_dhs_config ].each do |config|
+      FactoryBot.create(:partner_application_attribute,
+        partner_config: config,
+        name: 'income_changes',
+        description: 'income changes',
+        required: false,
+        data_type: 'string',
+        redactable: false
+      )
+    end
+
+    # Sandbox caseworker-only fields
+    sandbox_config = PartnerConfig.find_by(partner_id: 'sandbox')
+    [
+      { name: 'beacon_id', description: "Your WELID", form_field_type: 'text_field' },
+      { name: 'agency_id_number', description: "Client's agency ID number", form_field_type: 'text_field' },
+      { name: 'client_id_number', description: "CIN", form_field_type: 'text_field' },
+      { name: 'snap_application_date', description: "SNAP application or recertification interview date", form_field_type: 'date_picker' }
+    ].each do |attrs|
+      FactoryBot.create(:partner_application_attribute,
+        partner_config: sandbox_config,
+        name: attrs[:name],
+        description: attrs[:description],
+        required: false,
+        data_type: attrs[:data_type] || 'string',
+        form_field_type: attrs[:form_field_type],
+        redactable: false,
+        show_on_applicant_form: false,
+        show_on_caseworker_form: true
+      )
+    end
+
+    # Mirror production for AZ DES / PA DHS partner translations, which live in the
+    # database (config/locales no longer carries az_des/pa_dhs keys). The test DB is
+    # built from schema.rb and does not run data migrations, so load the same data the
+    # migration seeds — keeping the migration the single source of truth.
+    require Rails.root.join("db/migrate/20260615120000_seed_az_des_pa_dhs_partner_translations.rb").to_s
+    SeedAzDesPaDhsPartnerTranslations::TRANSLATIONS.each do |group, entries|
+      partner_id, locale = group.split("/")
+      config = PartnerConfig.find_by(partner_id: partner_id)
+      next unless config
+
+      entries.each do |key, value|
+        config.partner_translations.find_or_create_by!(locale: locale, key: key) { |t| t.value = value }
+      end
+    end
+
+    ClientAgencyConfig.reset!
+    Rails.application.reload_routes!
+  end
+
+
+  config.before(:each) do
+    ClientAgencyConfig.reset!
+  end
+
   # You can uncomment this line to turn off ActiveRecord support entirely.
   # config.use_active_record = false
 
@@ -128,6 +246,8 @@ RSpec.configure do |config|
   # activejob helper
   config.include ActiveJob::TestHelper
   config.before(:each) { clear_enqueued_jobs && clear_performed_jobs }
+
+  config.include ActiveSupport::Testing::TimeHelpers
 
   # Print some helpful debugging info about the last test failure, since
   # sometimes it's a bit hard to tell which page the error is coming from.

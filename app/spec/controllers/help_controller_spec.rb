@@ -18,7 +18,7 @@ RSpec.describe HelpController, type: :controller do
       end
 
       it "tracks events for help topic" do
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantViewedHelpTopic", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantViewedHelpTopic", anything, hash_including(
             cbv_applicant_id: cbv_flow.cbv_applicant_id,
             cbv_flow_id: cbv_flow.id,
             ip: "0.0.0.0",
@@ -41,7 +41,7 @@ RSpec.describe HelpController, type: :controller do
 
     context "without a CBV flow" do
       it "still renders the template and tracks events" do
-        expect(EventTrackingJob).to receive(:perform_later).with("ApplicantViewedHelpTopic", anything, hash_including(
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantViewedHelpTopic", anything, hash_including(
             ip: "0.0.0.0",
             locale: I18n.locale,
             client_agency_id: "sandbox",

@@ -72,7 +72,7 @@ class ProviderSearchService
   private
 
   def site_config
-    Rails.application.config.client_agencies
+    ClientAgencyConfig.instance
   end
 
   def any_exact_matches?(results, original_query)
@@ -84,7 +84,6 @@ class ProviderSearchService
     name.downcase.gsub(/[^0-9a-z]+/, "")
   end
 
-  # TODO: move these to a config file - see FFS-2661
   TOP_PROVIDERS = [
     {
       name: "ADP",
@@ -105,12 +104,11 @@ class ProviderSearchService
       }
     },
     {
-      name: "Paycom",
+      name: "UKG Pro",
       response_type: "platform",
-      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1605726518/partner-logos/paycom.png",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1761652671/partner-logos/UKG%20Pro%20%28UltiPro%29.png",
       provider_ids: {
-        pinwheel: "3f812c04-ac83-495b-99ca-7ec7d56dc68b",
-        argyle: "item_000029935"
+        argyle: "item_000041140"
       }
     },
     {
@@ -129,6 +127,55 @@ class ProviderSearchService
       provider_ids: {
         pinwheel: "913170d1-393c-4f35-8c23-df3133ce7529",
         argyle: "item_000029947"
+      }
+    },
+    {
+      name: "Paycom",
+      response_type: "platform",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1605726518/partner-logos/paycom.png",
+      provider_ids: {
+        pinwheel: "3f812c04-ac83-495b-99ca-7ec7d56dc68b",
+        argyle: "item_000029935"
+      }
+    },
+    {
+      name: "isolved",
+      response_type: "platform",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1631708654/partner-logos/isolved_grouping.png",
+      provider_ids: {
+        argyle: "item_000020847"
+      }
+    },
+    {
+      name: "Intuit QuickBooks",
+      response_type: "platform",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1618406825/partner-logos/intuit_quickbooks.png",
+      provider_ids: {
+        argyle: "item_000020670"
+      }
+    },
+    {
+      name: "Dayforce",
+      response_type: "platform",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1734620893/partner-logos/dayforcehcm.png",
+      provider_ids: {
+        argyle: "item_000011368"
+      }
+    },
+    {
+      name: "Gusto",
+      response_type: "platform",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1594718493/partner-logos/gusto_platform.png",
+      provider_ids: {
+        argyle: "item_000017821"
+      }
+    },
+    {
+      name: "UKG Ready",
+      response_type: "platform",
+      logo_url: "https://res.cloudinary.com/argyle-media/image/upload/v1761574859/partner-logos/UKG%20Ready.png",
+      provider_ids: {
+        argyle: "item_000041131"
       }
     },
     {

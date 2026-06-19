@@ -50,6 +50,18 @@ RSpec.describe Aggregators::AccountReportService do
         expect(result.account_report.employment).to be_present
         expect(result.account_report.employment.employer_name).to eq("Whole Foods")
       end
+
+      it 'logs paystubs to MixPanel' do
+        expect(MixpanelEventTrackingJob).to receive(:perform_later)
+          .with("ArgyleReportHours", anything, hash_including(
+            time: be_a(Integer),
+            total_paystubs: 10,
+            paystubs_with_argyle_hours_null: 0
+          )).once
+
+        service = described_class.new(report, payroll_account)
+        result = service.validate
+      end
     end
 
     context 'with missing employment IDs' do
@@ -82,7 +94,14 @@ RSpec.describe Aggregators::AccountReportService do
       it 'returns an invalid result' do
         service = described_class.new(report, payroll_account)
 
-        expect(EventTrackingJob).to receive(:perform_later)
+        expect(MixpanelEventTrackingJob).to receive(:perform_later)
+          .with("ArgyleReportHours", anything, hash_including(
+            time: be_a(Integer),
+            total_paystubs: 0,
+            paystubs_with_argyle_hours_null: 0
+          )).once
+
+        expect(MixpanelEventTrackingJob).to receive(:perform_later)
           .with("ApplicantPaystubHasNullEmploymentID", anything, hash_including(
             time: be_a(Integer),
             paystub_id: anything
@@ -133,7 +152,7 @@ RSpec.describe Aggregators::AccountReportService do
       it 'returns an invalid result' do
         service = described_class.new(report, payroll_account)
 
-        expect(EventTrackingJob).not_to receive(:perform_later)
+        expect(MixpanelEventTrackingJob).not_to receive(:perform_later)
           .with("ApplicantPaystubHasNullEmploymentID", anything, anything)
 
         result = service.validate
@@ -222,7 +241,7 @@ RSpec.describe Aggregators::AccountReportService do
       end
 
       it 'sends events to New Relic' do
-        expect(NewRelic::Agent).to receive(:record_custom_event).with(
+        expect(NewRelic::EventLogger).to receive(:track).with(
           TrackEvent::ApplicantReportAttemptedUsefulRequirements,
           {
             time: anything,
@@ -233,7 +252,7 @@ RSpec.describe Aggregators::AccountReportService do
           }
         )
 
-        expect(NewRelic::Agent).to receive(:record_custom_event).with(
+        expect(NewRelic::EventLogger).to receive(:track).with(
           TrackEvent::ApplicantReportFailedUsefulRequirements,
           {
             time: anything,

@@ -28,8 +28,8 @@ RSpec.describe Transmitters::JsonTransmitter do
   let!(:api_token) { create(:api_access_token, user: service_user) }
 
   before do
-    allow(mock_client_agency).to receive(:transmission_method_configuration).and_return(transmission_method_configuration)
     allow(mock_client_agency).to receive(:id).and_return("sandbox")
+    allow(mock_client_agency).to receive(:include_paystubs).and_return(false)
     allow(CbvApplicant).to receive(:valid_attributes_for_agency).with("sandbox").and_return([ "case_number" ])
     allow(Rails.logger).to receive(:error)
   end
@@ -38,7 +38,7 @@ RSpec.describe Transmitters::JsonTransmitter do
     it 'posts to the endpoint with the expected data' do
       expect(aggregator_report).to receive(:income_report).and_return({ cool: "report" })
       VCR.use_cassette("json_transmitter_200") do
-        described_class.new(cbv_flow, mock_client_agency, aggregator_report).deliver
+        described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration).deliver
       end
     end
   end
@@ -46,7 +46,7 @@ RSpec.describe Transmitters::JsonTransmitter do
   context 'agency responds with 500' do
     it 'raises an HTTP error' do
       VCR.use_cassette("json_transmitter_500") do
-        expect { described_class.new(cbv_flow, mock_client_agency, aggregator_report).deliver }.to raise_error("Unexpected response from agency: 500 Internal Server Error")
+        expect { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration).deliver }.to raise_error("Unexpected response from agency: 500 Internal Server Error")
       end
 
       expect(Rails.logger).to have_received(:error).with(/Unexpected response: 500/)
@@ -56,7 +56,7 @@ RSpec.describe Transmitters::JsonTransmitter do
   context 'any other non-200 response' do
     it 'raises an HTTP error' do
       VCR.use_cassette("json_transmitter_418") do
-        expect { described_class.new(cbv_flow, mock_client_agency, aggregator_report).deliver }
+        expect { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration).deliver }
           .to raise_error("Unexpected response from agency: 418 I'm a teapot")
       end
 
@@ -74,7 +74,7 @@ RSpec.describe Transmitters::JsonTransmitter do
       ).and_return("mock-signature")
 
       VCR.use_cassette("json_transmitter_200") do
-        described_class.new(cbv_flow, mock_client_agency, aggregator_report).deliver
+        described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration).deliver
       end
     end
 
@@ -86,7 +86,7 @@ RSpec.describe Transmitters::JsonTransmitter do
         expect(JsonApiSignature).to receive(:generate).with(anything, anything, older_token.access_token).and_return("mock-signature")
 
         VCR.use_cassette("json_transmitter_200") do
-          described_class.new(cbv_flow, mock_client_agency, aggregator_report).deliver
+          described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration).deliver
         end
       end
     end
@@ -108,8 +108,53 @@ RSpec.describe Transmitters::JsonTransmitter do
         .with(headers: { 'X-Client-ID' => 'test-client-id', 'X-Request-ID' => 'test-request-id' })
         .to_return(status: 200, body: '{"status": "success"}')
 
-      expect(described_class.new(cbv_flow, mock_client_agency, aggregator_report).deliver).to eq("ok")
+      expect(described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration).deliver).to eq("ok")
       expect(stub).to have_been_requested
+    end
+  end
+
+  context 'include_paystubs' do
+    let(:paystubs_url) { "http://fake.example.org/api/v1/income-report" }
+    let(:paystubs_config) { { "url" => paystubs_url } }
+    let(:paystubs_result) do
+      Aggregators::PaystubsPdfService::Result.new(
+        content: "fake-paystubs-pdf", page_count: 5, file_size: 18
+      )
+    end
+
+    before do
+      allow(mock_client_agency).to receive(:argyle_environment).and_return("sandbox")
+    end
+
+    context "when the partner has include_paystubs disabled" do
+      before { allow(mock_client_agency).to receive(:include_paystubs).and_return(false) }
+
+      it "does not include paystub_pdf in the payload" do
+        stub = stub_request(:post, paystubs_url)
+          .with { |req| !JSON.parse(req.body).key?("paystub_pdf") }
+          .to_return(status: 200, body: '{"status": "ok"}')
+
+        described_class.new(cbv_flow, mock_client_agency, aggregator_report, paystubs_config).deliver
+        expect(stub).to have_been_requested
+      end
+    end
+
+    context "when the partner has include_paystubs enabled" do
+      before do
+        allow(mock_client_agency).to receive(:include_paystubs).and_return(true)
+        allow_any_instance_of(Aggregators::PaystubsPdfService)
+          .to receive(:generate).and_return(paystubs_result)
+      end
+
+      it "includes paystub_pdf (base64) in the payload" do
+        captured_body = nil
+        stub_request(:post, paystubs_url)
+          .with { |req| captured_body = JSON.parse(req.body); true }
+          .to_return(status: 200, body: '{"status": "ok"}')
+
+        described_class.new(cbv_flow, mock_client_agency, aggregator_report, paystubs_config).deliver
+        expect(captured_body["paystub_pdf"]).to eq(Base64.strict_encode64("fake-paystubs-pdf"))
+      end
     end
   end
 end

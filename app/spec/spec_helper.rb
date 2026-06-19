@@ -62,6 +62,11 @@ RSpec.configure do |config|
     config.filter_run_excluding js: true
   end
 
+  # Don't run integration tests unless explicitly enabled
+  if ENV["INTEGRATION_RUN_TESTS"].nil?
+    config.filter_run_excluding integration: true
+  end
+
   # Allows RSpec to persist some state between runs in order to support
   # the `--only-failures` and `--next-failure` CLI options. We recommend
   # you configure your source control system to ignore this file.

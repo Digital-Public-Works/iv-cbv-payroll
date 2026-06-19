@@ -27,7 +27,7 @@
 
   <div class="text-gray-50"><%= t(".company_examples") %></div>
 
-  <%= form_with url: cbv_flow_employer_search_path, method: :get, class: "usa-search usa-search--big margin-y-4", html: { role: "search" }, data: { turbo_frame: "employers", turbo_action: "advance" } do |f| %>
+  <%= form_with url: cbv_flow_employer_search_path, method: :get, class: "usa-search usa-search--big margin-bottom-4 margin-top-2", html: { role: "search" }, data: { turbo_frame: "employers", turbo_action: "advance" } do |f| %>
     <%= f.label :query, "Search for your employer", class: "usa-sr-only" %>
     <%= f.text_field :query, value: @query, class: "usa-input", type: "search" %>
     <button
@@ -66,6 +66,7 @@
             data-name="<%= provider.name %>"
             data-response-type="<%= provider.provider_options.response_type %>"
             data-provider-name="<%= provider.provider_name %>"
+            aria-label="<%= provider.name %>"
             data-is-default-option="true"
             data-cbv-employer-search-target="employerButton"
             type="button"
@@ -84,4 +85,6 @@
       <% end %>
     </div>
   <% end %>
+
+  <%= render partial: "tips_for_unemployed" %>
 </div>

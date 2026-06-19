@@ -11,7 +11,7 @@ RSpec.describe GenericEventTracker do
     end
 
     it 'populates default attributes' do
-      expect(EventTrackingJob).to receive(:perform_later).with("myEvent", anything, hash_including(
+      expect(MixpanelEventTrackingJob).to receive(:perform_later).with("myEvent", anything, hash_including(
         time: an_instance_of(Integer),
         cbv_flow_id: "cbv_flow_id",
         locale: an_instance_of(String),
@@ -28,7 +28,7 @@ RSpec.describe GenericEventTracker do
       let(:event_type) { "myEvent" }
 
       before do
-        allow(EventTrackingJob).to receive(:perform_later).and_raise(RuntimeError)
+        allow(MixpanelEventTrackingJob).to receive(:perform_later).and_raise(RuntimeError)
         allow(Rails.logger).to receive(:error)
         allow(Rails.env).to receive(:production?).and_return(false)
       end

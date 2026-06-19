@@ -3,23 +3,49 @@
 <div data-controller="cbv-entry-page">
   <h1><%= title %></h1>
 
-  <p><%= t(".subheader_html", agency_full_name: agency_translation("shared.agency_full_name"),
-           agency_acronym: agency_translation("shared.agency_acronym")) %></p>
+  <p><%= t(".subheader", agency_full_name: agency_translation("shared.agency_full_name")) %></p>
 
-  <ol class="usa-process-list">
-    <li class="usa-process-list__item">
-      <h2 class="usa-process-list__heading"><%= t(".step1") %></h2>
-      <p><%= t(".step1_description") %></p>
+  <p><strong><em><%= t(".time_estimate") %></em></strong></p>
+
+  <h2><%= t(".what_youll_do") %></h2>
+
+  <ul class="usa-icon-list margin-top-3">
+    <li class="usa-icon-list__item margin-bottom-3">
+      <div class="usa-icon-list__icon">
+        <svg class="usa-icon text-primary" aria-hidden="true" role="img">
+          <use href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#search") %>"></use>
+        </svg>
+      </div>
+      <div class="usa-icon-list__content">
+        <h3 class="margin-bottom-1"><%= t(".step1") %></h3>
+        <p><%= t(".step1_description") %></p>
+        <p><em><%= t(".step1_note") %></em></p>
+      </div>
     </li>
-    <li class="usa-process-list__item">
-      <h2 class="usa-process-list__heading"><%= t(".step2") %></h2>
-      <p><%= t(".step2_description", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
+    <li class="usa-icon-list__item margin-bottom-3">
+      <div class="usa-icon-list__icon">
+        <svg class="usa-icon text-primary" aria-hidden="true" role="img">
+          <use href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#check") %>"></use>
+        </svg>
+      </div>
+      <div class="usa-icon-list__content">
+        <h3 class="margin-bottom-1"><%= t(".step2") %></h3>
+        <p><%= t(".step2_description", agency_full_name: agency_translation("shared.agency_full_name")) %></p>
+        <p><em><%= t(".step2_note") %></em></p>
+      </div>
     </li>
-    <li class="usa-process-list__item">
-      <h2 class="usa-process-list__heading"><%= t(".step3") %></h2>
-      <p><%= t(".step3_description", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
+    <li class="usa-icon-list__item margin-bottom-3">
+      <div class="usa-icon-list__icon">
+        <svg class="usa-icon text-primary" aria-hidden="true" role="img">
+          <use href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#send") %>"></use>
+        </svg>
+      </div>
+      <div class="usa-icon-list__content">
+        <h3 class="margin-bottom-1"><%= t(".step3") %></h3>
+        <p><%= t(".step3_description", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
+      </div>
     </li>
-  </ol>
+  </ul>
 
   <div data-controller="cbv-attestation-check">
     <%= form_with(url: cbv_flow_entry_path, builder: UswdsFormBuilder) do |f| %>

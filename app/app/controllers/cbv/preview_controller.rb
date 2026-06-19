@@ -148,7 +148,7 @@ class Cbv::PreviewController < ApplicationController
     client_agency_id = params[:client_agency_id] || "sandbox"
 
     # Validate client_agency_id
-    unless Rails.application.config.client_agencies.client_agency_ids.include?(client_agency_id)
+    unless ClientAgencyConfig.client_agency_ids.include?(client_agency_id)
       return render plain: "Invalid client_agency_id", status: :unprocessable_entity
     end
 
@@ -174,9 +174,8 @@ class Cbv::PreviewController < ApplicationController
   def create_synced_flow(client_agency_id)
     cbv_applicant = CbvApplicant.create!(
       client_agency_id: client_agency_id,
-      first_name: "Preview",
-      last_name: "User",
-      case_number: "PREVIEW123",
+      partner_identifier: "PREVIEW123",
+      custom_attributes: { "first_name" => "Preview", "last_name" => "User" },
       snap_application_date: Date.current
     )
 
@@ -212,7 +211,7 @@ class Cbv::PreviewController < ApplicationController
 
   def current_agency
     return unless @cbv_flow.present? && @cbv_flow.client_agency_id.present?
-    @current_agency ||= Rails.application.config.client_agencies[@cbv_flow.client_agency_id]
+    @current_agency ||= ClientAgencyConfig.instance[@cbv_flow.client_agency_id]
   end
 
   def argyle
