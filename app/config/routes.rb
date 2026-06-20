@@ -92,10 +92,12 @@ Rails.application.routes.draw do
 
       # Preview routes (non-production only)
       scope "/preview", as: :preview do
-        root to: "preview#employer_search"
+        root to: "preview#entry"
         get "employer_search", to: "preview#employer_search"
         get "entry", to: "preview#entry"
         get "applicant_information", to: "preview#applicant_information"
+        get "add_job", to: "preview#add_job"
+        get "other_job", to: "preview#other_job"
         get "expired_invitation", to: "preview#expired_invitation"
         get "session_timeout", to: "preview#session_timeout"
         get "success", to: "preview#success"

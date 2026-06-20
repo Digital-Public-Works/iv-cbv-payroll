@@ -102,6 +102,14 @@ class Cbv::PreviewController < ApplicationController
     render_as("applicant_informations")
   end
 
+  def add_job
+    render_as("add_jobs")
+  end
+
+  def other_job
+    render_as("other_jobs")
+  end
+
   def expired_invitation
     render_as("expired_invitations")
   end
