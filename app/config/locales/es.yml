@@ -226,6 +226,7 @@ es:
       show:
         body_1_html: Si todavía no termina de verificar sus ingresos, envíe su información de ingresos visitando %{website_link}.
         cta_button_html:
+          default: <a href="%{agency_url}" class="usa-button" target="_blank" rel="noopener noreferrer">Visite el sitio web de %{agency_portal_name}</a>
           la_ldh: <a href="%{agency_url}" class="usa-button" target="_blank" rel="noopener noreferrer">Visite el sitio web del LDH</a>
           sandbox: <a href="https://www.mass.gov/guides/how-to-contact-dta" class="usa-button" target="_blank" rel="noopener noreferrer">Obtenga más información en la Agencia de pruebas CBV</a>
         title: Su invitación para verificar ingresos ha expirado

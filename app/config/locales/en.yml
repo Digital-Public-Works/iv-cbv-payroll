@@ -324,6 +324,7 @@ en:
       show:
         body_1_html: If you still need to verify your income, please submit your income information by visiting %{website_link}.
         cta_button_html:
+          default: <a href="%{agency_url}" class="usa-button" target="_blank" rel="noopener noreferrer">Visit the %{agency_portal_name} website</a>
           la_ldh: <a href="%{agency_url}" class="usa-button" target="_blank" rel="noopener noreferrer">Visit LDH's website</a>
           sandbox: <a href="https://www.mass.gov/guides/how-to-contact-dta" class="usa-button" target="_blank" rel="noopener noreferrer">Learn more at CBV Test Agency</a>
         title: Your invitation to verify income has expired
