@@ -50,7 +50,7 @@
   <div data-controller="cbv-attestation-check">
     <%= form_with(url: cbv_flow_entry_path, builder: UswdsFormBuilder) do |f| %>
       <span class="d-block"> <abbr title="required" class="usa-hint--required">*</abbr> Required </span>
-      <%= f.check_box(:agreement, { label: agency_translation(".checkbox", agency_full_name: agency_translation("shared.agency_full_name")),
+      <%= f.check_box(:agreement, { label: agency_translation(".checkbox", agency_name_with_acronym: agency_name_with_acronym),
                                     required: true,
                                     data: {
                                       action: "cbv-entry-page#consent change->cbv-attestation-check#setButton",
