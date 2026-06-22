@@ -13,7 +13,7 @@
     "postcss": "^8.5.15",
     "postcss-cli": "^11.0.1",
     "postcss-minify": "^1.2.0",
-    "sass": "^1.98"
+    "sass": "^1.101"
   },
   "scripts": {
     "build": "esbuild app/javascript/*.* --bundle --sourcemap --outdir=app/assets/builds --public-path=assets",
