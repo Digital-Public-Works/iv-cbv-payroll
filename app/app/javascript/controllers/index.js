@@ -18,6 +18,7 @@ import AttestationCheckController from "./cbv/attestation_check_controller.js"
 import TooltipTrackerController from "./employer_search_tooltip_tracker_controller.js"
 import AccordionController from "./accordion_controller.js"
 import UnemployedTipsController from "./unemployed_tips_controller.js"
+import JsonViewerController from "./json_viewer_controller.js"
 
 application.register("anchor-scroll", AnchorScrollController)
 application.register("scroll-reset", ScrollResetController)
@@ -37,6 +38,7 @@ application.register("cbv-attestation-check", AttestationCheckController)
 application.register("tooltip-tracker", TooltipTrackerController)
 application.register("accordion", AccordionController)
 application.register("unemployed-tips", UnemployedTipsController)
+application.register("json-viewer", JsonViewerController)
 
 Turbo.StreamActions.redirect = function () {
   Turbo.visit(this.target)

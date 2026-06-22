@@ -16,6 +16,7 @@ class PartnerConfigLoader
     pay_income_days_w2 pay_income_days_gig
     report_customization_show_earnings_list
     include_paystubs
+    include_full_ssn include_direct_deposit_last_4
     weekly_report_enabled weekly_report_recipients weekly_report_variant
     include_invitation_details_on_weekly_report
     partner_identifier_name
