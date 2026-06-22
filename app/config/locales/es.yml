@@ -301,6 +301,22 @@ es:
         additional_information_placeholder: Introduzca hasta 1000 caracteres
         continue: Continuar
         deductions: 'Deducción: %{category} (%{tax})'
+        deposit_accounts:
+          direct_deposit_account:
+            applicant:
+              label: Cuenta de depósito directo
+              label_numbered: Cuenta de depósito directo %{number}
+            caseworker:
+              label: Últimos 4 dígitos de la cuenta de depósito directo
+              label_numbered: Últimos 4 dígitos de la cuenta de depósito directo %{number}
+          none: No se encontraron cuentas de depósito
+          payout_card_account:
+            applicant:
+              label: Cuenta de tarjeta de crédito
+              label_numbered: Cuenta de tarjeta de crédito %{number}
+            caseworker:
+              label: Últimos 4 dígitos de la cuenta de tarjeta de crédito
+              label_numbered: Últimos 4 dígitos de la cuenta de tarjeta de crédito %{number}
         employment_end_date: Fecha de finalización de la relación laboral
         employment_information_table_header: Información sobre el empleo
         employment_start_date: Fecha de inicio del empleo
@@ -325,6 +341,7 @@ es:
         pay_period_value: "%{start_date} al %{end_date}"
         payment_hours: "%{amount} horas"
         payments_and_deductions_table_header: Pagos y deducciones
+        ssn_disclaimer: Su número de Seguro Social se enviará de forma segura a %{agency_acronym} para confirmar su identidad. Verify My Income no guardará ni almacenará esta información.
         subheader_html: Hemos recopilado sus registros de pago del último %{report_data_range}, desde el %{start_date} hasta el %{end_date}.<br>Por favor, revise su información. Si falta información o si es incorrecta, deja un comentario para %{agency_acronym}. Su comentario se incluirá en su reporte de ingresos.
         unknown: Desconocido
     submits:
@@ -355,6 +372,7 @@ es:
             employment_payment_details: Detalles de empleo y pago
             header: Informe de verificación de ingresos
             self_employment: Empleo independiente
+            ssn_disclaimer: Su número de Seguro Social fue enviado de forma segura a %{agency_acronym} para confirmar su identidad. Verify My Income no guarda ni almacena esta información.
           footer:
             page_footer: Informe de verificación de ingresos | Página [page] de [topage]
           paystubs_cover:

@@ -25,6 +25,9 @@
   <% end %>
 <% else %>
   <p><%= t(".pdf.client.description", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
+  <% if current_agency&.include_full_ssn %>
+    <p><%= t(".pdf.client.ssn_disclaimer", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
+  <% end %>
 <% end %>
 
 <h2><%= t(".pdf.client.client_report_information") %></h2>
@@ -131,7 +134,8 @@
         income: summary[:income],
         is_caseworker: is_caseworker,
         is_responsive: false,
-        show_earnings_items: !!current_agency&.report_customization_show_earnings_list
+        show_earnings_items: !!current_agency&.report_customization_show_earnings_list,
+        show_direct_deposit_accounts: !!current_agency&.include_direct_deposit_last_4
       )) %>
     <% end %>
     <% if summary[:paystubs].empty? %>

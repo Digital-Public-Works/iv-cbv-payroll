@@ -18,6 +18,17 @@
     <% end %>
   <% end %>
   <%= table.with_data_point(:net_pay_amount, @paystub.net_pay_amount) %>
+  <% if show_deposit_accounts? %>
+    <% direct_deposit_accounts.each_with_index do |last_four, index| %>
+      <%= table.with_data_point(:direct_deposit_account, last_four, direct_deposit_account_number(index), @is_caseworker) %>
+    <% end %>
+    <% payout_card_accounts.each_with_index do |last_four, index| %>
+      <%= table.with_data_point(:payout_card_account, last_four, payout_card_account_number(index), @is_caseworker) %>
+    <% end %>
+    <% if no_deposit_accounts? %>
+      <%= table.with_data_point(:no_deposit_accounts) %>
+    <% end %>
+  <% end %>
   <% @paystub.deductions.filter { |deduction| deduction.amount.to_f > 0 }.each do |deduction| %>
     <%= table.with_data_point(:deduction, deduction.category, deduction.tax, deduction.amount) %>
   <% end %>

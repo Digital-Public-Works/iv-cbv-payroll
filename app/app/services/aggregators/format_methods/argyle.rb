@@ -123,6 +123,43 @@ module Aggregators::FormatMethods::Argyle
     ].compact.join(", ")
   end
 
+  def self.direct_deposit_accounts(destinations)
+    return [] if destinations.blank?
+
+    destinations.filter_map do |destination|
+      next unless ach_deposit_destination?(destination)
+
+      account = destination["ach_deposit_account"]
+      last_four_digits(account && account["account_number"])
+    end
+  end
+
+  def self.payout_card_accounts(destinations)
+    return [] if destinations.blank?
+
+    destinations.filter_map do |destination|
+      next unless payout_card_destination?(destination)
+
+      card = destination["card"]
+      # Argyle's card.card_number is typically obfuscated; keep only the trailing 4 digits.
+      last_four_digits(card && card["card_number"])
+    end
+  end
+
+  def self.ach_deposit_destination?(destination)
+    destination["destination_type"] == "ach_deposit_account" ||
+      destination["ach_deposit_account"].present?
+  end
+
+  def self.payout_card_destination?(destination)
+    destination["destination_type"] == "card" ||
+      destination["card"].present?
+  end
+
+  def self.last_four_digits(value)
+    value.to_s.gsub(/\D/, "").last(4).presence
+  end
+
   def self.seconds_to_hours(seconds)
     return unless seconds
     (seconds / 3600.0).round(2)

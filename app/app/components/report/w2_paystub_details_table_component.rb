@@ -21,7 +21,8 @@ class Report::W2PaystubDetailsTableComponent < ViewComponent::Base
     show_hours_breakdown: true,
     show_gross_pay_ytd: true,
     show_pay_frequency: true,
-    show_earnings_items: false
+    show_earnings_items: false,
+    show_direct_deposit_accounts: false
   )
     @paystub = paystub
     @income = income
@@ -32,6 +33,7 @@ class Report::W2PaystubDetailsTableComponent < ViewComponent::Base
     @show_gross_pay_ytd = show_gross_pay_ytd
     @show_pay_frequency = show_pay_frequency
     @show_earnings_items = show_earnings_items
+    @show_direct_deposit_accounts = show_direct_deposit_accounts
   end
 
   private
@@ -66,6 +68,32 @@ class Report::W2PaystubDetailsTableComponent < ViewComponent::Base
 
   def show_earnings_items?
     @show_earnings_items && @paystub.earnings.present?
+  end
+
+  def show_deposit_accounts?
+    @show_direct_deposit_accounts
+  end
+
+  def direct_deposit_accounts
+    @paystub.direct_deposit_accounts || []
+  end
+
+  def payout_card_accounts
+    @paystub.payout_card_accounts || []
+  end
+
+  # Numbering only applies when there is more than one account of a given type
+  # Because this Index starts 1 as its human-readable
+  def direct_deposit_account_number(index)
+    direct_deposit_accounts.size > 1 ? index + 1 : nil
+  end
+
+  def payout_card_account_number(index)
+    payout_card_accounts.size > 1 ? index + 1 : nil
+  end
+
+  def no_deposit_accounts?
+    direct_deposit_accounts.empty? && payout_card_accounts.empty?
   end
 
   def earnings_sort_order(earnings)

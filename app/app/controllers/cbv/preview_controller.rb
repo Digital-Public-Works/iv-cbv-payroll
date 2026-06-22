@@ -7,7 +7,7 @@ class Cbv::PreviewController < ApplicationController
   before_action :ensure_non_production_environment
   before_action :setup_preview_flow
   before_action :override_has_account_with_required_data
-  before_action :set_aggregator_report, only: %i[payment_details summary submit submit_pdf_as_html validation_failures]
+  before_action :set_aggregator_report, only: %i[payment_details summary submit submit_pdf_as_html validation_failures transmitted_json]
   before_action :relax_csp_for_html_preview
 
   helper_method :current_agency, :employer_name, :gross_pay, :employment_start_date,
@@ -80,8 +80,9 @@ class Cbv::PreviewController < ApplicationController
           formats: [ :pdf ],
           layout: "pdf",
           locals: {
-            is_caseworker: is_not_production? && params[:is_caseworker],
-            aggregator_report: @aggregator_report
+            is_caseworker: is_not_production? && params[:is_caseworker] == "true",
+            aggregator_report: @aggregator_report,
+            current_agency: current_agency
           },
           footer: { right: t("cbv.submits.show.pdf.footer.page_footer"), font_size: 10 },
           margin: {
@@ -94,9 +95,19 @@ class Cbv::PreviewController < ApplicationController
     end
   end
 
+  # Renders the JSON payload that would be transmitted to the partner agency
+  # (the same hash built by CbvFlowToJson for the webhook/JSON transmitters).
+  # Useful for previewing how the sensitive-output toggles (Full SSN, direct
+  # deposit last 4) change what actually gets sent.
+  def transmitted_json
+    @payroll_account = @cbv_flow.payroll_accounts.first
+    @json_payload = CbvFlowToJson.new(@cbv_flow, current_agency, @aggregator_report).to_h
+    render template: "cbv/preview/transmitted_json"
+  end
+
   def submit_pdf_as_html
     # Render the PDF template as HTML for debugging (no wkhtmltopdf conversion)
-    is_caseworker = is_not_production? && params[:is_caseworker]
+    is_caseworker = is_not_production? && params[:is_caseworker] == "true"
 
     # Render the PDF template and layout manually
     html_content = render_to_string(
@@ -105,7 +116,9 @@ class Cbv::PreviewController < ApplicationController
       layout: "pdf",
       locals: {
         is_caseworker: is_caseworker,
-        aggregator_report: @aggregator_report
+        aggregator_report: @aggregator_report,
+        # See #submit: pass the preview agency so toggles apply to the report.
+        current_agency: current_agency
       }
     )
 
@@ -211,7 +224,24 @@ class Cbv::PreviewController < ApplicationController
 
   def current_agency
     return unless @cbv_flow.present? && @cbv_flow.client_agency_id.present?
-    @current_agency ||= ClientAgencyConfig.instance[@cbv_flow.client_agency_id]
+
+    @current_agency ||= PreviewAgencyConfig.new(
+      ClientAgencyConfig.instance[@cbv_flow.client_agency_id],
+      include_full_ssn: params[:include_full_ssn] == "true",
+      include_direct_deposit_last_4: params[:include_direct_deposit_last_4] == "true"
+    )
+  end
+
+  # Wraps the real agency config so preview-only toggles can override the
+  # sensitive-output flags without mutating the shared, cached config instance.
+  class PreviewAgencyConfig < SimpleDelegator
+    attr_reader :include_full_ssn, :include_direct_deposit_last_4
+
+    def initialize(agency, include_full_ssn: false, include_direct_deposit_last_4: false)
+      super(agency)
+      @include_full_ssn = include_full_ssn
+      @include_direct_deposit_last_4 = include_direct_deposit_last_4
+    end
   end
 
   def argyle

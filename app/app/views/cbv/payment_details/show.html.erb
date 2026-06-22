@@ -13,6 +13,21 @@
     ) %>
 </p>
 
+<% if current_agency&.include_full_ssn %>
+  <ul class="usa-icon-list margin-top-3 margin-bottom-4">
+    <li class="usa-icon-list__item">
+      <div class="usa-icon-list__icon">
+        <svg class="usa-icon text-primary" aria-hidden="true" role="img">
+          <use href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#lock_outline") %>"></use>
+        </svg>
+      </div>
+      <div class="usa-icon-list__content">
+        <%= t(".ssn_disclaimer", agency_acronym: agency_translation("shared.agency_acronym")) %>
+      </div>
+    </li>
+  </ul>
+<% end %>
+
 <%= render(Report::EmploymentDetailsTableComponent.new(@aggregator_report, @payroll_account, show_income: @is_w2_worker)) %>
 
 <% if @is_w2_worker %>
@@ -23,7 +38,13 @@
       <%= t(".none_found_description", report_data_range: report_data_range(@aggregator_report, params[:user][:account_id])) %>
     <% end %>
   <% end %>
-  <%= render(Report::PaymentsDeductionsMonthlySummaryComponent.new(@aggregator_report, @payroll_account, is_w2_worker: @is_w2_worker, income: @payroll_account_report.income, show_earnings_items: !!current_agency&.report_customization_show_earnings_list)) %>
+
+  <%= render(Report::PaymentsDeductionsMonthlySummaryComponent.new(@aggregator_report,
+        @payroll_account,
+        is_w2_worker: @is_w2_worker,
+        income: @payroll_account_report.income,
+        show_earnings_items: !!current_agency&.report_customization_show_earnings_list,
+        show_direct_deposit_accounts: !!current_agency&.include_direct_deposit_last_4)) %>
 <% else %>
   <%= render(Report::GigMonthlySummaryTableComponent.new(@aggregator_report, @payroll_account)) %>
 <% end %>
