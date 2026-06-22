@@ -107,6 +107,9 @@ group :development do
   gem "rails-erd", "~> 1.7"
 end
 
+# Realistic fake data, used by the dev-only partner generator rake task.
+gem "faker", "~> 3.5", group: %i[development test]
+
 group :test do
   gem "pdf-reader", "~> 2.15.0"
   gem "axe-core-rspec", "~> 4.10"

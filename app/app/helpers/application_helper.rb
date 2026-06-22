@@ -19,6 +19,12 @@ module ApplicationHelper
   # is either missing or there is no current client agency, it will attempt to render a
   # "default" key.
   def agency_translation(i18n_base_key, **options)
+    # Relative (leading-dot) keys are scoped to the current template's path.
+    # Expand them up front so the database lookup — which stores full keys like
+    # "cbv.entries.show.checkbox" — can match. Without this, DB overrides
+    # silently fail for relative-key call sites and the YAML value is always used.
+    i18n_base_key = scope_key_by_partial(i18n_base_key) if i18n_base_key.start_with?(".")
+
     if i18n_base_key.include?("{agency}")
       i18n_key = current_agency ? i18n_base_key.gsub("{agency}", current_agency.id) : nil
       default_key = i18n_base_key.gsub("{agency}", "default")
@@ -123,7 +129,7 @@ module ApplicationHelper
     locale = I18n.locale.to_s
     cache_key = PartnerTranslation.cache_key_for(partner_config.id, locale, base_key)
 
-    value = Rails.cache.fetch(cache_key, expires_in: 10.minutes) do
+    value = fetch_translation_cache(cache_key) do
       translation = PartnerTranslation.find_by(
         partner_config: partner_config,
         locale: locale,
@@ -162,9 +168,21 @@ module ApplicationHelper
   end
 
   def cached_partner_config(partner_id)
-    Rails.cache.fetch("partner_config/#{partner_id}", expires_in: 10.minutes) do
+    fetch_translation_cache("partner_config/#{partner_id}") do
       PartnerConfig.find_by(partner_id: partner_id)
     end
+  end
+
+  TRANSLATION_CACHE_TTL = 10.minutes
+
+  # Caches DB-backed partner config/translation lookups, except in development
+  # where the cache is bypassed so edits made directly in the database show up
+  # immediately on refresh (a direct DB edit never fires the model's
+  # expire_cache callback). Mirrors ClientAgencyConfig's dev-immediate behavior.
+  def fetch_translation_cache(cache_key, &block)
+    return block.call if Rails.env.development?
+
+    Rails.cache.fetch(cache_key, expires_in: TRANSLATION_CACHE_TTL, &block)
   end
 
   public

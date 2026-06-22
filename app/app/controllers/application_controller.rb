@@ -86,10 +86,8 @@ class ApplicationController < ActionController::Base
     host = request.host
     subdomain = host.split(".").first
 
-    agency_config.client_agency_ids.find do |agency_id|
-      agency = agency_config[agency_id]
-      agency.agency_domain == subdomain || agency.agency_domain == host
-    end
+    agency = agency_config.find_by_domain(subdomain) || agency_config.find_by_domain(host)
+    agency&.id
   end
 
   def pilot_ended?

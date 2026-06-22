@@ -21,12 +21,10 @@ class ConfiguredAgencyConstraint
     labels.first # host
   end
 
-  # determine if the subdomain represents a configured agency
+  # determine if the subdomain represents a configured agency.
+  # Uses a single indexed lookup (cached in ClientAgencyConfig) by domain rather than scanning every partner,
+  # so this runs cheaply on the redirect hot path without loading all configs.
   def configured_agency?(slug)
-    cfg = ClientAgencyConfig.instance
-    cfg.client_agency_ids.any? do |id|
-      agency = cfg[id]
-      agency.agency_domain.to_s == slug
-    end
+    ClientAgencyConfig.instance.find_by_domain(slug).present?
   end
 end
