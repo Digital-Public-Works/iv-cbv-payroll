@@ -14,8 +14,19 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
     )
   end
 
-  let(:webhook_url) { "http://localhost:9292/api/v1/income-report" }
+  let(:webhook_url) { ENV.fetch("WEBHOOK_TEST_URL", "http://localhost:9292/api/v1/income-report") }
   let(:api_key) { ENV.fetch("WEBHOOK_TEST_API_KEY", "my-secure-guid") }
+
+  # The client_information custom attributes (name => value) to include in the
+  # payload. Configurable via WEBHOOK_TEST_CLIENT_INFORMATION as comma-separated
+  # key=value pairs, e.g.
+  #   WEBHOOK_TEST_CLIENT_INFORMATION="case_number=ABC1234,first_name=John"
+  let(:custom_attributes) do
+    ENV.fetch("WEBHOOK_TEST_CLIENT_INFORMATION", "case_number=ABC1234")
+       .split(",")
+       .map { |pair| pair.split("=", 2).map(&:strip) }
+       .to_h
+  end
   let(:transmission_method_configuration) do
     {
       "webhook_url" => webhook_url,
@@ -45,13 +56,37 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
     allow(mock_client_agency).to receive(:timezone).and_return("America/New_York")
     allow(mock_client_agency).to receive(:transmission_methods).and_return(configured_methods)
     allow(mock_client_agency).to receive(:include_paystubs).and_return(false)
-    allow(CbvApplicant).to receive(:valid_attributes_for_agency).with("sandbox").and_return([ "case_number" ])
+    allow(CbvApplicant).to receive(:valid_attributes_for_agency).with("sandbox").and_return(custom_attributes.keys.map(&:to_sym))
+    # Return the configured name => value pairs verbatim (string keys, matching
+    # the real build_custom_attributes), bypassing the cbv_applicant factory.
+    allow(CbvApplicant).to receive(:build_custom_attributes).with("sandbox").and_return(custom_attributes)
 
+    # This is a live integration test (no cassettes). VCR is hooked into
+    # WebMock globally and blocks un-cassetted requests to non-ignored hosts
+    # (localhost is ignored, which is why the default reference server works
+    # but a real host does not), so turn VCR off and allow real connections.
+    VCR.turn_off!(ignore_cassettes: true)
     WebMock.allow_net_connect!
+
+    # DIAGNOSTIC (opt-in via WEBHOOK_TEST_DEBUG): log the server response for
+    # every request the suite makes, regardless of whether the example calls
+    # #deliver (which raises and only logs the body) or posts directly. Lets us
+    # see the response code/body for each scenario in one run. Off in CI.
+    if ENV["WEBHOOK_TEST_DEBUG"].present?
+      allow_any_instance_of(Net::HTTP).to receive(:request).and_wrap_original do |original, *args, &block|
+        original.call(*args, &block).tap do |res|
+          puts "\n----- DIAGNOSTIC server response -----"
+          puts "HTTP #{res.code} #{res.message}"
+          puts "Body: #{res.body.inspect}"
+          puts "-----------------------------------------------------"
+        end
+      end
+    end
   end
 
   after do
     WebMock.disable_net_connect!
+    VCR.turn_on!
   end
 
   subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
@@ -62,6 +97,34 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
     it "successfully delivers to a running reference server" do
       result = subject.deliver
       expect(result).to eq("ok")
+    end
+
+    # Diagnostic (opt-in via WEBHOOK_TEST_DEBUG): posts the happy-path payload
+    # and prints exactly what we sent and what the server returned. Useful when
+    # the sunny-day delivery fails (e.g. a 400) and you need to see the server's
+    # validation message. Skipped in CI.
+    it "DIAGNOSTIC: prints the request payload and server response", if: ENV["WEBHOOK_TEST_DEBUG"].present? do
+      uri = URI(webhook_url)
+      body = CbvFlowToJson.new(cbv_flow, mock_client_agency, aggregator_report).to_h.to_json
+
+      req = Net::HTTP::Post.new(uri)
+      req.content_type = "application/json"
+      req.body = body
+      timestamp = Time.now.to_i.to_s
+      req["X-VMI-Timestamp"] = timestamp
+      req["X-VMI-Signature"] = JsonApiSignature.generate(body, timestamp, api_key)
+      req["X-VMI-API-Key"] = api_key
+      req["X-VMI-Confirmation-Code"] = cbv_flow.confirmation_code
+
+      res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") { |http| http.request(req) }
+
+      puts "\n===== DIAGNOSTIC: outbound request ====="
+      puts "POST #{uri}"
+      puts JSON.pretty_generate(JSON.parse(body))
+      puts "===== DIAGNOSTIC: server response ====="
+      puts "HTTP #{res.code} #{res.message}"
+      puts "Body: #{res.body.inspect}"
+      puts "=======================================\n"
     end
 
     it "sends a valid JSON payload with expected top-level keys" do
@@ -163,7 +226,7 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
       req["X-VMI-API-Key"] = api_key
       req["X-VMI-Confirmation-Code"] = cbv_flow.confirmation_code
 
-      res = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(req) }
+      res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") { |http| http.request(req) }
 
       expect(res.code).to eq("400")
       error_body = JSON.parse(res.body)
@@ -189,7 +252,7 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
       req["X-VMI-API-Key"] = wrong_key
       req["X-VMI-Confirmation-Code"] = cbv_flow.confirmation_code
 
-      res = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(req) }
+      res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") { |http| http.request(req) }
 
       expect(res.code).to eq("401")
       error_body = JSON.parse(res.body)
