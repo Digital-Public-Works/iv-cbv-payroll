@@ -79,10 +79,13 @@ class ClientAgencyConfig
   end
 
   REQUIRED_TRANSLATION_KEYS = %w[
-      shared.agency_acronym
       shared.agency_full_name
       shared.header.cbv_flow_title
       shared.header.preheader
+    ].freeze
+
+  OPTIONAL_TRANSLATION_KEYS = %w[
+      shared.agency_acronym
     ].freeze
 
   def validate_partner_translations

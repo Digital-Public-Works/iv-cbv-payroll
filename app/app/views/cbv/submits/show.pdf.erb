@@ -24,7 +24,7 @@
     <% end %>
   <% end %>
 <% else %>
-  <p><%= t(".pdf.client.description", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
+  <p><%= t(".pdf.client.description", agency_acronym: agency_acronym_or_full_name) %></p>
   <% if current_agency&.include_full_ssn %>
     <p><%= t(".pdf.client.ssn_disclaimer", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
   <% end %>

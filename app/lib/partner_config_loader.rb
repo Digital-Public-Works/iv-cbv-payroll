@@ -50,7 +50,6 @@ class PartnerConfigLoader
   VALID_PAY_INCOME_DAYS = [ 90, 182 ].freeze
 
   REQUIRED_TRANSLATION_KEYS = %w[
-    shared.agency_acronym
     shared.agency_full_name
     shared.header.cbv_flow_title
     shared.header.preheader

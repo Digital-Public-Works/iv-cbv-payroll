@@ -54,7 +54,8 @@ module ApplicationHelper
                      t(default_key, **options)
                    end
 
-    if translated.blank? && Rails.env.development?
+    if translated.blank? && Rails.env.development? &&
+        !ClientAgencyConfig::OPTIONAL_TRANSLATION_KEYS.include?(i18n_base_key)
       raise "Missing agency translation: #{i18n_key} (base: #{i18n_base_key}, default: #{default_key})"
     end
 
@@ -68,6 +69,43 @@ module ApplicationHelper
     else
       translated
     end
+  end
+
+  # `shared.agency_acronym` is optional (see ClientAgencyConfig::OPTIONAL_TRANSLATION_KEYS)
+  def has_acronym?
+    agency_translation("shared.agency_acronym").present?
+  end
+
+  # The agency acronym when the partner has one, otherwise the full agency name.
+  def agency_acronym_or_full_name
+    if has_acronym?
+      agency_translation("shared.agency_acronym")
+    else
+      agency_translation("shared.agency_full_name")
+    end
+  end
+
+  # Agency name with its acronym in parentheses (e.g. "West Carolina Department of Public Health (WC-DPH)").
+  # Partners with no acronym render just the full name, with no parens.
+  def agency_name_with_acronym
+    full_name = agency_translation("shared.agency_full_name")
+    return full_name unless has_acronym?
+
+    "#{full_name} (#{agency_translation("shared.agency_acronym")})"
+  end
+
+  # A reusable anchor tag to the agency portal
+  def agency_website_link(label: agency_website_link_label)
+    url = current_agency&.agency_contact_website
+    return label if url.blank?
+
+    link_to(label, url, target: "_blank", rel: "noopener noreferrer")
+  end
+
+  # The text for an agency website link/reference (e.g. "the COMPASS website").
+  def agency_website_link_label
+    t("shared.agency_website_link_label",
+      agency_portal_name: agency_translation("shared.agency_portal_name"))
   end
 
   private

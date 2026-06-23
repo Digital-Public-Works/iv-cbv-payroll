@@ -95,6 +95,36 @@ class Cbv::PreviewController < ApplicationController
     end
   end
 
+  def entry
+    render_as("entries")
+  end
+
+  def applicant_information
+    render_as("applicant_informations")
+  end
+
+  def add_job
+    render_as("add_jobs")
+  end
+
+  def other_job
+    render_as("other_jobs")
+  end
+
+  def expired_invitation
+    render_as("expired_invitations")
+  end
+
+  def session_timeout
+    render template: "cbv/sessions/timeout"
+  end
+
+  def success
+    @cbv_flow.confirmation_code ||= "PREVIEW0000"
+    @invitation_link = root_url
+    render_as("successes")
+  end
+
   # Renders the JSON payload that would be transmitted to the partner agency
   # (the same hash built by CbvFlowToJson for the webhook/JSON transmitters).
   # Useful for previewing how the sensitive-output toggles (Full SSN, direct

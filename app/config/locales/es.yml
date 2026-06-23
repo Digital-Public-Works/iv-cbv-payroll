@@ -196,7 +196,7 @@ es:
         error: Debe marcar la casilla de «acuerdo» para proceder.
       show:
         checkbox:
-          default: Marque esta casilla para permitirnos acceder a su información de pago y compartirla con %{agency_full_name}. No usaremos la información para ningún otro propósito ni la volveremos a divulgar a ninguna otra parte.
+          default: Marque esta casilla para permitirnos acceder a su información de pago y compartirla con %{agency_name_with_acronym}. No usaremos la información para ningún otro propósito ni la volveremos a divulgar a ninguna otra parte.
         continue: Comenzar
         header: Verifiquemos sus ingresos
         step1: Encuentre su empleador o empresa de nómina (payroll company)
@@ -211,7 +211,7 @@ es:
         time_estimate: La mayoría de las personas pueden encontrar, conectar y revisar un trabajo en unos 5 minutos.
         what_if_i_cant_use_this_body_1: Si necesita verificar sus ingresos y no puede usar esta herramienta, deberá compartir, de manera directa, la información de sus ingresos para este trabajo con %{agency_portal_name}.
         what_if_i_cant_use_this_body_2_html:
-          default: Para obtener más información sobre cómo enviar documentos, visite el sitio web de <a href="%{agency_url}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
+          default: Para obtener más información sobre cómo enviar documentos, visite %{website_link}.
           la_ldh: 'Usted puede: <ul><li>Subir documentos a través del Portal de Autoservicio en línea en <a href="https://mymedicaid.la.gov/" target="_blank" rel="noopener noreferrer">https://mymedicaid.la.gov/</a></li><li>Enviar documentos por correo postal: Louisiana Medicaid/LaCHIP, P.O. Box 91283, Baton Rouge, LA 70821-9278</li><li>Enviar documentos por correo electrónico: <a href="mailto:MyMedicaid@la.gov">MyMedicaid@la.gov</a></li><li>Llevar sus documentos a la oficina de Medicaid de su elección.</li></ul>'
         what_if_i_cant_use_this_title: "¿Qué debo hacer si no puedo usar esta herramienta?"
         what_youll_do: Tres pasos simples
@@ -224,8 +224,9 @@ es:
     error_no_access: No logramos cargar los datos de nómina para esta cuenta. Haga clic en el enlace que recibió de su agencia del SNAP para intentarlo de nuevo.
     expired_invitations:
       show:
-        body_1_html: Si todavía no termina de verificar sus ingresos, envíe su información de ingresos desde el mismo sitio web de <a href="%{agency_url}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
+        body_1_html: Si todavía no termina de verificar sus ingresos, envíe su información de ingresos visitando %{website_link}.
         cta_button_html:
+          default: <a href="%{agency_url}" class="usa-button" target="_blank" rel="noopener noreferrer">Visite el sitio web de %{agency_portal_name}</a>
           la_ldh: <a href="%{agency_url}" class="usa-button" target="_blank" rel="noopener noreferrer">Visite el sitio web del LDH</a>
           sandbox: <a href="https://www.mass.gov/guides/how-to-contact-dta" class="usa-button" target="_blank" rel="noopener noreferrer">Obtenga más información en la Agencia de pruebas CBV</a>
         title: Su invitación para verificar ingresos ha expirado
@@ -350,7 +351,7 @@ es:
         client_comment_description: Información adicional del cliente sobre los ingresos de este trabajo
         client_comment_title: Comentarios del cliente
         consent_checkbox_label_html:
-          default: 'Marque esta casilla para confirmar lo siguiente: <ul class="margin-y-2"><li>La información proporcionada es, a su leal saber y entender, verdadera y está completa.</li><li>Se compromete a informar a %{agency_full_name} (%{agency_acronym}) de cualquier otro ingreso que no esté incluido en este informe o cualquier discrepancia que haya detectado en la información recopilada con esta herramienta.</li><li>Comprende que usted es el único responsable de proporcionar información precisa y completa. Por este motivo, cualquier información falsa o que no conste en el informe puede acarrear consecuencias legales.</li></ul> Al enviar este informe, autoriza su uso para fines de verificación de ingresos por parte del personal autorizado de %{agency_acronym}.'
+          default: 'Marque esta casilla para confirmar lo siguiente: <ul class="margin-y-2"><li>La información proporcionada es, a su leal saber y entender, verdadera y está completa.</li><li>Se compromete a informar a %{agency_name_with_acronym} de cualquier otro ingreso que no esté incluido en este informe o cualquier discrepancia que haya detectado en la información recopilada con esta herramienta.</li><li>Comprende que usted es el único responsable de proporcionar información precisa y completa. Por este motivo, cualquier información falsa o que no conste en el informe puede acarrear consecuencias legales.</li></ul> Al enviar este informe, autoriza su uso para fines de verificación de ingresos por parte del personal autorizado de %{agency_acronym}.'
         legal_header: Acuerdo Legal
         none_found: No encontramos ningún pago de este empleador.
         none_found_confirmed: Hemos confirmado que no hay pagos recientes de este empleador. Esto sucede cuando el cliente no ha recibido ingresos de este trabajo.
@@ -406,7 +407,7 @@ es:
         survey: Responda esta encuesta de 5 preguntas
         whats_next: "¿Qué sigue?"
         whats_next_1_li_1: Si no pudo encontrar empleo o no tiene recibos de sueldo, verifique sus ingresos en %{agency_acronym} en línea, en persona o por correo.
-        whats_next_1_li_2_html: Visite el <a href="%{agency_website}" target="_blank" rel="noopener noreferrer">sitio web de %{agency_portal_name}</a>
+        whats_next_1_li_2_html: Visite %{website_link}
         whats_next_1_title: Verificar otros ingresos, si es necesario.
         whats_next_2_li_1_html: Nos gustaría saber más sobre su experiencia al usar este sitio.
         whats_next_2_title: Ayude a mejorar esta experiencia.
@@ -436,7 +437,7 @@ es:
         description: 'No pudimos conectarnos al sistema de su empleador debido a un error. Para continuar, puede:'
         option_1: Volver a la búsqueda de empleadores para nuevamente intentar agregar este empleador.
         option_2: Volver a la búsqueda de empleadores para agregar otro trabajo.
-        option_3: Envíe su información de ingresos a este empleador visitando el sitio web de %{agency_portal_name}.
+        option_3: Envíe su información de ingresos a este empleador visitando %{website_label}.
         title: No pudimos acceder a la información de su empleador
     synchronizations:
       indicators:
@@ -453,14 +454,14 @@ es:
       other_ways_no_employer:
         go_to_agency_portal: Ir a %{agency_portal_name}
         other_ways_description: 'Si no hay otra cuenta en la que pueda iniciar sesión, es necesario entregar información de ingresos para este trabajo fuera de Verify My Income. Puede entregar los últimos 30 días de ingresos a %{agency_name}:'
-        other_ways_option_1_html: Usando el cargador de documentos en <a href="%{agency_website}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
+        other_ways_option_1_html: Usando el cargador de documentos en %{website_link}.
         other_ways_option_2: Enviando por correo o por fax documentos de ingresos impresos
         other_ways_option_3: Llevando documentos de ingresos a una oficina de %{agency_acronym}
         try_searching_again: Intente buscar de nuevo
       other_ways_with_employer:
         continue_to_income_summary: Continuar al Resumen de Ingresos
         more_options: Más opciones
-        more_options_1_html: Usando el cargador de documentos en <a href="%{agency_website}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
+        more_options_1_html: Usando el cargador de documentos en %{website_link}.
         more_options_2: Enviando por correo o por fax documentos de ingresos impresos
         more_options_3: Llevando documentos de ingresos a una oficina de %{agency_acronym}
         more_options_text: 'Puede entregar los últimos 30 días de ingresos a %{agency_name}:'
@@ -701,7 +702,7 @@ es:
       heading: "¿Necesita más tiempo en la sesión?"
     page:
       description: Las sesiones terminan después de 30 minutos de inactividad. Esto ayuda a que su información esté segura.
-      info_box_html: Para verificar sus ingresos, devuélvalo a <a href="%{agency_contact_website}" target="_blank" rel="noopener noreferrer">%{agency_portal_name}</a>.
+      info_box_html: Para verificar sus ingresos, devuélvalo a %{website_link}.
       title: Su sesión ha terminado.
   shared:
     agency_acronym:
@@ -713,6 +714,7 @@ es:
     agency_portal_name:
       la_ldh: LDH
       sandbox: VMI
+    agency_website_link_label: el sitio web de %{agency_portal_name}
     app_name:
       sandbox: CBVApp
     banner:

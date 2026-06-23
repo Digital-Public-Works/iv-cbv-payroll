@@ -4,7 +4,7 @@
 </h1>
 
 <p data-testid="summary-description">
-  <%= t(".description", start_date: format_date(@aggregator_report.from_date), end_date: format_date(@aggregator_report.to_date), agency_acronym: agency_translation("shared.agency_acronym")) %>
+  <%= t(".description", start_date: format_date(@aggregator_report.from_date), end_date: format_date(@aggregator_report.to_date), agency_acronym: agency_acronym_or_full_name) %>
 </p>
 
 <% @aggregator_report.summarize_by_employer.each_with_index do |(account_id, summary), index| %>
@@ -36,7 +36,7 @@
 <!-- Generic link flow, no invitation -->
 <% if @cbv_flow.cbv_flow_invitation.blank? %>
 <h2><%= t(".your_information") %></h2>
-<p><%= agency_translation(".must_match", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
+<p><%= agency_translation(".must_match", agency_acronym: agency_acronym_or_full_name) %></p>
 <div class="display-flex flex-justify font-body-md">
   <h3><%= t(".application_information") %></h3>
   <%= link_to t(".edit"), cbv_flow_applicant_information_path(force_show: true), class: "usa-link text-bold margin-0" %>
