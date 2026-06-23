@@ -3,7 +3,7 @@ concurrency: 10
 # if queue is empty, delay 15 seconds before trying again.
 delay: 15
 # check the report_sender queue twice as often as the events queues
-# Queue names are suffixed for non-standard environments (a11y, preview)
+# Queue names are suffixed for non-standard environments (a11y)
 # QUEUE_SUFFIX env var is set by Terraform (empty for demo/prod, "_a11y" for a11y, etc.)
 queues:
   - ["report_sender<%= ENV.fetch('QUEUE_SUFFIX', '') %>", 2]

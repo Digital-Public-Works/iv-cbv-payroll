@@ -6,7 +6,7 @@ variable "environment_name" {
 variable "use_environment_suffix" {
   type        = bool
   default     = false
-  description = "Whether to append environment name to EventBridge and IAM role names. Set to true for non-standard environments (a11y, preview) to avoid resource conflicts. Standard environments (demo, prod) keep original names for backward compatibility."
+  description = "Whether to append environment name to EventBridge and IAM role names. Set to true for non-standard environments (a11y) to avoid resource conflicts. Standard environments (demo, prod) keep original names for backward compatibility."
 }
 
 variable "domain" {

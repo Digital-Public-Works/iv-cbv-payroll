@@ -11,7 +11,7 @@ data "aws_route53_zone" "domain" {
 }
 
 # SES Configuration Set "require-tls" is created in standard environments (demo, prod) and shared across all environments.
-# Other environments (a11y, preview) reference it by name.
+# Other environments (a11y) reference it by name.
 resource "aws_ses_configuration_set" "require_tls" {
   count = var.environment_name == "demo" || var.environment_name == "prod" ? 1 : 0
   name  = "require-tls"

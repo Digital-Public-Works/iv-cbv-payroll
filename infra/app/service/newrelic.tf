@@ -1,5 +1,5 @@
 # NewRelic IAM role is created in standard environments (demo, prod) and shared across all environments.
-# Other environments (a11y, preview) reference it via data source.
+# Other environments (a11y) reference it via data source.
 resource "aws_iam_role" "newrelic_metrics" {
   count = (var.environment_name == "demo" || var.environment_name == "prod") && !local.is_temporary ? 1 : 0
   # checkov:skip=CKV_AWS_61:This policy principal needs to be broad to allow for monitoring all services.

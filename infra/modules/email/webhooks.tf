@@ -32,7 +32,7 @@ locals {
 ############################################################################################
 resource "aws_sesv2_configuration_set_event_destination" "email_notifications" {
   configuration_set_name = (var.environment_name == "demo" || var.environment_name == "prod") ? aws_ses_configuration_set.require_tls[0].name : "require-tls"
-  # Use environment-suffixed name only for non-standard environments (a11y, preview)
+  # Use environment-suffixed name only for non-standard environments (a11y)
   # Standard environments (demo, prod) use original name for backward compatibility
   event_destination_name = "eventbridge-email-events${local.suffix}"
 
@@ -61,7 +61,7 @@ resource "aws_sesv2_configuration_set_event_destination" "email_notifications" {
 ## (note: EventBridge was formerly known as "CloudWatch Events")
 ############################################################################################
 resource "aws_cloudwatch_event_rule" "ses_events" {
-  # Use environment-suffixed name only for non-standard environments (a11y, preview)
+  # Use environment-suffixed name only for non-standard environments (a11y)
   # Standard environments (demo, prod) use original name for backward compatibility
   name        = "ForwardSESEventsToNewRelic${local.suffix}"
   description = "Forward AWS SES events to NewRelic custom event (AWSSESEvent)"
@@ -72,7 +72,7 @@ resource "aws_cloudwatch_event_rule" "ses_events" {
 }
 
 resource "aws_iam_role" "ses_events_to_newrelic" {
-  # Use environment-suffixed name only for non-standard environments (a11y, preview)
+  # Use environment-suffixed name only for non-standard environments (a11y)
   # Standard environments (demo, prod) use original name for backward compatibility
   name               = "SESEventsToNewRelic${local.suffix}"
   assume_role_policy = <<EOF
@@ -89,7 +89,7 @@ resource "aws_iam_role" "ses_events_to_newrelic" {
   EOF
 }
 resource "aws_iam_role_policy" "ses_events_to_newrelic" {
-  # Use environment-suffixed name only for non-standard environments (a11y, preview)
+  # Use environment-suffixed name only for non-standard environments (a11y)
   # Standard environments (demo, prod) use original name for backward compatibility
   name = "SESEventsToNewRelic${local.suffix}"
   role = aws_iam_role.ses_events_to_newrelic.id
@@ -133,7 +133,7 @@ resource "aws_cloudwatch_event_target" "ses_events" {
 }
 
 resource "aws_cloudwatch_event_api_destination" "newrelic" {
-  # Use environment-suffixed name only for non-standard environments (a11y, preview)
+  # Use environment-suffixed name only for non-standard environments (a11y)
   # Standard environments (demo, prod) use original name for backward compatibility
   name                = "NewRelic${local.suffix}"
   description         = "Send SES events to NewRelic"
@@ -143,7 +143,7 @@ resource "aws_cloudwatch_event_api_destination" "newrelic" {
 }
 
 resource "aws_cloudwatch_event_connection" "newrelic" {
-  # Use environment-suffixed name only for non-standard environments (a11y, preview)
+  # Use environment-suffixed name only for non-standard environments (a11y)
   # Standard environments (demo, prod) use original name for backward compatibility
   name               = "NewRelic${local.suffix}"
   authorization_type = "API_KEY"

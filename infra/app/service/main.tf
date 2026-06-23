@@ -172,7 +172,7 @@ module "sqs_queues" {
   source = "../../modules/sqs-queues"
 
   environment_name = var.environment_name
-  # Only use environment suffix for non-standard environments (a11y, preview) to avoid
+  # Only use environment suffix for non-standard environments (a11y) to avoid
   # resource name conflicts. Standard environments (demo, prod) keep original names
   # for backward compatibility and to avoid state migration issues.
   use_environment_suffix     = var.environment_name != "demo" && var.environment_name != "prod"
@@ -232,7 +232,7 @@ module "service" {
       BUCKET_NAME           = local.storage_config.bucket_name
       STATIC_ASSETS_CDN_URL = "https://static.verifymyincome.org"
       # Queue suffix for SQS queue names. Standard environments (demo, prod) have no suffix.
-      # Non-standard environments (a11y, preview) append "_<environment_name>" to queue names.
+      # Non-standard environments (a11y) append "_<environment_name>" to queue names.
       QUEUE_SUFFIX = var.environment_name != "demo" && var.environment_name != "prod" ? "_${var.environment_name}" : ""
     },
     var.environment_name == "prod" ? {
@@ -292,7 +292,7 @@ module "email" {
   count            = !local.is_temporary ? 1 : 0
   source           = "../../modules/email"
   environment_name = var.environment_name
-  # Only use environment suffix for non-standard environments (a11y, preview) to avoid
+  # Only use environment suffix for non-standard environments (a11y) to avoid
   # resource name conflicts. Standard environments (demo, prod) keep original names
   # for backward compatibility and to avoid state migration issues.
   use_environment_suffix      = var.environment_name != "demo" && var.environment_name != "prod"

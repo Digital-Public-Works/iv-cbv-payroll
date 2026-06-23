@@ -1,7 +1,7 @@
 locals {
   # Resource naming strategy:
   # - Standard environments (demo, prod): no suffix (backward compatible, no state migration)
-  # - New environments (a11y, preview): with suffix (prevents resource name conflicts)
+  # - New environments (a11y): with suffix (prevents resource name conflicts)
   #
   # This allows multiple environments to coexist without shared resource conflicts,
   # while maintaining backward compatibility for existing deployments.
