@@ -123,7 +123,8 @@ class Cbv::PreviewController < ApplicationController
     @cbv_flow.confirmation_code ||= "PREVIEW0000"
     @invitation_link = root_url
     render_as("successes")
-    
+  end
+
   # Renders the JSON payload that would be transmitted to the partner agency
   # (the same hash built by CbvFlowToJson for the webhook/JSON transmitters).
   # Useful for previewing how the sensitive-output toggles (Full SSN, direct
