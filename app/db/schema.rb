@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_05_26_155906) do
+ActiveRecord::Schema[7.2].define(version: 2026_06_15_120100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -135,6 +135,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_26_155906) do
     t.string "state_name"
     t.string "partner_identifier_name"
     t.boolean "include_paystubs", default: false, null: false
+    t.boolean "include_full_ssn", default: false, null: false
+    t.boolean "include_direct_deposit_last_4", default: false, null: false
     t.index ["partner_id"], name: "index_partner_configs_on_partner_id", unique: true
   end
 

@@ -273,7 +273,7 @@ RSpec.describe PartnerConfigLoader do
     end
 
     it "warns on missing recommended translations" do
-      valid_yaml["translations"]["en"].delete("shared.agency_acronym")
+      valid_yaml["translations"]["en"].delete("shared.agency_full_name")
       yaml_file.reopen(yaml_file.path, "w")
       yaml_file.write(valid_yaml.to_yaml)
       yaml_file.rewind
@@ -282,7 +282,21 @@ RSpec.describe PartnerConfigLoader do
       loader.load!
       loader.validate!
       expect(loader.valid?).to be true
-      expect(loader.warnings).to include(/Missing recommended translation.*en.*shared\.agency_acronym/)
+      expect(loader.warnings).to include(/Missing recommended translation.*en.*shared\.agency_full_name/)
+    end
+
+    it "does not warn when the optional agency_acronym translation is absent" do
+      valid_yaml["translations"]["en"].delete("shared.agency_acronym")
+      valid_yaml["translations"]["es"].delete("shared.agency_acronym")
+      yaml_file.reopen(yaml_file.path, "w")
+      yaml_file.write(valid_yaml.to_yaml)
+      yaml_file.rewind
+
+      loader = described_class.new(yaml_file.path)
+      loader.load!
+      loader.validate!
+      expect(loader.valid?).to be true
+      expect(loader.warnings).not_to include(/shared\.agency_acronym/)
     end
 
     context "with $ENV_VAR references" do
@@ -554,6 +568,53 @@ RSpec.describe PartnerConfigLoader do
 
     it "raises for unknown partner" do
       expect { described_class.export("nonexistent") }.to raise_error(ActiveRecord::RecordNotFound)
+    end
+  end
+
+  describe "output configuration fields" do
+    it "applies the flat include_full_ssn and include_direct_deposit_last_4 flags" do
+      valid_yaml["include_full_ssn"] = true
+      valid_yaml["include_direct_deposit_last_4"] = true
+      yaml_file.reopen(yaml_file.path, "w")
+      yaml_file.write(valid_yaml.to_yaml)
+      yaml_file.rewind
+
+      loader = described_class.new(yaml_file.path)
+      loader.load!
+      loader.validate!
+      loader.apply!
+
+      partner_config = PartnerConfig.find_by(partner_id: "test_partner")
+      expect(partner_config.include_full_ssn).to be(true)
+      expect(partner_config.include_direct_deposit_last_4).to be(true)
+    end
+
+    it "defaults the flags to false when omitted" do
+      loader = described_class.new(yaml_file.path)
+      loader.load!
+      loader.validate!
+      loader.apply!
+
+      partner_config = PartnerConfig.find_by(partner_id: "test_partner")
+      expect(partner_config.include_full_ssn).to be(false)
+      expect(partner_config.include_direct_deposit_last_4).to be(false)
+    end
+
+    it "exports the flat flags" do
+      valid_yaml["include_full_ssn"] = true
+      valid_yaml["include_direct_deposit_last_4"] = false
+      yaml_file.reopen(yaml_file.path, "w")
+      yaml_file.write(valid_yaml.to_yaml)
+      yaml_file.rewind
+
+      loader = described_class.new(yaml_file.path)
+      loader.load!
+      loader.validate!
+      loader.apply!
+
+      data = described_class.export("test_partner")
+      expect(data["include_full_ssn"]).to be(true)
+      expect(data["include_direct_deposit_last_4"]).to be(false)
     end
   end
 end

@@ -5,7 +5,7 @@
 </div>
 
 <p>
-  <%= t(".warning_1", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
+  <%= t(".warning_1", agency_acronym: agency_acronym_or_full_name) %></p>
   <br>
   <%= t(".warning_2") %>
 </p>
@@ -14,14 +14,14 @@
 <div data-controller="cbv-attestation-check">
   <%= form_with model: @cbv_flow, url: cbv_flow_submit_path, html: { class: "usa-form maxw-mobile-lg" }, builder: UswdsFormBuilder, method: "patch" do |f| %>
     <span class="d-block"> <abbr title="required" class="usa-hint--required">*</abbr> Required </span>
-    <%= f.check_box :consent_to_authorized_use, { 'label': agency_translation(".consent_checkbox_label_html", agency_full_name: agency_translation("shared.agency_full_name"), agency_acronym: agency_translation("shared.agency_acronym")),
+    <%= f.check_box :consent_to_authorized_use, { 'label': agency_translation(".consent_checkbox_label_html", agency_name_with_acronym: agency_name_with_acronym, agency_full_name: agency_translation("shared.agency_full_name"), agency_acronym: agency_acronym_or_full_name),
                                                   required: true,
                                                   data: {
                                                     action: "change->cbv-attestation-check#setButton",
                                                     cbv_attestation_check_target: "attestationCheckbox"
                                                   }
     } %>
-    <%= f.submit t(".share_report_button", agency_acronym: agency_translation("shared.agency_acronym")),
+    <%= f.submit t(".share_report_button", agency_acronym: agency_acronym_or_full_name),
          data: { cbv_attestation_check_target: "submitButton" },
          class: "btn btn-primary usa-button margin-top-5 margin-bottom-2" %>
     <%= button_tag t("back"),
