@@ -42,8 +42,8 @@ class ClientAgencyConfig
   def initialize(load_all_agency_configs)
     # This runs during bootup even before migrations. this is a temp guard until these migrations are made
     # TODO: make this less brittle
-    return unless ActiveRecord::Base.connection.column_exists?(:partner_configs, :partner_identifier_name) &&
-      ActiveRecord::Base.connection.data_source_exists?(:partner_transmission_methods)
+    # This should be resolved by dynamic partner load, PF-642
+    return unless ActiveRecord::Base.connection.column_exists?(:partner_configs, :include_full_ssn)
 
     @client_agencies = PartnerConfig.all.each_with_object({}) do |config, h|
       next unless load_all_agency_configs ||
