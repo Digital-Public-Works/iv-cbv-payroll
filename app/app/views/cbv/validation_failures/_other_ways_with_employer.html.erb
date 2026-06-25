@@ -18,9 +18,9 @@
 <p><%= t(".more_options_text", agency_name: agency_translation("shared.agency_full_name")) %></p>
 
 <ul>
-  <li><%= t(".more_options_1_html", agency_portal_name: agency_translation("shared.agency_portal_name"), agency_website: agency_url) %></li>
+  <li><%= t(".more_options_1_html", website_link: agency_website_link(label: agency_translation("shared.agency_portal_name"))) %></li>
   <li><%= t(".more_options_2") %></li>
-  <li><%= t(".more_options_3", agency_acronym: agency_translation("shared.agency_acronym")) %></li>
+  <li><%= t(".more_options_3", agency_acronym: agency_acronym_or_full_name) %></li>
 </ul>
 
 <ul class="usa-button-group margin-top-5">

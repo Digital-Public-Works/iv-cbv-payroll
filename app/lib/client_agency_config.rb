@@ -42,8 +42,8 @@ class ClientAgencyConfig
   def initialize(load_all_agency_configs)
     # This runs during bootup even before migrations. this is a temp guard until these migrations are made
     # TODO: make this less brittle
-    return unless ActiveRecord::Base.connection.column_exists?(:partner_configs, :partner_identifier_name) &&
-      ActiveRecord::Base.connection.data_source_exists?(:partner_transmission_methods)
+    # This should be resolved by dynamic partner load, PF-642
+    return unless ActiveRecord::Base.connection.column_exists?(:partner_configs, :include_full_ssn)
 
     @client_agencies = PartnerConfig.all.each_with_object({}) do |config, h|
       next unless load_all_agency_configs ||
@@ -79,10 +79,13 @@ class ClientAgencyConfig
   end
 
   REQUIRED_TRANSLATION_KEYS = %w[
-      shared.agency_acronym
       shared.agency_full_name
       shared.header.cbv_flow_title
       shared.header.preheader
+    ].freeze
+
+  OPTIONAL_TRANSLATION_KEYS = %w[
+      shared.agency_acronym
     ].freeze
 
   def validate_partner_translations
@@ -128,6 +131,8 @@ class ClientAgencyConfig
       agency_domain
       authorized_emails
       default_origin
+      include_full_ssn
+      include_direct_deposit_last_4
       invitation_valid_days
       logo_path
       logo_square_path
@@ -200,6 +205,9 @@ class ClientAgencyConfig
       @report_customization_show_earnings_list = partner_config.report_customization_show_earnings_list
       @generic_links_disabled = !partner_config.generic_links_enabled
       @invitation_links_enabled = partner_config.invitation_links_enabled
+      @include_full_ssn = partner_config.include_full_ssn
+      @include_direct_deposit_last_4 = partner_config.include_direct_deposit_last_4
+
 
       @require_applicant_information_on_invitation = partner_config.partner_application_attributes.exists?(required: true)
       @include_invitation_details_on_weekly_report = partner_config.respond_to?(:include_invitation_details_on_weekly_report) &&

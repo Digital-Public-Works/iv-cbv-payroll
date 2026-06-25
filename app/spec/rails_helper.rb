@@ -104,6 +104,7 @@ RSpec.configure do |config|
     PartnerApplicationAttribute.delete_all
     PartnerTransmissionConfig.delete_all
     PartnerTransmissionMethod.delete_all
+    PartnerTranslation.delete_all
     PartnerConfig.delete_all
 
     @sandbox = PartnerConfig.find_by(partner_id: 'sandbox') || FactoryBot.create(:partner_config)
@@ -189,6 +190,21 @@ RSpec.configure do |config|
         show_on_applicant_form: false,
         show_on_caseworker_form: true
       )
+    end
+
+    # Mirror production for AZ DES / PA DHS partner translations, which live in the
+    # database (config/locales no longer carries az_des/pa_dhs keys). The test DB is
+    # built from schema.rb and does not run data migrations, so load the same data the
+    # migration seeds — keeping the migration the single source of truth.
+    require Rails.root.join("db/migrate/20260615120000_seed_az_des_pa_dhs_partner_translations.rb").to_s
+    SeedAzDesPaDhsPartnerTranslations::TRANSLATIONS.each do |group, entries|
+      partner_id, locale = group.split("/")
+      config = PartnerConfig.find_by(partner_id: partner_id)
+      next unless config
+
+      entries.each do |key, value|
+        config.partner_translations.find_or_create_by!(locale: locale, key: key) { |t| t.value = value }
+      end
     end
 
     ClientAgencyConfig.reset!

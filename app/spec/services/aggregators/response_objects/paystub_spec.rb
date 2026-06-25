@@ -229,5 +229,180 @@ RSpec.describe Aggregators::ResponseObjects::Paystub, type: :model do
         paystub = described_class.from_argyle(argyle_response)
       end
     end
+
+    context 'direct deposit accounts' do
+      let(:base_argyle_response) do
+        {
+          "account" => "67890",
+          "gross_pay" => "6000.34",
+          "net_pay" => "4800.56",
+          "gross_pay_ytd" => "24000.78",
+          "paystub_period" => { "start_date" => "2023-01-01", "end_date" => "2023-01-15" },
+          "paystub_date" => "2023-01-20",
+          "hours" => 80,
+          "gross_pay_list" => [
+            {
+              "name" => "Regular", "type" => "base", "start_date" => "2025-02-10",
+              "end_date" => "2025-02-24", "rate" => "23.1599", "hours" => "65.5861",
+              "amount" => "1518.97", "hours_ytd" => "342.1600", "amount_ytd" => "7924.45"
+            }
+          ],
+          "deduction_list" => []
+        }
+      end
+
+      it 'extracts last 4 from a single destination' do
+        response = base_argyle_response.merge(
+          "destinations" => [
+            { "ach_deposit_account" => { "account_number" => "xxxxxx1111" } }
+          ]
+        )
+
+        paystub = described_class.from_argyle(response)
+
+        expect(paystub.direct_deposit_accounts).to eq([ "1111" ])
+      end
+
+      it 'extracts last 4 from multiple destinations, preserving order' do
+        response = base_argyle_response.merge(
+          "destinations" => [
+            { "ach_deposit_account" => { "account_number" => "xxxxxx1111" } },
+            { "ach_deposit_account" => { "account_number" => "xxxxxxxxxx2222" } }
+          ]
+        )
+
+        paystub = described_class.from_argyle(response)
+
+        expect(paystub.direct_deposit_accounts).to eq([ "1111", "2222" ])
+      end
+
+      it 'returns an empty array when destinations key is missing' do
+        paystub = described_class.from_argyle(base_argyle_response)
+
+        expect(paystub.direct_deposit_accounts).to eq([])
+      end
+
+      it 'returns an empty array when destinations is an empty array' do
+        response = base_argyle_response.merge("destinations" => [])
+        paystub = described_class.from_argyle(response)
+
+        expect(paystub.direct_deposit_accounts).to eq([])
+      end
+
+      it 'skips destinations with no ach_deposit_account' do
+        response = base_argyle_response.merge(
+          "destinations" => [
+            { "ach_deposit_account" => nil },
+            { "ach_deposit_account" => { "account_number" => "xxxxxx9999" } }
+          ]
+        )
+
+        paystub = described_class.from_argyle(response)
+
+        expect(paystub.direct_deposit_accounts).to eq([ "9999" ])
+      end
+
+      it 'skips destinations whose account_number has no digits' do
+        response = base_argyle_response.merge(
+          "destinations" => [
+            { "ach_deposit_account" => { "account_number" => "xxxxxx" } }
+          ]
+        )
+
+        paystub = described_class.from_argyle(response)
+
+        expect(paystub.direct_deposit_accounts).to eq([])
+      end
+
+      it 'handles an unmasked account_number by taking the last 4 digits' do
+        response = base_argyle_response.merge(
+          "destinations" => [
+            { "ach_deposit_account" => { "account_number" => "987654321" } }
+          ]
+        )
+        paystub = described_class.from_argyle(response)
+
+        expect(paystub.direct_deposit_accounts).to eq([ "4321" ])
+      end
+
+      it 'does not treat payout card destinations as direct deposit accounts' do
+        response = base_argyle_response.merge(
+          "destinations" => [
+            { "card" => { "card_number" => "xxxxxxxx5678" } }
+          ]
+        )
+
+        paystub = described_class.from_argyle(response)
+
+        expect(paystub.direct_deposit_accounts).to eq([])
+      end
+    end
+
+    context 'payout card accounts' do
+      let(:base_argyle_response) do
+        {
+          "account" => "67890",
+          "gross_pay" => "6000.34",
+          "net_pay" => "4800.56",
+          "gross_pay_ytd" => "24000.78",
+          "paystub_period" => { "start_date" => "2023-01-01", "end_date" => "2023-01-15" },
+          "paystub_date" => "2023-01-20",
+          "hours" => 80,
+          "gross_pay_list" => [],
+          "deduction_list" => []
+        }
+      end
+
+      it 'extracts last 4 from a card destination' do
+        response = base_argyle_response.merge(
+          "destinations" => [
+            { "card" => { "card_number" => "xxxxxxxx5678" } }
+          ]
+        )
+
+        paystub = described_class.from_argyle(response)
+
+        expect(paystub.payout_card_accounts).to eq([ "5678" ])
+      end
+
+      it 'extracts last 4 from multiple card destinations, preserving order' do
+        response = base_argyle_response.merge(
+          "destinations" => [
+            { "card" => { "card_number" => "xxxx5678" } },
+            { "card" => { "card_number" => "6789" } }
+          ]
+        )
+
+        paystub = described_class.from_argyle(response)
+
+        expect(paystub.payout_card_accounts).to eq([ "5678", "6789" ])
+      end
+
+      it 'keeps direct deposit and payout card destinations separate' do
+        response = base_argyle_response.merge(
+          "destinations" => [
+            { "ach_deposit_account" => { "account_number" => "xxxxxx1111" } },
+            { "card" => { "card_number" => "xxxxxxxx5678" } }
+          ]
+        )
+
+        paystub = described_class.from_argyle(response)
+
+        expect(paystub.direct_deposit_accounts).to eq([ "1111" ])
+        expect(paystub.payout_card_accounts).to eq([ "5678" ])
+      end
+
+      it 'returns an empty array when there are no card destinations' do
+        response = base_argyle_response.merge(
+          "destinations" => [
+            { "ach_deposit_account" => { "account_number" => "xxxxxx1111" } }
+          ]
+        )
+
+        paystub = described_class.from_argyle(response)
+
+        expect(paystub.payout_card_accounts).to eq([])
+      end
+    end
   end
 end
