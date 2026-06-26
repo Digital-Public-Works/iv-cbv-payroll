@@ -1,5 +1,5 @@
 class CaseWorkerTransmitterJob < ApplicationJob
-  queue_as :report_sender
+  queue_as { self.class.queue_with_suffix(:report_sender) }
 
   def perform(cbv_flow_id)
     cbv_flow = CbvFlow.find(cbv_flow_id)

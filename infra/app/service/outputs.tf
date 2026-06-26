@@ -22,3 +22,8 @@ output "service_endpoint" {
 output "service_name" {
   value = local.service_config.service_name
 }
+
+output "aws_region" {
+  description = "The AWS region for this service"
+  value       = data.aws_region.current.name
+}
