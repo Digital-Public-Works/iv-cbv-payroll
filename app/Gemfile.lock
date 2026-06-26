@@ -367,7 +367,7 @@ GEM
       date
       stringio
     public_suffix (6.0.2)
-    puma (6.6.0)
+    puma (6.6.1)
       nio4r (~> 2.0)
     racc (1.8.1)
     rack (3.2.6)
@@ -638,7 +638,7 @@ DEPENDENCIES
   pg-aws_rds_iam (~> 0.7.0)
   premailer-rails
   pry
-  puma (~> 6.6.0)
+  puma (~> 6.6.1)
   rack (~> 3.2.6)
   rack-mini-profiler
   rails (~> 7.2.3, >= 7.2.3.1)
