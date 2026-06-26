@@ -79,8 +79,8 @@ GEM
       minitest (>= 5.1, < 6)
       securerandom (>= 0.3)
       tzinfo (~> 2.0, >= 2.0.5)
-    addressable (2.8.7)
-      public_suffix (>= 2.0.2, < 7.0)
+    addressable (2.9.0)
+      public_suffix (>= 2.0.2, < 8.0)
     afm (1.0.0)
     ast (2.4.3)
     aws-actionmailer-ses (1.0.0)
@@ -172,13 +172,13 @@ GEM
     combine_pdf (1.0.31)
       matrix
       ruby-rc4 (>= 0.1.5)
-    concurrent-ruby (1.3.6)
+    concurrent-ruby (1.3.7)
     connection_pool (3.0.2)
     crack (1.0.0)
       bigdecimal
       rexml
     crass (1.0.6)
-    css_parser (1.17.1)
+    css_parser (1.22.0)
       addressable
     cssbundling-rails (1.4.1)
       railties (>= 6.0.0)
@@ -193,10 +193,10 @@ GEM
     descendants_tracker (0.0.4)
       thread_safe (~> 0.3, >= 0.3.1)
     device_detector (1.1.3)
-    devise (4.9.4)
+    devise (5.0.4)
       bcrypt (~> 3.0)
       orm_adapter (~> 0.1)
-      railties (>= 4.1.0)
+      railties (>= 7.0)
       responders
       warden (~> 1.2.3)
     diff-lcs (1.5.1)
@@ -208,7 +208,7 @@ GEM
       railties (>= 3.2)
     drb (2.2.3)
     dumb_delegator (1.1.0)
-    erb (6.0.2)
+    erb (6.0.4)
     erb_lint (0.9.0)
       activesupport
       better_html (>= 2.0.1)
@@ -219,11 +219,11 @@ GEM
     erubi (1.13.1)
     factory_bot (6.5.6)
       activesupport (>= 6.1.0)
-    faraday (2.14.1)
+    faraday (2.14.2)
       faraday-net_http (>= 2.0, < 3.5)
       json
       logger
-    faraday-net_http (3.4.2)
+    faraday-net_http (3.4.4)
       net-http (~> 0.5)
     globalid (1.3.0)
       activesupport (>= 6.1)
@@ -235,7 +235,7 @@ GEM
     highline (3.1.0)
       reline
     htmlentities (4.3.4)
-    i18n (1.14.8)
+    i18n (1.15.1)
       concurrent-ruby (~> 1.0)
     i18n-tasks (1.0.14)
       activesupport (>= 4.0.2)
@@ -249,7 +249,7 @@ GEM
       terminal-table (>= 1.5.1)
     ice_nine (0.11.2)
     io-console (0.8.2)
-    irb (1.17.0)
+    irb (1.18.0)
       pp (>= 0.6.0)
       prism (>= 1.3.0)
       rdoc (>= 4.0.0)
@@ -257,8 +257,8 @@ GEM
     jmespath (1.6.2)
     jsbundling-rails (1.3.1)
       railties (>= 6.0.0)
-    json (2.19.3)
-    jwt (3.1.2)
+    json (2.19.9)
+    jwt (3.2.0)
       base64
     language_server-protocol (3.17.0.5)
     lint_roller (1.1.0)
@@ -287,7 +287,7 @@ GEM
     mutex_m (0.3.0)
     net-http (0.9.1)
       uri (>= 0.11.1)
-    net-imap (0.5.10)
+    net-imap (0.5.15)
       date
       net-protocol
     net-pop (0.1.2)
@@ -301,13 +301,13 @@ GEM
     net-ssh (7.3.0)
     newrelic_rpm (9.21.0)
     nio4r (2.7.5)
-    nokogiri (1.19.2-aarch64-linux-gnu)
+    nokogiri (1.19.4-aarch64-linux-gnu)
       racc (~> 1.4)
-    nokogiri (1.19.2-arm64-darwin)
+    nokogiri (1.19.4-arm64-darwin)
       racc (~> 1.4)
-    nokogiri (1.19.2-x86_64-darwin)
+    nokogiri (1.19.4-x86_64-darwin)
       racc (~> 1.4)
-    nokogiri (1.19.2-x86_64-linux-gnu)
+    nokogiri (1.19.4-x86_64-linux-gnu)
       racc (~> 1.4)
     oauth2 (2.0.18)
       faraday (>= 0.17.3, < 4.0)
@@ -363,11 +363,11 @@ GEM
       coderay (~> 1.1)
       method_source (~> 1.0)
       reline (>= 0.6.0)
-    psych (5.3.1)
+    psych (5.4.0)
       date
       stringio
-    public_suffix (6.0.2)
-    puma (6.6.0)
+    public_suffix (7.0.5)
+    puma (7.2.1)
       nio4r (~> 2.0)
     racc (1.8.1)
     rack (3.2.6)
@@ -428,7 +428,7 @@ GEM
       tsort (>= 0.2)
       zeitwerk (~> 2.6)
     rainbow (3.1.1)
-    rake (13.3.1)
+    rake (13.4.2)
     rdoc (7.2.0)
       erb
       psych (>= 4.0.0)
@@ -436,9 +436,9 @@ GEM
     regexp_parser (2.11.3)
     reline (0.6.3)
       io-console (~> 0.5)
-    responders (3.1.1)
-      actionpack (>= 5.2)
-      railties (>= 5.2)
+    responders (3.2.0)
+      actionpack (>= 7.0)
+      railties (>= 7.0)
     rexml (3.4.4)
     rspec-core (3.13.0)
       rspec-support (~> 3.13.0)
@@ -581,7 +581,7 @@ GEM
     wkhtmltopdf-binary (0.12.6.10)
     xpath (3.2.0)
       nokogiri (~> 1.8)
-    zeitwerk (2.7.5)
+    zeitwerk (2.8.2)
 
 PLATFORMS
   aarch64-linux
@@ -614,18 +614,18 @@ DEPENDENCIES
   debase-ruby_core_source (~> 4.0)
   debug
   device_detector
-  devise (~> 4.9)
+  devise (~> 5.0)
   discard (~> 1.4)
   dotenv-rails (~> 2.7)
   erb_lint
   factory_bot (~> 6.5)
-  faraday (~> 2.13)
+  faraday (~> 2.14)
   gpgme (~> 2.0, >= 2.0.12)
   i18n-tasks (~> 1.0)
   jsbundling-rails
   mixpanel-ruby
   mutex_m
-  net-imap (= 0.5.10)
+  net-imap (= 0.5.15)
   net-sftp
   net-ssh
   newrelic_rpm
@@ -638,7 +638,7 @@ DEPENDENCIES
   pg-aws_rds_iam (~> 0.7.0)
   premailer-rails
   pry
-  puma (~> 6.6.0)
+  puma (~> 7.2.1)
   rack (~> 3.2.6)
   rack-mini-profiler
   rails (~> 7.2.3, >= 7.2.3.1)
