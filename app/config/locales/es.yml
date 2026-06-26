@@ -198,6 +198,7 @@ es:
         checkbox:
           default: Marque esta casilla para permitirnos acceder a su información de pago y compartirla con %{agency_name_with_acronym}. No usaremos la información para ningún otro propósito ni la volveremos a divulgar a ninguna otra parte.
         continue: Comenzar
+        follow_these_steps: Siga estos pasos
         header: Verifiquemos sus ingresos
         step1: Encuentre su empleador o empresa de nómina (payroll company)
         step1_description: Empresas como ADP, Workday, Uber o Lyft tienen información sobre sus pagos. Busque su trabajo y use el mismo usuario y contraseña que usa para ver sus recibos de pago en línea.
@@ -214,7 +215,6 @@ es:
           default: Para obtener más información sobre cómo enviar documentos, visite %{website_link}.
           la_ldh: 'Usted puede: <ul><li>Subir documentos a través del Portal de Autoservicio en línea en <a href="https://mymedicaid.la.gov/" target="_blank" rel="noopener noreferrer">https://mymedicaid.la.gov/</a></li><li>Enviar documentos por correo postal: Louisiana Medicaid/LaCHIP, P.O. Box 91283, Baton Rouge, LA 70821-9278</li><li>Enviar documentos por correo electrónico: <a href="mailto:MyMedicaid@la.gov">MyMedicaid@la.gov</a></li><li>Llevar sus documentos a la oficina de Medicaid de su elección.</li></ul>'
         what_if_i_cant_use_this_title: "¿Qué debo hacer si no puedo usar esta herramienta?"
-        what_youll_do: Tres pasos simples
         who_is_this_for_body: Puede usar esta herramienta si ha recibido ingresos en los últimos 90 días (incluso si ya no está trabajando). Además, le recordamos que puede acceder a sus recibos de pago en línea si brinda servicios a través de plataformas digitales, como Uber, Lyft o Amazon Flex.
         who_is_this_for_title: "¿Quién puede usar este herramienta?"
     error_invalid_link: Se utilizó un enlace no válido para iniciar CBV. Vuelva a hacer clic en el enlace, o bien directamente póngase en contacto con su asistente de caso para obtener ayuda.
