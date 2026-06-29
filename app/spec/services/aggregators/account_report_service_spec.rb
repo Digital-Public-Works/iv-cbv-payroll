@@ -163,7 +163,7 @@ RSpec.describe Aggregators::AccountReportService do
     end
 
     context 'with empty report data (no identity records)' do
-      let(:account_id) { 'empty-account-id' }
+      let(:account_id) { '00000000-0000-0000-0000-000000000000' }
       let!(:payroll_account) do
         create(
           :payroll_account,
@@ -214,7 +214,7 @@ RSpec.describe Aggregators::AccountReportService do
     end
 
     context 'with an invalid report' do
-      let(:account_id) { 'empty-account-id' }
+      let(:account_id) { '00000000-0000-0000-0000-000000000000' }
       let!(:payroll_account) do
         create(
           :payroll_account,
@@ -272,7 +272,7 @@ RSpec.describe Aggregators::AccountReportService do
     end
 
     context 'with mismatched account_id' do
-      let(:account_id) { 'wrong-account-id' }
+      let(:account_id) { '11111111-1111-1111-1111-111111111111' }
       let!(:payroll_account) do
         create(
           :payroll_account,

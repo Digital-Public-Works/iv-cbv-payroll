@@ -72,7 +72,7 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
       allow(argyle_service).to receive(:fetch_employments_api).and_return(employments_json)
       allow(argyle_service).to receive(:fetch_paystubs_api).and_return(paystubs_json)
       allow(argyle_service).to receive(:fetch_account_api).and_return(account_json)
-      allow(argyle_service).to receive(:fetch_gigs_api).and_return(nil)
+      allow(argyle_service).to receive(:fetch_gigs_api).and_return({ "results" => [] })
     end
 
     around do |ex|

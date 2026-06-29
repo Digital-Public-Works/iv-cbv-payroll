@@ -34,16 +34,18 @@ module Aggregators::AggregatorReports
     end
 
     def fetch_report_data
-      begin
-        all_successful = true
-        @payroll_accounts.each do |payroll_account|
-          fetch_report_data_for_account(payroll_account)
-        end
-      rescue StandardError => e
-        Rails.logger.error("Report Fetch Error: #{e.message}")
-        all_successful = false
+      @payroll_accounts.each do |payroll_account|
+        fetch_report_data_for_account(payroll_account)
       end
-      @has_fetched = all_successful
+      @has_fetched = true
+    rescue StandardError => e
+      # Do not swallow the error. A transient aggregator failure here leaves the
+      # data collections (@identities, @employments, etc.) partially populated,
+      # but the webhook-derived flags in #summarize_by_employer still report
+      # "succeeded".
+      @has_fetched = false
+      Rails.logger.error("Report Fetch Error: #{e.message}")
+      raise
     end
 
     def find_account_report(account_id)
