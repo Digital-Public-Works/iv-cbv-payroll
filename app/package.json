@@ -29,7 +29,7 @@
   },
   "devDependencies": {
     "jsdom": "^27.0.0",
-    "prettier": "^3.7.4",
+    "prettier": "^3.9.3",
     "vitest": "^4.1.9"
   },
   "overrides": {
