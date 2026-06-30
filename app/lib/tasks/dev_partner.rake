@@ -60,10 +60,11 @@ namespace :dev do
     REQUIRED_PARTNER_TRANSLATIONS = ClientAgencyConfig::REQUIRED_TRANSLATION_KEYS
     # Prefix every generated string so faked text is obvious on screen.
     GENERATED_PREFIX = "DEV - "
+    NON_PRODUCTION = Object.new.extend(NonProductionAccessible)
 
     desc "Generate a new partner (with translations) populated with fake data"
     task :create, [ :partner_id ] => :environment do |_t, args|
-      abort "Refusing to run in production." if Rails.env.production?
+      abort "Refusing to run in production." unless NON_PRODUCTION.is_not_production?
       require "faker"
 
       partner_id = (args[:partner_id].presence || "dev_#{Faker::Color.color_name}_#{SecureRandom.hex(2)}")
@@ -201,7 +202,7 @@ namespace :dev do
 
     desc "Destroy a partner created for dev validation"
     task :destroy, [ :partner_id ] => :environment do |_t, args|
-      abort "Refusing to run in production." if Rails.env.production?
+      abort "Refusing to run in production." unless NON_PRODUCTION.is_not_production?
       partner_id = args[:partner_id].presence or abort "Usage: rake \"dev:partner:destroy[partner_id]\""
 
       config = PartnerConfig.find_by(partner_id: partner_id) or abort "Partner '#{partner_id}' not found."

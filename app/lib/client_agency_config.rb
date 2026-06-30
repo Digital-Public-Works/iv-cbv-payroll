@@ -20,7 +20,7 @@ class ClientAgencyConfig
   # while the app is running are picked up within this window without a restart.
   # In development the effective TTL is 0 so edits show up immediately (see
   # #cache_ttl_seconds).
-  CACHE_TTL_SECONDS = 5.minutes.to_i
+  CACHE_TTL_SECONDS = 10.minutes.to_i
 
   def self.instance
     @instance ||= new(Rails.env.development? || Rails.env.test?)

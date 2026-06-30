@@ -17,6 +17,7 @@ Rails.application.config.after_initialize do
   begin
     ClientAgencyConfig.instance.validate_all
   rescue => e
-    Rails.logger.warn("Skipped partner config validation at boot: #{e.message}")
+    Rails.logger.error("Skipped partner config validation at boot: #{e.message}")
+    NewRelic::Agent.notice_error(e) if defined?(NewRelic::Agent)
   end
 end
