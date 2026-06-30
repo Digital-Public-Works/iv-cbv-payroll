@@ -280,6 +280,10 @@ Devise.setup do |config|
   # up on your models and hooks.
   # We are disabling SSO for the caseworker portal. However, we are preserving this code for future
   # caseworker portal reactivation.
+  # NOTE: the `omniauth-azure-activedirectory-v2` gem was removed (it was unused — the portal/SSO
+  # flow was never productionized beyond the original spike). To reactivate SSO, re-add an OmniAuth
+  # strategy gem — its maintained successor is `omniauth-entra-id` (class `OmniAuth::Strategies::EntraId`) —
+  # and update the `strategy_class:` references below accordingly.
   # if Rails.application.config.client_agencies["sandbox"].present?
   #   config.omniauth(
   #     :sandbox,
@@ -342,7 +346,7 @@ Devise.setup do |config|
   # apps is `200 OK` and `302 Found` respectively, but new apps are generated with
   # these new defaults that match Hotwire/Turbo behavior.
   # Note: These might become the new default in future versions of Devise.
-  config.responder.error_status = :unprocessable_entity
+  config.responder.error_status = :unprocessable_content
   config.responder.redirect_status = :see_other
 
   # ==> Configuration for :registerable
