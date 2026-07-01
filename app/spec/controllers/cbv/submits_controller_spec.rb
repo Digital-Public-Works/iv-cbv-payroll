@@ -653,6 +653,10 @@ RSpec.describe Cbv::SubmitsController do
       # pinwheel_stub_request_income_metadata_response
       # pinwheel_stub_request_identity_response
       allow(Aggregators::AggregatorReports::ArgyleReport).to receive(:new).and_return(argyle_report)
+      # The injected report is pre-hydrated by the factory and its argyle_service
+      # is nil; fetch_report_data now re-raises instead of swallowing, so stub
+      # fetch to a no-op rather than letting it call the (nil) service.
+      allow(argyle_report).to receive(:fetch)
     end
 
     context "without consent" do

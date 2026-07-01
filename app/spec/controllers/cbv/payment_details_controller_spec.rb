@@ -131,6 +131,15 @@ RSpec.describe Cbv::PaymentDetailsController do
       end
 
       context "when account comment does not exist" do
+        let(:account_id) { "019571bc-2f60-3955-d972-dbadfe0913a8" } # bob
+
+        before do
+          argyle_stub_request_identities_response("bob")
+          argyle_stub_request_paystubs_response("bob")
+          argyle_stub_request_gigs_response("bob")
+          argyle_stub_request_account_response("bob")
+        end
+
         it "does not include an account comment in the response" do
           get :show, params: { user: { account_id: account_id } }
           expect(response.body).not_to include(comment)
@@ -139,8 +148,18 @@ RSpec.describe Cbv::PaymentDetailsController do
     end
 
     context "when report paystubs aren't present" do
+      # Sarah is a W-2 worker with no recent start/termination date, so a report
+      # with no valid paystubs fails UsefulReportValidator and redirects.
+      let(:account_id) { "01956d5f-cb8d-af2f-9232-38bce8531f58" } # sarah (W-2)
+
+      before do
+        argyle_stub_request_identities_response("sarah")
+        argyle_stub_request_account_response("sarah")
+        argyle_stub_request_gigs_response("sarah")
+        argyle_stub_request_paystubs_response("empty")
+      end
+
       it "redirects when no paystubs are present" do
-        WebMock.remove_request_stub(paystubs_response)
         get :show, params: { user: { account_id: account_id } }
         expect(response).to redirect_to(cbv_flow_validation_failures_path(user: { account_id: account_id }))
       end
@@ -338,7 +357,7 @@ RSpec.describe Cbv::PaymentDetailsController do
       end
 
       context "for Empty (a user with no identity records)" do
-        let(:account_id) { "empty-account-id" }
+        let(:account_id) { "00000000-0000-0000-0000-000000000000" }
         let(:cbv_flow) do
           create(:cbv_flow,
                  :invited,

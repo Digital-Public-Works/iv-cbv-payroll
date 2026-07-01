@@ -29,7 +29,7 @@ RSpec.describe NewRelic::EventLogger do
 
       expect(NewRelicEventTrackingJob).to receive(:perform_later).with(event_type, attributes)
                                                                  .and_raise(StandardError.new('Test error'))
-      expect { logger.track(event_type, attributes) }.not_to raise_error(StandardError, 'Test error')
+      expect { logger.track(event_type, attributes) }.not_to raise_error
     end
   end
 end
