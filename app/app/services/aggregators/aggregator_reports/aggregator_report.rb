@@ -3,10 +3,9 @@ module Aggregators::AggregatorReports
   class AggregatorReport
     include Cbv::MonthlySummaryHelper
 
-    attr_accessor :payroll_accounts, :identities, :incomes, :employments, :gigs, :paystubs, :has_fetched, :fetched_days
+    attr_accessor :payroll_accounts, :identities, :incomes, :employments, :gigs, :paystubs, :fetched_days
 
     def initialize(payroll_accounts: [], days_to_fetch_for_w2: nil, days_to_fetch_for_gig: nil)
-      @has_fetched = false
       @payroll_accounts = payroll_accounts
       @identities = []
       @incomes = []
@@ -23,10 +22,6 @@ module Aggregators::AggregatorReports
       fetch_report_data
     end
 
-    def has_fetched?
-      @has_fetched
-    end
-
     def is_ready_to_fetch?
       @payroll_accounts.all? do |payroll_account|
         payroll_account.has_fully_synced?
@@ -37,13 +32,11 @@ module Aggregators::AggregatorReports
       @payroll_accounts.each do |payroll_account|
         fetch_report_data_for_account(payroll_account)
       end
-      @has_fetched = true
     rescue StandardError => e
       # Do not swallow the error. A transient aggregator failure here leaves the
       # data collections (@identities, @employments, etc.) partially populated,
       # but the webhook-derived flags in #summarize_by_employer still report
       # "succeeded".
-      @has_fetched = false
       Rails.logger.error("Report Fetch Error: #{e.message}")
       raise
     end

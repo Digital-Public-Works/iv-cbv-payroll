@@ -21,7 +21,6 @@ module Aggregators::AggregatorReports
 
         @fetched_days = [ @fetched_days, aggregator_report.fetched_days ].max
       end
-      @has_fetched = true
     end
   end
 end

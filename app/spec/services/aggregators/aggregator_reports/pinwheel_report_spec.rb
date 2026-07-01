@@ -68,11 +68,6 @@ RSpec.describe Aggregators::AggregatorReports::PinwheelReport, type: :service do
       expect(report.gigs).to all(be_an(Aggregators::ResponseObjects::Gig))
     end
 
-    it 'sets @has_fetched to true on success' do
-      report.fetch
-      expect(report.has_fetched).to be true
-    end
-
     it 'has the correct number of response objects' do
       report.fetch
       expect(report.identities.length).to eq(1)
@@ -215,7 +210,6 @@ RSpec.describe Aggregators::AggregatorReports::PinwheelReport, type: :service do
       #
       #   expect { report.fetch }.to raise_error(StandardError, 'API error')
       #   expect(Rails.logger).to have_received(:error).with(/Report Fetch Error: API error/)
-      #   expect(report.has_fetched).to be false
       # end
 
       it 'continues if an error on fetch_platform' do
@@ -223,7 +217,6 @@ RSpec.describe Aggregators::AggregatorReports::PinwheelReport, type: :service do
 
         report.fetch
         expect(Rails.logger).to have_received(:error).with(/Failed to fetch platform: API error/)
-        expect(report.has_fetched).to be true
         expect(report.employments.first).to have_attributes(
                                                    account_id: account,
                                                    account_source: nil,
