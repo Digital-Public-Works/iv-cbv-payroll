@@ -216,6 +216,30 @@ RSpec.describe ApplicationHelper do
     end
   end
 
+  describe "#agency_translation with a relative (leading-dot) key" do
+    let(:current_agency) { ClientAgencyConfig.instance["sandbox"] }
+
+    before do
+      without_partial_double_verification do
+        allow(helper).to receive(:current_agency).and_return(current_agency)
+      end
+      # Set by ActionView during template rendering; scopes leading-dot keys.
+      helper.instance_variable_set(:@virtual_path, "cbv/entries/show")
+    end
+
+    it "expands the relative key so a full-key DB translation is used" do
+      partner = PartnerConfig.find_by(partner_id: "sandbox")
+      PartnerTranslation.create!(
+        partner_config: partner,
+        locale: "en",
+        key: "cbv.entries.show.checkbox",
+        value: "DB checkbox label"
+      )
+
+      expect(helper.agency_translation(".checkbox")).to eq("DB checkbox label")
+    end
+  end
+
   describe "#feedback_form_url" do
     let(:current_agency) { nil }
     let(:params) { {} }

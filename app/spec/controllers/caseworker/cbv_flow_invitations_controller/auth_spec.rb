@@ -17,11 +17,10 @@ RSpec.describe Caseworker::CbvFlowInvitationsController, type: :controller do
     end
 
     context "with an invalid client agency id" do
-      it "raises a routing error" do
+      it "raises a routing error (unknown partner has no route)" do
         expect {
           get :new, params: valid_params.tap { |p| p[:client_agency_id] = "this-is-not-a-site-id" }
-        }.to raise_error(ActionController::UrlGenerationError)
-        expect response.status == 404
+        }.to raise_error(ActionController::RoutingError)
       end
     end
 
