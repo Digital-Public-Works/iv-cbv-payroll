@@ -27,6 +27,17 @@
   max-width: none;
 }
 
+// USWDS tile checkboxes fill the label with a translucent blue background
+// when checked, which drops the focus ring below the 3:1 non-text contrast
+// minimum. Keep the border as the checked-state indicator and drop the fill.
+.usa-checkbox__input--tile {
+  &:checked, {
+    + [class*="__label"] {
+      background-color: color($theme-body-background-color);
+    }
+  }
+}
+
 
 // Make the navbar a bit taller on mobile, and increase the size of the "Menu"
 // button to compensate.
