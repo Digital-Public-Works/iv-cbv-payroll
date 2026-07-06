@@ -231,7 +231,6 @@ GEM
       mini_portile2 (~> 2.7)
     hashdiff (1.2.1)
     hashery (2.1.2)
-    hashie (5.0.0)
     highline (3.1.0)
       reline
     htmlentities (4.3.4)
@@ -307,14 +306,6 @@ GEM
       racc (~> 1.4)
     nokogiri (1.19.4-x86_64-linux-gnu)
       racc (~> 1.4)
-    omniauth (2.1.4)
-      hashie (>= 3.4.6)
-      logger
-      rack (>= 2.2.3)
-      rack-protection
-    omniauth-rails_csrf_protection (1.0.2)
-      actionpack (>= 4.2)
-      omniauth (~> 2.0)
     openssl (3.3.2)
     orm_adapter (0.5.0)
     ostruct (0.6.2)
@@ -611,7 +602,6 @@ DEPENDENCIES
   net-sftp
   net-ssh
   newrelic_rpm
-  omniauth-rails_csrf_protection (~> 1.0)
   openssl
   ostruct
   pdf-reader (~> 2.15.0)
