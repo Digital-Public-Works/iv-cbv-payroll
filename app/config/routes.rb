@@ -1,5 +1,6 @@
 
 require "constraints/configured_agency_constraint"
+require "constraints/client_agency_id_constraint"
 
 Rails.application.routes.draw do
   devise_for :users,
@@ -74,15 +75,11 @@ Rails.application.routes.draw do
       resource :expired_invitation, only: %i[show]
       resource :applicant_information, only: %i[show update]
 
-      # Generic link
-      begin
-        if ActiveRecord::Base.connection.data_source_exists?(:partner_application_attributes)
-          scope "links/:client_agency_id", constraints: { client_agency_id: Regexp.union(ClientAgencyConfig.client_agency_ids) } do
-            root to: "generic_links#show", as: :new
-          end
-        end
-      rescue ActiveRecord::NoDatabaseError, PG::ConnectionBad, ActiveRecord::ConnectionNotEstablished, ArgumentError
-        # The database hasn't been created yet, we are likely in a db task.
+      # Generic link. The client_agency_id segment is validated dynamically per
+      # request against the database (see ClientAgencyIdConstraint), so partners
+      # are not enumerated into the route table at boot.
+      scope "links/:client_agency_id", constraints: ClientAgencyIdConstraint.new do
+        root to: "generic_links#show", as: :new
       end
 
       # Session management
@@ -114,21 +111,16 @@ Rails.application.routes.draw do
       end
     end
 
-    # This code runs during every boot of the app, including the migrations necessary to create the partner_configs table.
-    # Skip if the table hasn't been created yet.
-    # The partner application attributes are added last, so if they are not present, the db is missing tables needed to initialize from db configuration.
-    begin
-      if ActiveRecord::Base.connection.data_source_exists?(:partner_application_attributes)
-        scope "/:client_agency_id", module: :caseworker, constraints: { client_agency_id: Regexp.union(ClientAgencyConfig.client_agency_ids) } do
-          get "/sso", to: redirect("/%{client_agency_id}") # Temporary: Remove once people get used to going to /:client_agency_id as the login destination.
-          root to: "entries#index", as: :new_user_session
+    # Caseworker portal, scoped per partner. The client_agency_id segment is
+    # validated dynamically per request against the database (see
+    # ClientAgencyIdConstraint) rather than enumerating partners into the route
+    # table at boot.
+    scope "/:client_agency_id", module: :caseworker, constraints: ClientAgencyIdConstraint.new do
+      get "/sso", to: redirect("/%{client_agency_id}") # Temporary: Remove once people get used to going to /:client_agency_id as the login destination.
+      root to: "entries#index", as: :new_user_session
 
-          resource :dashboard, only: %i[show], as: :caseworker_dashboard
-          resources :cbv_flow_invitations, only: %i[new create], as: :invitations, path: :invitations
-        end
-      end
-    rescue ActiveRecord::NoDatabaseError, PG::ConnectionBad, ActiveRecord::ConnectionNotEstablished, ArgumentError
-      # The database hasn't been created yet, we are likely in a db task.
+      resource :dashboard, only: %i[show], as: :caseworker_dashboard
+      resources :cbv_flow_invitations, only: %i[new create], as: :invitations, path: :invitations
     end
   end
 
