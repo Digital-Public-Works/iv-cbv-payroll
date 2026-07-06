@@ -36,10 +36,9 @@
               data-provider-name="<%= employer.provider_name %>"
               class="usa-button usa-button--outline"
               type="button"
-              tabindex="0"
-              aria-label="<%= employer.name %>"
             >
               <%= t("cbv.employer_searches.show.select") %>
+              <span class="usa-sr-only"><%= employer.name %></span>
             </button>
           </div>
         </div>
