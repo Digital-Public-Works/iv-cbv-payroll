@@ -266,7 +266,7 @@ RSpec.describe Api::LoadTestSessionsController, type: :controller do
         it "returns unprocessable_entity status" do
           post :create, params: params
 
-          expect(response).to have_http_status(:unprocessable_entity)
+          expect(response).to have_http_status(:unprocessable_content)
         end
 
         it "returns error message" do
@@ -289,7 +289,7 @@ RSpec.describe Api::LoadTestSessionsController, type: :controller do
         it "returns unprocessable_entity status" do
           post :create, params: params
 
-          expect(response).to have_http_status(:unprocessable_entity)
+          expect(response).to have_http_status(:unprocessable_content)
         end
 
         it "returns error message with scenario name" do

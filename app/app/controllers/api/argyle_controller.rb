@@ -44,7 +44,7 @@ class Api::ArgyleController < ApplicationController
   def resume_previous_argyle_account_connection
     item_id = params[:item_id]
     unless item_id.present?
-      return render json: { status: :error, message: "Invalid item_id" }, status: :unprocessable_entity
+      return render json: { status: :error, message: "Invalid item_id" }, status: :unprocessable_content
     end
 
     return if item_id == "item_000026933" # If it's an ADP item, allow user to create a new connection.
