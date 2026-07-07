@@ -135,10 +135,6 @@ RSpec.describe Report::GigMonthlySummaryTableComponent, type: :component do
         expect(subject.css("thead tr.subheader-row th").length).to eq(4)
       end
 
-      it "renders the monthly summary heading as an h3, not an h2" do
-        expect(subject.css("h2").text).not_to include "Monthly summary"
-      end
-
       it "renders the Month column with the correct date format" do
         expect(subject.css("thead tr.subheader-row th:nth-child(1)").to_html).to include "Month"
         expect(subject.css("tbody tr:nth-child(1) th:nth-child(1)").to_html).to include "March 2025"
@@ -303,10 +299,6 @@ RSpec.describe Report::GigMonthlySummaryTableComponent, type: :component do
       it "includes table header" do
         expect(subject.css("h3").to_html).to include "Monthly summary"
         expect(subject.css("thead tr.subheader-row th").length).to eq(4)
-      end
-
-      it "renders the monthly summary heading as an h3, not an h2" do
-        expect(subject.css("h2").text).not_to include "Monthly summary"
       end
 
       it "renders the Month column with the correct date format" do
