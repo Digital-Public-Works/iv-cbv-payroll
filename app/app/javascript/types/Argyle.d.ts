@@ -19,6 +19,7 @@ type ArgyleInitializationParams = {
   onError?: (payload: LinkError) => void
   onUIEvent?: (payload: ArgyleUIEvent) => void
   sandbox?: boolean
+  language?: string
 }
 
 type Argyle = {
