@@ -80,8 +80,8 @@ GEM
       securerandom (>= 0.3)
       tzinfo (~> 2.0, >= 2.0.5)
       uri (>= 0.13.1)
-    addressable (2.8.7)
-      public_suffix (>= 2.0.2, < 7.0)
+    addressable (2.9.0)
+      public_suffix (>= 2.0.2, < 8.0)
     afm (1.0.0)
     ast (2.4.3)
     aws-actionmailer-ses (1.0.0)
@@ -178,7 +178,7 @@ GEM
       bigdecimal
       rexml
     crass (1.0.7)
-    css_parser (1.17.1)
+    css_parser (1.22.0)
       addressable
     cssbundling-rails (1.4.1)
       railties (>= 6.0.0)
@@ -221,11 +221,11 @@ GEM
       activesupport (>= 6.1.0)
     faker (3.8.0)
       i18n (>= 1.8.11, < 2)
-    faraday (2.14.1)
+    faraday (2.14.3)
       faraday-net_http (>= 2.0, < 3.5)
       json
       logger
-    faraday-net_http (3.4.2)
+    faraday-net_http (3.4.4)
       net-http (~> 0.5)
     globalid (1.4.0)
       activesupport (>= 6.1)
@@ -286,7 +286,7 @@ GEM
     mutex_m (0.3.0)
     net-http (0.9.1)
       uri (>= 0.11.1)
-    net-imap (0.5.10)
+    net-imap (0.5.15)
       date
       net-protocol
     net-pop (0.1.2)
@@ -341,8 +341,8 @@ GEM
       coderay (~> 1.1)
       method_source (~> 1.0)
       reline (>= 0.6.0)
-    public_suffix (6.0.2)
-    puma (6.6.0)
+    public_suffix (7.0.5)
+    puma (7.2.1)
       nio4r (~> 2.0)
     racc (1.8.1)
     rack (3.2.6)
@@ -595,13 +595,13 @@ DEPENDENCIES
   erb_lint
   factory_bot (~> 6.5)
   faker (~> 3.5)
-  faraday (~> 2.13)
+  faraday (~> 2.14)
   gpgme (~> 2.0, >= 2.0.12)
   i18n-tasks (~> 1.0)
   jsbundling-rails
   mixpanel-ruby
   mutex_m
-  net-imap (= 0.5.10)
+  net-imap (= 0.5.15)
   net-sftp
   net-ssh
   newrelic_rpm
@@ -612,7 +612,7 @@ DEPENDENCIES
   pg-aws_rds_iam (~> 0.7.0)
   premailer-rails
   pry
-  puma (~> 6.6.0)
+  puma (~> 7.2.1)
   rack (~> 3.2.6)
   rack-mini-profiler
   rails (~> 8.1.3)
