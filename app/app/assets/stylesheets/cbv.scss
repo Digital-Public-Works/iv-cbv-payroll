@@ -337,6 +337,13 @@ input#invitation_link {
   page-break-inside: avoid;
 }
 
+// Remove the trailing bottom padding on the PDF's wrapping .usa-section.
+// wkhtmltopdf renders an extra blank final page when total content height
+// spills just past a page boundaryScoped to .pdf-document so the web report layout is unaffected.
+.pdf-document .usa-section {
+  padding-bottom: 0;
+}
+
 .paystub_earnings_items_table td {
   border: none;
   background-color: inherit;

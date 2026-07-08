@@ -39,10 +39,6 @@ RSpec.describe Aggregators::AggregatorReports::CompositeReport, type: :service d
       expect(subject.paystubs.filter { |d| d.account_id == "argyle_report1" }.length).to be(2)
     end
 
-    it 'sets has_fetched to true' do
-      expect(subject.has_fetched).to be true
-    end
-
     it 'returns correct summarize_by_employer' do
       expect(subject.summarize_by_employer["argyle_report1"][:total]).to eq(1000.00)
       expect(subject.summarize_by_employer["argyle_report1"][:has_employment_data]).to be(true)

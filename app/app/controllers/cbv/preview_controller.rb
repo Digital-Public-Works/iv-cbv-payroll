@@ -192,7 +192,7 @@ class Cbv::PreviewController < ApplicationController
 
     # Validate client_agency_id
     unless ClientAgencyConfig.client_agency_ids.include?(client_agency_id)
-      return render plain: "Invalid client_agency_id", status: :unprocessable_entity
+      return render plain: "Invalid client_agency_id", status: :unprocessable_content
     end
 
     # Create or reuse test data
