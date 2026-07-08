@@ -100,6 +100,12 @@ module ApplicationHelper
     "#{full_name} (#{agency_translation("shared.agency_acronym")})"
   end
 
+  # A visually-hidden span used to add descriptive context to an otherwise
+  # generic visible label (e.g. "Edit" -> "Edit Applicant information").
+  def sr_only_span(text)
+    content_tag(:span, text, class: "usa-sr-only")
+  end
+
   # A reusable anchor tag to the agency portal
   def agency_website_link(label: agency_website_link_label)
     url = current_agency&.agency_contact_website
