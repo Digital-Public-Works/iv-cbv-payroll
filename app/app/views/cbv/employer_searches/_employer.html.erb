@@ -18,9 +18,10 @@
           <% if employer.logo_url.present? %>
             <div class="usa-card__media usa-card__media--inset display-flex flex-justify-center">
               <div class="usa-card__img cbv-employer-card__img">
+                <%# alt is intentionally blank to mark this as a decorative image %>
                 <img
                   src="<%= employer.logo_url.sub(/^http:/, "https:") %>"
-                  alt="" # NOTE: Intentionally left blank to mark as decorative image
+                  alt=""
                 >
               </div>
             </div>
