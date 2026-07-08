@@ -259,7 +259,6 @@ class ClientAgencyConfig
       include_direct_deposit_last_4
       invitation_valid_days
       logo_path
-      logo_square_path
       pay_income_days
       pinwheel_api_token
       pinwheel_environment
