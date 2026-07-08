@@ -185,6 +185,29 @@ RSpec.describe ApplicationHelper do
     end
   end
 
+  describe "#agency_logo_alt_text" do
+    before do
+      allow(helper).to receive(:agency_translation).with("shared.agency_full_name").and_return("Full Agency Name")
+      allow(helper).to receive(:agency_translation).with("shared.agency_acronym").and_return(acronym)
+    end
+
+    context "when the partner has an acronym" do
+      let(:acronym) { "DHS" }
+
+      it "interpolates the acronym into the shared.header.logo_alt translation" do
+        expect(helper.agency_logo_alt_text).to eq("DHS Logo")
+      end
+    end
+
+    context "when the partner has no acronym" do
+      let(:acronym) { nil }
+
+      it "falls back to the full agency name" do
+        expect(helper.agency_logo_alt_text).to eq("Full Agency Name Logo")
+      end
+    end
+  end
+
   describe "#agency_website_link" do
     let(:url) { "https://compass.example.gov" }
     let(:current_agency) do

@@ -734,6 +734,7 @@ es:
       close: Cerrar
       help: Ayuda
       log_out: Cerrar sesión
+      logo_alt: Logo de %{agency_acronym}
       preheader:
         default: Un sitio web en colaboración con la Agencia de pruebas CBV.
         la_ldh: Un sitio web en colaboración con el Departamento de Salud de Luisiana

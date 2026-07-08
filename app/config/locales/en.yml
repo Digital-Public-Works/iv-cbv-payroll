@@ -802,6 +802,7 @@ en:
       close: Close
       help: Help
       log_out: Log out
+      logo_alt: "%{agency_acronym} Logo"
       preheader:
         default: A website in partnership with CBV Test Agency.
         la_ldh: A website in partnership with the Louisiana Department of Health
