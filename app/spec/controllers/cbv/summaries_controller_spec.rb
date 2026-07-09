@@ -195,6 +195,13 @@ end
     end
 
     context "with mismatched employment data" do
+      before do
+        argyle_stub_request_identities_response("bob")
+        argyle_stub_request_paystubs_response("bob")
+        argyle_stub_request_gigs_response("bob")
+        argyle_stub_request_account_response("bob")
+      end
+
       it "should handle when employment job succeeds but employment data is nil" do
         allow_any_instance_of(Aggregators::AggregatorReports::AggregatorReport).to receive(:summarize_by_employer) do
           { cbv_flow.payroll_accounts.first.aggregator_account_id =>
@@ -207,7 +214,12 @@ end
     end
 
     it "tracks events" do
-      allow(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+      argyle_stub_request_identities_response("bob")
+      argyle_stub_request_paystubs_response("bob")
+      argyle_stub_request_gigs_response("bob")
+      argyle_stub_request_account_response("bob")
+
+      allow(MixpanelEventTrackingJob).to receive(:perform_later)
 
       expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantAccessedIncomeSummary", anything, hash_including(
           cbv_flow_id: cbv_flow.id,

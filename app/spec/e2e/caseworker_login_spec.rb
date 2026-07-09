@@ -4,21 +4,26 @@ RSpec.describe 'Caseworker Login and Invitation', type: :system do
   before do
     driven_by(:selenium_chrome_headless) # Change to :selenium_chrome if you want to see the browser
     WebMock.disable_net_connect!(allow_localhost: true)
-    OmniAuth.config.test_mode = true
-    OmniAuth.config.mock_auth[:sandbox] = OmniAuth::AuthHash.new(
-      provider: 'google_oauth2',
-      uid: '123456',
-      info: {
-        email: 'test@example.com',
-        name: 'Test User',
-        nickname: 'the mockiest perrson'
-      },
-      credentials: {
-        token: 'mock_token',
-        refresh_token: 'mock_refresh_token',
-        expires_at: Time.now + 1.hour
-      }
-    )
+    # OmniAuth mock removed: the OmniAuth SSO flow was never productionized (no :omniauthable
+    # on User, no callbacks controller, no routes) and the omniauth-rails_csrf_protection gem
+    # was removed during the Rails 8.1 upgrade (it emitted an ActiveSupport::Configurable
+    # deprecation and pulled in an otherwise-unused omniauth dependency). Restore this block
+    # along with the gem if SSO is ever reactivated. The examples below are already skipped (xit).
+    # OmniAuth.config.test_mode = true
+    # OmniAuth.config.mock_auth[:sandbox] = OmniAuth::AuthHash.new(
+    #   provider: 'google_oauth2',
+    #   uid: '123456',
+    #   info: {
+    #     email: 'test@example.com',
+    #     name: 'Test User',
+    #     nickname: 'the mockiest perrson'
+    #   },
+    #   credentials: {
+    #     token: 'mock_token',
+    #     refresh_token: 'mock_refresh_token',
+    #     expires_at: Time.now + 1.hour
+    #   }
+    # )
   end
 
 

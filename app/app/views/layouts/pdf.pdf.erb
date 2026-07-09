@@ -8,9 +8,13 @@
     <%= yield :head %>
 
     <%= wicked_pdf_stylesheet_link_tag "application" %>
+    <style>
+      /* Force a white page background so only white can show in the PDF view. */
+      html { background-color: #fff; }
+    </style>
   </head>
 
-  <body>
+  <body class="pdf-document">
     <div id="root">
       <main id="main-content">
         <section class="grid-container usa-section">

@@ -40,7 +40,7 @@ class Api::UserEventsController < ApplicationController
 
     NewRelic::Agent.notice_error(ex)
     Rails.logger.error "Unable to process user action: #{ex}"
-    render json: { status: :error }, status: :unprocessable_entity
+    render json: { status: :error }, status: :unprocessable_content
   end
 
   private

@@ -12,7 +12,7 @@ class Api::LoadTestSessionsController < ApplicationController
 
     # Validate client_agency_id
     unless ClientAgencyConfig.client_agency_ids.include?(client_agency_id)
-      return render json: { error: "Invalid client_agency_id" }, status: :unprocessable_entity
+      return render json: { error: "Invalid client_agency_id" }, status: :unprocessable_content
     end
 
     # Create test data based on scenario
@@ -24,7 +24,7 @@ class Api::LoadTestSessionsController < ApplicationController
                            when "failed"
                              create_failed_flow(client_agency_id)
                            else
-                             return render json: { error: "Invalid scenario: #{scenario}" }, status: :unprocessable_entity
+                             return render json: { error: "Invalid scenario: #{scenario}" }, status: :unprocessable_content
                            end
 
     # Set session using Rails' session mechanism (Rails will encrypt the cookie)
