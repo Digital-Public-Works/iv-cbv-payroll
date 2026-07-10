@@ -266,6 +266,7 @@ en:
           help_options: Get help here.
         app_based_providers: App-based employers
         can_not_find_employer: Explore your options
+        clear_search: Clear search
         company_examples: 'Examples: Uber, McDonald''s, ADP'
         company_name: Company Name
         employer_not_listed: Trouble finding your employer or payroll provider?
