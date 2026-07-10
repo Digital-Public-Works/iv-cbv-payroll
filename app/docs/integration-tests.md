@@ -75,7 +75,7 @@ Integration specs carry the tag `integration: true` and are excluded from the de
 
 The `integration:partner:setup` task creates an `integration_test` partner and a service-account user with an API access token. This lets you exercise the full CBV flow end-to-end through a browser, with real webhook delivery to the Docker services.
 
-The `integration_test` partner is configured with a single webhook transmission method (see `docs/app/integration-test-partner.yml`). Authentication uses API tokens — there is no caseworker UI or generic link.
+The `integration_test` partner is configured with a single webhook transmission method (see `docs/app/integration-test-partner.credentials.yml`). Authentication uses API tokens — there is no caseworker UI or generic link.
 
 ```bash
 # 1. Start Docker services
