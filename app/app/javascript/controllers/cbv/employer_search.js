@@ -3,7 +3,14 @@ import { createModalAdapter } from "@js/utilities/createModalAdapter"
 import { loadProviderResources } from "@js/utilities/loadProviderResources.ts"
 
 export default class extends Controller {
-  static targets = ["form", "userAccountId", "employerButton", "helpAlert"]
+  static targets = [
+    "form",
+    "userAccountId",
+    "employerButton",
+    "helpAlert",
+    "queryInput",
+    "clearButton",
+  ]
 
   static values = {
     cbvFlowId: Number,
@@ -35,6 +42,15 @@ export default class extends Controller {
     const submitter = event.detail.formSubmission?.submitter
 
     if (submitter) submitter.disabled = false
+  }
+
+  toggleClearButton() {
+    this.clearButtonTarget.hidden = this.queryInputTarget.value.length === 0
+  }
+
+  onSearchReset() {
+    this.clearButtonTarget.hidden = true
+    this.queryInputTarget.focus()
   }
 
   onSuccess(accountId) {

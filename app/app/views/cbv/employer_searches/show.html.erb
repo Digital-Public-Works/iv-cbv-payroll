@@ -27,8 +27,22 @@
 
   <div id="company_examples" class="text-gray-50"><%= t(".company_examples") %></div>
 
-  <%= form_with url: cbv_flow_employer_search_path, method: :get, class: "usa-search usa-search--big margin-bottom-4 margin-top-2", html: { role: "search" }, data: { turbo_frame: "employers", turbo_action: "advance" } do |f| %>
-    <%= f.text_field :query, value: @query, class: "usa-input", type: "search", aria: { describedby: "company_examples" } %>
+  <%= form_with url: cbv_flow_employer_search_path, method: :get, class: "usa-search usa-search--big margin-bottom-4 margin-top-2", html: { role: "search" }, data: { turbo_frame: "employers", turbo_action: "advance", action: "reset->cbv-employer-search#onSearchReset" } do |f| %>
+    <div class="cbv-employer-search__input-wrapper">
+      <%= f.text_field :query, value: @query, class: "usa-input", type: "search",
+            aria: { describedby: "company_examples" },
+            data: { "cbv-employer-search-target": "queryInput", action: "input->cbv-employer-search#toggleClearButton" } %>
+      <button
+        type="reset"
+        class="cbv-employer-search__clear-button"
+        <%= "hidden" if @query.blank? %>
+        data-cbv-employer-search-target="clearButton">
+        <span class="usa-sr-only"><%= t(".clear_search") %></span>
+        <svg class="usa-icon" aria-hidden="true" focusable="false" role="img">
+          <use href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#close") %>"></use>
+        </svg>
+      </button>
+    </div>
     <button
       class="usa-button"
       type="submit">
