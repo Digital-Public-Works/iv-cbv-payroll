@@ -100,6 +100,11 @@ module ApplicationHelper
     "#{full_name} (#{agency_translation("shared.agency_acronym")})"
   end
 
+  # Alt text for the agency logo image (e.g. "DHS Logo").
+  def agency_logo_alt_text
+    "#{agency_acronym_or_full_name} Logo"
+  end
+
   # A reusable anchor tag to the agency portal
   def agency_website_link(label: agency_website_link_label)
     url = current_agency&.agency_contact_website
