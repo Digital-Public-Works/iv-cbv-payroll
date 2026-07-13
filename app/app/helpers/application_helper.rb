@@ -100,6 +100,12 @@ module ApplicationHelper
     "#{full_name} (#{agency_translation("shared.agency_acronym")})"
   end
 
+  # A visually-hidden span used to add descriptive context to an otherwise
+  # generic visible label (e.g. "Edit" -> "Edit Applicant information").
+  def sr_only_span(text)
+    content_tag(:span, text, class: "usa-sr-only")
+  end
+
   # Alt text for the agency logo image (e.g. "DHS Logo").
   def agency_logo_alt_text
     "#{agency_acronym_or_full_name} Logo"
