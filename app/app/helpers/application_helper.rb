@@ -105,7 +105,7 @@ module ApplicationHelper
   def sr_only_span(text)
     content_tag(:span, text, class: "usa-sr-only")
   end
-  
+
   # Alt text for the agency logo image (e.g. "DHS Logo").
   def agency_logo_alt_text
     "#{agency_acronym_or_full_name} Logo"
