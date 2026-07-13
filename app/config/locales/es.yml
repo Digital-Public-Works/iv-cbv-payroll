@@ -168,6 +168,7 @@ es:
           help_options: Obtenga ayuda aquí.
         app_based_providers: Empleadores basados
         can_not_find_employer: Explore sus opciones
+        clear_search: Borrar búsqueda
         company_examples: 'Ejemplos: Uber, McDonald''s, ADP'
         company_name: Nombre de la empresa
         employer_not_listed: "¿Tiene problemas para encontrar a su empleador o proveedor de nómina?"
