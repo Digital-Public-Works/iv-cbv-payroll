@@ -48,7 +48,9 @@ export default class extends Controller {
     this.clearButtonTarget.hidden = this.queryInputTarget.value.length === 0
   }
 
-  onSearchReset() {
+  onSearchReset(event) {
+    event.preventDefault()
+    this.queryInputTarget.value = ""
     this.clearButtonTarget.hidden = true
     this.queryInputTarget.focus()
   }

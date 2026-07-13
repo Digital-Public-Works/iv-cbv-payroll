@@ -240,6 +240,18 @@ describe("EmployerSearchController clear button", () => {
     expect(clearButton.hidden).toBe(true)
     expect(document.activeElement).toBe(queryInput)
   })
+
+  it("empties the input on reset even when it was pre-filled from a query param", () => {
+    // Simulates the server rendering `value: @query`, which becomes the
+    // input's defaultValue that a native form reset would otherwise restore.
+    queryInput.setAttribute("value", "Walmart")
+    queryInput.value = "Walmart"
+    queryInput.dispatchEvent(new Event("input", { bubbles: true }))
+
+    form.dispatchEvent(new Event("reset", { bubbles: true, cancelable: true }))
+
+    expect(queryInput.value).toBe("")
+  })
 })
 
 describe("EmployerSearchController multiple instances on same page!", () => {
