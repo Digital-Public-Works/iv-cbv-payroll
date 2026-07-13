@@ -37,7 +37,7 @@
         class="cbv-employer-search__clear-button"
         <%= "hidden" if @query.blank? %>
         data-cbv-employer-search-target="clearButton">
-        <span class="usa-sr-only"><%= t(".clear_search") %></span>
+        <%= sr_only_span( t(".clear_search")) %>
         <svg class="usa-icon" aria-hidden="true" focusable="false" role="img">
           <use href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#close") %>"></use>
         </svg>
