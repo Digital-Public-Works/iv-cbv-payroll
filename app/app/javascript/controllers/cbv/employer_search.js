@@ -67,51 +67,51 @@ export default class extends Controller {
     }
   }
 
-  toggleErrorIds(target, error) {
+  toggleErrorIds(target, error, id) {
+    const describedbyList = target.getAttribute("aria-describedby")
+    if (error && describedbyList.includes(id)) return
     let describeIds;
 
+    // TODO: DREW - should error id be first or second?
     if(error) {
-      describeIds = "query_error_message" + " " + target.getAttribute("aria-describedby")
+      describeIds = id + " " + describedbyList
     } else {
-      describeIds = target.getAttribute("aria-describedby").replace("query_error_message", "").trim()
+      describeIds = describedbyList.replace(id, "").trim()
     }
 
-    this.queryInputTarget.setAttribute("aria-describedby", describeIds)
+    target.setAttribute("aria-describedby", describeIds)
+  }
+
+  updateAriaLiveRegion(text) {
+    document.getElementById("live-announcer").replaceChildren()
+    if (text) {
+      document.getElementById("live-announcer").textContent = text
+    }
   }
 
   showError() {
-    // const ariaLiveRegion = document.getElementById("live-announcer")
-    // ariaLiveRegion.replaceChildren()
-    // const pTag = document.createElement('p')
-    document.getElementById("query_error_message").replaceChildren()
-    document.getElementById("query_error_message").textContent = "HELLO WORLD"
-    // pTag.textContent ="HELLO WORLD"
-    // console.log("DROO", ariaLiveRegion)
-    // console.log("DROO", pTag)
-
-    // ariaLiveRegion.appendChild(pTag)
+    // announce to the user the error message
+    this.updateAriaLiveRegion(this.errorMessageTarget.textContent)
+    // visually show the error message
     this.errorMessageTarget.classList.remove("display-none")
+    // visually and programatically change the input to be in an error state, associate message with input
     this.queryInputTarget.classList.add("usa-input--error")
     this.queryInputTarget.setAttribute("aria-invalid", "true")
-    this.toggleErrorIds(this.queryInputTarget, true)
+    this.toggleErrorIds(this.queryInputTarget, true, "query_error_message")
+    // prevent error message from making content jump
     this.searchFormTarget.classList.remove("margin-bottom-4")
   }
 
   hideError() {
-    document.getElementById("query_error_message").replaceChildren()
-    document.getElementById("query_error_message").textContent = "GOODBYE WORLD"
-    // const ariaLiveRegion = document.getElementById("live-announcer")
-    // ariaLiveRegion.replaceChildren()
-    // const pTag = document.createElement('p')
-    // pTag.textContent ="GOODBYE WORLD"
-    // console.log("DROO", ariaLiveRegion)
-    // console.log("DROO", pTag)
-
-    // ariaLiveRegion.appendChild(pTag)
+    // clear error message from live region
+    this.updateAriaLiveRegion()
+    // visually hide error message
     this.errorMessageTarget.classList.add("display-none")
+    // visually and programatically remove input error state and associations 
     this.queryInputTarget.classList.remove("usa-input--error")
     this.queryInputTarget.removeAttribute("aria-invalid")
-    this.toggleErrorIds(this.queryInputTarget, false)
+    this.toggleErrorIds(this.queryInputTarget, false, "query_error_message")
+    // revert styling 
     this.searchFormTarget.classList.add("margin-bottom-4")
   }
 
