@@ -254,6 +254,97 @@ describe("EmployerSearchController clear button", () => {
   })
 })
 
+describe("EmployerSearchController blank query error", () => {
+  let controllerElement
+  let form
+  let queryInput
+  let errorMessage
+
+  beforeEach(async () => {
+    controllerElement = document.createElement("div")
+    controllerElement.setAttribute("data-controller", "cbv-employer-search")
+
+    form = document.createElement("form")
+    form.setAttribute("data-action", "submit->cbv-employer-search#onSubmit")
+    form.setAttribute("data-cbv-employer-search-target", "searchForm")
+    form.classList.add("margin-bottom-4")
+
+    queryInput = document.createElement("input")
+    queryInput.setAttribute("type", "search")
+    queryInput.setAttribute("data-cbv-employer-search-target", "queryInput")
+    queryInput.setAttribute("data-action", "input->cbv-employer-search#toggleClearButton")
+
+    const clearButton = document.createElement("button")
+    clearButton.setAttribute("type", "reset")
+    clearButton.setAttribute("data-cbv-employer-search-target", "clearButton")
+    clearButton.hidden = true
+
+    errorMessage = document.createElement("p")
+    errorMessage.setAttribute("data-cbv-employer-search-target", "errorMessage")
+    errorMessage.classList.add("display-none")
+
+    form.appendChild(queryInput)
+    form.appendChild(clearButton)
+    form.appendChild(errorMessage)
+    controllerElement.appendChild(form)
+    document.body.appendChild(controllerElement)
+
+    await window.Stimulus.register("cbv-employer-search", EmployerSearchController)
+  })
+
+  afterEach(() => {
+    document.body.innerHTML = ""
+  })
+
+  it("shows the error and prevents submission when the query is blank", () => {
+    const event = new Event("submit", { bubbles: true, cancelable: true })
+    form.dispatchEvent(event)
+
+    expect(event.defaultPrevented).toBe(true)
+    expect(errorMessage.classList.contains("display-none")).toBe(false)
+    expect(queryInput.classList.contains("usa-input--error")).toBe(true)
+    expect(queryInput.getAttribute("aria-invalid")).toBe("true")
+    expect(form.classList.contains("margin-bottom-1")).toBe(true)
+    expect(form.classList.contains("margin-bottom-4")).toBe(false)
+  })
+
+  it("shows the error and prevents submission when the query is only whitespace", () => {
+    queryInput.value = "   "
+
+    const event = new Event("submit", { bubbles: true, cancelable: true })
+    form.dispatchEvent(event)
+
+    expect(event.defaultPrevented).toBe(true)
+    expect(errorMessage.classList.contains("display-none")).toBe(false)
+  })
+
+  it("does not show an error and allows submission when the query is present", () => {
+    queryInput.value = "Walmart"
+
+    const event = new Event("submit", { bubbles: true, cancelable: true })
+    form.dispatchEvent(event)
+
+    expect(event.defaultPrevented).toBe(false)
+    expect(errorMessage.classList.contains("display-none")).toBe(true)
+    expect(queryInput.classList.contains("usa-input--error")).toBe(false)
+    expect(queryInput.getAttribute("aria-invalid")).toBeNull()
+  })
+
+  it("hides the error as soon as the user types a character", () => {
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }))
+    expect(errorMessage.classList.contains("display-none")).toBe(false)
+
+    queryInput.value = "W"
+    queryInput.dispatchEvent(new Event("input", { bubbles: true }))
+
+    expect(errorMessage.classList.contains("display-none")).toBe(true)
+    expect(queryInput.classList.contains("usa-input--error")).toBe(false)
+    expect(queryInput.getAttribute("aria-invalid")).toBeNull()
+    expect(form.classList.contains("margin-bottom-4")).toBe(true)
+    expect(form.classList.contains("margin-bottom-1")).toBe(false)
+  })
+})
+
 describe("EmployerSearchController multiple instances on same page!", () => {
   let stimulusElement1
   let stimulusElement2

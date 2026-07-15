@@ -10,6 +10,8 @@ export default class extends Controller {
     "helpAlert",
     "queryInput",
     "clearButton",
+    "errorMessage",
+    "searchForm",
   ]
 
   static values = {
@@ -46,6 +48,7 @@ export default class extends Controller {
 
   toggleClearButton() {
     this.clearButtonTarget.hidden = this.queryInputTarget.value.length === 0
+    if (this.queryInputTarget.value.length > 0) this.hideError()
   }
 
   onSearchReset(event) {
@@ -53,6 +56,63 @@ export default class extends Controller {
     this.queryInputTarget.value = ""
     this.clearButtonTarget.hidden = true
     this.queryInputTarget.focus()
+  }
+
+  onSubmit(event) {
+    if (this.queryInputTarget.value.trim().length === 0) {
+      event.preventDefault()
+      this.showError()
+    } else {
+      this.hideError()
+    }
+  }
+
+  toggleErrorIds(target, error) {
+    let describeIds;
+
+    if(error) {
+      describeIds = "query_error_message" + " " + target.getAttribute("aria-describedby")
+    } else {
+      describeIds = target.getAttribute("aria-describedby").replace("query_error_message", "").trim()
+    }
+
+    this.queryInputTarget.setAttribute("aria-describedby", describeIds)
+  }
+
+  showError() {
+    // const ariaLiveRegion = document.getElementById("live-announcer")
+    // ariaLiveRegion.replaceChildren()
+    // const pTag = document.createElement('p')
+    document.getElementById("query_error_message").replaceChildren()
+    document.getElementById("query_error_message").textContent = "HELLO WORLD"
+    // pTag.textContent ="HELLO WORLD"
+    // console.log("DROO", ariaLiveRegion)
+    // console.log("DROO", pTag)
+
+    // ariaLiveRegion.appendChild(pTag)
+    this.errorMessageTarget.classList.remove("display-none")
+    this.queryInputTarget.classList.add("usa-input--error")
+    this.queryInputTarget.setAttribute("aria-invalid", "true")
+    this.toggleErrorIds(this.queryInputTarget, true)
+    this.searchFormTarget.classList.remove("margin-bottom-4")
+  }
+
+  hideError() {
+    document.getElementById("query_error_message").replaceChildren()
+    document.getElementById("query_error_message").textContent = "GOODBYE WORLD"
+    // const ariaLiveRegion = document.getElementById("live-announcer")
+    // ariaLiveRegion.replaceChildren()
+    // const pTag = document.createElement('p')
+    // pTag.textContent ="GOODBYE WORLD"
+    // console.log("DROO", ariaLiveRegion)
+    // console.log("DROO", pTag)
+
+    // ariaLiveRegion.appendChild(pTag)
+    this.errorMessageTarget.classList.add("display-none")
+    this.queryInputTarget.classList.remove("usa-input--error")
+    this.queryInputTarget.removeAttribute("aria-invalid")
+    this.toggleErrorIds(this.queryInputTarget, false)
+    this.searchFormTarget.classList.add("margin-bottom-4")
   }
 
   onSuccess(accountId) {

@@ -27,10 +27,10 @@
 
   <div id="company_examples" class="text-gray-50"><%= t(".company_examples") %></div>
 
-  <%= form_with url: cbv_flow_employer_search_path, method: :get, class: "usa-search usa-search--big margin-bottom-4 margin-top-2", html: { role: "search" }, data: { turbo_frame: "employers", turbo_action: "advance", action: "reset->cbv-employer-search#onSearchReset" } do |f| %>
+  <%= form_with url: cbv_flow_employer_search_path, method: :get, class: "usa-search usa-search--big margin-bottom-4 margin-top-2", html: { role: "search" }, data: { turbo_frame: "employers", turbo_action: "advance", action: "reset->cbv-employer-search#onSearchReset submit->cbv-employer-search#onSubmit", "cbv-employer-search-target": "searchForm" } do |f| %>
     <div class="cbv-employer-search__input-wrapper">
       <%= f.text_field :query, value: @query, class: "usa-input", type: "search",
-            aria: { describedby: "company_examples" },
+            aria: { describedby: "company_examples"  },
             data: { "cbv-employer-search-target": "queryInput", action: "input->cbv-employer-search#toggleClearButton" } %>
       <button
         type="reset"
@@ -52,6 +52,13 @@
         <%= image_tag "@uswds/uswds/dist/img/usa-icons-bg/search--white.svg", class: "usa-search__submit-icon", alt: "Search" %>
     </button>
   <% end %>
+
+  <p
+    id="query_error_message"
+    class="usa-error-message margin-top-0 display-none"
+    data-cbv-employer-search-target="errorMessage"
+    role="status"
+  ><%= t(".blank_query_error") %></p>
 
   <%= render partial: "employer", locals: { employer: @employers } %>
 
