@@ -70,10 +70,10 @@ export default class extends Controller {
   toggleErrorIds(target, error, id) {
     const describedbyList = target.getAttribute("aria-describedby")
     if (error && describedbyList.includes(id)) return
-    let describeIds;
+    let describeIds
 
     // TODO: DREW - should error id be first or second?
-    if(error) {
+    if (error) {
       describeIds = id + " " + describedbyList
     } else {
       describeIds = describedbyList.replace(id, "").trim()
@@ -107,11 +107,11 @@ export default class extends Controller {
     this.updateAriaLiveRegion()
     // visually hide error message
     this.errorMessageTarget.classList.add("display-none")
-    // visually and programatically remove input error state and associations 
+    // visually and programatically remove input error state and associations
     this.queryInputTarget.classList.remove("usa-input--error")
     this.queryInputTarget.removeAttribute("aria-invalid")
     this.toggleErrorIds(this.queryInputTarget, false, "query_error_message")
-    // revert styling 
+    // revert styling
     this.searchFormTarget.classList.add("margin-bottom-4")
   }
 

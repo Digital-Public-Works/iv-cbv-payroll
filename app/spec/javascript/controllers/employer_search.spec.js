@@ -259,6 +259,7 @@ describe("EmployerSearchController blank query error", () => {
   let form
   let queryInput
   let errorMessage
+  let liveAnnouncer
 
   beforeEach(async () => {
     controllerElement = document.createElement("div")
@@ -273,6 +274,7 @@ describe("EmployerSearchController blank query error", () => {
     queryInput.setAttribute("type", "search")
     queryInput.setAttribute("data-cbv-employer-search-target", "queryInput")
     queryInput.setAttribute("data-action", "input->cbv-employer-search#toggleClearButton")
+    queryInput.setAttribute("aria-describedby", "company_examples")
 
     const clearButton = document.createElement("button")
     clearButton.setAttribute("type", "reset")
@@ -282,12 +284,19 @@ describe("EmployerSearchController blank query error", () => {
     errorMessage = document.createElement("p")
     errorMessage.setAttribute("data-cbv-employer-search-target", "errorMessage")
     errorMessage.classList.add("display-none")
+    errorMessage.textContent = "Enter letters or numbers"
 
     form.appendChild(queryInput)
     form.appendChild(clearButton)
     form.appendChild(errorMessage)
     controllerElement.appendChild(form)
     document.body.appendChild(controllerElement)
+
+    // Rendered by the app layout in production; the controller reaches for
+    // it by id, so it must exist in the DOM independent of this controller.
+    liveAnnouncer = document.createElement("div")
+    liveAnnouncer.id = "live-announcer"
+    document.body.appendChild(liveAnnouncer)
 
     await window.Stimulus.register("cbv-employer-search", EmployerSearchController)
   })
@@ -296,7 +305,7 @@ describe("EmployerSearchController blank query error", () => {
     document.body.innerHTML = ""
   })
 
-  it("shows the error and prevents submission when the query is blank", () => {
+  it("shows the error, prevents submission, and announces it when the query is blank", () => {
     const event = new Event("submit", { bubbles: true, cancelable: true })
     form.dispatchEvent(event)
 
@@ -304,8 +313,9 @@ describe("EmployerSearchController blank query error", () => {
     expect(errorMessage.classList.contains("display-none")).toBe(false)
     expect(queryInput.classList.contains("usa-input--error")).toBe(true)
     expect(queryInput.getAttribute("aria-invalid")).toBe("true")
-    expect(form.classList.contains("margin-bottom-1")).toBe(true)
+    expect(queryInput.getAttribute("aria-describedby")).toBe("query_error_message company_examples")
     expect(form.classList.contains("margin-bottom-4")).toBe(false)
+    expect(liveAnnouncer.textContent).toBe("Enter letters or numbers")
   })
 
   it("shows the error and prevents submission when the query is only whitespace", () => {
@@ -328,9 +338,10 @@ describe("EmployerSearchController blank query error", () => {
     expect(errorMessage.classList.contains("display-none")).toBe(true)
     expect(queryInput.classList.contains("usa-input--error")).toBe(false)
     expect(queryInput.getAttribute("aria-invalid")).toBeNull()
+    expect(queryInput.getAttribute("aria-describedby")).toBe("company_examples")
   })
 
-  it("hides the error as soon as the user types a character", () => {
+  it("hides the error, clears the announcement, and restores spacing as soon as the user types a character", () => {
     form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }))
     expect(errorMessage.classList.contains("display-none")).toBe(false)
 
@@ -340,8 +351,16 @@ describe("EmployerSearchController blank query error", () => {
     expect(errorMessage.classList.contains("display-none")).toBe(true)
     expect(queryInput.classList.contains("usa-input--error")).toBe(false)
     expect(queryInput.getAttribute("aria-invalid")).toBeNull()
+    expect(queryInput.getAttribute("aria-describedby")).toBe("company_examples")
     expect(form.classList.contains("margin-bottom-4")).toBe(true)
-    expect(form.classList.contains("margin-bottom-1")).toBe(false)
+    expect(liveAnnouncer.textContent).toBe("")
+  })
+
+  it("does not duplicate the error id in aria-describedby when submitted blank twice in a row", () => {
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }))
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }))
+
+    expect(queryInput.getAttribute("aria-describedby")).toBe("query_error_message company_examples")
   })
 })
 
