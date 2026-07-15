@@ -28,6 +28,7 @@ export default class ArgyleModalAdapter extends ModalAdapter {
           userToken: user.user_token,
           flowId: flowId,
           items: [this.requestData.id],
+          language: locale,
           onAccountConnected: this.onSuccess.bind(this),
           onTokenExpired: this.onTokenExpired.bind(this),
           onAccountCreated: async (payload) => {

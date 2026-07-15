@@ -1,16 +1,9 @@
 # ==========================================
-# INTEGRATION TEST PARTNER CONFIGURATION
+# INTEGRATION TEST PARTNER — SETTINGS (shared across environments)
 # Purpose: Partner for local e2e testing against Docker services.
-# Requires docker-compose.integration.yml services to be running.
-#
-# Setup:
-#   1. Start Docker services:
-#      docker compose -f docker-compose.integration.yml up -d
-#
-#   2. Run the integration setup rake task:
-#      bundle exec rake integration:setup
-#
-#   3. Start the Rails server and visit /cbv/links/integration_test
+# Applied together with integration-test-partner.credentials.yml via
+#   bundle exec rake integration:partner:setup
+# See docs/app/integration-test-partner.credentials.yml for the env-specific half.
 # ==========================================
 
 ---
@@ -22,7 +15,6 @@ domain: integration-test
 website: https://integration-test.example.org/
 # Inline SVG "INTTEST" badge — dev-only placeholder, no external asset dependency
 logo_path: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 80'><rect width='200' height='80' fill='%231B5E8C' rx='8'/><text x='100' y='50' text-anchor='middle' fill='white' font-family='Helvetica,Arial,sans-serif' font-weight='bold' font-size='28' letter-spacing='2'>INTTEST</text></svg>"
-argyle_environment: sandbox
 active_demo: true
 active_prod: false
 pilot_ended: false
@@ -35,32 +27,6 @@ pay_income_days_gig: 90
 report_customization_show_earnings_list: true
 partner_identifier_name: case_number
 weekly_report_enabled: false
-transmission_methods:
-- method_type: webhook
-  configs:
-  - key: webhook_url
-    encrypted: false
-    value: "http://localhost:9292/api/v1/income-report"
-  - key: api_key
-    encrypted: false
-    value: "my-secure-guid"
-- method_type: sftp
-  configs:
-  - key: url
-    encrypted: false
-    value: "localhost"
-  - key: port
-    encrypted: false
-    value: "2222"
-  - key: user
-    encrypted: false
-    value: "testuser"
-  - key: password
-    encrypted: false
-    value: "testpass"
-  - key: path_prefix
-    encrypted: false
-    value: "upload"
 application_attributes:
 - name: case_number
   description: Case number

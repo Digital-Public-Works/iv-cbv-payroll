@@ -9,9 +9,9 @@
     <% if current_agency.logo_path.present? %>
       <div class="display-inline-block text-middle">
         <% if current_agency.logo_path.start_with?("http", "data:") %>
-          <%= image_tag current_agency.logo_path, class: "cbv-header__agency-logo--#{current_agency.id}" %>
+          <%= image_tag current_agency.logo_path, class: "cbv-header__agency-logo--#{current_agency.id}", alt: agency_logo_alt_text %>
         <% else %>
-          <%= image_tag wicked_pdf_asset_base64(current_agency.logo_path), class: "cbv-header__agency-logo--#{current_agency.id}" %>
+          <%= image_tag wicked_pdf_asset_base64(current_agency.logo_path), class: "cbv-header__agency-logo--#{current_agency.id}", alt: agency_logo_alt_text %>
         <% end %>
       </div>
     <% else %>
