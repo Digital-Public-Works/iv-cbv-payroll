@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 import { createModalAdapter } from "@js/utilities/createModalAdapter"
 import { loadProviderResources } from "@js/utilities/loadProviderResources.ts"
+import { toggleErrorIds, updateAriaLiveRegion } from "@js/utilities/accessibility"
 
 export default class extends Controller {
   static targets = [
@@ -67,50 +68,28 @@ export default class extends Controller {
     }
   }
 
-  toggleErrorIds(target, error, id) {
-    const describedbyList = target.getAttribute("aria-describedby")
-    if (error && describedbyList.includes(id)) return
-    let describeIds
-
-    // TODO: DREW - should error id be first or second?
-    if (error) {
-      describeIds = id + " " + describedbyList
-    } else {
-      describeIds = describedbyList.replace(id, "").trim()
-    }
-
-    target.setAttribute("aria-describedby", describeIds)
-  }
-
-  updateAriaLiveRegion(text) {
-    document.getElementById("live-announcer").replaceChildren()
-    if (text) {
-      document.getElementById("live-announcer").textContent = text
-    }
-  }
-
   showError() {
     // announce to the user the error message
-    this.updateAriaLiveRegion(this.errorMessageTarget.textContent)
+    updateAriaLiveRegion(this.errorMessageTarget.textContent)
     // visually show the error message
     this.errorMessageTarget.classList.remove("display-none")
     // visually and programatically change the input to be in an error state, associate message with input
     this.queryInputTarget.classList.add("usa-input--error")
     this.queryInputTarget.setAttribute("aria-invalid", "true")
-    this.toggleErrorIds(this.queryInputTarget, true, "query_error_message")
+    toggleErrorIds(this.queryInputTarget, true, "query_error_message")
     // prevent error message from making content jump
     this.searchFormTarget.classList.remove("margin-bottom-4")
   }
 
   hideError() {
     // clear error message from live region
-    this.updateAriaLiveRegion()
+    updateAriaLiveRegion()
     // visually hide error message
     this.errorMessageTarget.classList.add("display-none")
     // visually and programatically remove input error state and associations
     this.queryInputTarget.classList.remove("usa-input--error")
     this.queryInputTarget.removeAttribute("aria-invalid")
-    this.toggleErrorIds(this.queryInputTarget, false, "query_error_message")
+    toggleErrorIds(this.queryInputTarget, false, "query_error_message")
     // revert styling
     this.searchFormTarget.classList.add("margin-bottom-4")
   }
