@@ -3,14 +3,11 @@
     <%= render partial: "unemployment_search_tips" %>
   <% end %>
 
-  <div role="region" aria-live="polite" />
-    <% if @query.present? %>
-  
-      <h2 class="site-preview-heading margin-bottom-2">
-        <%= t("cbv.employer_searches.show.results") %> (<%= @employers.count %>)
-      </h2>
-    <% end %>
-  </div>
+  <% if @query.present? %>
+    <h2 class="site-preview-heading margin-bottom-2">
+      <%= t("cbv.employer_searches.show.results") %> (<%= @employers.count %>)
+    </h2>
+  <% end %>
   <div class="usa-card-group">
     <% @employers.each do |employer| %>
       <div class="usa-card usa-card--flag usa-card--media-right desktop:grid-col-6">
