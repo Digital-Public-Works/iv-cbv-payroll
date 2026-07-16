@@ -84,6 +84,31 @@ describe("ArgyleModalAdapter", () => {
       )
       expect(mockArgyleAuthToken.isSandbox).toBe(true)
     })
+    it("passes the current document locale as the language param", async () => {
+      expect(Argyle.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          language: "en",
+        })
+      )
+    })
+    it("passes 'es' as the language param when the document locale is Spanish", async () => {
+      const previousLang = document.documentElement.lang
+      document.documentElement.lang = "es"
+      try {
+        Argyle.create.mockClear()
+        const esAdapter = new ArgyleModalAdapter(Argyle)
+        esAdapter.init(modalAdapterArgs)
+        await esAdapter.open()
+        expect(Argyle.create).toHaveBeenCalledTimes(1)
+        expect(Argyle.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            language: "es",
+          })
+        )
+      } finally {
+        document.documentElement.lang = previousLang
+      }
+    })
   })
 
   describe("event:onSuccess", () => {
