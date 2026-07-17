@@ -556,5 +556,131 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
         expect(subject.to_html).not_to include "Gross Pay Item: Regular Pay"
       end
     end
+
+    context "when show_direct_deposit_accounts is true" do
+      let(:deductions) { [ OpenStruct.new(category: "Tax", tax: "pre-tax", amount: 10000) ] }
+
+      def render_paystub(direct_deposit_accounts: [], payout_card_accounts: [], is_caseworker: false)
+        render_inline(
+          described_class.new(
+            build_paystub(
+              direct_deposit_accounts: direct_deposit_accounts,
+              payout_card_accounts: payout_card_accounts,
+              deductions: deductions
+            ),
+            income: income,
+            is_caseworker: is_caseworker,
+            show_direct_deposit_accounts: true
+          )
+        )
+      end
+
+      context "with a single direct deposit account" do
+        subject { render_paystub(direct_deposit_accounts: [ "1111" ]) }
+
+        it "renders the unnumbered direct deposit label and bare last four" do
+          html = subject.to_html
+          expect(html).to include I18n.t("cbv.payment_details.show.deposit_accounts.direct_deposit_account.applicant.label")
+          expect(html).not_to include I18n.t("cbv.payment_details.show.deposit_accounts.direct_deposit_account.applicant.label_numbered", number: 1)
+          expect(html).to include "1111"
+        end
+      end
+
+      context "with multiple direct deposit accounts" do
+        subject { render_paystub(direct_deposit_accounts: [ "1111", "2222" ]) }
+
+        it "numbers each account in order" do
+          html = subject.to_html
+          expect(html).to include I18n.t("cbv.payment_details.show.deposit_accounts.direct_deposit_account.applicant.label_numbered", number: 1)
+          expect(html).to include I18n.t("cbv.payment_details.show.deposit_accounts.direct_deposit_account.applicant.label_numbered", number: 2)
+          expect(html.index("1111")).to be < html.index("2222")
+        end
+      end
+
+      context "with a single payout card account" do
+        subject { render_paystub(payout_card_accounts: [ "5678" ]) }
+
+        it "renders the unnumbered payout card label and bare last four" do
+          html = subject.to_html
+          expect(html).to include I18n.t("cbv.payment_details.show.deposit_accounts.payout_card_account.applicant.label")
+          expect(html).to include "5678"
+        end
+      end
+
+      context "with both account types and multiples" do
+        subject { render_paystub(direct_deposit_accounts: [ "1111", "2222" ], payout_card_accounts: [ "5678", "6789" ]) }
+
+        it "lists all direct deposit accounts before any payout card accounts" do
+          html = subject.to_html
+          expect(html.index("2222")).to be < html.index("5678")
+        end
+
+        it "numbers the payout card accounts" do
+          html = subject.to_html
+          expect(html).to include I18n.t("cbv.payment_details.show.deposit_accounts.payout_card_account.applicant.label_numbered", number: 1)
+          expect(html).to include I18n.t("cbv.payment_details.show.deposit_accounts.payout_card_account.applicant.label_numbered", number: 2)
+        end
+      end
+
+      context "with no deposit accounts of either type" do
+        subject { render_paystub(direct_deposit_accounts: [], payout_card_accounts: []) }
+
+        it "renders the 'No deposit accounts found' line" do
+          expect(subject.to_html).to include I18n.t("cbv.payment_details.show.deposit_accounts.none")
+        end
+      end
+
+      context "when rendered for a caseworker (income report)" do
+        subject { render_paystub(direct_deposit_accounts: [ "1111" ], payout_card_accounts: [ "5678" ], is_caseworker: true) }
+
+        it "uses the longer 'Last 4 digits of' labels instead of the applicant labels" do
+          html = subject.to_html
+          expect(html).to include I18n.t("cbv.payment_details.show.deposit_accounts.direct_deposit_account.caseworker.label")
+          expect(html).to include I18n.t("cbv.payment_details.show.deposit_accounts.payout_card_account.caseworker.label")
+          expect(html).not_to include I18n.t("cbv.payment_details.show.deposit_accounts.direct_deposit_account.applicant.label")
+          expect(html).not_to include I18n.t("cbv.payment_details.show.deposit_accounts.payout_card_account.applicant.label")
+        end
+      end
+
+      it "places the deposit section between net pay and deductions" do
+        html = render_paystub(direct_deposit_accounts: [ "1111" ]).to_html
+        net_pay_pos = html.index("$1,140.39") # from build_paystub default net_pay
+        dda_pos     = html.index("1111")
+        deduct_pos  = html.index("Deduction: Tax")
+
+        expect(net_pay_pos).to be < dda_pos
+        expect(dda_pos).to be < deduct_pos
+      end
+
+      it "treats nil account arrays as empty" do
+        html = render_inline(
+          described_class.new(
+            build_paystub(direct_deposit_accounts: nil, payout_card_accounts: nil),
+            income: income,
+            show_direct_deposit_accounts: true
+          )
+        ).to_html
+        expect(html).to include I18n.t("cbv.payment_details.show.deposit_accounts.none")
+      end
+    end
+
+    context "when show_direct_deposit_accounts is false (default)" do
+      let(:paystub) { build_paystub(direct_deposit_accounts: [ "1111", "2222" ], payout_card_accounts: [ "5678" ]) }
+
+      subject do
+        render_inline(
+          described_class.new(paystub, income: income)
+        )
+      end
+
+      it "does not render any deposit section" do
+        html = subject.to_html
+        expect(html).not_to include "1111"
+        expect(html).not_to include "5678"
+        expect(html).not_to include I18n.t("cbv.payment_details.show.deposit_accounts.direct_deposit_account.applicant.label")
+        expect(html).not_to include I18n.t("cbv.payment_details.show.deposit_accounts.payout_card_account.applicant.label")
+        expect(html).not_to include I18n.t("cbv.payment_details.show.deposit_accounts.none")
+      end
+    end
   end
 end

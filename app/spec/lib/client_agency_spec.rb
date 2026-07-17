@@ -133,4 +133,29 @@ RSpec.describe ClientAgency do
       end
     end
   end
+
+  context "include_paystubs" do
+    let(:partner_config) do
+      pc = PartnerConfig.create!(
+        partner_id: 'foo',
+        name: 'foo',
+        timezone: 'America/Los_Angeles',
+        argyle_environment: 'sandbox',
+        pay_income_days_w2: 90,
+        pay_income_days_gig: 182,
+        partner_identifier_name: 'case_number'
+      )
+      pc.partner_transmission_methods.create!(method_type: :shared_email)
+      pc
+    end
+
+    it "is false by default" do
+      expect(ClientAgencyConfig::ClientAgency.new(partner_config).include_paystubs).to eq(false)
+    end
+
+    it "is true when the partner config has it set" do
+      partner_config.update!(include_paystubs: true)
+      expect(ClientAgencyConfig::ClientAgency.new(partner_config).include_paystubs).to eq(true)
+    end
+  end
 end

@@ -63,6 +63,26 @@ module Aggregators::Sdk
       nil # 204 No Content
     end
 
+    def fetch_payroll_documents_api(account: nil, user: nil, employment: nil, limit: 200)
+      doc = load_fixture("request_payroll_document.json")
+      { "results" => [ doc ], "next" => nil }
+    end
+
+    def fetch_payroll_document_api(id:)
+      load_fixture("request_payroll_document.json")
+    end
+
+    # Returns the bytes of a minimal valid 1-page PDF (checked in as a
+    # shared fixture) and a PDF content type. Tests that need a different
+    # shape (image content type, multi-page, etc.) should stub this method.
+    def fetch_payroll_document_file(file_url:)
+      [ File.binread(SHARED_PAYSTUB_PDF_FIXTURE), "application/pdf" ]
+    end
+
+    SHARED_PAYSTUB_PDF_FIXTURE = Rails.root.join(
+      "spec", "support", "fixtures", "argyle", "shared", "mock_paystub.pdf"
+    ).freeze
+
     private
 
     def load_fixture(filename)

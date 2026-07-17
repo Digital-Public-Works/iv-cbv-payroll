@@ -42,6 +42,7 @@ RSpec.describe Transmitters::UnencryptedS3Transmitter, integration: true do
     allow(mock_client_agency).to receive(:timezone).and_return("America/New_York")
     allow(mock_client_agency).to receive(:partner_identifier_name).and_return("case_number")
     allow(mock_client_agency).to receive(:applicant_attributes).and_return({})
+    allow(mock_client_agency).to receive(:include_paystubs).and_return(false)
 
     stub_pdf_generation(label: "UnencryptedS3Transmitter integration test")
   end
@@ -69,7 +70,7 @@ RSpec.describe Transmitters::UnencryptedS3Transmitter, integration: true do
 
       # PDF is real, parseable, and has at least one page.
       expect(pdf_bytes.byteslice(0, 5)).to eq("%PDF-")
-      expect(PDF::Reader.new(StringIO.new(pdf_bytes)).page_count).to be >= 1
+      expect(CombinePDF.parse(pdf_bytes).pages.count).to be >= 1
 
       # CSV metadata matches the cbv_flow / applicant we transmitted.
       meta = parse_metadata_csv(csv_bytes)
@@ -101,6 +102,45 @@ RSpec.describe Transmitters::UnencryptedS3Transmitter, integration: true do
         keys = s3.list_objects_v2(bucket: bucket).contents.map(&:key)
         key = keys.grep(%r{\Ainbox/prod/VMI_[A-Z0-9]{8}_\d{8}_ConfS3UNENC1\.tar\.gz\z}).max
         expect(key).not_to be_nil, "no prefixed VMI tar.gz landed in the bucket; saw: #{keys.inspect}"
+      end
+    end
+  end
+
+  context "with include_paystubs enabled" do
+    let(:paystubs_pdf_bytes) do
+      File.binread(Aggregators::Sdk::MockArgyleService::SHARED_PAYSTUB_PDF_FIXTURE)
+    end
+
+    before do
+      allow(mock_client_agency).to receive(:include_paystubs).and_return(true)
+      allow(mock_client_agency).to receive(:argyle_environment).and_return("mock")
+      allow_any_instance_of(Aggregators::PaystubsPdfService).to receive(:generate)
+        .and_return(Aggregators::PaystubsPdfService::Result.new(
+          content: paystubs_pdf_bytes,
+          page_count: 1,
+          file_size: paystubs_pdf_bytes.bytesize
+        ))
+    end
+
+    describe "#deliver" do
+      it "includes a _paystubs.pdf alongside the report PDF and CSV in the tar.gz" do
+        expect { subject.deliver }.not_to raise_error
+
+        s3 = s3_client_from(transmission_method_configuration)
+        keys = s3.list_objects_v2(bucket: bucket).contents.map(&:key)
+        key = keys.grep(/\AVMI_[A-Z0-9]{8}_\d{8}_ConfS3UNENC1\.tar\.gz\z/).max
+        expect(key).not_to be_nil, "no VMI tar.gz landed in the bucket; saw: #{keys.inspect}"
+
+        entries = extract_tar_gz(download_object(s3, bucket, key))
+        expect(entries.keys).to contain_exactly(
+          a_string_matching(/_paystubs\.pdf\z/),
+          a_string_matching(/(?<!_paystubs)\.pdf\z/),
+          a_string_matching(/\.csv\z/)
+        )
+
+        _, paystubs_bytes = entries.find { |k, _| k.end_with?("_paystubs.pdf") }
+        expect(paystubs_bytes.byteslice(0, 5)).to eq("%PDF-")
+        expect(CombinePDF.parse(paystubs_bytes).pages.count).to be >= 1
       end
     end
   end

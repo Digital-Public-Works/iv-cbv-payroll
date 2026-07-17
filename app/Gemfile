@@ -5,7 +5,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 ruby "3.4.5"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails", "~> 7.2.3", ">= 7.2.3.1"
+gem "rails", "~> 8.1.3"
 
 # The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]
 gem "sprockets-rails"
@@ -18,7 +18,7 @@ gem "csv"
 gem "pg", "~> 1.1"
 
 # Use the Puma web server [https://github.com/puma/puma]
-gem "puma", "~> 6.6.0"
+gem "puma", "~> 7.2"
 
 # Bundle and transpile JavaScript [https://github.com/rails/jsbundling-rails]
 gem "jsbundling-rails"
@@ -32,9 +32,6 @@ gem "stimulus-rails"
 # Bundle and process CSS [https://github.com/rails/cssbundling-rails]
 gem "cssbundling-rails"
 gem "premailer-rails"
-
-# Build JSON APIs with ease [https://github.com/rails/jbuilder]
-gem "jbuilder"
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
@@ -55,6 +52,7 @@ gem "newrelic_rpm"
 gem "faraday", "~> 2.13"
 
 gem "wicked_pdf"
+gem "combine_pdf"
 gem "actioncable-enhanced-postgresql-adapter"
 gem "aws-sdk-rails"
 gem "aws-sdk-s3"
@@ -64,16 +62,16 @@ gem "aws-actionmailer-ses"
 gem "rack-mini-profiler"
 gem "stackprof"
 
-gem "rack", "~> 3.1.20"
+gem "rack", "~> 3.2.6"
 
 # https://www.ruby-lang.org/en/news/2024/08/01/dos-rexml-cve-2024-41123/
 gem "rexml", "~> 3.4.2"
 gem "gpgme", "~> 2.0", ">= 2.0.12"
-gem "pdf-reader", "~> 2.15.0"
-gem "net-imap", "0.5.10"  # Fixing GHSA-j3g3-5qv5-52m
+gem "net-imap", "0.5.14"  # Fixing CVE-2026-42246 (STARTTLS stripping) + GHSA-j3g3-5qv5-52mj
 gem "cgi", ">= 0.4.2"     # Fixing GHSA-mhwm-jh88-3gjf
 gem "thor", ">= 1.4.0"    # Fixing GHSA-mqcp-p2hv-vw6x
 gem "uri", ">= 1.0.4"     # Fixing CVE-2025-61594
+gem "ostruct"             # Required by wicked_pdf on Ruby 3.4+ (no longer a default gem; was previously loaded transitively via jbuilder)
 
 group :development, :test do
   gem "brakeman"
@@ -83,7 +81,7 @@ group :development, :test do
   gem "dotenv-rails", "~> 2.7"
   gem "erb_lint", require: false
   gem "i18n-tasks", "~> 1.0", require: false
-  gem "rspec-rails", "~> 6.1"
+  gem "rspec-rails", "~> 8.0"
   gem "rubocop"
   gem "rubocop-rspec"
   gem "rubocop-rails-omakase"
@@ -95,7 +93,8 @@ group :development, :test do
 end
 
 group :development do
-  gem "debase-ruby_core_source", "~> 3.3", ">= 3.3.1"
+  # debase + ruby_core_source back RubyMine's classic "Ruby remote debug" (Debug Server) config — keep them.
+  gem "debase-ruby_core_source", "~> 4.0"
   gem "debase", "~> 0.2.9", require: false
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
@@ -108,7 +107,11 @@ group :development do
   gem "rails-erd", "~> 1.7"
 end
 
+# Realistic fake data, used by the dev-only partner generator rake task.
+gem "faker", "~> 3.5", group: %i[development test]
+
 group :test do
+  gem "pdf-reader", "~> 2.15.0"
   gem "axe-core-rspec", "~> 4.10"
   gem "climate_control", "~> 1.0"
   gem "webmock", ">= 3.24.0"
@@ -121,10 +124,8 @@ group :production do
   # Add plugin for pg gem to support AWS RDS IAM
   gem "pg-aws_rds_iam", "~> 0.7.0"
 end
-gem "devise", "~> 4.9"
+gem "devise", "~> 5.0"
 
-gem "omniauth-rails_csrf_protection", "~> 1.0"
-gem "omniauth-azure-activedirectory-v2"
 gem "view_component"
 gem "wkhtmltopdf-binary"
 
@@ -137,7 +138,7 @@ gem "sinatra", "~> 4.2"
 # AWS SQS
 gem "aws-sdk-sqs"
 # Shoryuken for SQS
-gem "shoryuken"
+gem "shoryuken", "~> 7.0"
 
 # Discard for soft deletes
 gem "discard", "~> 1.4"

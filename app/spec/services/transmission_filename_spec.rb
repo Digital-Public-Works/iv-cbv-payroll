@@ -113,6 +113,27 @@ RSpec.describe TransmissionFilename do
       expect { described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :smoke_signal) }
         .to raise_error(KeyError, /not a file-producing method/)
     end
+
+    context "with a suffix" do
+      it "inserts the suffix between the stem and the extension" do
+        expect(described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :sftp, suffix: "_paystubs"))
+          .to eq("VMI_00012345_20260513_ConfABC123_paystubs.pdf")
+      end
+
+      it "works for tar-based methods too" do
+        expect(described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :unencrypted_s3, suffix: "_paystubs"))
+          .to eq("VMI_00012345_20260513_ConfABC123_paystubs.tar.gz")
+      end
+
+      context "when the suffix causes the filename to exceed 100 characters" do
+        let(:confirmation_code) { "X" * 63 }
+
+        it "raises an error referencing the 100-char ceiling" do
+          expect { described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :sftp, suffix: "_paystubs") }
+            .to raise_error(/100/)
+        end
+      end
+    end
   end
 
   describe ".remote_directory_for" do

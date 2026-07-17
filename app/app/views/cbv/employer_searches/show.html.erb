@@ -11,7 +11,7 @@
     <%= t(".header") %>
   </h1>
   <div class="display-flex flex-align-center text-ink font-sans-md">
-    <span><%= t(".company_name") %></span>
+    <%= label_tag :query, t(".company_name") %>
     <button type="button"
             class="usa-button usa-button--unstyled text-ink usa-tooltip margin-left-05"
             data-position="right"
@@ -25,11 +25,24 @@
     </button>
   </div>
 
-  <div class="text-gray-50"><%= t(".company_examples") %></div>
+  <div id="company_examples" class="text-gray-50"><%= t(".company_examples") %></div>
 
-  <%= form_with url: cbv_flow_employer_search_path, method: :get, class: "usa-search usa-search--big margin-bottom-4 margin-top-2", html: { role: "search" }, data: { turbo_frame: "employers", turbo_action: "advance" } do |f| %>
-    <%= f.label :query, "Search for your employer", class: "usa-sr-only" %>
-    <%= f.text_field :query, value: @query, class: "usa-input", type: "search" %>
+  <%= form_with url: cbv_flow_employer_search_path, method: :get, class: "usa-search usa-search--big margin-bottom-4 margin-top-2", html: { role: "search" }, data: { turbo_frame: "employers", turbo_action: "advance", action: "reset->cbv-employer-search#onSearchReset" } do |f| %>
+    <div class="cbv-employer-search__input-wrapper">
+      <%= f.text_field :query, value: @query, class: "usa-input", type: "search",
+            aria: { describedby: "company_examples" },
+            data: { "cbv-employer-search-target": "queryInput", action: "input->cbv-employer-search#toggleClearButton" } %>
+      <button
+        type="reset"
+        class="cbv-employer-search__clear-button"
+        <%= "hidden" if @query.blank? %>
+        data-cbv-employer-search-target="clearButton">
+        <%= sr_only_span(t(".clear_search")) %>
+        <svg class="usa-icon" aria-hidden="true" focusable="false" role="img">
+          <use href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#close") %>"></use>
+        </svg>
+      </button>
+    </div>
     <button
       class="usa-button"
       type="submit">

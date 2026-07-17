@@ -16,11 +16,13 @@ namespace :integration do
       puts "=== Integration Test Partner Setup ==="
       puts
 
-      # 1. Load and apply the partner config
+      # 1. Load and apply the partner config (settings + credentials documents)
       puts "Applying integration_test partner config..."
-      yaml_path = Rails.root.join("..", "docs", "app", "integration-test-partner.yml").to_s
+      docs_dir = Rails.root.join("..", "docs", "app")
+      settings_path = docs_dir.join("integration-test-partner.settings.yml").to_s
+      credentials_path = docs_dir.join("integration-test-partner.credentials.yml").to_s
 
-      loader = PartnerConfigLoader.new(yaml_path)
+      loader = PartnerConfigLoader.new(settings_path, credentials_path)
       loader.load!
       loader.validate!
 

@@ -21,6 +21,7 @@ weekly_report_enabled: true
 weekly_report_recipients: west_carolina@example.org
 weekly_report_variant: invitations
 include_invitation_details_on_weekly_report: true
+include_paystubs: false
 transmission_method: sftp
 partner_identifier_name: case_number
 transmission_configs:

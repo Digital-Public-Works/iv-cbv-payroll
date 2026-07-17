@@ -18,6 +18,17 @@
     <% end %>
   <% end %>
   <%= table.with_data_point(:net_pay_amount, @paystub.net_pay_amount) %>
+  <% if show_deposit_accounts? %>
+    <% direct_deposit_accounts.each_with_index do |last_four, index| %>
+      <%= table.with_data_point(:direct_deposit_account, last_four, direct_deposit_account_number(index), @is_caseworker) %>
+    <% end %>
+    <% payout_card_accounts.each_with_index do |last_four, index| %>
+      <%= table.with_data_point(:payout_card_account, last_four, payout_card_account_number(index), @is_caseworker) %>
+    <% end %>
+    <% if no_deposit_accounts? %>
+      <%= table.with_data_point(:no_deposit_accounts) %>
+    <% end %>
+  <% end %>
   <% @paystub.deductions.filter { |deduction| deduction.amount.to_f > 0 }.each do |deduction| %>
     <%= table.with_data_point(:deduction, deduction.category, deduction.tax, deduction.amount) %>
   <% end %>
@@ -27,7 +38,7 @@
 <% end %>
 <% if show_earnings_items? %>
   <aside class="paystub_earnings_items bg-base-lightest padding-x-4 padding-y-3 margin-bottom-8">
-  <h4><%= t("components.report.w2_paystub_details_table.earnings_items_title") %></h4>
+  <h5><%= t("components.report.w2_paystub_details_table.earnings_items_title") %></h5>
   <p><%= t("components.report.w2_paystub_details_table.earnings_items_description") %></p>
   <%= render(TableComponent.new(is_responsive: @is_responsive, thead_class_names: "", class_names: "paystub_earnings_items_table margin-bottom-0")) do |table| %>
     <% earnings_sort_order(@paystub.earnings.filter { |earning| earning.amount.to_f > 0 }).each do |earning| %>

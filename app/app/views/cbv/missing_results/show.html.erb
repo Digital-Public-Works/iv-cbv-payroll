@@ -120,15 +120,15 @@
           <p class="margin-top-05 margin-bottom-0"><%= t(".upload_text") %></p>
         </li>
         <li class="margin-bottom-2">
-          <strong><%= t(".mail_heading", agency_acronym: agency_translation("shared.agency_acronym")) %></strong>
-          <p class="margin-top-05 margin-bottom-0"><%= t(".mail_text", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
+          <strong><%= t(".mail_heading", agency_acronym: agency_acronym_or_full_name) %></strong>
+          <p class="margin-top-05 margin-bottom-0"><%= t(".mail_text", agency_acronym: agency_acronym_or_full_name) %></p>
         </li>
         <li class="margin-bottom-2">
           <p class="margin-y-0"><%= t(".local_help") %></p>
         </li>
         <li class="margin-bottom-0">
-          <strong><%= t(".in_person_heading", agency_acronym: agency_translation("shared.agency_acronym")) %></strong>
-          <p class="margin-top-05 margin-bottom-0"><%= t(".in_person_text", agency_acronym: agency_translation("shared.agency_acronym")) %></p>
+          <strong><%= t(".in_person_heading", agency_acronym: agency_acronym_or_full_name) %></strong>
+          <p class="margin-top-05 margin-bottom-0"><%= t(".in_person_text", agency_acronym: agency_acronym_or_full_name) %></p>
         </li>
       </ul>
     <% end %>

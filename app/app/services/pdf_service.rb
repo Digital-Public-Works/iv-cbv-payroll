@@ -1,4 +1,4 @@
-require "pdf-reader"
+require "combine_pdf"
 
 class PdfService
   # Represents the result of PDF generation
@@ -49,8 +49,7 @@ class PdfService
         raise StandardError, "Failed to generate PDF: Content is empty or nil"
       end
 
-      reader = PDF::Reader.new(StringIO.new(pdf_content))
-      page_count = reader.page_count
+      page_count = CombinePDF.parse(pdf_content).pages.count
 
       PdfGenerationResult.new(pdf_content, html_content, page_count, pdf_content.bytesize)
     rescue => e

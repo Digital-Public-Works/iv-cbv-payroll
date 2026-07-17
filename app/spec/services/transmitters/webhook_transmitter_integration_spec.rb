@@ -23,7 +23,10 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
     }
   end
 
-  let(:mock_client_agency) { instance_double(ClientAgencyConfig::ClientAgency) }
+  let(:mock_client_agency) do
+    instance_double(ClientAgencyConfig::ClientAgency, include_full_ssn: false, include_direct_deposit_last_4: false)
+  end
+
   let(:pinwheel_report) { build(:pinwheel_report, :with_pinwheel_account) }
   let(:aggregator_report) do
     Aggregators::AggregatorReports::CompositeReport.new(
@@ -44,6 +47,7 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
     allow(mock_client_agency).to receive(:id).and_return("sandbox")
     allow(mock_client_agency).to receive(:timezone).and_return("America/New_York")
     allow(mock_client_agency).to receive(:transmission_methods).and_return(configured_methods)
+    allow(mock_client_agency).to receive(:include_paystubs).and_return(false)
     allow(CbvApplicant).to receive(:valid_attributes_for_agency).with("sandbox").and_return([ "case_number" ])
 
     WebMock.allow_net_connect!

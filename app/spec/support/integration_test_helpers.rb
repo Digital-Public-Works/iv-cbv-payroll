@@ -1,8 +1,6 @@
 require "csv"
 require "zlib"
 require "rubygems/package"
-require "pdf-reader"
-
 # Helpers shared across the transmitter integration specs.
 module IntegrationTestHelpers
   # Stubs PdfService#generate to return a small, real PDF rendered by wicked_pdf.
@@ -45,6 +43,33 @@ module IntegrationTestHelpers
   # Parses the metadata CSV the s3 transmitters write alongside the PDF.
   def parse_metadata_csv(csv_bytes)
     CSV.parse(csv_bytes, headers: true).first.to_h
+  end
+
+  # Opens a Net::SFTP session from a transmission_method_configuration hash and
+  # yields it, then closes cleanly. Mirrors how SftpGateway opens connections.
+  def with_sftp_session(config)
+    session = Net::SSH.start(
+      config["url"], config["user"],
+      password: config["password"],
+      port: config.fetch("port", 22).to_i
+    )
+    sftp = Net::SFTP::Session.new(session)
+    sftp.connect!
+    yield sftp
+  ensure
+    sftp&.close_channel
+  end
+
+  def sftp_list_files(config, dir)
+    with_sftp_session(config) { |s| s.dir.entries(dir).map(&:name).reject { |n| %w[. ..].include?(n) } }
+  end
+
+  def sftp_download_file(config, remote_path)
+    with_sftp_session(config) do |s|
+      io = StringIO.new(+"".b)
+      s.download!(remote_path, io)
+      io.string
+    end
   end
 
   # Returns a fresh AWS S3 client pointed at whatever endpoint the

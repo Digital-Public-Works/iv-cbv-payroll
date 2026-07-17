@@ -30,6 +30,45 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
     Timecop.freeze(today, &ex)
   end
 
+  describe "#check_paystub_volume (anomalous-paystub-count guardrail)" do
+    let(:report) do
+      Aggregators::AggregatorReports::ArgyleReport.new(
+        payroll_accounts: [ payroll_account ],
+        argyle_service: argyle_service,
+        days_to_fetch_for_w2: days_ago_to_fetch,
+        days_to_fetch_for_gig: days_ago_to_fetch_for_gig
+      )
+    end
+
+    before do
+      # cap = @fetched_days * MAX_PAYSTUBS_PER_LOOKBACK_DAY(2) = 10
+      report.instance_variable_set(:@fetched_days, 5)
+      allow(Rails.logger).to receive(:error)
+      allow(NewRelic::Agent).to receive(:notice_error)
+    end
+
+    it "surfaces an over-cap count to New Relic WITHOUT raising (report generation continues)" do
+      over_cap = { "results" => Array.new(10) { {} } } # 10 >= cap(10) -> fires
+
+      expect {
+        report.send(:check_paystub_volume, over_cap, payroll_account)
+      }.not_to raise_error
+
+      expect(NewRelic::Agent).to have_received(:notice_error).with(
+        an_instance_of(Aggregators::AggregatorReports::ArgyleReport::PaystubLimitExceededError),
+        custom_params: hash_including(paystub_count: 10, max_paystubs: 10, lookback_days: 5)
+      )
+    end
+
+    it "does nothing when the count is under the cap" do
+      under_cap = { "results" => Array.new(3) { {} } } # 3 < cap(10)
+
+      report.send(:check_paystub_volume, under_cap, payroll_account)
+
+      expect(NewRelic::Agent).not_to have_received(:notice_error)
+    end
+  end
+
   describe '#fetch_report_data' do
     let(:argyle_report) do
       Aggregators::AggregatorReports::ArgyleReport.new(
@@ -64,11 +103,6 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
         expect(argyle_report.employments.first.employer_address).to be_nil
       end
 
-      it 'sets @has_fetched to true on success' do
-        expect(argyle_report.has_fetched).to be true
-      end
-
-
       it 'should have an employment account_source' do
         expect(argyle_report.employments.first.account_source).to match(/argyle_sandbox/)
       end
@@ -92,12 +126,11 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
 
         it 'logs the error' do
           expect(Rails.logger).to receive(:error).with(/Report Fetch Error: API error/)
-          argyle_report.send(:fetch_report_data)
+          expect { argyle_report.send(:fetch_report_data) }.to raise_error(StandardError, 'API error')
         end
 
-        it 'sets has_fetched to false' do
-          argyle_report.send(:fetch_report_data)
-          expect(argyle_report.has_fetched).to be false
+        it 're-raises the error rather than swallowing it' do
+          expect { argyle_report.send(:fetch_report_data) }.to raise_error(StandardError, 'API error')
         end
       end
     end
@@ -125,10 +158,6 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
         expect(argyle_report.employments.first.employer_address).to eq("202 Westlake Ave N, Seattle, WA 98109")
       end
 
-      it 'sets @has_fetched to true on success' do
-        expect(argyle_report.has_fetched).to be true
-      end
-
       context "when in an agency configured to grab 182 days of gig data" do
         let(:days_ago_to_fetch_for_gig) { 182 }
 
@@ -148,12 +177,11 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
 
         it 'logs the error' do
           expect(Rails.logger).to receive(:error).with(/Report Fetch Error: API error/)
-          argyle_report.send(:fetch_report_data)
+          expect { argyle_report.send(:fetch_report_data) }.to raise_error(StandardError, 'API error')
         end
 
-        it 'sets has_fetched to false' do
-          argyle_report.send(:fetch_report_data)
-          expect(argyle_report.has_fetched).to be false
+        it 're-raises the error rather than swallowing it' do
+          expect { argyle_report.send(:fetch_report_data) }.to raise_error(StandardError, 'API error')
         end
       end
     end
@@ -378,8 +406,8 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
         allow(argyle_service).to receive(:fetch_account_api).and_raise(StandardError, "argyle is down")
       end
 
-      it "does not discard the account" do
-        argyle_report.fetch
+      it "propagates the error rather than swallowing it, and does not discard the account" do
+        expect { argyle_report.fetch }.to raise_error(StandardError, "argyle is down")
         expect(discarded_in_db?(payroll_account)).to be false
       end
     end
@@ -525,7 +553,7 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
         allow(argyle_service).to receive(:fetch_employments_api).and_return(employments_json)
         allow(argyle_service).to receive(:fetch_paystubs_api).and_return(paystubs_json)
         allow(argyle_service).to receive(:fetch_account_api).and_return(account_json)
-        allow(argyle_service).to receive(:fetch_gigs_api).and_return(nil)
+        allow(argyle_service).to receive(:fetch_gigs_api).and_return({ "results" => [] })
         argyle_report.fetch
       end
 

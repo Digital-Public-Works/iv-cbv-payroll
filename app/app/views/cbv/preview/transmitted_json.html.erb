@@ -1,0 +1,36 @@
+<% content_for :title, "Transmitted JSON" %>
+
+<div data-controller="json-viewer">
+  <div class="display-flex flex-justify margin-bottom-2">
+    <h1 class="margin-0">Transmitted JSON</h1>
+    <button type="button"
+            class="usa-button usa-button--outline"
+            data-action="click->json-viewer#copy"
+            data-json-viewer-target="button">
+      Copy JSON
+    </button>
+  </div>
+
+  <p class="text-base">
+    This is the payload <code>CbvFlowToJson</code> builds for the webhook / JSON
+    transmitters — i.e. what actually gets sent to the partner agency. Use the
+    preview-bar toggles to see how the sensitive-output flags change it.
+  </p>
+
+  <ul class="usa-list usa-list--unstyled margin-bottom-3 text-base">
+    <li>
+      <strong>Full SSN:</strong>
+      <%= current_agency&.include_full_ssn ? "on" : "off" %>
+      <span class="text-base-light">(<code>?include_full_ssn=true</code>)</span>
+    </li>
+    <li>
+      <strong>Direct deposit last 4:</strong>
+      <%= current_agency&.include_direct_deposit_last_4 ? "on" : "off" %>
+      <span class="text-base-light">(<code>?include_direct_deposit_last_4=true</code>)</span>
+    </li>
+  </ul>
+
+  <pre class="bg-base-lightest padding-2 radius-md overflow-x-auto font-mono-sm line-height-mono-4"
+       data-json-viewer-target="source"
+       style="white-space: pre; max-height: 70vh; overflow-y: auto;"><%= JSON.pretty_generate(@json_payload) %></pre>
+</div>

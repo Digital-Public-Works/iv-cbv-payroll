@@ -177,6 +177,83 @@ describe("EmployerSearchController onSearchStart", () => {
   })
 })
 
+describe("EmployerSearchController clear button", () => {
+  let controllerElement
+  let form
+  let queryInput
+  let clearButton
+
+  beforeEach(async () => {
+    controllerElement = document.createElement("div")
+    controllerElement.setAttribute("data-controller", "cbv-employer-search")
+
+    form = document.createElement("form")
+    form.setAttribute("data-action", "reset->cbv-employer-search#onSearchReset")
+
+    queryInput = document.createElement("input")
+    queryInput.setAttribute("type", "search")
+    queryInput.setAttribute("data-cbv-employer-search-target", "queryInput")
+    queryInput.setAttribute("data-action", "input->cbv-employer-search#toggleClearButton")
+
+    clearButton = document.createElement("button")
+    clearButton.setAttribute("type", "reset")
+    clearButton.setAttribute("data-cbv-employer-search-target", "clearButton")
+    clearButton.hidden = true
+
+    form.appendChild(queryInput)
+    form.appendChild(clearButton)
+    controllerElement.appendChild(form)
+    document.body.appendChild(controllerElement)
+
+    await window.Stimulus.register("cbv-employer-search", EmployerSearchController)
+  })
+
+  afterEach(() => {
+    document.body.innerHTML = ""
+  })
+
+  it("shows the clear button once the query input has a value", () => {
+    queryInput.value = "Walmart"
+    queryInput.dispatchEvent(new Event("input", { bubbles: true }))
+
+    expect(clearButton.hidden).toBe(false)
+  })
+
+  it("hides the clear button again once the query input is emptied", () => {
+    queryInput.value = "Walmart"
+    queryInput.dispatchEvent(new Event("input", { bubbles: true }))
+    expect(clearButton.hidden).toBe(false)
+
+    queryInput.value = ""
+    queryInput.dispatchEvent(new Event("input", { bubbles: true }))
+
+    expect(clearButton.hidden).toBe(true)
+  })
+
+  it("hides the clear button and refocuses the input when the form is reset", () => {
+    queryInput.value = "Walmart"
+    queryInput.dispatchEvent(new Event("input", { bubbles: true }))
+    expect(clearButton.hidden).toBe(false)
+
+    form.dispatchEvent(new Event("reset", { bubbles: true }))
+
+    expect(clearButton.hidden).toBe(true)
+    expect(document.activeElement).toBe(queryInput)
+  })
+
+  it("empties the input on reset even when it was pre-filled from a query param", () => {
+    // Simulates the server rendering `value: @query`, which becomes the
+    // input's defaultValue that a native form reset would otherwise restore.
+    queryInput.setAttribute("value", "Walmart")
+    queryInput.value = "Walmart"
+    queryInput.dispatchEvent(new Event("input", { bubbles: true }))
+
+    form.dispatchEvent(new Event("reset", { bubbles: true, cancelable: true }))
+
+    expect(queryInput.value).toBe("")
+  })
+})
+
 describe("EmployerSearchController multiple instances on same page!", () => {
   let stimulusElement1
   let stimulusElement2

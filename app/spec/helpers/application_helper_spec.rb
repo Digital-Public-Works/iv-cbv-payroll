@@ -90,6 +90,177 @@ RSpec.describe ApplicationHelper do
         end
       end
     end
+
+    context "when the translation is missing in development" do
+      let(:current_agency) { nil }
+
+      before do
+        allow(Rails.env).to receive(:development?).and_return(true)
+      end
+
+      it "raises for a non-optional key" do
+        expect { helper.agency_translation("missing_prefix") }
+          .to raise_error(/Missing agency translation/)
+      end
+
+      it "returns blank without raising for an optional key" do
+        expect(helper.agency_translation("shared.agency_acronym")).to be_blank
+      end
+    end
+  end
+
+  describe "#has_acronym?" do
+    before do
+      allow(helper).to receive(:agency_translation).with("shared.agency_acronym").and_return(acronym)
+    end
+
+    context "when the acronym is set" do
+      let(:acronym) { "ACME" }
+
+      it "returns true" do
+        expect(helper.has_acronym?).to be true
+      end
+    end
+
+    context "when the acronym is blank" do
+      let(:acronym) { "" }
+
+      it "returns false" do
+        expect(helper.has_acronym?).to be false
+      end
+    end
+
+    context "when the acronym is never set" do
+      let(:acronym) { nil }
+
+      it "returns false" do
+        expect(helper.has_acronym?).to be false
+      end
+    end
+  end
+
+  describe "#agency_acronym_or_full_name" do
+    before do
+      allow(helper).to receive(:agency_translation).with("shared.agency_full_name").and_return("Full Agency Name")
+      allow(helper).to receive(:agency_translation).with("shared.agency_acronym").and_return(acronym)
+    end
+
+    context "when the partner has an acronym" do
+      let(:acronym) { "ACME" }
+
+      it "returns the acronym" do
+        expect(helper.agency_acronym_or_full_name).to eq("ACME")
+      end
+    end
+
+    context "when the partner has no acronym" do
+      let(:acronym) { nil }
+
+      it "returns the full agency name" do
+        expect(helper.agency_acronym_or_full_name).to eq("Full Agency Name")
+      end
+    end
+  end
+
+  describe "#agency_name_with_acronym" do
+    before do
+      allow(helper).to receive(:agency_translation).with("shared.agency_full_name").and_return("ACME Corporation")
+      allow(helper).to receive(:agency_translation).with("shared.agency_acronym").and_return(acronym)
+    end
+
+    context "when the partner has a distinct acronym" do
+      let(:acronym) { "ACME" }
+
+      it "renders the full name with the acronym in parentheses" do
+        expect(helper.agency_name_with_acronym).to eq("ACME Corporation (ACME)")
+      end
+    end
+
+    context "when the partner has no acronym" do
+      let(:acronym) { nil }
+
+      it "renders just the full name, with no parentheses" do
+        expect(helper.agency_name_with_acronym).to eq("ACME Corporation")
+      end
+    end
+  end
+
+  describe "#agency_logo_alt_text" do
+    before do
+      allow(helper).to receive(:agency_translation).with("shared.agency_full_name").and_return("Full Agency Name")
+      allow(helper).to receive(:agency_translation).with("shared.agency_acronym").and_return(acronym)
+    end
+
+    context "when the partner has an acronym" do
+      let(:acronym) { "DHS" }
+
+      it "returns the acronym followed by 'Logo'" do
+        expect(helper.agency_logo_alt_text).to eq("DHS Logo")
+      end
+    end
+
+    context "when the partner has no acronym" do
+      let(:acronym) { nil }
+
+      it "falls back to the full agency name followed by 'Logo'" do
+        expect(helper.agency_logo_alt_text).to eq("Full Agency Name Logo")
+      end
+    end
+  end
+
+  describe "#agency_website_link" do
+    let(:url) { "https://compass.example.gov" }
+    let(:current_agency) do
+      instance_double(ClientAgencyConfig::ClientAgency, id: "sandbox", agency_contact_website: url)
+    end
+
+    before do
+      without_partial_double_verification do
+        allow(helper).to receive(:current_agency).and_return(current_agency)
+      end
+    end
+
+    it "builds an external link labeled with the default 'the … website' wording" do
+      result = helper.agency_website_link
+      expect(result).to include(%(href="#{url}"), 'target="_blank"', 'rel="noopener noreferrer"', ">the VMI website</a>")
+      expect(result).to be_html_safe
+    end
+
+    it "uses a custom label when provided" do
+      expect(helper.agency_website_link(label: "Acme")).to include(">Acme</a>")
+    end
+
+    context "when the agency has no website" do
+      let(:url) { nil }
+
+      it "returns the label as plain text with no link" do
+        expect(helper.agency_website_link(label: "Acme")).to eq("Acme")
+      end
+    end
+  end
+
+  describe "#agency_translation with a relative (leading-dot) key" do
+    let(:current_agency) { ClientAgencyConfig.instance["sandbox"] }
+
+    before do
+      without_partial_double_verification do
+        allow(helper).to receive(:current_agency).and_return(current_agency)
+      end
+      # Set by ActionView during template rendering; scopes leading-dot keys.
+      helper.instance_variable_set(:@virtual_path, "cbv/entries/show")
+    end
+
+    it "expands the relative key so a full-key DB translation is used" do
+      partner = PartnerConfig.find_by(partner_id: "sandbox")
+      PartnerTranslation.create!(
+        partner_config: partner,
+        locale: "en",
+        key: "cbv.entries.show.checkbox",
+        value: "DB checkbox label"
+      )
+
+      expect(helper.agency_translation(".checkbox")).to eq("DB checkbox label")
+    end
   end
 
   describe "#feedback_form_url" do

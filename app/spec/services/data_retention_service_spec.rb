@@ -12,9 +12,12 @@ RSpec.describe DataRetentionService do
       Timecop.freeze(now, &ex)
     end
 
+    # Invitations redact on the next daily run after expires_at -- no grace.
+    # The implicit ≤24h tolerance (between expiry and the next scheduled task
+    # firing) is documented in partner data-sharing agreements.
     context "for an unused invitation (no associated CbvFlow)" do
-      context "before the deletion threshold" do
-        let(:now) { cbv_flow_invitation.expires_at + 7.days - 1.minute }
+      context "before the invitation expires" do
+        let(:now) { cbv_flow_invitation.expires_at - 1.minute }
 
         it "does not redact the invitation" do
           expect { service.redact_invitations }
@@ -22,8 +25,8 @@ RSpec.describe DataRetentionService do
         end
       end
 
-      context "after the deletion threshold" do
-        let(:now) { cbv_flow_invitation.expires_at + 7.days + 1.minute }
+      context "after the invitation has expired" do
+        let(:now) { cbv_flow_invitation.expires_at + 1.minute }
 
         it "redacts the invitation" do
           service.redact_invitations
@@ -56,12 +59,10 @@ RSpec.describe DataRetentionService do
           before do
             allow(Rails.env).to receive(:production?).and_return(true)
 
-            # `now` is already past the first invitation's expiry+threshold, but
-            # other_invitation is created at that advanced clock, so back-date it
-            # explicitly to bring it past the deletion threshold too.
-            other_invitation.update!(
-              expires_at: now - DataRetentionService::REDACT_UNUSED_INVITATIONS_AFTER - 1.day
-            )
+            # `now` is already past the first invitation's expiry, but
+            # other_invitation is created at that advanced clock, so back-date
+            # its expires_at explicitly to bring it past expiry too.
+            other_invitation.update!(expires_at: now - 1.day)
 
             allow_any_instance_of(CbvApplicant).to receive(:redact!).and_wrap_original do |original, *args|
               if original.receiver.id == cbv_flow_invitation.cbv_applicant.id
@@ -95,13 +96,13 @@ RSpec.describe DataRetentionService do
     end
   end
 
-  describe "#redact_incomplete_cbv_flows" do
+  describe "#redact_cbv_flows" do
     let!(:cbv_flow_invitation) do
       create(:cbv_flow_invitation)
     end
     let!(:cbv_flow) { CbvFlow.create_from_invitation(cbv_flow_invitation, "test_device_id") }
     let(:service) { DataRetentionService.new }
-    let(:deletion_threshold) { cbv_flow_invitation.expires_at + DataRetentionService::REDACT_UNUSED_INVITATIONS_AFTER }
+    let(:deletion_threshold) { cbv_flow.created_at + DataRetentionService::REDACT_CBV_FLOWS_AFTER }
     let(:now) { Time.now }
 
     around do |ex|
@@ -112,24 +113,24 @@ RSpec.describe DataRetentionService do
       let(:now) { deletion_threshold - 1.minute }
 
       it "does not redact the CbvFlow" do
-        expect { service.redact_incomplete_cbv_flows }
+        expect { service.redact_cbv_flows }
           .not_to change { cbv_flow.reload.attributes }
       end
 
       it "does not redact the CbvFlowInvitation" do
-        expect { service.redact_incomplete_cbv_flows }
+        expect { service.redact_cbv_flows }
           .not_to change { cbv_flow_invitation.reload.attributes }
       end
 
       it "does not redact the CbvApplicant" do
-        expect { service.redact_incomplete_cbv_flows }
+        expect { service.redact_cbv_flows }
           .not_to change { cbv_flow.cbv_applicant.reload.attributes }
       end
 
       it "does not redact an associated PayrollAccount" do
         payroll_account = create(:payroll_account, cbv_flow: cbv_flow)
 
-        expect { service.redact_incomplete_cbv_flows }
+        expect { service.redact_cbv_flows }
           .not_to change { payroll_account.reload.attributes }
       end
     end
@@ -144,8 +145,8 @@ RSpec.describe DataRetentionService do
         )
       end
 
-      it "redacts the incomplete CbvFlow" do
-        service.redact_incomplete_cbv_flows
+      it "redacts the CbvFlow" do
+        service.redact_cbv_flows
         expect(cbv_flow.reload).to have_attributes(
           end_user_id: "00000000-0000-0000-0000-000000000000",
           additional_information: {}
@@ -153,7 +154,7 @@ RSpec.describe DataRetentionService do
       end
 
       it "redacts the associated invitation" do
-        service.redact_incomplete_cbv_flows
+        service.redact_cbv_flows
         expect(cbv_flow_invitation.reload).to have_attributes(
           auth_token: "REDACTED",
           redacted_at: within(1.second).of(now)
@@ -161,7 +162,7 @@ RSpec.describe DataRetentionService do
       end
 
       it "redacts the associated CbvApplicant" do
-        service.redact_incomplete_cbv_flows
+        service.redact_cbv_flows
         expect(cbv_flow.cbv_applicant.reload).to have_attributes(
           first_name: "REDACTED"
         )
@@ -169,32 +170,44 @@ RSpec.describe DataRetentionService do
 
       it "redacts an associated PayrollAccount" do
         payroll_account = create(:payroll_account, cbv_flow: cbv_flow)
-        service.redact_incomplete_cbv_flows
+        service.redact_cbv_flows
         expect(payroll_account.reload).to have_attributes(
           redacted_at: within(1.second).of(now)
         )
       end
 
       it "skips redacting already-redacted CbvFlows" do
-        service.redact_incomplete_cbv_flows
+        service.redact_cbv_flows
 
         expect_any_instance_of(CbvFlow).not_to receive(:redact!)
-        service.redact_incomplete_cbv_flows
+        service.redact_cbv_flows
       end
 
-      context "for a complete CbvFlow" do
+      # Uniform 7-day rule applies regardless of completion / transmission state.
+      context "for a complete CbvFlow (confirmation_code present)" do
         before do
           cbv_flow.update(confirmation_code: "SANDBOX001")
         end
 
-        it "does not redact the CbvFlow" do
-          expect { service.redact_invitations }
-            .not_to change { cbv_flow.reload.attributes }
+        it "still redacts the CbvFlow" do
+          service.redact_cbv_flows
+          expect(cbv_flow.reload.redacted_at).to be_within(1.second).of(now)
         end
 
-        it "does not redact the invitation" do
-          expect { service.redact_invitations }
-            .not_to change { cbv_flow_invitation.reload.attributes }
+        it "still redacts the invitation" do
+          service.redact_cbv_flows
+          expect(cbv_flow_invitation.reload.redacted_at).to be_within(1.second).of(now)
+        end
+      end
+
+      context "for a transmitted CbvFlow (transmitted_at present)" do
+        before do
+          cbv_flow.update(confirmation_code: "SANDBOX001", transmitted_at: now - 1.day)
+        end
+
+        it "still redacts the CbvFlow" do
+          service.redact_cbv_flows
+          expect(cbv_flow.reload.redacted_at).to be_within(1.second).of(now)
         end
       end
 
@@ -215,155 +228,7 @@ RSpec.describe DataRetentionService do
 
         it "deletes the argyle user" do
           expect(fake_argyle).to receive(:delete_user).with(argyle_user_id: "argyle_123")
-          service.redact_incomplete_cbv_flows
-        end
-      end
-    end
-
-    context "when the CbvFlow has no invitation" do
-      let(:cbv_flow) { create(:cbv_flow, :invited, cbv_flow_invitation: nil) }
-      let(:deletion_threshold) { cbv_flow.updated_at + DataRetentionService::REDACT_UNUSED_INVITATIONS_AFTER }
-
-      context "before the deletion threshold" do
-        let(:now) { deletion_threshold - 1.minute }
-
-        it "does not redact the CbvFlow" do
-          expect { service.redact_invitations }
-            .not_to change { cbv_flow.reload.attributes }
-        end
-      end
-
-      context "after the deletion threshold" do
-        let(:now) { deletion_threshold + 1.minute }
-
-        it "redacts the incomplete CbvFlow" do
-          service.redact_incomplete_cbv_flows
-          expect(cbv_flow.reload).to have_attributes(
-            end_user_id: "00000000-0000-0000-0000-000000000000",
-            additional_information: {}
-          )
-        end
-
-        it "redacts an associated PayrollAccount" do
-          payroll_account = create(:payroll_account, cbv_flow: cbv_flow)
-          service.redact_incomplete_cbv_flows
-          expect(payroll_account.reload).to have_attributes(
-            redacted_at: within(1.second).of(now)
-          )
-        end
-      end
-    end
-  end
-
-  describe "#redact_transmitted_cbv_flows" do
-    let!(:cbv_flow_invitation) do
-      create(:cbv_flow_invitation)
-    end
-    let!(:cbv_flow) do
-      CbvFlow
-        .create_from_invitation(cbv_flow_invitation, "test_device_id")
-        .tap do |cbv_flow|
-          cbv_flow.update(
-            end_user_id: "11111111-1111-1111-1111-111111111111",
-            additional_information: { "account-id" => "some string here" },
-            confirmation_code: "SANDBOX0002",
-            transmitted_at: Time.new(2024, 8, 1, 12, 0, 0, "-04:00")
-          )
-        end
-    end
-    let(:service) { DataRetentionService.new }
-    let(:deletion_threshold) { cbv_flow.transmitted_at + DataRetentionService::REDACT_TRANSMITTED_CBV_FLOWS_AFTER }
-    let(:now) { Time.now }
-
-    around do |ex|
-      Timecop.freeze(now, &ex)
-    end
-
-    context "before the deletion threshold" do
-      let(:now) { deletion_threshold - 1.minute }
-
-      it "does not redact the CbvFlow" do
-        expect { service.redact_transmitted_cbv_flows }
-          .not_to change { cbv_flow.reload.attributes }
-      end
-
-      it "does not redact the CbvFlowInvitation" do
-        expect { service.redact_transmitted_cbv_flows }
-          .not_to change { cbv_flow_invitation.reload.attributes }
-      end
-
-      it "does not redact the CbvApplicant" do
-        expect { service.redact_transmitted_cbv_flows }
-          .not_to change { cbv_flow.cbv_applicant.reload.attributes }
-      end
-
-      it "does not redact an associated PayrollAccount" do
-        payroll_account = create(:payroll_account, cbv_flow: cbv_flow)
-
-        expect { service.redact_transmitted_cbv_flows }
-          .not_to change { payroll_account.reload.attributes }
-      end
-    end
-
-    context "after the deletion threshold" do
-      let(:now) { deletion_threshold + 1.minute }
-
-      it "redacts the incomplete CbvFlow" do
-        service.redact_transmitted_cbv_flows
-        expect(cbv_flow.reload).to have_attributes(
-          end_user_id: "00000000-0000-0000-0000-000000000000",
-          additional_information: {}
-        )
-      end
-
-      it "redacts the associated invitation" do
-        service.redact_transmitted_cbv_flows
-        expect(cbv_flow_invitation.reload).to have_attributes(
-          auth_token: "REDACTED",
-          redacted_at: within(1.second).of(now)
-        )
-      end
-
-      it "redacts the associated applicant" do
-        service.redact_transmitted_cbv_flows
-        expect(cbv_flow.cbv_applicant.reload).to have_attributes(
-          first_name: "REDACTED"
-        )
-      end
-
-      it "redacts an associated PayrollAccount" do
-        payroll_account = create(:payroll_account, cbv_flow: cbv_flow)
-        service.redact_transmitted_cbv_flows
-        expect(payroll_account.reload).to have_attributes(
-          redacted_at: within(1.second).of(now)
-        )
-      end
-
-      it "skips redacting already-redacted CbvFlows" do
-        service.redact_transmitted_cbv_flows
-
-        expect_any_instance_of(CbvFlow).not_to receive(:redact!)
-        service.redact_transmitted_cbv_flows
-      end
-
-      context "when the cbv_flow has an argyle_user_id" do
-        let(:fake_argyle) { instance_double(Aggregators::Sdk::ArgyleService) }
-
-        before do
-          cbv_flow.update(argyle_user_id: "argyle_123")
-
-          argyle_environment = ClientAgencyConfig.instance[cbv_flow.client_agency_id].argyle_environment
-          allow(Aggregators::Sdk::ArgyleService)
-            .to receive(:new)
-                  .with(argyle_environment)
-                  .and_return(fake_argyle)
-
-          allow(fake_argyle).to receive(:delete_user)
-        end
-
-        it "deletes the argyle user" do
-          expect(fake_argyle).to receive(:delete_user).with(argyle_user_id: "argyle_123")
-          service.redact_transmitted_cbv_flows
+          service.redact_cbv_flows
         end
       end
 
@@ -374,122 +239,226 @@ RSpec.describe DataRetentionService do
 
         it "does not attempt to delete argyle user" do
           expect(service).not_to receive(:delete_argyle_user)
-          service.redact_transmitted_cbv_flows
+          service.redact_cbv_flows
+        end
+      end
+    end
+
+    # Standalone flow (no invitation): uniform 7-day rule from cbv_flow.created_at
+    # applies the same way -- no longer keyed off updated_at.
+    context "when the CbvFlow has no invitation" do
+      let(:cbv_flow) { create(:cbv_flow, :invited, cbv_flow_invitation: nil) }
+      let(:deletion_threshold) { cbv_flow.created_at + DataRetentionService::REDACT_CBV_FLOWS_AFTER }
+
+      context "before the deletion threshold" do
+        let(:now) { deletion_threshold - 1.minute }
+
+        it "does not redact the CbvFlow" do
+          expect { service.redact_cbv_flows }
+            .not_to change { cbv_flow.reload.attributes }
+        end
+      end
+
+      context "after the deletion threshold" do
+        let(:now) { deletion_threshold + 1.minute }
+
+        it "redacts the CbvFlow" do
+          service.redact_cbv_flows
+          expect(cbv_flow.reload).to have_attributes(
+            end_user_id: "00000000-0000-0000-0000-000000000000",
+            additional_information: {}
+          )
+        end
+
+        it "redacts an associated PayrollAccount" do
+          payroll_account = create(:payroll_account, cbv_flow: cbv_flow)
+          service.redact_cbv_flows
+          expect(payroll_account.reload).to have_attributes(
+            redacted_at: within(1.second).of(now)
+          )
         end
       end
     end
   end
 
-  describe "#redact_old_cbv_flows" do
-    let!(:cbv_flow_invitation) do
-      create(:cbv_flow_invitation)
-    end
-    let!(:cbv_flow) do
-      CbvFlow
-        .create_from_invitation(cbv_flow_invitation, 'test_device_id')
-        .tap do |cbv_flow|
-        cbv_flow.update(
-          end_user_id: "11111111-1111-1111-1111-111111111111",
-          additional_information: { "account-id" => "some string here" },
-          confirmation_code: "SANDBOX0002",
-          created_at: Time.new(2024, 8, 1, 12, 0, 0, "-04:00")
-        )
-      end
-    end
+  describe "#redact_backstop!" do
     let(:service) { DataRetentionService.new }
-    let(:deletion_threshold) { cbv_flow.created_at + DataRetentionService::REDACT_OLD_RECORD_BACKSTOP }
     let(:now) { Time.now }
+    let(:event_logger) { instance_double(GenericEventTracker, track: nil) }
 
     around do |ex|
       Timecop.freeze(now, &ex)
     end
 
-    context "before the deletion threshold" do
-      let(:now) { deletion_threshold - 1.minute }
-
-      it "does not redact the CbvFlow" do
-        expect { service.redact_old_cbv_flows }
-          .not_to change { cbv_flow.reload.attributes }
-      end
-
-      it "does not redact the CbvFlowInvitation" do
-        expect { service.redact_old_cbv_flows }
-          .not_to change { cbv_flow_invitation.reload.attributes }
-      end
-
-      it "does not redact the CbvApplicant" do
-        expect { service.redact_old_cbv_flows }
-          .not_to change { cbv_flow.cbv_applicant.reload.attributes }
-      end
-
-      it "does not redact an associated PayrollAccount" do
-        payroll_account = create(:payroll_account, cbv_flow: cbv_flow)
-
-        expect { service.redact_old_cbv_flows }
-          .not_to change { payroll_account.reload.attributes }
-      end
+    before do
+      allow(GenericEventTracker).to receive(:new).and_return(event_logger)
     end
 
-    context "after the deletion threshold" do
-      let(:now) { deletion_threshold + 1.minute }
+    context "CbvFlow rows older than REDACT_BACKSTOP" do
+      let!(:cbv_flow_invitation) { create(:cbv_flow_invitation) }
+      let!(:cbv_flow) do
+        CbvFlow.create_from_invitation(cbv_flow_invitation, "test_device_id").tap do |f|
+          f.update_columns(created_at: now - DataRetentionService::REDACT_BACKSTOP - 1.day)
+        end
+      end
 
-      it "redacts the incomplete CbvFlow" do
-        service.redact_old_cbv_flows
-        expect(cbv_flow.reload).to have_attributes(
-                                     end_user_id: "00000000-0000-0000-0000-000000000000",
-                                     additional_information: {}
-                                   )
+      it "redacts the CbvFlow even when caught by the backstop" do
+        service.redact_backstop!
+        expect(cbv_flow.reload.redacted_at).to be_within(1.second).of(now)
       end
 
       it "redacts the associated invitation" do
-        service.redact_old_cbv_flows
-        expect(cbv_flow_invitation.reload).to have_attributes(
-                                                auth_token: "REDACTED",
-                                                redacted_at: within(1.second).of(now)
-                                              )
+        service.redact_backstop!
+        expect(cbv_flow_invitation.reload.redacted_at).to be_within(1.second).of(now)
       end
 
-      it "redacts the associated applicant" do
-        service.redact_old_cbv_flows
-        expect(cbv_flow.cbv_applicant.reload).to have_attributes(
-                                                   first_name: "REDACTED"
-                                                 )
+      it "emits a backstop-hit warning to the Rails logger" do
+        expect(Rails.logger).to receive(:warn).with(/DataRetention backstop hit: CbvFlow/)
+        service.redact_backstop!
       end
 
-      it "redacts an associated PayrollAccount" do
-        payroll_account = create(:payroll_account, cbv_flow: cbv_flow)
-        service.redact_old_cbv_flows
-        expect(payroll_account.reload).to have_attributes(
-                                            redacted_at: within(1.second).of(now)
-                                          )
+      it "emits a backstop-hit error to NewRelic" do
+        expect(NewRelic::Agent).to receive(:notice_error)
+          .with(kind_of(StandardError), hash_including(custom_params: hash_including(model: "CbvFlow", cbv_flow_id: cbv_flow.id)))
+        service.redact_backstop!
       end
 
-      it "skips redacting already-redacted CbvFlows" do
-        service.redact_old_cbv_flows
+      it "emits a DataRedactionBackstopHit event for the Mixpanel/analytics channel" do
+        expect(event_logger).to receive(:track)
+          .with("DataRedactionBackstopHit", nil, hash_including(model: "CbvFlow", cbv_flow_id: cbv_flow.id))
+        service.redact_backstop!
+      end
+    end
 
+    context "CbvFlow rows younger than REDACT_BACKSTOP" do
+      let!(:cbv_flow_invitation) { create(:cbv_flow_invitation) }
+      let!(:cbv_flow) { CbvFlow.create_from_invitation(cbv_flow_invitation, "test_device_id") }
+
+      it "does not redact the flow" do
+        expect { service.redact_backstop! }.not_to change { cbv_flow.reload.attributes }
+      end
+
+      it "does not emit a backstop-hit warning for this CbvFlow" do
+        # Allow any other warnings from pre-existing test-DB state; assert only
+        # that THIS record under test does not trigger a warning.
+        allow(Rails.logger).to receive(:warn)
+        expect(Rails.logger).not_to receive(:warn).with(/cbv_flow_id: #{cbv_flow.id}\b/)
+        service.redact_backstop!
+      end
+    end
+
+    # Invitations are NOT in the backstop -- they have variable lifetime up
+    # to 366 days. Assert that the backstop does not redact an aged-but-still-
+    # valid (or aged-but-unredacted) invitation, even with associated unredacted
+    # records past 15 days.
+    context "old unredacted CbvFlowInvitation (NOT in backstop)" do
+      let!(:cbv_flow_invitation) do
+        create(:cbv_flow_invitation, :sandbox).tap do |inv|
+          inv.update_columns(created_at: now - DataRetentionService::REDACT_BACKSTOP - 1.day)
+        end
+      end
+
+      it "does not redact the invitation via the backstop" do
+        expect { service.redact_backstop! }
+          .not_to change { cbv_flow_invitation.reload.redacted_at }
+      end
+
+      it "does not emit a backstop-hit warning for the invitation" do
+        allow(Rails.logger).to receive(:warn)
+        expect(Rails.logger).not_to receive(:warn).with(/cbv_flow_invitation_id: #{cbv_flow_invitation.id}\b/)
+        service.redact_backstop!
+      end
+    end
+
+    # CbvApplicant backstop catches only true cascade-misses: applicants
+    # whose associations are all redacted (or absent). An applicant tied to
+    # an unredacted invitation is NOT caught -- that invitation's own
+    # lifecycle drives the redaction.
+    context "CbvApplicant with no associations (true orphan)" do
+      let!(:applicant) do
+        create(:cbv_applicant, client_agency_id: "sandbox").tap do |a|
+          a.update_columns(created_at: now - DataRetentionService::REDACT_BACKSTOP - 1.day)
+        end
+      end
+
+      it "redacts the orphan applicant" do
+        service.redact_backstop!
+        expect(applicant.reload.redacted_at).to be_within(1.second).of(now)
+      end
+
+      it "emits a backstop-hit warning identifying CbvApplicant" do
+        expect(Rails.logger).to receive(:warn).with(/DataRetention backstop hit: CbvApplicant/)
+        service.redact_backstop!
+      end
+
+      it "emits a DataRedactionBackstopHit event for the applicant" do
+        expect(event_logger).to receive(:track)
+          .with("DataRedactionBackstopHit", nil, hash_including(model: "CbvApplicant", cbv_applicant_id: applicant.id))
+        service.redact_backstop!
+      end
+    end
+
+    context "CbvApplicant tied to an unredacted invitation (NOT a cascade miss)" do
+      let!(:cbv_flow_invitation) { create(:cbv_flow_invitation, :sandbox) }
+      let!(:applicant) do
+        cbv_flow_invitation.cbv_applicant.tap do |a|
+          a.update_columns(created_at: now - DataRetentionService::REDACT_BACKSTOP - 1.day)
+        end
+      end
+
+      it "does not redact the applicant" do
+        expect { service.redact_backstop! }.not_to change { applicant.reload.redacted_at }
+      end
+
+      it "does not emit a backstop-hit warning for the applicant" do
+        allow(Rails.logger).to receive(:warn)
+        expect(Rails.logger).not_to receive(:warn).with(/cbv_applicant_id: #{applicant.id}\b/)
+        service.redact_backstop!
+      end
+    end
+
+    context "CbvApplicant whose associations have all been redacted (cascade miss)" do
+      let!(:cbv_flow_invitation) do
+        create(:cbv_flow_invitation, :sandbox).tap do |inv|
+          inv.update_columns(redacted_at: now - 1.day)
+        end
+      end
+      let!(:applicant) do
+        cbv_flow_invitation.cbv_applicant.tap do |a|
+          a.update_columns(created_at: now - DataRetentionService::REDACT_BACKSTOP - 1.day)
+        end
+      end
+
+      it "redacts the cascade-missed applicant" do
+        service.redact_backstop!
+        expect(applicant.reload.redacted_at).to be_within(1.second).of(now)
+      end
+
+      it "emits a backstop-hit warning identifying CbvApplicant" do
+        expect(Rails.logger).to receive(:warn).with(/DataRetention backstop hit: CbvApplicant.*cbv_applicant_id: #{applicant.id}/)
+        service.redact_backstop!
+      end
+    end
+
+    context "already-redacted records" do
+      let!(:cbv_flow) do
+        create(:cbv_flow).tap do |f|
+          f.cbv_applicant.update_columns(redacted_at: now - 2.days)
+          f.update_columns(created_at: now - DataRetentionService::REDACT_BACKSTOP - 1.day, redacted_at: now - 2.days)
+        end
+      end
+
+      it "does not re-process already-redacted CbvFlows" do
         expect_any_instance_of(CbvFlow).not_to receive(:redact!)
-        service.redact_old_cbv_flows
+        service.redact_backstop!
       end
 
-      context "when the cbv_flow has an argyle_user_id" do
-        let(:fake_argyle) { instance_double(Aggregators::Sdk::ArgyleService) }
-
-        before do
-          cbv_flow.update(argyle_user_id: "argyle_123")
-
-          argyle_environment = ClientAgencyConfig.instance[cbv_flow.client_agency_id].argyle_environment
-          allow(Aggregators::Sdk::ArgyleService)
-            .to receive(:new)
-                  .with(argyle_environment)
-                  .and_return(fake_argyle)
-
-          allow(fake_argyle).to receive(:delete_user)
-        end
-
-        it "deletes the argyle user" do
-          expect(fake_argyle).to receive(:delete_user).with(argyle_user_id: "argyle_123")
-          service.redact_old_cbv_flows
-        end
+      it "does not emit a backstop-hit warning for this already-redacted CbvFlow" do
+        # Allow any other warnings from pre-existing test-DB state; assert only
+        # that this redacted record does not trigger a warning.
+        allow(Rails.logger).to receive(:warn)
+        expect(Rails.logger).not_to receive(:warn).with(/cbv_flow_id: #{cbv_flow.id}\b/)
+        service.redact_backstop!
       end
     end
   end
@@ -886,18 +855,20 @@ RSpec.describe DataRetentionService do
       allow(fake_argyle).to receive(:delete_user)
     end
 
-    # Build a "good" and a "bad" flow. We deliberately leave confirmation_code
-    # nil so the flows remain `incomplete` (scope: where(confirmation_code: nil));
-    # setting one would exclude them from #redact_incomplete_cbv_flows.
+    # Build a "good" and a "bad" flow. The uniform redaction rule keys off
+    # cbv_flow.created_at, so callers pass a backdated created_at to push the
+    # flow past whichever threshold they're exercising (primary or backstop).
     def make_two_flows(transmitted_at: nil, created_at: nil)
       %w[good bad].map do |suffix|
         invitation = create(:cbv_flow_invitation)
         flow = CbvFlow.create_from_invitation(invitation, "device_#{suffix}")
         updates = { argyle_user_id: "argyle_#{suffix.upcase}" }
         updates[:transmitted_at] = transmitted_at if transmitted_at
-        updates[:created_at] = created_at if created_at
         flow.update!(updates)
-        flow
+        # `created_at` is normally Rails-managed; bypass via update_columns
+        # so factories can age the flow without tripping callbacks/validations.
+        flow.update_columns(created_at: created_at) if created_at
+        flow.reload
       end
     end
 
@@ -911,60 +882,9 @@ RSpec.describe DataRetentionService do
       end
     end
 
-    context "#redact_transmitted_cbv_flows" do
-      let(:transmitted_at) { now - DataRetentionService::REDACT_TRANSMITTED_CBV_FLOWS_AFTER - 1.day }
-      let!(:flows) { make_two_flows(transmitted_at: transmitted_at) }
-      let(:good_flow) { flows.first }
-      let(:bad_flow) { flows.last }
-
-      before { raise_on_one_applicant(bad_flow) }
-
-      it "still calls delete_user for both flows" do
-        expect(fake_argyle).to receive(:delete_user).with(argyle_user_id: "argyle_GOOD")
-        expect(fake_argyle).to receive(:delete_user).with(argyle_user_id: "argyle_BAD")
-        expect { service.redact_transmitted_cbv_flows }.not_to raise_error
-      end
-
-      it "still redacts the good flow" do
-        service.redact_transmitted_cbv_flows
-        expect(good_flow.reload.redacted_at).to be_within(1.second).of(now)
-      end
-
-      it "reports the failing flow to NewRelic" do
-        expect(NewRelic::Agent).to receive(:notice_error)
-          .with(kind_of(RuntimeError), custom_params: hash_including(cbv_flow_id: bad_flow.id))
-        service.redact_transmitted_cbv_flows
-      end
-    end
-
-    context "#redact_incomplete_cbv_flows" do
-      let!(:flows) do
-        flows = make_two_flows
-        # Push past the deletion threshold by ageing the invitations
-        flows.each do |f|
-          f.cbv_flow_invitation.update!(expires_at: now - DataRetentionService::REDACT_UNUSED_INVITATIONS_AFTER - 1.day)
-        end
-        flows
-      end
-      let(:good_flow) { flows.first }
-      let(:bad_flow) { flows.last }
-
-      before { raise_on_one_applicant(bad_flow) }
-
-      it "still calls delete_user for both flows" do
-        expect(fake_argyle).to receive(:delete_user).with(argyle_user_id: "argyle_GOOD")
-        expect(fake_argyle).to receive(:delete_user).with(argyle_user_id: "argyle_BAD")
-        expect { service.redact_incomplete_cbv_flows }.not_to raise_error
-      end
-
-      it "still redacts the good flow" do
-        service.redact_incomplete_cbv_flows
-        expect(good_flow.reload.redacted_at).to be_within(1.second).of(now)
-      end
-    end
-
-    context "#redact_old_cbv_flows" do
-      let(:created_at) { now - DataRetentionService::REDACT_OLD_RECORD_BACKSTOP - 1.day }
+    context "#redact_cbv_flows (primary)" do
+      # Age the flows past the primary 7-day rule by backdating created_at.
+      let(:created_at) { now - DataRetentionService::REDACT_CBV_FLOWS_AFTER - 1.day }
       let!(:flows) { make_two_flows(created_at: created_at) }
       let(:good_flow) { flows.first }
       let(:bad_flow) { flows.last }
@@ -974,11 +894,37 @@ RSpec.describe DataRetentionService do
       it "still calls delete_user for both flows" do
         expect(fake_argyle).to receive(:delete_user).with(argyle_user_id: "argyle_GOOD")
         expect(fake_argyle).to receive(:delete_user).with(argyle_user_id: "argyle_BAD")
-        expect { service.redact_old_cbv_flows }.not_to raise_error
+        expect { service.redact_cbv_flows }.not_to raise_error
       end
 
       it "still redacts the good flow" do
-        service.redact_old_cbv_flows
+        service.redact_cbv_flows
+        expect(good_flow.reload.redacted_at).to be_within(1.second).of(now)
+      end
+
+      it "reports the failing flow to NewRelic" do
+        expect(NewRelic::Agent).to receive(:notice_error)
+          .with(kind_of(RuntimeError), custom_params: hash_including(cbv_flow_id: bad_flow.id))
+        service.redact_cbv_flows
+      end
+    end
+
+    context "#redact_backstop!" do
+      let(:created_at) { now - DataRetentionService::REDACT_BACKSTOP - 1.day }
+      let!(:flows) { make_two_flows(created_at: created_at) }
+      let(:good_flow) { flows.first }
+      let(:bad_flow) { flows.last }
+
+      before { raise_on_one_applicant(bad_flow) }
+
+      it "still calls delete_user for both flows" do
+        expect(fake_argyle).to receive(:delete_user).with(argyle_user_id: "argyle_GOOD")
+        expect(fake_argyle).to receive(:delete_user).with(argyle_user_id: "argyle_BAD")
+        expect { service.redact_backstop! }.not_to raise_error
+      end
+
+      it "still redacts the good flow" do
+        service.redact_backstop!
         expect(good_flow.reload.redacted_at).to be_within(1.second).of(now)
       end
     end
@@ -989,7 +935,7 @@ RSpec.describe DataRetentionService do
 
       before do
         [ good_invitation, bad_invitation ].each do |inv|
-          inv.update!(expires_at: now - DataRetentionService::REDACT_UNUSED_INVITATIONS_AFTER - 1.day)
+          inv.update!(expires_at: now - 1.day)
         end
 
         allow_any_instance_of(CbvApplicant).to receive(:redact!).and_wrap_original do |original, *args|
@@ -1034,6 +980,7 @@ RSpec.describe DataRetentionService do
     # Smoke test that redaction completes end-to-end for every agency. The
     # az_des and pa_dhs applicant factory traits null out first_name/last_name,
     # which the test harness marks required, so supply them here.
+    # Uniform-7-day rule keys off cbv_flow.created_at; age the flow there.
     %i[sandbox az_des la_ldh pa_dhs].each do |agency|
       it "redacts a transmitted #{agency} flow without raising" do
         invitation = create(:cbv_flow_invitation, agency,
@@ -1042,8 +989,9 @@ RSpec.describe DataRetentionService do
         flow.update!(
           argyle_user_id: "argyle_#{agency}",
           confirmation_code: "OKAY#{agency.upcase}",
-          transmitted_at: now - DataRetentionService::REDACT_TRANSMITTED_CBV_FLOWS_AFTER - 1.day
+          transmitted_at: now - 1.day
         )
+        flow.update_columns(created_at: now - DataRetentionService::REDACT_CBV_FLOWS_AFTER - 1.day)
 
         expect { service.redact_all! }.not_to raise_error
 

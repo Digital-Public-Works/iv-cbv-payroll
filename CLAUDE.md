@@ -1,13 +1,14 @@
 # CLAUDE.md - Project Guide for Claude Code
 
 ## Project Overview
-Consent-Based Verification (CBV) Payroll — an income verification system that lets benefit applicants verify income via payroll providers (Argyle, Pinwheel). Multi-tenant architecture supporting multiple state/agency partners.
+Consent-Based Verification (CBV) Payroll, a.k.a. **Verify My Income (VMI)** — an income verification system that lets benefit applicants verify income by retrieving payroll data directly from payroll providers with the applicant's consent. **Argyle is the active provider; a Pinwheel integration exists in code but is NOT active in production.** Multi-tenant architecture supporting multiple **partners** (state agencies and non-state partners). Note: the system uses **no AI/ML** — it surfaces authoritative payroll data, and eligibility workers make benefit determinations.
 
 ## Tech Stack
 - **Backend:** Ruby on Rails 7.2, Ruby 3.4
 - **Frontend:** Hotwire (Turbo + Stimulus), USWDS (U.S. Web Design System)
 - **Database:** PostgreSQL 14
-- **Cache/Jobs:** Redis, AWS SQS
+- **Background jobs:** AWS SQS via Shoryuken (`config.active_job.queue_adapter = :shoryuken`)
+- **Cache:** Rails in-process `:memory_store`. *(Redis is aspirational — NOT currently used; there is no Redis gem or running Redis.)*
 - **Infra:** Terraform (in `/infra`), Docker, AWS (RDS, SES, S3, SQS)
 - **JS Tests:** Vitest
 - **Ruby Tests:** RSpec with Capybara, Selenium, VCR, Factory Bot
@@ -62,12 +63,12 @@ bin/rails db:seed
 - Follow existing Rails conventions in the codebase
 
 ## Key Patterns
-- Multi-tenant: site configs per agency partner (AZ DES, LA DHH, PA DHS, sandbox)
+- Multi-tenant: partner configs are **database-canonical** (`PartnerConfig`, hydrated by `ClientAgencyConfig` at boot — no runtime YAML; the `partner_config` rake task imports/exports YAML). Partners include PA DHS, AZ DES (live), LA LDH (legacy pilot), sandbox. Current term is "partner"; the legacy tenant column is still `client_agency_id`.
 - i18n: all user-facing strings should use translation keys
 - Service objects in `app/services/`
 - ViewComponents in `app/components/`
 - PDF generation (wkhtmltopdf) for income reports
-- Aggregator integrations: Argyle and Pinwheel adapters
+- Aggregator integrations: **Argyle** (active). Pinwheel adapters exist in code but are **not in production use** — deprioritize Pinwheel-only concerns; re-enabling would require a full re-evaluation.
 
 ## CI/CD (GitHub Actions)
 - `rspec.yml` — Ruby tests

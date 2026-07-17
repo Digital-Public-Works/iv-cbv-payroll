@@ -22,20 +22,20 @@ Rails.application.configure do
     policy.worker_src :self, "blob:"
     policy.frame_src :self, "https://cdn.getpinwheel.com"
 
-    # Allow <style> tags used by Aggregator SDKs by explicitly allowing their
-    # hashes.
+    # Allow inline <style> tags injected by the Aggregator SDKs (Pinwheel and
+    # Argyle).
     #
-    # When upgrading Pinwheel or Argyle JS SDKs, update these hashes by
-    # attempting to open each modal. If the <style> tag has changed, and we
-    # need to update the hash, then the JS console will show you the new hashes
-    # when it blocks adding the <style> tag to the page.
+    # We previously pinned each SDK's inline <style> by SHA-256 hash, but the
+    # Argyle web SDK (argyle.web.v5.js) injects dynamically-generated style
+    # content whose hash changes between renders, so hash-pinning is no longer
+    # viable. A nonce can't help either: the SDKs inject their own <style> tags
+    # from CDN code and cannot stamp our per-request nonce on them.
     #
-    # The error will say "Refused ... Either ... a hash ('sha256-[blahblah]') ...
-    # is required." Replace the hash value(s) here from that message.
-    policy.style_src :self,
-      "'sha256-WAyOw4V+FqDc35lQPyRADLBWbuNK8ahvYEaQIYF1+Ps='", # Pinwheel
-      "'sha256-8Fd8AAaNByYvS/HuItVFketOItMHf2YiH+wvh8OVQOA='", # Pinwheel
-      "'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU='"  # Argyle
+    # 'unsafe-inline' is therefore required for style-src. Note this relaxes
+    # style injection protection ONLY; script-src remains strict (nonces +
+    # explicit hosts). Per CSP spec, mixing 'unsafe-inline' with hashes/nonces
+    # makes browsers ignore 'unsafe-inline', so the SDK style hashes are removed.
+    policy.style_src :self, :unsafe_inline
 
     policy.report_uri "/csp-reports"
   end

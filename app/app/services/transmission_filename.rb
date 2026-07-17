@@ -19,17 +19,18 @@ class TransmissionFilename
 
   # The full remote path where this transmission lands.
   # e.g. path/to/inbox/VMI_00012345_20260513_ConfABC123.pdf
-  def self.full_path(cbv_flow:, agency:, method_type:, remote_directory:)
+  def self.full_path(cbv_flow:, agency:, method_type:, remote_directory:, suffix: "")
     method_type = method_type.to_sym
-    basename = basename_for(cbv_flow: cbv_flow, agency: agency, method_type: method_type)
+    basename = basename_for(cbv_flow: cbv_flow, agency: agency, method_type: method_type, suffix: suffix)
     dir = remote_directory_for(method_type: method_type, remote_directory: remote_directory)
     dir.empty? ? basename : File.join(dir, basename)
   end
 
-  # Basename (stem + extension). All file-producing methods share
+  # Basename (stem + optional suffix + extension). All file-producing methods share
   # the same deterministic stem; only the extension differs by method_type.
+  # The suffix distinguishes companion files (e.g. "_paystubs") that share the stem.
   # e.g. VMI_00012345_20260513_ConfABC123.pdf
-  def self.basename_for(cbv_flow:, agency:, method_type:)
+  def self.basename_for(cbv_flow:, agency:, method_type:, suffix: "")
     method_type = method_type.to_sym
     extension = EXTENSIONS.fetch(method_type) do
       raise KeyError, "TransmissionFilename: `#{method_type}` is not a file-producing method (only #{EXTENSIONS.keys.join(', ')} are)"
@@ -38,7 +39,7 @@ class TransmissionFilename
       raise "Cannot generate transmission filename: consent timestamp is missing for cbv_flow #{cbv_flow.id}"
     end
 
-    full = stem(cbv_flow, agency) + extension
+    full = stem(cbv_flow, agency) + suffix + extension
 
     # 100-char total ceiling due to POSIXv7 (circa 1979) limitation in the filename for Ruby's tar package. (origin: PR #439)
     if full.length > MAX_TOTAL_LENGTH

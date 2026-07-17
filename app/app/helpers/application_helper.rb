@@ -19,6 +19,12 @@ module ApplicationHelper
   # is either missing or there is no current client agency, it will attempt to render a
   # "default" key.
   def agency_translation(i18n_base_key, **options)
+    # Relative (leading-dot) keys are scoped to the current template's path.
+    # Expand them up front so the database lookup — which stores full keys like
+    # "cbv.entries.show.checkbox" — can match. Without this, DB overrides
+    # silently fail for relative-key call sites and the YAML value is always used.
+    i18n_base_key = scope_key_by_partial(i18n_base_key) if i18n_base_key.start_with?(".")
+
     if i18n_base_key.include?("{agency}")
       i18n_key = current_agency ? i18n_base_key.gsub("{agency}", current_agency.id) : nil
       default_key = i18n_base_key.gsub("{agency}", "default")
@@ -42,7 +48,11 @@ module ApplicationHelper
     end
 
     # Look for the translation in the database first; if not found there, look in the locale files.
-    translated = db_translation(i18n_key, **options) || db_translation(i18n_base_key, **options)
+    # Expand leading-dot ("lazy") keys (e.g. ".checkbox") to their fully-qualified path first,
+    # because DB translations are stored under the full key (e.g. "cbv.entries.show.checkbox").
+    # Without this, a partial key would never match a DB row and would silently fall back to YAML.
+    translated = db_translation(scope_key_by_partial(i18n_key), **options) ||
+      db_translation(scope_key_by_partial(i18n_base_key), **options)
 
     translated ||= if I18n.exists?(scope_key_by_partial(i18n_key))
                      t(i18n_key, **options)
@@ -50,7 +60,8 @@ module ApplicationHelper
                      t(default_key, **options)
                    end
 
-    if translated.blank? && Rails.env.development?
+    if translated.blank? && Rails.env.development? &&
+        !ClientAgencyConfig::OPTIONAL_TRANSLATION_KEYS.include?(i18n_base_key)
       raise "Missing agency translation: #{i18n_key} (base: #{i18n_base_key}, default: #{default_key})"
     end
 
@@ -64,6 +75,54 @@ module ApplicationHelper
     else
       translated
     end
+  end
+
+  # `shared.agency_acronym` is optional (see ClientAgencyConfig::OPTIONAL_TRANSLATION_KEYS)
+  def has_acronym?
+    agency_translation("shared.agency_acronym").present?
+  end
+
+  # The agency acronym when the partner has one, otherwise the full agency name.
+  def agency_acronym_or_full_name
+    if has_acronym?
+      agency_translation("shared.agency_acronym")
+    else
+      agency_translation("shared.agency_full_name")
+    end
+  end
+
+  # Agency name with its acronym in parentheses (e.g. "West Carolina Department of Public Health (WC-DPH)").
+  # Partners with no acronym render just the full name, with no parens.
+  def agency_name_with_acronym
+    full_name = agency_translation("shared.agency_full_name")
+    return full_name unless has_acronym?
+
+    "#{full_name} (#{agency_translation("shared.agency_acronym")})"
+  end
+
+  # A visually-hidden span used to add descriptive context to an otherwise
+  # generic visible label (e.g. "Edit" -> "Edit Applicant information").
+  def sr_only_span(text)
+    content_tag(:span, text, class: "usa-sr-only")
+  end
+
+  # Alt text for the agency logo image (e.g. "DHS Logo").
+  def agency_logo_alt_text
+    "#{agency_acronym_or_full_name} Logo"
+  end
+
+  # A reusable anchor tag to the agency portal
+  def agency_website_link(label: agency_website_link_label)
+    url = current_agency&.agency_contact_website
+    return label if url.blank?
+
+    link_to(label, url, target: "_blank", rel: "noopener noreferrer")
+  end
+
+  # The text for an agency website link/reference (e.g. "the COMPASS website").
+  def agency_website_link_label
+    t("shared.agency_website_link_label",
+      agency_portal_name: agency_translation("shared.agency_portal_name"))
   end
 
   private
@@ -81,7 +140,7 @@ module ApplicationHelper
     locale = I18n.locale.to_s
     cache_key = PartnerTranslation.cache_key_for(partner_config.id, locale, base_key)
 
-    value = Rails.cache.fetch(cache_key, expires_in: 10.minutes) do
+    value = fetch_translation_cache(cache_key) do
       translation = PartnerTranslation.find_by(
         partner_config: partner_config,
         locale: locale,
@@ -120,9 +179,21 @@ module ApplicationHelper
   end
 
   def cached_partner_config(partner_id)
-    Rails.cache.fetch("partner_config/#{partner_id}", expires_in: 10.minutes) do
+    fetch_translation_cache("partner_config/#{partner_id}") do
       PartnerConfig.find_by(partner_id: partner_id)
     end
+  end
+
+  TRANSLATION_CACHE_TTL = 10.minutes
+
+  # Caches DB-backed partner config/translation lookups, except in development
+  # where the cache is bypassed so edits made directly in the database show up
+  # immediately on refresh (a direct DB edit never fires the model's
+  # expire_cache callback). Mirrors ClientAgencyConfig's dev-immediate behavior.
+  def fetch_translation_cache(cache_key, &block)
+    return block.call if Rails.env.development?
+
+    Rails.cache.fetch(cache_key, expires_in: TRANSLATION_CACHE_TTL, &block)
   end
 
   public
@@ -132,6 +203,11 @@ module ApplicationHelper
 
   def feedback_form_url
     APPLICANT_FEEDBACK_FORM
+  end
+
+  def page_title
+    parts = [ content_for(:title).presence, t("shared.pilot_name") ].compact
+    safe_join(parts, " | ")
   end
 
   def survey_form_url

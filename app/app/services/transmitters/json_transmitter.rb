@@ -1,5 +1,6 @@
 class Transmitters::JsonTransmitter
   include Transmitter
+  include Transmitters::Concerns::PaystubsOutput
 
   def deliver
     api_url = URI(@transmission_config["url"])
@@ -18,6 +19,10 @@ class Transmitters::JsonTransmitter
 
     if include_report_pdf
       payload[:report_pdf] = Base64.strict_encode64(pdf_output&.content)
+    end
+
+    if (paystubs = paystubs_output)
+      payload[:paystub_pdf] = Base64.strict_encode64(paystubs.content)
     end
 
     req.body = payload.to_json
