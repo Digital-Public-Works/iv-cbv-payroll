@@ -301,6 +301,8 @@ es:
         additional_information_header: Comentarios adicionales (Opcional)
         additional_information_label: Comparta cualquier comentario o información adicional sobre los detalles de pago anteriores que desea que %{agency_acronym} conozca. Por ejemplo, puede compartir si la información es inexacta o si ya no trabaja en ese empleo.
         additional_information_placeholder: Introduzca hasta 1000 caracteres
+        character_count_over_limit: Hay {count} caracteres de más.
+        character_count_shorten: Acorte el comentario, por favor.
         continue: Continuar
         deductions: 'Deducción: %{category} (%{tax})'
         deposit_accounts:
