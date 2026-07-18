@@ -33,7 +33,7 @@ export default class extends Controller {
   }
 
   showCount(length) {
-    this.messageTarget.textContent = `${length}/${this.maxlengthValue} characters remaining`
+    this.messageTarget.textContent = `${length}/${this.maxlengthValue}`
     this.messageTarget.classList.remove(ERROR_CLASS)
     this.messageTarget.classList.add(HINT_CLASS)
     this.srMessageTarget.textContent = ""

@@ -70,7 +70,7 @@ describe("CharacterCountController", () => {
   })
 
   it("shows an initial count, enables the submit button, and keeps it focusable", () => {
-    expect(message.textContent).toBe("0/1000 characters remaining")
+    expect(message.textContent).toBe("0/1000")
     expect(srMessage.textContent).toBe("")
     expect(submitButton.disabled).toBe(false)
     expect(submitButton.getAttribute("aria-disabled")).toBe("false")
@@ -84,7 +84,7 @@ describe("CharacterCountController", () => {
     })
 
     it("updates the visible counter without announcing anything, and allows submission", () => {
-      expect(message.textContent).toBe("500/1000 characters remaining")
+      expect(message.textContent).toBe("500/1000")
       expect(srMessage.textContent).toBe("")
       expect(input.hasAttribute("aria-invalid")).toBe(false)
       expect(submitButton.disabled).toBe(false)
@@ -123,7 +123,7 @@ describe("CharacterCountController", () => {
       })
 
       it("clears the error state, re-enables the submit button, and allows submission", () => {
-        expect(message.textContent).toBe("200/1000 characters remaining")
+        expect(message.textContent).toBe("200/1000")
         expect(srMessage.textContent).toBe("")
         expect(input.hasAttribute("aria-invalid")).toBe(false)
         expect(submitButton.disabled).toBe(false)

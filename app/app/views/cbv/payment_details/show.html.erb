@@ -58,7 +58,7 @@
     <%= hidden_field_tag "user[account_id]", params[:user][:account_id] %>
     <%= form.label :additional_information, t(".additional_information_label", agency_acronym: agency_acronym_or_full_name), class: "usa-label", id: "additional_information_description" %>
     <%= form.text_area :additional_information, class: "usa-textarea", rows: 5, value: @account_comment, placeholder: t(".additional_information_placeholder"), "aria-labelledby": "additional_info_header additional_information_description", "aria-describedby": "additional_information_count", data: { cbv_character_count_target: "input", action: "input->cbv-character-count#update" } %>
-    <%= content_tag :div, "0/1000 characters remaining", id: "additional_information_count", class: "usa-hint margin-top-1", data: { cbv_character_count_target: "message" } %>
+    <%= content_tag :div, "0/1000", id: "additional_information_count", class: "usa-hint margin-top-1", data: { cbv_character_count_target: "message" } %>
     <%= content_tag :div, "", class: "usa-sr-only", "aria-live": "polite", data: { cbv_character_count_target: "srMessage" } %>
     <%= form.submit t(".continue"), class: "usa-button usa-button--primary", data: { cbv_character_count_target: "submitButton" } %>
   <% end %>
