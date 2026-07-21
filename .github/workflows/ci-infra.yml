@@ -92,19 +92,22 @@ jobs:
           directory: infra
           framework: terraform
           quiet: true # only displays failed checks
-  check-compliance-with-tfsec:
-    name: Check compliance with tfsec
+  check-compliance-with-trivy:
+    # tfsec was archived by Aquasecurity and its rules folded into Trivy's config scanner
+    # see https://github.com/aquasecurity/tfsec/blob/master/tfsec-to-trivy-migration-guide.md.
+    name: Check compliance with Trivy (IaC config)
     runs-on: ubuntu-latest
 
     permissions:
       contents: read
-      pull-requests: write
 
     steps:
       - uses: actions/checkout@v4
-      - name: Run tfsec check
-        uses: aquasecurity/tfsec-pr-commenter-action@v1.3.1
+      - name: Run Trivy IaC config scan
+        uses: aquasecurity/trivy-action@master
         with:
-          github_token: ${{ github.token }}
-          tfsec_version: v1.28.1
-          commenter_version: v1.3.1
+          scan-type: config
+          scan-ref: infra
+          format: table
+          exit-code: 1
+          severity: HIGH,CRITICAL
