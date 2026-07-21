@@ -52,3 +52,4 @@ done
 debug "in ($CHANGE_DIRECTORY) will run (${COMMAND[*]})"
 cd "$CHANGE_DIRECTORY"
 exec "${COMMAND[@]}"
+# ci-probe: temporary trivial touch to trigger CI path filters
