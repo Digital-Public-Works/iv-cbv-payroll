@@ -34,6 +34,7 @@ resource "aws_lb" "alb" {
 # NOTE: for the demo we expose private http endpoint
 # due to the complexity of acquiring a valid TLS/SSL cert.
 # In a production system we would provision an https listener
+#trivy:ignore:aws-0054 Implement HTTPS in issue #163
 resource "aws_lb_listener" "alb_listener_http" {
   # checkov:skip=CKV_AWS_2:Implement HTTPS in issue #163
   # checkov:skip=CKV_AWS_103:Require TLS 1.2 as part of implementing HTTPS support
