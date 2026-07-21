@@ -34,10 +34,10 @@ resource "aws_lb" "alb" {
   }
 }
 
+# TODO: redirect HTTP->HTTPS at the ALB. HTTP->HTTPS enforced by Rails config.force_ssl
+# See `navapbc/template-infra`'s fix: https://github.com/navapbc/template-infra/commit/f9785a860360d849e6733a26f358f50dfd4d6a80
+#trivy:ignore:aws-0054
 resource "aws_lb_listener" "alb_listener_http" {
-  # TODO: redirect HTTP->HTTPS at the ALB. HTTP->HTTPS enforced by Rails config.force_ssl
-  # See `navapbc/template-infra`'s fix: https://github.com/navapbc/template-infra/commit/f9785a860360d849e6733a26f358f50dfd4d6a80
-  # trivy:ignore:aws-0054 HTTP->HTTPS enforced by Rails config.force_ssl
   # checkov:skip=CKV_AWS_2:HTTP->HTTPS enforced by Rails config.force_ssl
   # checkov:skip=CKV_AWS_103:Require TLS 1.2 as part of implementing HTTPS support
 
