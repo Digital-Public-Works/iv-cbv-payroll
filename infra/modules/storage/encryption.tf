@@ -1,4 +1,5 @@
 resource "aws_kms_key" "storage" {
+  # checkov:skip=CKV2_AWS_64:Default key policy (account-root control) is sufficient; no cross-account access needed
   description = "KMS key for bucket ${var.name}"
   # The waiting period, specified in number of days. After the waiting period ends, AWS KMS deletes the KMS key.
   deletion_window_in_days = "10"

@@ -52,6 +52,7 @@ resource "aws_lambda_function" "role_manager" {
   timeout = 30
   # checkov:skip=CKV_AWS_272: TODO: add code signing config
   # checkov:skip=CKV_AWS_116:Dead letter queue (DLQ) configuration is only relevant for asynchronous invocations
+  # checkov:skip=CKV_AWS_363: python3.9 is deprecated; runtime bump tracked in PF-XXX
 }
 
 data "aws_kms_key" "default_ssm_key" {
@@ -60,6 +61,7 @@ data "aws_kms_key" "default_ssm_key" {
 
 # KMS key used to encrypt role manager's environment variables
 resource "aws_kms_key" "role_manager" {
+  # checkov:skip=CKV2_AWS_64:Default key policy (account-root control) is sufficient; no cross-account access needed
   description         = "Key for Lambda function ${local.role_manager_name}"
   enable_key_rotation = true
 }

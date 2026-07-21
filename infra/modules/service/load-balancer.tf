@@ -3,6 +3,7 @@
 #---------------
 
 # ALB for an app running in ECS
+#trivy:ignore:aws-0053 Public web application; internet-facing ALB is intentional
 resource "aws_lb" "alb" {
   depends_on      = [aws_s3_bucket_policy.access_logs]
   name            = var.service_name
@@ -17,7 +18,9 @@ resource "aws_lb" "alb" {
 
   # checkov:skip=CKV2_AWS_20:Redirect HTTP to HTTPS as part of implementing HTTPS support
 
-  # checkov:skip=CKV2_AWS_28:Implement WAF in issue #165
+  # checkov:skip=CKV2_AWS_28:No WAF in front of the app ALB (unlike CloudFront/static-assets, which are intentionally
+  # unprotected as low-value targets). This one fronts the actual application and has no real tracking ticket today
+  # (the referenced "#165" was a stale/unrelated reference) — see PF-XXX to evaluate adding a WAF here.
 
   # Drop invalid HTTP headers for improved security
   # Note that header names cannot contain underscores
@@ -33,7 +36,7 @@ resource "aws_lb" "alb" {
 
 resource "aws_lb_listener" "alb_listener_http" {
   # TODO: redirect HTTP->HTTPS at the ALB. HTTP->HTTPS enforced by Rails config.force_ssl
-  # See `navapbc/template-infra`'s fix: https://github.com/navapbc/template-infra/commit/f9784a860360d849e6733a26f358f50dfd4d6a80
+  # See `navapbc/template-infra`'s fix: https://github.com/navapbc/template-infra/commit/f9785a860360d849e6733a26f358f50dfd4d6a80
   # trivy:ignore:aws-0054 HTTP->HTTPS enforced by Rails config.force_ssl
   # checkov:skip=CKV_AWS_2:HTTP->HTTPS enforced by Rails config.force_ssl
   # checkov:skip=CKV_AWS_103:Require TLS 1.2 as part of implementing HTTPS support
@@ -108,6 +111,7 @@ resource "aws_lb_listener_rule" "app_https_forward" {
 }
 
 resource "aws_lb_target_group" "app_tg" {
+  # checkov:skip=CKV_AWS_378:TLS terminates at the ALB; HTTP between ALB and container is within the VPC
   # you must use a prefix, to facilitate successful tg changes
   name_prefix          = "app-"
   port                 = var.container_port

@@ -77,6 +77,7 @@ resource "aws_rds_cluster_instance" "primary" {
 }
 
 resource "aws_kms_key" "db" {
+  # checkov:skip=CKV2_AWS_64:Default key policy (account-root control) is sufficient; no cross-account access needed
   description         = "Key for RDS cluster ${var.name}"
   enable_key_rotation = true
 }
