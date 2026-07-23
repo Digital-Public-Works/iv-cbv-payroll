@@ -12,6 +12,8 @@ export function toggleErrorIds(target, error, id) {
   target.setAttribute("aria-describedby", describeIds)
 }
 
+// TODO: Add a guard around race conditions in case multiple components are calling this function
+// --> potential for first one not to be read out by SR if it gets replaced too quickly
 export function updateAriaLiveRegion(text) {
   const liveRegion = document.getElementById("live-announcer")
   liveRegion.replaceChildren()
