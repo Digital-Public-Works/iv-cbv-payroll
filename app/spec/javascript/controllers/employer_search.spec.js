@@ -30,8 +30,8 @@ describe("EmployerSearchController", () => {
     document.body.innerHTML = ""
   })
 
-  it("adds turbo:frame-missing and turbo:submit-start listeners on connect()", () => {
-    expect(stimulusElement.addEventListener).toBeCalledTimes(2)
+  it("adds turbo:frame-missing, turbo:submit-start, and turbo:frame-load listeners on connect()", () => {
+    expect(stimulusElement.addEventListener).toBeCalledTimes(3)
     expect(stimulusElement.addEventListener).toHaveBeenCalledWith(
       "turbo:frame-missing",
       expect.any(Function)
@@ -41,14 +41,20 @@ describe("EmployerSearchController", () => {
       "turbo:submit-start",
       expect.any(Function)
     )
+
+    expect(stimulusElement.addEventListener).toHaveBeenCalledWith(
+      "turbo:frame-load",
+      expect.any(Function)
+    )
   })
 
-  it("removes turbo:frame-missing and turbo:submit-start listeners on disconnect()", async () => {
+  it("removes turbo:frame-missing, turbo:submit-start, and turbo:frame-load listeners on disconnect()", async () => {
     await stimulusElement.remove()
-    expect(stimulusElement.removeEventListener).toBeCalledTimes(2)
+    expect(stimulusElement.removeEventListener).toBeCalledTimes(3)
     const removedEvents = stimulusElement.removeEventListener.mock.calls.map((c) => c[0])
     expect(removedEvents).toContain("turbo:frame-missing")
     expect(removedEvents).toContain("turbo:submit-start")
+    expect(removedEvents).toContain("turbo:frame-load")
   })
 })
 
@@ -361,6 +367,67 @@ describe("EmployerSearchController blank query error", () => {
     form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }))
 
     expect(queryInput.getAttribute("aria-describedby")).toBe("query_error_message company_examples")
+  })
+})
+
+describe("EmployerSearchController results accessible announcement", () => {
+  let controllerElement
+  let employersFrame
+  let resultsHeading
+  let liveAnnouncer
+
+  beforeEach(async () => {
+    controllerElement = document.createElement("div")
+    controllerElement.setAttribute("data-controller", "cbv-employer-search")
+
+    employersFrame = document.createElement("turbo-frame")
+    employersFrame.id = "employers"
+
+    resultsHeading = document.createElement("h2")
+    resultsHeading.setAttribute("data-cbv-employer-search-target", "resultsHeading")
+    resultsHeading.textContent = "\n      Results (3)\n    "
+
+    employersFrame.appendChild(resultsHeading)
+    controllerElement.appendChild(employersFrame)
+    document.body.appendChild(controllerElement)
+
+    // Rendered by the app layout in production; the controller reaches for
+    // it by id, so it must exist in the DOM independent of this controller.
+    liveAnnouncer = document.createElement("div")
+    liveAnnouncer.id = "live-announcer"
+    document.body.appendChild(liveAnnouncer)
+
+    await window.Stimulus.register("cbv-employer-search", EmployerSearchController)
+  })
+
+  afterEach(() => {
+    document.body.innerHTML = ""
+  })
+
+  it("announces the results heading text when the employers frame loads", () => {
+    const event = new CustomEvent("turbo:frame-load", { bubbles: true })
+    employersFrame.dispatchEvent(event)
+
+    expect(liveAnnouncer.textContent).toBe("Results (3)")
+  })
+
+  it("announces again with the same text on a repeat search with an identical count", () => {
+    employersFrame.dispatchEvent(new CustomEvent("turbo:frame-load", { bubbles: true }))
+    liveAnnouncer.textContent = "stale content to prove it gets cleared"
+
+    employersFrame.dispatchEvent(new CustomEvent("turbo:frame-load", { bubbles: true }))
+
+    expect(liveAnnouncer.textContent).toBe("Results (3)")
+  })
+
+  it("ignores turbo:frame-load events from other frames on the page", () => {
+    const popularFrame = document.createElement("turbo-frame")
+    popularFrame.id = "popular"
+    controllerElement.appendChild(popularFrame)
+
+    popularFrame.dispatchEvent(new CustomEvent("turbo:frame-load", { bubbles: true }))
+
+    expect(liveAnnouncer.textContent).toBe("")
   })
 })
 
