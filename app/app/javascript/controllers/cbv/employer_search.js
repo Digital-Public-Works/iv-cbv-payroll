@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 import { createModalAdapter } from "@js/utilities/createModalAdapter"
 import { loadProviderResources } from "@js/utilities/loadProviderResources.ts"
+import { toggleErrorIds, updateAriaLiveRegion } from "@js/utilities/accessibility"
 
 export default class extends Controller {
   static targets = [
@@ -10,6 +11,8 @@ export default class extends Controller {
     "helpAlert",
     "queryInput",
     "clearButton",
+    "errorMessage",
+    "searchForm",
   ]
 
   static values = {
@@ -46,6 +49,7 @@ export default class extends Controller {
 
   toggleClearButton() {
     this.clearButtonTarget.hidden = this.queryInputTarget.value.length === 0
+    if (this.queryInputTarget.value.length > 0) this.hideError()
   }
 
   onSearchReset(event) {
@@ -53,6 +57,41 @@ export default class extends Controller {
     this.queryInputTarget.value = ""
     this.clearButtonTarget.hidden = true
     this.queryInputTarget.focus()
+  }
+
+  onSubmit(event) {
+    if (this.queryInputTarget.value.trim().length === 0) {
+      event.preventDefault()
+      this.showError()
+    } else {
+      this.hideError()
+    }
+  }
+
+  showError() {
+    // announce to the user the error message
+    updateAriaLiveRegion(this.errorMessageTarget.textContent)
+    // visually show the error message
+    this.errorMessageTarget.classList.remove("display-none")
+    // visually and programatically change the input to be in an error state, associate message with input
+    this.queryInputTarget.classList.add("usa-input--error")
+    this.queryInputTarget.setAttribute("aria-invalid", "true")
+    toggleErrorIds(this.queryInputTarget, true, "query_error_message")
+    // prevent error message from making content jump
+    this.searchFormTarget.classList.remove("margin-bottom-4")
+  }
+
+  hideError() {
+    // clear error message from live region
+    updateAriaLiveRegion()
+    // visually hide error message
+    this.errorMessageTarget.classList.add("display-none")
+    // visually and programatically remove input error state and associations
+    this.queryInputTarget.classList.remove("usa-input--error")
+    this.queryInputTarget.removeAttribute("aria-invalid")
+    toggleErrorIds(this.queryInputTarget, false, "query_error_message")
+    // revert styling
+    this.searchFormTarget.classList.add("margin-bottom-4")
   }
 
   onSuccess(accountId) {

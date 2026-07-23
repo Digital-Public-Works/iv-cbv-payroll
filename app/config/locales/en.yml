@@ -265,6 +265,7 @@ en:
           heading: Need help connecting to your payroll provider?
           help_options: Get help here.
         app_based_providers: App-based employers
+        blank_query_error: Enter letters or numbers
         can_not_find_employer: Explore your options
         clear_search: Clear search
         company_examples: 'Examples: Uber, McDonald''s, ADP'

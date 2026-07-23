@@ -167,6 +167,7 @@ es:
           heading: "¿Necesita ayuda para conectarse a su proveedor de nómina?"
           help_options: Obtenga ayuda aquí.
         app_based_providers: Empleadores basados
+        blank_query_error: Escriba letras o números
         can_not_find_employer: Explore sus opciones
         clear_search: Borrar búsqueda
         company_examples: 'Ejemplos: Uber, McDonald''s, ADP'
