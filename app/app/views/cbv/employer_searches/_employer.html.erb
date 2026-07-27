@@ -4,7 +4,7 @@
   <% end %>
 
   <% if @query.present? %>
-    <h2 class="site-preview-heading margin-bottom-2">
+    <h2 class="site-preview-heading margin-bottom-2" data-cbv-employer-search-target="resultsHeading">
       <%= t("cbv.employer_searches.show.results") %> (<%= @employers.count %>)
     </h2>
   <% end %>

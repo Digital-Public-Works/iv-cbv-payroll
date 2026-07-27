@@ -13,6 +13,7 @@ export default class extends Controller {
     "clearButton",
     "errorMessage",
     "searchForm",
+    "resultsHeading",
   ]
 
   static values = {
@@ -24,13 +25,25 @@ export default class extends Controller {
   }
 
   async connect() {
+    this.onFrameLoad = this.onFrameLoad.bind(this)
     this.element.addEventListener("turbo:frame-missing", this.onTurboError)
     this.element.addEventListener("turbo:submit-start", this.onSearchStart)
+    this.element.addEventListener("turbo:frame-load", this.onFrameLoad)
   }
 
   disconnect() {
     this.element.removeEventListener("turbo:frame-missing", this.onTurboError)
     this.element.removeEventListener("turbo:submit-start", this.onSearchStart)
+    this.element.removeEventListener("turbo:frame-load", this.onFrameLoad)
+  }
+
+  onFrameLoad(event) {
+    // Preventing the heading from being announced when the "Popular" tab is selected and the turbo frame is loaded.
+    if (event.target.id !== "employers") return
+
+    if (this.hasResultsHeadingTarget) {
+      updateAriaLiveRegion(this.resultsHeadingTarget.textContent.trim())
+    }
   }
 
   onTurboError(event) {
