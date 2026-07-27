@@ -38,6 +38,7 @@ export default class extends Controller {
   }
 
   onFrameLoad(event) {
+    // Preventing the heading from being announced when the "Popular" tab is selected and the turbo frame is loaded.
     if (event.target.id !== "employers") return
 
     if (this.hasResultsHeadingTarget) {
