@@ -131,7 +131,7 @@ export default class extends Controller {
   onTabKeydown(event) {
     const tabs = this.tabTargets
     // finds which tab just received the keydown from the element listener it is bound to,
-    // i.e. whichever tab is currently focused).
+    // i.e. whichever tab is currently focused.
     const currentIndex = tabs.indexOf(event.currentTarget)
     let newIndex
 
