@@ -26,24 +26,40 @@ module Aggregators
 
     def generate
       refs = collect_document_refs
-      raise NoPaystubsError, "no payout statement documents found for any account" if refs.empty?
-
-      docs = fetch_documents_parallel(refs)
+      docs = refs.empty? ? [] : fetch_documents_parallel(refs)
       pdf_parts = docs.filter_map { |d| normalize_to_pdf(d) }
-      raise NoPaystubsError, "no paystub documents survived normalization" if pdf_parts.empty?
+
+      if pdf_parts.empty?
+        # No pay stub images are available. In caseworker mode we still return a
+        # cover-only file so the absence is communicated explicitly (rather than
+        # silently omitting the file). The client path (no caseworker cover here)
+        # raises so the report omits the paystubs section entirely.
+        raise NoPaystubsError, "no paystub documents found for any account" unless caseworker_mode?
+
+        cover = generate_caseworker_cover
+        raise NoPaystubsError, "caseworker cover render produced no content" if cover.blank?
+
+        return Result.new(content: cover, page_count: page_count(cover), file_size: cover.bytesize)
+      end
 
       merged = merge(pdf_parts)
 
-      if @current_agency.present? && @aggregator_report.present?
-        if (cover = generate_caseworker_cover)
-          merged = prepend_pdf(cover, merged)
-        end
+      if caseworker_mode?
+        cover = generate_caseworker_cover
+        merged = prepend_pdf(cover, merged) if cover
       end
 
       Result.new(content: merged, page_count: page_count(merged), file_size: merged.bytesize)
     end
 
     private
+
+    # Caseworker mode prepends the cover page and always produces a file (even
+    # with no images). It is selected by the caller passing current_agency and
+    # aggregator_report; the client path passes neither.
+    def caseworker_mode?
+      @current_agency.present? && @aggregator_report.present?
+    end
 
     def accounts_for_service
       @cbv_flow.payroll_accounts.pluck(:aggregator_account_id).compact
@@ -130,7 +146,7 @@ module Aggregators
     end
 
     def generate_caseworker_cover
-      employer_names = collect_employer_names
+      groups = @aggregator_report.employer_names_by_image_presence
 
       html = ApplicationController.renderer.render(
         template: "aggregators/paystubs_pdf/caseworker_cover",
@@ -140,17 +156,12 @@ module Aggregators
           current_agency: @current_agency,
           cbv_flow: @cbv_flow,
           aggregator_report: @aggregator_report,
-          employer_names: employer_names
+          employers_with_images: groups[:with],
+          employers_without_images: groups[:without]
         }
       )
 
       WickedPdf.new.pdf_from_string(html).presence
-    end
-
-    def collect_employer_names
-      @aggregator_report.summarize_by_employer
-        .select { |_, summary| summary[:paystubs]&.any? { |p| p.payroll_document_id.present? } }
-        .filter_map { |_, summary| summary[:employment]&.employer_name }
     end
 
     def prepend_pdf(front_bytes, back_bytes)

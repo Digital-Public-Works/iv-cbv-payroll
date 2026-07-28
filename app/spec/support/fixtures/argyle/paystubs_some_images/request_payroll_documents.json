@@ -1,0 +1,23 @@
+{
+  "results": [
+    {
+      "id": "demo-payroll-document-01959b15",
+      "account": "01959b15-8b7f-5487-212d-2c0f50e3ec96",
+      "document_type": "payout-statement",
+      "available_date": "2025-03-07T12:00:00.000Z",
+      "file_url": "https://example.test/mock-signed-url/01959b15-8b7f-5487-212d-2c0f50e3ec96.pdf",
+      "expiration": null,
+      "metadata": {}
+    },
+    {
+      "id": "demo-payroll-document-01958c05",
+      "account": "01958c05-982e-0ff3-47d8-9d469d6d7957",
+      "document_type": "payout-statement",
+      "available_date": "2025-03-06T12:00:00.000Z",
+      "file_url": "https://example.test/mock-signed-url/01958c05-982e-0ff3-47d8-9d469d6d7957.pdf",
+      "expiration": null,
+      "metadata": {}
+    }
+  ],
+  "next": null
+}
