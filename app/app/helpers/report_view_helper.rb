@@ -7,17 +7,25 @@ module ReportViewHelper
     hour.to_f.round(2)
   end
 
-  def federal_cents_per_mile(year)
+  def federal_cents_per_mile(year, month)
     case year
     when 2024
       67
     when 2025
       70
+    when 2026
+      # The 2026 rate introduces mid-year adjustments
+      if month < 7
+        # 2026 Jan-Jun introduces a half-cent.
+        # This results in a float value instead of an integer.
+        # If you plan to use this value for more extensive calculations, you will need to consider
+        # how it might be rounded via aggregations.
+        72.5
+      else
+        76
+      end
     else
-      # The 2026 rate introduces a half-cent.  This results in a float value instead of an integer.
-      # If you plan to use this value for more extensive calculations, you will need to consider
-      # how it might be rounded via aggregations.
-      72.5
+      76
     end
   end
 
