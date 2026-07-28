@@ -51,6 +51,7 @@ export default class extends Controller {
     this.element.removeEventListener("turbo:frame-missing", this.onTurboError)
     this.element.removeEventListener("turbo:submit-start", this.onSearchStart)
     this.element.removeEventListener("turbo:frame-load", this.onFrameLoad)
+    this.element.removeEventListener("turbo:frame-load", this.onPopularFrameLoad)
   }
 
   onFrameLoad(event) {
@@ -60,7 +61,6 @@ export default class extends Controller {
     if (this.hasResultsHeadingTarget) {
       updateAriaLiveRegion(this.resultsHeadingTarget.textContent.trim())
     }
-    this.element.removeEventListener("turbo:frame-load", this.onPopularFrameLoad)
   }
 
   onTurboError(event) {

@@ -30,8 +30,11 @@ describe("EmployerSearchController", () => {
     document.body.innerHTML = ""
   })
 
-  it("adds turbo:frame-missing, turbo:submit-start, and turbo:frame-load listeners on connect()", () => {
-    expect(stimulusElement.addEventListener).toBeCalledTimes(3)
+  it("adds turbo:frame-missing, turbo:submit-start, and two turbo:frame-load listeners on connect()", () => {
+    // Two separate turbo:frame-load listeners are registered: onFrameLoad
+    // (results-heading announcement) and onPopularFrameLoad (tab focus
+    // restoration) — they watch different frames and must both survive.
+    expect(stimulusElement.addEventListener).toBeCalledTimes(4)
     expect(stimulusElement.addEventListener).toHaveBeenCalledWith(
       "turbo:frame-missing",
       expect.any(Function)
@@ -42,19 +45,23 @@ describe("EmployerSearchController", () => {
       expect.any(Function)
     )
 
-    expect(stimulusElement.addEventListener).toHaveBeenCalledWith(
-      "turbo:frame-load",
-      expect.any(Function)
-    )
+    const frameLoadListenerCount = stimulusElement.addEventListener.mock.calls.filter(
+      ([eventName]) => eventName === "turbo:frame-load"
+    ).length
+    expect(frameLoadListenerCount).toBe(2)
   })
 
-  it("removes turbo:frame-missing, turbo:submit-start, and turbo:frame-load listeners on disconnect()", async () => {
+  it("removes all four listeners, including both turbo:frame-load ones, on disconnect()", async () => {
     await stimulusElement.remove()
-    expect(stimulusElement.removeEventListener).toBeCalledTimes(3)
+    expect(stimulusElement.removeEventListener).toBeCalledTimes(4)
     const removedEvents = stimulusElement.removeEventListener.mock.calls.map((c) => c[0])
     expect(removedEvents).toContain("turbo:frame-missing")
     expect(removedEvents).toContain("turbo:submit-start")
-    expect(removedEvents).toContain("turbo:frame-load")
+
+    const frameLoadRemovalCount = removedEvents.filter(
+      (eventName) => eventName === "turbo:frame-load"
+    ).length
+    expect(frameLoadRemovalCount).toBe(2)
   })
 })
 
@@ -660,5 +667,27 @@ describe("EmployerSearchController tab focus restoration after frame reload", ()
     expect(() =>
       popularFrame.dispatchEvent(new CustomEvent("turbo:frame-load", { bubbles: true }))
     ).not.toThrow()
+  })
+
+  it("still restores tab focus after the employers results frame has already loaded once", () => {
+    // Regression test: onFrameLoad (results-heading announcement, in the
+    // "employers" frame) used to tear down onPopularFrameLoad's listener as
+    // a side effect, permanently breaking tab focus restoration for the
+    // rest of the page's lifetime after any company-name search.
+    const employersFrame = document.createElement("div")
+    employersFrame.id = "employers"
+    controllerElement.appendChild(employersFrame)
+    employersFrame.dispatchEvent(new CustomEvent("turbo:frame-load", { bubbles: true }))
+
+    employerTab.click()
+
+    const reloadedTab = document.createElement("a")
+    reloadedTab.id = "app_based_providers_tab"
+    reloadedTab.setAttribute("href", "/cbv/employer_search?type=employer")
+    employerTab.replaceWith(reloadedTab)
+
+    popularFrame.dispatchEvent(new CustomEvent("turbo:frame-load", { bubbles: true }))
+
+    expect(document.activeElement).toBe(reloadedTab)
   })
 })
