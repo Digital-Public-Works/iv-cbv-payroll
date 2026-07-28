@@ -383,7 +383,7 @@ es:
           paystubs_cover:
             header: 'Informe de Verificación de Ingresos: Imágenes de talones de pago'
             next_page_note: Si hay imágenes de talones de pago disponibles, aparecen en la página siguiente. También se envían a %{agency_name}.
-            no_images_intro: Cuando hay imágenes de talones de pago disponibles, se envían a [Agency]. Su informe de ingresos sigue siendo correcto, con o sin estas imágenes.
+            no_images_intro: Cuando hay imágenes de talones de pago disponibles, se envían a %{agency_name}. Su informe de ingresos sigue siendo correcto, con o sin estas imágenes.
             with_intro: 'Hay imágenes de talones de pago para los siguientes trabajos:'
             without_intro: 'Verify My Income no encontró imágenes de talones de pago para los siguientes trabajos:'
           shared:
