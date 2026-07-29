@@ -265,6 +265,7 @@ en:
           heading: Need help connecting to your payroll provider?
           help_options: Get help here.
         app_based_providers: App-based employers
+        blank_query_error: Enter letters or numbers
         can_not_find_employer: Explore your options
         clear_search: Clear search
         company_examples: 'Examples: Uber, McDonald''s, ADP'
@@ -399,6 +400,8 @@ en:
         additional_information_header: Additional comments (Optional)
         additional_information_label: Share any comments or additional information about the income details above that you’d like %{agency_acronym} to know. For example, you can share if the information is inaccurate or if you’re no longer working at that job.
         additional_information_placeholder: Enter up to 1000 characters
+        character_count_over_limit: "{count} characters over limit."
+        character_count_shorten: Please make your comment shorter.
         continue: Continue
         deductions: 'Deduction: %{category} (%{tax})'
         deposit_accounts:
@@ -606,8 +609,8 @@ en:
             definition_accrued_gross_earnings_html: "<strong>“Accrued gross earnings”</strong> is the sum of all gross payments made in that month."
             definition_self_employment_html: "<strong>“Self-employment”</strong> is a label for a self-employed or 1099 contractor job from an online app (like Uber or Doordash). All business expenses should be factored into the total gross income for this job."
             definition_total_hours_worked_html: "<strong>“Total hours worked”</strong> is a sum of the time it took to complete each gig. The monthly total shows when a payout happened, not when the work was done."
-            definition_verified_mileage_expenses_html: "<strong>“Verified mileage expenses”</strong> are car-related expenses based on the miles driven and recorded in the Platform/App. This tool multiplies the miles driven by the IRS-defined mileage expense rate ($.725 per mile in 2026). This rate includes gas, car payments or leasing fees, car insurance, repairs, and maintenance."
-            mileage_rate_note: Some reports may include income from multiple years. You'll see the mileage rate that applies to each year.
+            definition_verified_mileage_expenses_html: "<strong>“Verified mileage expenses”</strong> are car-related expenses based on the miles driven and recorded in the Platform/App. This tool multiplies the miles driven by the IRS-defined mileage expense rate ($.725 per mile for January through June 2026, and $.76 per mile starting in July 2026). This rate includes gas, car payments or leasing fees, car insurance, repairs, and maintenance."
+            mileage_rate_note: Some reports may include income from multiple years. You'll see the mileage rate that applies to each year or part of a year.
             what_does_this_mean: What does the information in the ‘Monthly Summary’ table mean?
         dollars_times_miles: "(%{dollar_amount} x %{number_of_miles} miles)"
         month: Month
