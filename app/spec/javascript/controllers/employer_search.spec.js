@@ -30,8 +30,11 @@ describe("EmployerSearchController", () => {
     document.body.innerHTML = ""
   })
 
-  it("adds turbo:frame-missing, turbo:submit-start, and turbo:frame-load listeners on connect()", () => {
-    expect(stimulusElement.addEventListener).toBeCalledTimes(3)
+  it("adds turbo:frame-missing, turbo:submit-start, and two turbo:frame-load listeners on connect()", () => {
+    // Two separate turbo:frame-load listeners are registered: onFrameLoad
+    // (results-heading announcement) and onPopularFrameLoad (tab focus
+    // restoration) — they watch different frames and must both survive.
+    expect(stimulusElement.addEventListener).toBeCalledTimes(4)
     expect(stimulusElement.addEventListener).toHaveBeenCalledWith(
       "turbo:frame-missing",
       expect.any(Function)
@@ -42,19 +45,23 @@ describe("EmployerSearchController", () => {
       expect.any(Function)
     )
 
-    expect(stimulusElement.addEventListener).toHaveBeenCalledWith(
-      "turbo:frame-load",
-      expect.any(Function)
-    )
+    const frameLoadListenerCount = stimulusElement.addEventListener.mock.calls.filter(
+      ([eventName]) => eventName === "turbo:frame-load"
+    ).length
+    expect(frameLoadListenerCount).toBe(2)
   })
 
-  it("removes turbo:frame-missing, turbo:submit-start, and turbo:frame-load listeners on disconnect()", async () => {
+  it("removes all four listeners, including both turbo:frame-load ones, on disconnect()", async () => {
     await stimulusElement.remove()
-    expect(stimulusElement.removeEventListener).toBeCalledTimes(3)
+    expect(stimulusElement.removeEventListener).toBeCalledTimes(4)
     const removedEvents = stimulusElement.removeEventListener.mock.calls.map((c) => c[0])
     expect(removedEvents).toContain("turbo:frame-missing")
     expect(removedEvents).toContain("turbo:submit-start")
-    expect(removedEvents).toContain("turbo:frame-load")
+
+    const frameLoadRemovalCount = removedEvents.filter(
+      (eventName) => eventName === "turbo:frame-load"
+    ).length
+    expect(frameLoadRemovalCount).toBe(2)
   })
 })
 
@@ -500,5 +507,187 @@ describe("EmployerSearchController multiple instances on same page!", () => {
     await stimulusElement2.click()
 
     expect(await trackUserAction).toBeCalledTimes(1)
+  })
+})
+
+describe("EmployerSearchController tab keyboard navigation", () => {
+  let controllerElement
+  let payrollTab
+  let employerTab
+
+  beforeEach(async () => {
+    controllerElement = document.createElement("div")
+    controllerElement.setAttribute("data-controller", "cbv-employer-search")
+
+    payrollTab = document.createElement("a")
+    payrollTab.setAttribute("data-cbv-employer-search-target", "tab")
+    payrollTab.setAttribute("data-action", "keydown->cbv-employer-search#onTabKeydown")
+    payrollTab.setAttribute("tabindex", "0")
+
+    employerTab = document.createElement("a")
+    employerTab.setAttribute("data-cbv-employer-search-target", "tab")
+    employerTab.setAttribute("data-action", "keydown->cbv-employer-search#onTabKeydown")
+    employerTab.setAttribute("tabindex", "-1")
+
+    controllerElement.appendChild(payrollTab)
+    controllerElement.appendChild(employerTab)
+    document.body.appendChild(controllerElement)
+
+    await window.Stimulus.register("cbv-employer-search", EmployerSearchController)
+
+    payrollTab.focus()
+  })
+
+  afterEach(() => {
+    document.body.innerHTML = ""
+  })
+
+  it("moves focus and roving tabindex to the next tab on ArrowRight", () => {
+    payrollTab.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }))
+
+    expect(document.activeElement).toBe(employerTab)
+    expect(employerTab.getAttribute("tabindex")).toBe("0")
+    expect(payrollTab.getAttribute("tabindex")).toBe("-1")
+  })
+
+  it("wraps focus around to the last tab on ArrowLeft from the first tab", () => {
+    payrollTab.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }))
+
+    expect(document.activeElement).toBe(employerTab)
+    expect(employerTab.getAttribute("tabindex")).toBe("0")
+    expect(payrollTab.getAttribute("tabindex")).toBe("-1")
+  })
+
+  it("wraps focus around to the first tab on ArrowRight from the last tab", () => {
+    employerTab.focus()
+    employerTab.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }))
+
+    expect(document.activeElement).toBe(payrollTab)
+    expect(payrollTab.getAttribute("tabindex")).toBe("0")
+    expect(employerTab.getAttribute("tabindex")).toBe("-1")
+  })
+
+  it("moves focus to the last tab on End", () => {
+    payrollTab.dispatchEvent(new KeyboardEvent("keydown", { key: "End", bubbles: true }))
+
+    expect(document.activeElement).toBe(employerTab)
+  })
+
+  it("moves focus to the first tab on Home", () => {
+    employerTab.focus()
+    employerTab.dispatchEvent(new KeyboardEvent("keydown", { key: "Home", bubbles: true }))
+
+    expect(document.activeElement).toBe(payrollTab)
+  })
+
+  it("activates the focused tab on Space without moving focus elsewhere", () => {
+    employerTab.focus()
+    vi.spyOn(employerTab, "click")
+
+    employerTab.dispatchEvent(
+      new KeyboardEvent("keydown", { key: " ", bubbles: true, cancelable: true })
+    )
+
+    expect(employerTab.click).toBeCalledTimes(1)
+  })
+
+  it("does not move focus or activate a tab on unrelated keys", () => {
+    vi.spyOn(payrollTab, "click")
+
+    payrollTab.dispatchEvent(new KeyboardEvent("keydown", { key: "a", bubbles: true }))
+
+    expect(document.activeElement).toBe(payrollTab)
+    expect(payrollTab.click).not.toBeCalled()
+    expect(payrollTab.getAttribute("tabindex")).toBe("0")
+  })
+})
+
+describe("EmployerSearchController tab focus restoration after frame reload", () => {
+  let controllerElement
+  let popularFrame
+  let employerTab
+
+  beforeEach(async () => {
+    controllerElement = document.createElement("div")
+    controllerElement.setAttribute("data-controller", "cbv-employer-search")
+
+    popularFrame = document.createElement("div")
+    popularFrame.id = "popular"
+
+    employerTab = document.createElement("a")
+    employerTab.id = "app_based_providers_tab"
+    employerTab.setAttribute("href", "/cbv/employer_search?type=employer")
+    employerTab.setAttribute("data-cbv-employer-search-target", "tab")
+    employerTab.setAttribute(
+      "data-action",
+      "click->cbv-employer-search#onTabClick keydown->cbv-employer-search#onTabKeydown"
+    )
+
+    popularFrame.appendChild(employerTab)
+    controllerElement.appendChild(popularFrame)
+    document.body.appendChild(controllerElement)
+
+    await window.Stimulus.register("cbv-employer-search", EmployerSearchController)
+  })
+
+  afterEach(() => {
+    document.body.innerHTML = ""
+  })
+
+  it("refocuses the activated tab's element (by id) once the popular frame finishes reloading", () => {
+    employerTab.click()
+
+    // Simulates Turbo tearing down and rebuilding the frame's contents on
+    // navigation: the original tab node is gone, replaced by a new one that
+    // happens to share the same id.
+    const reloadedTab = document.createElement("a")
+    reloadedTab.id = "app_based_providers_tab"
+    reloadedTab.setAttribute("href", "/cbv/employer_search?type=employer")
+    employerTab.replaceWith(reloadedTab)
+
+    popularFrame.dispatchEvent(new CustomEvent("turbo:frame-load", { bubbles: true }))
+
+    expect(document.activeElement).toBe(reloadedTab)
+  })
+
+  it("does nothing if the reloaded frame is not the popular frame", () => {
+    employerTab.click()
+    vi.spyOn(employerTab, "focus")
+
+    const otherFrame = document.createElement("div")
+    otherFrame.id = "employers"
+    controllerElement.appendChild(otherFrame)
+
+    otherFrame.dispatchEvent(new CustomEvent("turbo:frame-load", { bubbles: true }))
+
+    expect(employerTab.focus).not.toBeCalled()
+  })
+
+  it("does nothing if no tab was clicked before the frame reloads", () => {
+    expect(() =>
+      popularFrame.dispatchEvent(new CustomEvent("turbo:frame-load", { bubbles: true }))
+    ).not.toThrow()
+  })
+
+  it("still restores tab focus after the employers results frame has already loaded once", () => {
+    // Regression test: onFrameLoad (results-heading announcement, in the
+    // "employers" frame) used to tear down onPopularFrameLoad's listener as
+    // a side effect, permanently breaking tab focus restoration for the
+    // rest of the page's lifetime after any company-name search.
+    const employersFrame = document.createElement("div")
+    employersFrame.id = "employers"
+    controllerElement.appendChild(employersFrame)
+    employersFrame.dispatchEvent(new CustomEvent("turbo:frame-load", { bubbles: true }))
+
+    employerTab.click()
+
+    const reloadedTab = document.createElement("a")
+    reloadedTab.id = "app_based_providers_tab"
+    reloadedTab.setAttribute("href", "/cbv/employer_search?type=employer")
+    employerTab.replaceWith(reloadedTab)
+
+    popularFrame.dispatchEvent(new CustomEvent("turbo:frame-load", { bubbles: true }))
+
+    expect(document.activeElement).toBe(reloadedTab)
   })
 })
