@@ -400,6 +400,7 @@ en:
         additional_information_header: Additional comments (Optional)
         additional_information_label: Share any comments or additional information about the income details above that you’d like %{agency_acronym} to know. For example, you can share if the information is inaccurate or if you’re no longer working at that job.
         additional_information_placeholder: Enter up to 1000 characters
+        character_count_description: You can enter up to 1000 characters
         character_count_over_limit: "{count} characters over limit."
         character_count_shorten: Please make your comment shorter.
         continue: Continue
