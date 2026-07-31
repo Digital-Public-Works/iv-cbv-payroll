@@ -7,11 +7,13 @@ on:
     paths:
       - bin/**
       - infra/**
+      - app/**
       - .github/workflows/**
   pull_request:
     paths:
       - bin/**
       - infra/**
+      - app/**
       - .github/workflows/**
 
 jobs:
