@@ -22,12 +22,8 @@ resource "aws_iam_policy" "github_actions" {
   policy      = data.aws_iam_policy_document.github_actions.json
 }
 
-# KNOWN RISK, NOT ROUTINE: this policy grants iam:* on resources=["*"], which lets this role
-# grant itself any permission (incl. full admin) — it is not meaningfully bounded by the "*.serviceX:*" action list.
-# The trust policy (see github_assume_role below) also allows any ref in this repo, not just protected branches.
-# Effectively: any GitHub Actions run in this repo can act as AWS account admin.
+# any GitHub Actions run in this repo can act as AWS account admin.
 # Scoping tracked in PF-795 (Infra defect: GitHub Actions deploy has root iam role).
-#trivy:ignore:aws-0345
 data "aws_iam_policy_document" "github_actions" {
   statement {
     sid       = "ManageInfra"
