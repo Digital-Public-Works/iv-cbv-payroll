@@ -167,6 +167,7 @@ es:
           heading: "¿Necesita ayuda para conectarse a su proveedor de nómina?"
           help_options: Obtenga ayuda aquí.
         app_based_providers: Empleadores basados
+        blank_query_error: Escriba letras o números
         can_not_find_employer: Explore sus opciones
         clear_search: Borrar búsqueda
         company_examples: 'Ejemplos: Uber, McDonald''s, ADP'
@@ -301,6 +302,9 @@ es:
         additional_information_header: Comentarios adicionales (Opcional)
         additional_information_label: Comparta cualquier comentario o información adicional sobre los detalles de pago anteriores que desea que %{agency_acronym} conozca. Por ejemplo, puede compartir si la información es inexacta o si ya no trabaja en ese empleo.
         additional_information_placeholder: Introduzca hasta 1000 caracteres
+        character_count_description: Hasta 1000 caracteres
+        character_count_over_limit: Hay {count} caracteres de más.
+        character_count_shorten: Acorte el comentario, por favor.
         continue: Continuar
         deductions: 'Deducción: %{category} (%{tax})'
         deposit_accounts:
@@ -494,8 +498,8 @@ es:
             definition_accrued_gross_earnings_html: "<strong>“Ganancias brutas acumuladas”</strong> es la suma de todos los pagos brutos realizados en ese mes."
             definition_self_employment_html: "<strong>“Empleo independiente”</strong> es una etiqueta para un trabajo por cuenta propia o como contratista 1099 de una aplicación en línea (como Uber o Doordash). La ganancia del empleo independiente se usa al determinar la elegibilidad. La ganancia se calcula así: ganancias brutas menos los costos permitidos del empleo independiente."
             definition_total_hours_worked_html: "<strong>“Total de horas trabajadas”</strong> es la suma del tiempo que tomó completar cada trabajo. El total del mes muestra cuándo ocurrió un pago, no cuándo se realizó el trabajo."
-            definition_verified_mileage_expenses_html: "<strong>“Gastos de millaje verificados”</strong> son los gastos relacionados con el vehículo basados en las millas conducidas y registradas en la plataforma/aplicación. Las millas conducidas se multiplican por la tarifa de gasto de millaje definida por el IRS ($0.725 por milla en 2026). Esta tarifa incluye gasolina, pagos por el vehículo (compra o renta), seguro del vehículo, reparaciones y mantenimiento."
-            mileage_rate_note: Algunos informes pueden incluir ingresos de varios años. Aparecerá la tarifa de millaje que se aplica a cada año.
+            definition_verified_mileage_expenses_html: "<strong>“Gastos de millaje verificados”</strong> son los gastos relacionados con el vehículo, calculados según las millas conducidas y registradas en la plataforma/aplicación. Las millas conducidas se multiplican por la tarifa de gasto de millaje definida por el IRS ($0.725 por milla de enero a junio de 2026, y $0.76 por milla a partir de julio de 2026). Esta tarifa incluye gasolina, pagos del vehículo (compra o arrendamiento), seguro del vehículo, reparaciones y mantenimiento."
+            mileage_rate_note: Algunos informes pueden incluir ingresos de varios años. Usted verá la tarifa de millaje que se aplicó durante cada año, o durante parte de un año.
             what_does_this_mean: ¿Qué significa la información en la tabla "Resumen mensual"?
         dollars_times_miles: "(%{dollar_amount} x %{number_of_miles} millas)"
         month: Mes

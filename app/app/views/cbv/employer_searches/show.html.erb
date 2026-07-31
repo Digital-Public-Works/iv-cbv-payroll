@@ -27,10 +27,10 @@
 
   <div id="company_examples" class="text-gray-50"><%= t(".company_examples") %></div>
 
-  <%= form_with url: cbv_flow_employer_search_path, method: :get, class: "usa-search usa-search--big margin-bottom-4 margin-top-2", html: { role: "search" }, data: { turbo_frame: "employers", turbo_action: "advance", action: "reset->cbv-employer-search#onSearchReset" } do |f| %>
+  <%= form_with url: cbv_flow_employer_search_path, method: :get, class: "usa-search usa-search--big margin-bottom-4 margin-top-2", html: { role: "search" }, data: { turbo_frame: "employers", turbo_action: "advance", action: "reset->cbv-employer-search#onSearchReset submit->cbv-employer-search#onSubmit", "cbv-employer-search-target": "searchForm" } do |f| %>
     <div class="cbv-employer-search__input-wrapper">
       <%= f.text_field :query, value: @query, class: "usa-input", type: "search",
-            aria: { describedby: "company_examples" },
+            aria: { describedby: "company_examples"  },
             data: { "cbv-employer-search-target": "queryInput", action: "input->cbv-employer-search#toggleClearButton" } %>
       <button
         type="reset"
@@ -53,24 +53,44 @@
     </button>
   <% end %>
 
+  <p
+    id="query_error_message"
+    class="usa-error-message margin-top-0 display-none"
+    data-cbv-employer-search-target="errorMessage"
+  ><%= t(".blank_query_error") %></p>
+
   <%= render partial: "employer", locals: { employer: @employers } %>
 
   <%= form_with url: next_path, method: :get, class: "display-none", data: { 'cbv-employer-search-target': "form" } do |f| %>
     <input type="hidden" name="user[account_id]" data-cbv-employer-search-target="userAccountId">
   <% end %>
 
-  <h2><%= t(".popular_providers") %></h2>
+  <h2 id="popular_providers_heading"><%= t(".popular_providers") %></h2>
   <%= turbo_frame_tag "popular" do %>
-    <div class="grid-row maxw-mobile-lg margin-left-0 padding-left-0 margin-top-4">
+    <div class="grid-row maxw-mobile-lg margin-left-0 padding-left-0 margin-top-4" role="tablist" aria-labelledby="popular_providers_heading">
       <%= link_to t(".payroll_providers"), cbv_flow_employer_search_path(type: :payroll),
+        id: "payroll_providers_tab",
+        role: "tab",
+        tabindex: @selected_tab == "payroll" ? "0" : "-1",
+        aria: { selected: @selected_tab == "payroll", controls: "popular_providers_panel" },
         class: "grid-col usa-button margin-0 radius-right-0 #{@selected_tab != 'payroll' && 'usa-button--outline'}",
-        data: { turbo_frame: "popular", turbo_action: "advance", turbo_prefetch: false } %>
+        data: { turbo_frame: "popular", turbo_action: "advance", turbo_prefetch: false, "cbv-employer-search-target": "tab", action: "click->cbv-employer-search#onTabClick keydown->cbv-employer-search#onTabKeydown" } %>
       <%= link_to t(".app_based_providers"), cbv_flow_employer_search_path(type: :employer),
+        id: "app_based_providers_tab",
+        role: "tab",
+        tabindex: @selected_tab == "employer" ? "0" : "-1",
+        aria: { selected: @selected_tab == "employer", controls: "popular_providers_panel" },
         class: "grid-col usa-button margin-0 radius-left-0 #{@selected_tab != 'employer' && 'usa-button--outline'}",
-        data: { turbo_frame: "popular", turbo_action: "advance", turbo_prefetch: false } %>
+        data: { turbo_frame: "popular", turbo_action: "advance", turbo_prefetch: false, "cbv-employer-search-target": "tab", action: "click->cbv-employer-search#onTabClick keydown->cbv-employer-search#onTabKeydown" } %>
     </div>
 
-    <div class="grid-row grid-gap margin-top-2">
+    <div
+      id="popular_providers_panel"
+      role="tabpanel"
+      tabindex="0"
+      aria-labelledby="<%= @selected_tab == "payroll" ? "payroll_providers_tab" : "app_based_providers_tab" %>"
+      class="grid-row grid-gap margin-top-2"
+    >
       <% (ProviderSearchService.new(@cbv_flow.client_agency_id).top_aggregator_options(@selected_tab)).each do |provider| %>
         <div class="grid-col-4 tablet:grid-col-2 margin-top-2">
           <button
