@@ -15,6 +15,7 @@ export default class extends Controller {
     "searchForm",
     "resultsHeading",
     "tab",
+    "pageHeading",
   ]
 
   static values = {
@@ -200,6 +201,7 @@ export default class extends Controller {
       onSuccess: this.onSuccess.bind(this),
       onExit: this.onExit.bind(this),
       triggerElement: event.currentTarget,
+      fallbackFocusElement: this.hasPageHeadingTarget ? this.pageHeadingTarget : undefined,
     })
     await adapter.open()
   }
