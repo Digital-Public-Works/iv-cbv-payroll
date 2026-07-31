@@ -52,7 +52,7 @@ resource "aws_lambda_function" "role_manager" {
   timeout = 30
   # checkov:skip=CKV_AWS_272: TODO: add code signing config
   # checkov:skip=CKV_AWS_116:Dead letter queue (DLQ) configuration is only relevant for asynchronous invocations
-  # checkov:skip=CKV_AWS_363: python3.9 is deprecated; runtime bump tracked in PF-XXX
+  # checkov:skip=CKV_AWS_363: python3.9 is deprecated; runtime bump tracked in PF-799
 }
 
 data "aws_kms_key" "default_ssm_key" {

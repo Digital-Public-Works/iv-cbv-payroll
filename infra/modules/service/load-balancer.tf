@@ -20,7 +20,7 @@ resource "aws_lb" "alb" {
 
   # checkov:skip=CKV2_AWS_28:No WAF in front of the app ALB (unlike CloudFront/static-assets, which are intentionally
   # unprotected as low-value targets). This one fronts the actual application and has no real tracking ticket today
-  # (the referenced "#165" was a stale/unrelated reference) — see PF-XXX to evaluate adding a WAF here.
+  # see PF-796 to evaluate adding a WAF here.
 
   # Drop invalid HTTP headers for improved security
   # Note that header names cannot contain underscores
@@ -34,7 +34,7 @@ resource "aws_lb" "alb" {
   }
 }
 
-# TODO: redirect HTTP->HTTPS at the ALB. HTTP->HTTPS enforced by Rails config.force_ssl
+# TODO PF-800: redirect HTTP->HTTPS at the ALB. HTTP->HTTPS enforced by Rails config.force_ssl
 # See `navapbc/template-infra`'s fix: https://github.com/navapbc/template-infra/commit/f9785a860360d849e6733a26f358f50dfd4d6a80
 #trivy:ignore:aws-0054
 resource "aws_lb_listener" "alb_listener_http" {

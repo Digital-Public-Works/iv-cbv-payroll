@@ -20,7 +20,7 @@ resource "aws_security_group" "alb" {
   vpc_id = var.vpc_id
 
   # checkov:skip=CKV_AWS_260:Port 80 forwards to the app, but HTTP->HTTPS is enforced by Rails config.force_ssl (verified live).
-  # TODO: redirect at the ALB too (defense in depth) per navapbc/template-infra's fix:
+  # TODO PF-800: redirect at the ALB too per navapbc/template-infra's fix:
   # https://github.com/navapbc/template-infra/commit/f9785a860360d849e6733a26f358f50dfd4d6a80
   ingress {
     description = "Allow HTTP traffic from public internet"
@@ -38,8 +38,8 @@ resource "aws_security_group" "alb" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # checkov:skip=CKV_AWS_382:Open egress needed to reach external services (e.g. Argyle); see PF-XXX to scope egress rules
-  # trivy:ignore:aws-0104 Open egress needed to reach external services (e.g. Argyle); see PF-XXX to scope egress rules
+  # checkov:skip=CKV_AWS_382:Open egress needed to reach external services (e.g. Argyle); see PF-798  to scope egress rules
+  # trivy:ignore:aws-0104 Open egress needed to reach external services (e.g. Argyle); see PF-798 to scope egress rules
   egress {
     description = "Allow all outgoing traffic"
     from_port   = 0
@@ -62,7 +62,7 @@ resource "aws_security_group" "app" {
   }
 }
 
-#trivy:ignore:aws-0104 Open egress needed to reach external services (e.g. Argyle); see PF-XXX to scope egress rules
+#trivy:ignore:aws-0104 Open egress needed to reach external services (e.g. Argyle); see PF-798 to scope egress rules
 resource "aws_vpc_security_group_egress_rule" "service_egress_to_all" {
   security_group_id = aws_security_group.app.id
   description       = "Allow all outgoing traffic from application"
