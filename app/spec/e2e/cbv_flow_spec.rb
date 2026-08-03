@@ -92,19 +92,6 @@ RSpec.describe "e2e CBV flow test", type: :feature, js: true do
   it "returns focus to the trigger button after the Argyle modal is closed without logging in" do
     raise "Argyle not in supported_providers!" unless Rails.application.config.supported_providers.include?(:argyle)
 
-    # This uses a hand-rolled replay payload (rather than @e2e.replay_modal_callbacks,
-    # which always plays back the fixed "aggregator_modal_callbacks.yml" recording)
-    # because that recording only ever completes a successful login - it never
-    # exercises Argyle's onClose callback, so it can't be used to verify focus
-    # restoration after the user closes the modal without logging in.
-    page.driver.browser.execute_script(<<~JS)
-      window.sessionStorage.setItem("e2eInvokedCallbacks", "[]");
-      window.sessionStorage.setItem(
-        "e2eCallbacksToInvoke",
-        #{JSON.generate([ { callbackName: "onClose", callbackArguments: [] } ]).inspect}
-      );
-    JS
-
     # /cbv/entry
     visit URI(root_url).request_uri
     visit URI(cbv_flow_invitation.to_url).request_uri
@@ -113,6 +100,25 @@ RSpec.describe "e2e CBV flow test", type: :feature, js: true do
 
     # /cbv/employer_search
     verify_page(page, title: I18n.t("cbv.employer_searches.show.header"), wait: 10)
+
+    # This uses a hand-rolled replay payload (rather than @e2e.replay_modal_callbacks,
+    # which always plays back the fixed "aggregator_modal_callbacks.yml" recording)
+    # because that recording only ever completes a successful login - it never
+    # exercises Argyle's onClose callback, so it can't be used to verify focus
+    # restoration after the user closes the modal without logging in.
+    #
+    # Must run after the initial navigation above, not before it - executing
+    # script against sessionStorage before the browser has visited any real
+    # page throws "Access is denied for this document" (no origin yet to
+    # scope storage to).
+    page.driver.browser.execute_script(<<~JS)
+      window.sessionStorage.setItem("e2eInvokedCallbacks", "[]");
+      window.sessionStorage.setItem(
+        "e2eCallbacksToInvoke",
+        #{JSON.generate([ { callbackName: "onClose", callbackArguments: [] } ]).inspect}
+      );
+    JS
+
     click_button "Paychex"
 
     # Closing without logging in shouldn't navigate away from employer_search...
