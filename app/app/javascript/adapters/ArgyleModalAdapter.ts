@@ -9,6 +9,15 @@ import {
 
 export default class ArgyleModalAdapter extends ModalAdapter {
   private seenError = false
+
+  // Covers both onClose and onError, which already funnel into this. Must
+  // wait for the exit callback (which re-enables the trigger button) to run
+  // before restoring focus - a disabled button silently rejects .focus().
+  async onExit(eventPayload: any = {}) {
+    await super.onExit(eventPayload)
+    this.restoreFocus()
+  }
+
   async open() {
     const locale = getDocumentLocale()
 
@@ -62,13 +71,13 @@ export default class ArgyleModalAdapter extends ModalAdapter {
       await trackUserAction("ApplicantEncounteredModalAdapterError", {
         message: "Missing requestData from init() function",
       })
-      this.onExit()
+      await this.onExit()
     }
   }
 
   async onError(err: LinkError) {
     await trackUserAction("ApplicantEncounteredArgyleError", err)
-    this.onExit()
+    await this.onExit()
   }
 
   async onClose() {

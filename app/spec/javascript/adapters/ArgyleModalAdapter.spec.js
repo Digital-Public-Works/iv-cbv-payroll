@@ -422,4 +422,59 @@ describe("ArgyleModalAdapter", () => {
       expect(trackUserAction.mock.calls[1][1]).toMatchSnapshot()
     })
   })
+
+  // Uses its own adapter instance/args (not the shared module-level
+  // `modalAdapterArgs`/`adapter`/`triggers` from the outer beforeEach) so
+  // `triggerElement` doesn't leak into unrelated tests.
+  describe("focus restoration", () => {
+    afterEach(() => {
+      document.body.innerHTML = ""
+    })
+
+    it("restores focus to the triggerElement after the modal closes", async () => {
+      const trigger = document.createElement("button")
+      document.body.appendChild(trigger)
+
+      const localAdapter = new ArgyleModalAdapter(Argyle)
+      localAdapter.init({ ...modalAdapterArgs, triggerElement: trigger })
+      const localTriggers = await localAdapter.open()
+
+      await localTriggers.triggerClose()
+
+      expect(document.activeElement).toBe(trigger)
+    })
+
+    it("restores focus to the triggerElement after the modal errors", async () => {
+      const trigger = document.createElement("button")
+      document.body.appendChild(trigger)
+
+      const localAdapter = new ArgyleModalAdapter(Argyle)
+      localAdapter.init({ ...modalAdapterArgs, triggerElement: trigger })
+      const localTriggers = await localAdapter.open()
+
+      await localTriggers.triggerError()
+
+      expect(document.activeElement).toBe(trigger)
+    })
+
+    it("falls back to fallbackFocusElement when the trigger was removed before the modal closed", async () => {
+      const trigger = document.createElement("button")
+      const fallback = document.createElement("h1")
+      fallback.setAttribute("tabindex", "-1")
+      document.body.append(trigger, fallback)
+
+      const localAdapter = new ArgyleModalAdapter(Argyle)
+      localAdapter.init({
+        ...modalAdapterArgs,
+        triggerElement: trigger,
+        fallbackFocusElement: fallback,
+      })
+      const localTriggers = await localAdapter.open()
+
+      trigger.remove()
+      await localTriggers.triggerClose()
+
+      expect(document.activeElement).toBe(fallback)
+    })
+  })
 })
