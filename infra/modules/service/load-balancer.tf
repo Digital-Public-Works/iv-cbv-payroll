@@ -18,9 +18,7 @@ resource "aws_lb" "alb" {
 
   # checkov:skip=CKV2_AWS_20:Redirect HTTP to HTTPS as part of implementing HTTPS support; tracked in PF-800
 
-  # checkov:skip=CKV2_AWS_28:No WAF in front of the app ALB (unlike CloudFront/static-assets, which are intentionally
-  # unprotected as low-value targets). This one fronts the actual application and has no real tracking ticket today
-  # see PF-796 to evaluate adding a WAF here.
+  # checkov:skip=CKV2_AWS_28:No WAF in front of the app ALB. see PF-796
 
   # Drop invalid HTTP headers for improved security
   # Note that header names cannot contain underscores
