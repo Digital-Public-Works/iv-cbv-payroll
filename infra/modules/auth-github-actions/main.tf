@@ -22,6 +22,8 @@ resource "aws_iam_policy" "github_actions" {
   policy      = data.aws_iam_policy_document.github_actions.json
 }
 
+# any GitHub Actions run in this repo can act as AWS account admin.
+# Scoping tracked in PF-795 (Infra defect: GitHub Actions deploy has root iam role).
 data "aws_iam_policy_document" "github_actions" {
   statement {
     sid       = "ManageInfra"
