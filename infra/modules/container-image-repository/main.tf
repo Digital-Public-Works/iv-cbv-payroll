@@ -82,7 +82,6 @@ data "aws_iam_policy_document" "image_access" {
 }
 
 resource "aws_kms_key" "ecr_kms" {
-  # checkov:skip=CKV2_AWS_64:Default key policy (account-root control) is sufficient; no cross-account access needed
   enable_key_rotation = true
   description         = "KMS key for ECR repository ${var.name}"
 }

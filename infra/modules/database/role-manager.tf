@@ -61,7 +61,6 @@ data "aws_kms_key" "default_ssm_key" {
 
 # KMS key used to encrypt role manager's environment variables
 resource "aws_kms_key" "role_manager" {
-  # checkov:skip=CKV2_AWS_64:Default key policy (account-root control) is sufficient; no cross-account access needed
   description         = "Key for Lambda function ${local.role_manager_name}"
   enable_key_rotation = true
 }

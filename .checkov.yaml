@@ -1,0 +1,3 @@
+skip-check:
+  # Default KMS key policy is sufficient (only root account gets kms:*); no cross-account access needed.
+  - CKV2_AWS_64

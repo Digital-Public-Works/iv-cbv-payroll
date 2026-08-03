@@ -14,7 +14,6 @@ locals {
 # control over the key. This allows for ability to restrict access by key as well as policies attached to roles or users.
 # https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html
 resource "aws_kms_key" "tf_backend" {
-  # checkov:skip=CKV2_AWS_64:Default key policy (account-root control) is sufficient; no cross-account access needed
   description = "KMS key for DynamoDB table ${local.tf_locks_table_name}"
   # The waiting period, specified in number of days. After the waiting period ends, AWS KMS deletes the KMS key.
   deletion_window_in_days = "10"
