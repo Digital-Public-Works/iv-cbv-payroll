@@ -16,7 +16,7 @@ resource "aws_lb" "alb" {
   # checkov:skip=CKV_AWS_150:Allow deletion for automated tests
   enable_deletion_protection = !var.is_temporary
 
-  # checkov:skip=CKV2_AWS_20:Redirect HTTP to HTTPS as part of implementing HTTPS support
+  # checkov:skip=CKV2_AWS_20:Redirect HTTP to HTTPS as part of implementing HTTPS support; tracked in PF-800
 
   # checkov:skip=CKV2_AWS_28:No WAF in front of the app ALB (unlike CloudFront/static-assets, which are intentionally
   # unprotected as low-value targets). This one fronts the actual application and has no real tracking ticket today
@@ -38,8 +38,8 @@ resource "aws_lb" "alb" {
 # See `navapbc/template-infra`'s fix: https://github.com/navapbc/template-infra/commit/f9785a860360d849e6733a26f358f50dfd4d6a80
 #trivy:ignore:aws-0054
 resource "aws_lb_listener" "alb_listener_http" {
-  # checkov:skip=CKV_AWS_2:HTTP->HTTPS enforced by Rails config.force_ssl
-  # checkov:skip=CKV_AWS_103:Require TLS 1.2 as part of implementing HTTPS support
+  # checkov:skip=CKV_AWS_2:HTTP->HTTPS enforced by Rails config.force_ssl; see PF-800
+  # checkov:skip=CKV_AWS_103:Require TLS 1.2 as part of implementing HTTPS support; tracked in PF-800
 
   load_balancer_arn = aws_lb.alb.arn
   port              = "80"

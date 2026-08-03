@@ -11,7 +11,6 @@ resource "random_password" "random_password" {
 }
 
 resource "aws_ssm_parameter" "random_password" {
-  # checkov:skip=CKV_AWS_337:SecureString with AWS-managed key is sufficient here; consistent with our accepted CMK stance elsewhere
   name  = var.ssm_param_name
   type  = "SecureString"
   value = random_password.random_password.result
