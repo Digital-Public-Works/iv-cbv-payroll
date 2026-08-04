@@ -1,5 +1,5 @@
 import type { RequestData, ModalAdapterArgs } from "./ModalAdapter.types.ts"
-import { restoreFocusTo } from "@js/utilities/modalFocusContainment.js"
+import { restoreFocusTo, describeElement } from "@js/utilities/modalFocusContainment.js"
 
 export abstract class ModalAdapter {
   requestData?: RequestData
@@ -16,6 +16,11 @@ export abstract class ModalAdapter {
   }
 
   init(args: ModalAdapterArgs) {
+    console.log("[ModalAdapter] init() called with:", {
+      triggerElement: describeElement(args.triggerElement),
+      fallbackFocusElement: describeElement(args.fallbackFocusElement),
+    })
+
     if (args.onSuccess) {
       this.successCallback = args.onSuccess
     }
@@ -35,6 +40,10 @@ export abstract class ModalAdapter {
   }
 
   restoreFocus() {
+    console.log("[ModalAdapter] restoreFocus() called, current state:", {
+      triggerElement: describeElement(this.triggerElement),
+      fallbackFocusElement: describeElement(this.fallbackFocusElement),
+    })
     restoreFocusTo(this.triggerElement, this.fallbackFocusElement)
   }
 

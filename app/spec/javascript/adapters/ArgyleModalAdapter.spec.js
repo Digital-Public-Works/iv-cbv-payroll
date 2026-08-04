@@ -140,14 +140,19 @@ describe("ArgyleModalAdapter", () => {
     it("triggers the provided onExit callback when modal closed", async () => {
       await triggers.triggerClose()
       expect(modalAdapterArgs.onExit).toHaveBeenCalled()
-      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction).toHaveBeenCalledTimes(3)
       expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantClosedArgyleModal")
+      // No triggerElement/fallbackFocusElement configured on this shared
+      // adapter, so restoreFocus() falls back to <body> and fires the
+      // diagnostic added for the demo-only "focus lost to <body>" bug report.
+      expect(trackUserAction.mock.calls[2][0]).toBe("DiagnosticModalFocusFellBackToBody")
     })
     it("triggers the provided onExit callback when modal throws error", async () => {
       await triggers.triggerError()
       expect(modalAdapterArgs.onExit).toHaveBeenCalled()
-      expect(trackUserAction).toHaveBeenCalledTimes(2)
+      expect(trackUserAction).toHaveBeenCalledTimes(3)
       expect(trackUserAction.mock.calls[1][0]).toBe("ApplicantEncounteredArgyleError")
+      expect(trackUserAction.mock.calls[2][0]).toBe("DiagnosticModalFocusFellBackToBody")
     })
   })
 
