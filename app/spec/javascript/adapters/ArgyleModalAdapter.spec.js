@@ -61,7 +61,15 @@ describe("ArgyleModalAdapter", () => {
     adapter.init(modalAdapterArgs)
     triggers = await adapter.open()
   })
-  afterEach(() => {})
+  afterEach(() => {
+    // Most tests here never close the modal, so the MutationObserver
+    // `open()` sets up to watch for the Argyle root div is otherwise left
+    // dangling on document.body and fires again for whatever the *next*
+    // test appends to it.
+    adapter.cancelBackgroundContainment?.()
+    adapter.cancelInitialFocus?.()
+    document.removeEventListener("keydown", adapter.onEscapeKeydown)
+  })
 
   describe("open", () => {
     it("calls track user action", async () => {
@@ -99,6 +107,12 @@ describe("ArgyleModalAdapter", () => {
         const esAdapter = new ArgyleModalAdapter(Argyle)
         esAdapter.init(modalAdapterArgs)
         await esAdapter.open()
+        // Otherwise its background-containment/initial-focus MutationObservers
+        // and Escape keydown listener keep watching document for the rest of
+        // the file's test run.
+        esAdapter.cancelBackgroundContainment?.()
+        esAdapter.cancelInitialFocus?.()
+        document.removeEventListener("keydown", esAdapter.onEscapeKeydown)
         expect(Argyle.create).toHaveBeenCalledTimes(1)
         expect(Argyle.create).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -475,6 +489,129 @@ describe("ArgyleModalAdapter", () => {
       await localTriggers.triggerClose()
 
       expect(document.activeElement).toBe(fallback)
+    })
+  })
+
+  // Uses its own adapter instance/args, same rationale as "focus restoration"
+  // above.
+  describe("background containment", () => {
+    beforeEach(() => {
+      // The outer beforeEach's shared `adapter` is also watching
+      // document.body for an Argyle root div - disconnect it first so it
+      // doesn't race the local adapter under test below for ownership of
+      // containing/releasing the same elements.
+      adapter.cancelBackgroundContainment?.()
+      adapter.cancelInitialFocus?.()
+    })
+
+    afterEach(() => {
+      document.body.innerHTML = ""
+    })
+
+    it("inerts the rest of the page once the Argyle root appears, and releases it once the modal closes", async () => {
+      const trigger = document.createElement("button")
+      document.body.appendChild(trigger)
+
+      const localAdapter = new ArgyleModalAdapter(Argyle)
+      localAdapter.init({ ...modalAdapterArgs, triggerElement: trigger })
+      const localTriggers = await localAdapter.open()
+
+      // The real Argyle widget appends its root div to document.body once
+      // it's ready - the mock SDK doesn't touch the DOM, so simulate that.
+      const argyleRoot = document.createElement("div")
+      argyleRoot.id = "argyle-link-root-abc123"
+      document.body.appendChild(argyleRoot)
+      await Promise.resolve()
+
+      expect(trigger.inert).toBe(true)
+      expect(argyleRoot.inert).toBeFalsy()
+
+      await localTriggers.triggerClose()
+
+      expect(trigger.inert).toBe(false)
+    })
+
+    it("does not inert the page if the Argyle root never appears (e.g. the modal errors before rendering)", async () => {
+      const trigger = document.createElement("button")
+      document.body.appendChild(trigger)
+
+      const localAdapter = new ArgyleModalAdapter(Argyle)
+      localAdapter.init({ ...modalAdapterArgs, triggerElement: trigger })
+      const localTriggers = await localAdapter.open()
+
+      await localTriggers.triggerError()
+
+      expect(trigger.inert).toBeFalsy()
+    })
+  })
+
+  // Uses its own adapter instance/args, same rationale as "focus restoration"
+  // above.
+  describe("initial focus", () => {
+    beforeEach(() => {
+      // See "background containment" above - the shared `adapter` from the
+      // outer beforeEach would otherwise race the local adapter under test.
+      adapter.cancelBackgroundContainment?.()
+      adapter.cancelInitialFocus?.()
+    })
+
+    afterEach(() => {
+      document.body.innerHTML = ""
+    })
+
+    it("moves focus into the Argyle root once it appears", async () => {
+      const trigger = document.createElement("button")
+      document.body.appendChild(trigger)
+      trigger.focus()
+
+      const localAdapter = new ArgyleModalAdapter(Argyle)
+      localAdapter.init({ ...modalAdapterArgs, triggerElement: trigger })
+      await localAdapter.open()
+
+      const argyleRoot = document.createElement("div")
+      argyleRoot.id = "argyle-link-root-abc123"
+      document.body.appendChild(argyleRoot)
+      await Promise.resolve()
+
+      expect(document.activeElement).toBe(argyleRoot)
+      // tabindex is only needed transiently to make focus() work - left in
+      // place, it would make the root a permanent focus target and break
+      // the existing guardFocus fallback-to-<body> restoration logic.
+      expect(argyleRoot.hasAttribute("tabindex")).toBe(false)
+    })
+  })
+
+  describe("Escape key", () => {
+    // The keydown listener calls the SDK's close(), which (per the mock)
+    // fires the real onClose -> onExit async callback chain - dispatchEvent
+    // itself doesn't expose that chain to await on, so give it a few
+    // microtask turns to settle instead.
+    function flushPromises() {
+      return Promise.resolve().then().then().then().then()
+    }
+
+    it("closes the modal when Escape is pressed", async () => {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }))
+      await flushPromises()
+
+      expect(modalAdapterArgs.onExit).toHaveBeenCalled()
+    })
+
+    it("does not close the modal for other keys", async () => {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }))
+      await flushPromises()
+
+      expect(modalAdapterArgs.onExit).not.toHaveBeenCalled()
+    })
+
+    it("stops listening for Escape once the modal has already closed", async () => {
+      await triggers.triggerClose()
+      modalAdapterArgs.onExit.mockClear()
+
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }))
+      await flushPromises()
+
+      expect(modalAdapterArgs.onExit).not.toHaveBeenCalled()
     })
   })
 })
