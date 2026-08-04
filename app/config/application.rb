@@ -65,7 +65,7 @@ module IvCbvPayroll
     config.supported_providers = (ENV["SUPPORTED_PROVIDERS"] || "pinwheel")&.split(",")&.map(&:to_sym)
     config.cbv_session_expires_after = 30.minutes
 
-    config.max_paystubs_per_account = 10_000
+    config.max_paystubs_per_account = 1000
   end
 
   def self.client_agencies

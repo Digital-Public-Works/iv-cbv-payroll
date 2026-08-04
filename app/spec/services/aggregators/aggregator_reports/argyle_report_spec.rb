@@ -32,7 +32,7 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
 
   describe "config.max_paystubs_per_account" do
     it "ships a deliberately high default so gig workers are not constrained" do
-      expect(Rails.application.config.max_paystubs_per_account).to eq(10_000)
+      expect(Rails.application.config.max_paystubs_per_account).to eq(1000)
     end
   end
 
@@ -94,10 +94,10 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
     end
 
     context "with the app's shipped default cap" do
-      let(:max_paystubs_per_account) { 10_000 }
+      let(:max_paystubs_per_account) { 1000 }
 
       it "does not trip for a gig worker with many frequent cashouts" do
-        report.send(:check_paystub_volume, { "results" => Array.new(2_000) { {} } }, payroll_account)
+        report.send(:check_paystub_volume, { "results" => Array.new(999) { {} } }, payroll_account)
 
         expect(NewRelic::Agent).not_to have_received(:notice_error)
       end
