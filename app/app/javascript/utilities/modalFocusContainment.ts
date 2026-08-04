@@ -69,11 +69,17 @@ function guardFocus(target: HTMLElement): void {
       setTimeout(check, FOCUS_GUARD_POLL_MS)
       return
     }
-    // Anything else: focus moved to a different real element - leave it alone.
+    // Anything else: focus moved to a different real element. Normally this
+    // means the user legitimately tabbed away and we should leave it alone -
+    // but diagnostic-only for now: keep polling/logging (without
+    // re-focusing) instead of stopping here, to see whether this is a
+    // one-tick blip (e.g. third-party teardown noise) or a sustained hold,
+    // before deciding whether/how to correct it too.
     console.log(
-      "[modalFocusContainment] guardFocus sees focus on a different element, giving up:",
+      "[modalFocusContainment] guardFocus sees focus on a different element (would normally give up here):",
       describeElement(document.activeElement)
     )
+    setTimeout(check, FOCUS_GUARD_POLL_MS)
   }
   setTimeout(check, FOCUS_GUARD_POLL_MS)
 }
