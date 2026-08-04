@@ -10,6 +10,7 @@ import {
   onceElementAppears,
   containBackgroundFocus,
 } from "@js/utilities/modalBackgroundContainment.js"
+import { describeElement } from "@js/utilities/modalFocusContainment.js"
 
 const ARGYLE_ROOT_SELECTOR = 'div[id*="argyle-link-root"]'
 
@@ -29,6 +30,12 @@ export default class ArgyleModalAdapter extends ModalAdapter {
   // wait for the exit callback (which re-enables the trigger button) to run
   // before restoring focus - a disabled button silently rejects .focus().
   async onExit(eventPayload: any = {}) {
+    console.log("[ArgyleModalAdapter] onExit() entered, state at entry:", {
+      triggerElement: describeElement(this.triggerElement),
+      fallbackFocusElement: describeElement(this.fallbackFocusElement),
+      eventPayload,
+    })
+
     // Un-inert the background before restoring focus below: an inert
     // element can't receive .focus(), so this must happen first or focus
     // restoration silently no-ops.
@@ -38,6 +45,11 @@ export default class ArgyleModalAdapter extends ModalAdapter {
     document.removeEventListener("keydown", this.onEscapeKeydown)
 
     await super.onExit(eventPayload)
+
+    console.log("[ArgyleModalAdapter] onExit() about to restoreFocus(), state now:", {
+      triggerElement: describeElement(this.triggerElement),
+      fallbackFocusElement: describeElement(this.fallbackFocusElement),
+    })
     this.restoreFocus()
   }
 

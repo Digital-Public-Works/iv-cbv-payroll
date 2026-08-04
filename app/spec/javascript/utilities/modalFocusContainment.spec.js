@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest"
 import { restoreFocusTo } from "@js/utilities/modalFocusContainment"
+import { trackUserAction } from "@js/utilities/api"
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -37,6 +38,22 @@ describe("restoreFocusTo", () => {
     restoreFocusTo(undefined, undefined)
 
     expect(document.activeElement).toBe(document.body)
+  })
+
+  it("reports a diagnostic event when falling back to document.body", () => {
+    const trigger = document.createElement("button")
+    trigger.id = "trigger-button"
+    // Deliberately never attached, so both the trigger and fallback checks fail.
+
+    restoreFocusTo(trigger, undefined)
+
+    expect(trackUserAction).toHaveBeenCalledWith(
+      "DiagnosticModalFocusFellBackToBody",
+      expect.objectContaining({
+        triggerElement: expect.stringContaining("trigger-button"),
+        fallback: "none",
+      })
+    )
   })
 
   it("reclaims focus if it falls back to document.body shortly afterward", async () => {
