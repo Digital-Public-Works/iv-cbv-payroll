@@ -6,14 +6,37 @@ import {
   isArgyleErrorEvent,
   namespaceTrackingProperties,
 } from "./argyleTracking.js"
+import {
+  onceElementAppears,
+  containBackgroundFocus,
+} from "@js/utilities/modalBackgroundContainment.js"
+
+const ARGYLE_ROOT_SELECTOR = 'div[id*="argyle-link-root"]'
 
 export default class ArgyleModalAdapter extends ModalAdapter {
   private seenError = false
+  private cancelBackgroundContainment?: () => void
+  private releaseBackgroundContainment?: () => void
+  private cancelInitialFocus?: () => void
+  private argyleLink?: ReturnType<Argyle["create"]>
+
+  private onEscapeKeydown = (event: KeyboardEvent) => {
+    if (event.key !== "Escape") return
+    this.argyleLink?.close()
+  }
 
   // Covers both onClose and onError, which already funnel into this. Must
   // wait for the exit callback (which re-enables the trigger button) to run
   // before restoring focus - a disabled button silently rejects .focus().
   async onExit(eventPayload: any = {}) {
+    // Un-inert the background before restoring focus below: an inert
+    // element can't receive .focus(), so this must happen first or focus
+    // restoration silently no-ops.
+    this.cancelBackgroundContainment?.()
+    this.releaseBackgroundContainment?.()
+    this.cancelInitialFocus?.()
+    document.removeEventListener("keydown", this.onEscapeKeydown)
+
     await super.onExit(eventPayload)
     this.restoreFocus()
   }
@@ -32,40 +55,64 @@ export default class ArgyleModalAdapter extends ModalAdapter {
       })
 
       const { user, isSandbox, flowId } = await fetchArgyleToken(this.requestData.id)
-      return (this.modalSdk as Argyle)
-        .create({
-          userToken: user.user_token,
-          flowId: flowId,
-          items: [this.requestData.id],
-          language: locale,
-          onAccountConnected: this.onSuccess.bind(this),
-          onTokenExpired: this.onTokenExpired.bind(this),
-          onAccountCreated: async (payload) => {
-            await trackUserAction(
-              "ApplicantCreatedArgyleAccount",
-              namespaceTrackingProperties(payload)
-            )
-          },
-          onAccountError: async (payload) => {
-            await trackUserAction(
-              "ApplicantEncounteredArgyleAccountCallbackError",
-              namespaceTrackingProperties(payload)
-            )
-          },
-          onAccountRemoved: async (payload) => {
-            await trackUserAction(
-              "ApplicantRemovedArgyleAccount",
-              namespaceTrackingProperties(payload)
-            )
-          },
-          onUIEvent: async (payload) => {
-            await this.onUIEvent(payload)
-          },
-          onClose: this.onClose.bind(this),
-          onError: this.onError.bind(this),
-          sandbox: isSandbox,
-        })
-        .open()
+
+      this.cancelBackgroundContainment = onceElementAppears(ARGYLE_ROOT_SELECTOR, (root) => {
+        this.releaseBackgroundContainment = containBackgroundFocus(root)
+      })
+
+      // Places focus once, the first time the widget's root appears -
+      // deliberately not on every internal Argyle screen transition
+      // (intro -> search -> login -> MFA etc.), which would fight the
+      // widget's own focus handling once the user is already inside it.
+      this.cancelInitialFocus = onceElementAppears(ARGYLE_ROOT_SELECTOR, (root) => {
+        root.setAttribute("tabindex", "-1")
+        root.focus()
+        // tabindex is only needed transiently to make the initial .focus()
+        // above work. Left in place, it makes the root a permanent focus
+        // target: whenever Argyle re-renders internally and removes
+        // whatever's currently focused (e.g. its own exit/X button), the
+        // browser's "move focus to nearest focusable ancestor" behavior
+        // lands on this div instead of falling through to <body> - and
+        // since it's a real element (not <body>), the existing guardFocus
+        // restoration logic treats that as a legitimate focus change and
+        // stops correcting it, permanently stranding focus here.
+        root.removeAttribute("tabindex")
+      })
+
+      this.argyleLink = (this.modalSdk as Argyle).create({
+        userToken: user.user_token,
+        flowId: flowId,
+        items: [this.requestData.id],
+        language: locale,
+        onAccountConnected: this.onSuccess.bind(this),
+        onTokenExpired: this.onTokenExpired.bind(this),
+        onAccountCreated: async (payload) => {
+          await trackUserAction(
+            "ApplicantCreatedArgyleAccount",
+            namespaceTrackingProperties(payload)
+          )
+        },
+        onAccountError: async (payload) => {
+          await trackUserAction(
+            "ApplicantEncounteredArgyleAccountCallbackError",
+            namespaceTrackingProperties(payload)
+          )
+        },
+        onAccountRemoved: async (payload) => {
+          await trackUserAction(
+            "ApplicantRemovedArgyleAccount",
+            namespaceTrackingProperties(payload)
+          )
+        },
+        onUIEvent: async (payload) => {
+          await this.onUIEvent(payload)
+        },
+        onClose: this.onClose.bind(this),
+        onError: this.onError.bind(this),
+        sandbox: isSandbox,
+      })
+      document.addEventListener("keydown", this.onEscapeKeydown)
+      return this.argyleLink.open()
     } else {
       // TODO this should throw an error, which should be caught by a document.onerror handler to show the user a crash message.
       await trackUserAction("ApplicantEncounteredModalAdapterError", {
