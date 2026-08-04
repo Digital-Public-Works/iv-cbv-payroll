@@ -71,10 +71,13 @@ module Aggregators::AggregatorReports
         account: payroll_account.aggregator_account_id
       )
 
-      # Override the date range to fetch when fetching a gig job.
-      has_gig_job = identities_json["results"].any? do |identity_json|
+      gig_identities = identities_json["results"].select do |identity_json|
         Aggregators::FormatMethods::Argyle.employment_type(identity_json["employment_type"]) == :gig
       end
+
+      gig_employment_ids = gig_identities.filter_map { |identity_json| identity_json["employment"].presence }
+
+      has_gig_job = gig_identities.any?
       if has_gig_job
         @fetched_days = @days_to_fetch_for_gig
       end
@@ -99,7 +102,7 @@ module Aggregators::AggregatorReports
                                                  paystubs_json,
                                                  account_json))
       @incomes.append(*transform_incomes(identities_json))
-      @paystubs.append(*transform_paystubs(paystubs_json))
+      @paystubs.append(*transform_paystubs(paystubs_json, gig_employment_ids: gig_employment_ids))
       @gigs.append(*transform_gigs(gigs_json))
 
       check_hours(paystubs_json)
@@ -157,9 +160,10 @@ module Aggregators::AggregatorReports
       end
     end
 
-    def transform_paystubs(paystubs_json)
+    def transform_paystubs(paystubs_json, gig_employment_ids:)
       paystubs_json["results"].map do |paystub_json|
-        Paystub.from_argyle(paystub_json)
+        is_gig_paystub = gig_employment_ids.include?(paystub_json["employment"])
+        Paystub.from_argyle(paystub_json, log_hours_to_mixpanel: !is_gig_paystub)
       end
     end
 
