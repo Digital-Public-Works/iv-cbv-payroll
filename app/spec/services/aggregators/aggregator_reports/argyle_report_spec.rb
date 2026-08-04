@@ -30,6 +30,12 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
     Timecop.freeze(today, &ex)
   end
 
+  describe "config.max_paystubs_per_account" do
+    it "ships a deliberately high default so gig workers are not constrained" do
+      expect(Rails.application.config.max_paystubs_per_account).to eq(1000)
+    end
+  end
+
   describe "#check_paystub_volume (anomalous-paystub-count guardrail)" do
     let(:report) do
       Aggregators::AggregatorReports::ArgyleReport.new(
@@ -40,8 +46,17 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
       )
     end
 
+    let(:max_paystubs_per_account) { 10 }
+
+    around do |ex|
+      old_value = Rails.application.config.max_paystubs_per_account
+      Rails.application.config.max_paystubs_per_account = max_paystubs_per_account
+      ex.run
+    ensure
+      Rails.application.config.max_paystubs_per_account = old_value
+    end
+
     before do
-      # cap = @fetched_days * MAX_PAYSTUBS_PER_LOOKBACK_DAY(2) = 10
       report.instance_variable_set(:@fetched_days, 5)
       allow(Rails.logger).to receive(:error)
       allow(NewRelic::Agent).to receive(:notice_error)
@@ -66,6 +81,26 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
       report.send(:check_paystub_volume, under_cap, payroll_account)
 
       expect(NewRelic::Agent).not_to have_received(:notice_error)
+    end
+
+    context "when the configured cap is disabled" do
+      let(:max_paystubs_per_account) { nil }
+
+      it "does not report regardless of the paystub count" do
+        report.send(:check_paystub_volume, { "results" => Array.new(50_000) { {} } }, payroll_account)
+
+        expect(NewRelic::Agent).not_to have_received(:notice_error)
+      end
+    end
+
+    context "with the app's shipped default cap" do
+      let(:max_paystubs_per_account) { 1000 }
+
+      it "does not trip for a gig worker with many frequent cashouts" do
+        report.send(:check_paystub_volume, { "results" => Array.new(999) { {} } }, payroll_account)
+
+        expect(NewRelic::Agent).not_to have_received(:notice_error)
+      end
     end
   end
 
