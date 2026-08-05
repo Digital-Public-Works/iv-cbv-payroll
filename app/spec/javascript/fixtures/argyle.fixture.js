@@ -197,6 +197,7 @@ export const mockArgyleModule = {
   create: vi.fn((createParams) => {
     return {
       open: vi.fn(() => triggers(createParams)),
+      close: vi.fn(() => createParams.onClose && createParams.onClose()),
     }
   }),
 }
