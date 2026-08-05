@@ -10,7 +10,6 @@ import {
   onceElementAppears,
   containBackgroundFocus,
 } from "@js/utilities/modalBackgroundContainment.js"
-import { describeElement } from "@js/utilities/modalFocusContainment.js"
 
 const ARGYLE_ROOT_SELECTOR = 'div[id*="argyle-link-root"]'
 
@@ -30,12 +29,6 @@ export default class ArgyleModalAdapter extends ModalAdapter {
   // wait for the exit callback (which re-enables the trigger button) to run
   // before restoring focus - a disabled button silently rejects .focus().
   async onExit(eventPayload: any = {}) {
-    console.log("[ArgyleModalAdapter] onExit() entered, state at entry:", {
-      triggerElement: describeElement(this.triggerElement),
-      fallbackFocusElement: describeElement(this.fallbackFocusElement),
-      eventPayload,
-    })
-
     // Un-inert the background before restoring focus below: an inert
     // element can't receive .focus(), so this must happen first or focus
     // restoration silently no-ops.
@@ -45,11 +38,6 @@ export default class ArgyleModalAdapter extends ModalAdapter {
     document.removeEventListener("keydown", this.onEscapeKeydown)
 
     await super.onExit(eventPayload)
-
-    console.log("[ArgyleModalAdapter] onExit() about to restoreFocus(), state now:", {
-      triggerElement: describeElement(this.triggerElement),
-      fallbackFocusElement: describeElement(this.fallbackFocusElement),
-    })
     this.restoreFocus()
   }
 
@@ -78,16 +66,13 @@ export default class ArgyleModalAdapter extends ModalAdapter {
       // widget's own focus handling once the user is already inside it.
       this.cancelInitialFocus = onceElementAppears(ARGYLE_ROOT_SELECTOR, (root) => {
         root.setAttribute("tabindex", "-1")
-        root.focus()
-        // tabindex is only needed transiently to make the initial .focus()
-        // above work. Left in place, it makes the root a permanent focus
-        // target: whenever Argyle re-renders internally and removes
-        // whatever's currently focused (e.g. its own exit/X button), the
-        // browser's "move focus to nearest focusable ancestor" behavior
-        // lands on this div instead of falling through to <body> - and
-        // since it's a real element (not <body>), the existing guardFocus
-        // restoration logic treats that as a legitimate focus change and
-        // stops correcting it, permanently stranding focus here.
+        // preventScroll: the root briefly sits in normal document flow at
+        // the bottom of <body> before Argyle's own dynamically-injected CSS
+        // makes it a fixed overlay - focusing it without this scrolls the
+        // page down to bring that still-in-flow div into view.
+        root.focus({ preventScroll: true })
+        // Remove again immediately - left in place, this div would become a
+        // permanent focus target and could strand focus there later.
         root.removeAttribute("tabindex")
       })
 

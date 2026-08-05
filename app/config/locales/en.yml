@@ -475,8 +475,10 @@ en:
             how_to: This report includes payment information from the past 90 days. In most cases, you only need to review income from the last 30 days for eligibility purposes. Use data beyond the 30-day period only if necessary. Key fields for income verification are highlighted in yellow.
             how_to_header: 'How to use this report:'
             pay_period: Pay period (%{pay_frequency})
-            paystubs_available_header: 'Pay stub images are available for the following employers:'
-            paystubs_separate_file: Pay stub images are provided in a separate file for reference.
+            paystubs_header: Pay stub images
+            paystubs_separate_file: When available, pay stub images are provided in a separate file for reference.
+            paystubs_with_intro: 'The following jobs have pay stub images:'
+            paystubs_without_intro: 'Verify My Income did not find pay stub images for the following jobs:'
             snap_agency_id: SNAP Agency ID
             ssn: SSN
             staff_beacon_id_wel_id: Staff BEACON ID (WELID)
@@ -494,9 +496,11 @@ en:
           footer:
             page_footer: Income Verification Report | Page [page] of [topage]
           paystubs_cover:
-            footer: The pay stub images are shown on the next page, and have been shared with %{agency_name}.
             header: 'Income Verification Report: Pay stub images'
-            intro: 'There are pay stub images for these jobs:'
+            next_page_note: If pay stub images are available, they are shown on the next page. They are also shared with %{agency_name}.
+            no_images_intro: When pay stubs are available, they are shared with %{agency_name}. Your income report is accurate, even if there are no pay stub images.
+            with_intro: 'There are pay stub images for these jobs:'
+            without_intro: 'Verify My Income did not find pay stub images for the following jobs:'
           shared:
             additional_jobs_to_report: Does the client have additional jobs they will verify separately?
             additional_jobs_to_report_html: Does the client have additional jobs they will verify separately?<sup>1</sup>
@@ -837,9 +841,12 @@ en:
       consent_timestamp: Agreement Consent Timestamp
       date_range: Date range for the income report
       employer_list_intro: 'Verify My Income pulled pay stubs from the client''s payroll account(s). Pay stubs are available for the jobs listed below:'
+      employers_without_images_intro: 'Verify My Income did not find pay stub images for the following jobs:'
+      images_availability_note: Pay stub images may not be available for all jobs, but that does not affect the accuracy of the income report.
       report_created: Date the income report was created
       report_details: Report details
-      supplement_body: The income report is a separate file. It shows monthly summaries of the pay stubs in this file, and any client comments. Review the report for more complete information about the client's jobs.
+      review_note: Review the report for more complete information about the client's jobs.
+      supplement_body: The income report is a separate file. It shows monthly summaries of the pay stubs in this file, and any client comments.
       supplement_heading: This file is a supplement to the Income Verification Report
       title: 'Income Verification Report: Pay stub images'
   us_form_with:

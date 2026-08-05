@@ -5,17 +5,15 @@ import { trackUserAction } from "./api.js"
 const FOCUS_GUARD_WINDOW_MS = 2000
 const FOCUS_GUARD_POLL_MS = 100
 
-export function describeElement(el?: Element | null): string {
+function describeElement(el?: Element | null): string {
   if (!el) return "none"
   const id = el.id ? `#${el.id}` : ""
   const text = (el.textContent || "").trim().slice(0, 40)
   return `<${el.tagName.toLowerCase()}${id}> isConnected=${el.isConnected}${text ? ` text="${text}"` : ""}`
 }
 
-// Diagnostic only, for the "focus lands on <body> and stays there" reports
-// seen on the demo deploy but not reproducible locally - reports which of
-// triggerElement/fallback were missing/detached at the moment we gave up on
-// them, so it can be removed again once root-caused.
+// Low-noise safety net for the rare case both triggerElement and fallback
+// are lost - cheap to keep as an early signal if it ever starts firing.
 function reportLostFocusTarget(
   triggerElement: HTMLElement | undefined,
   fallback: HTMLElement | undefined,
@@ -34,51 +32,29 @@ function reportLostFocusTarget(
   trackUserAction("DiagnosticModalFocusFellBackToBody", details).catch(() => {})
 }
 
-// Polls document.activeElement instead of listening for a focus event:
-// focus falling back to <body> (nothing else taking it) doesn't reliably
-// dispatch a listenable focusout/focusin event, so reading the state
-// directly is the only dependable signal. Only corrects when activeElement
-// is exactly <body> - once it becomes any other real element, that's a
-// legitimate focus change (e.g. the user tabbing away) and checking stops
-// for good.
+// Polls document.activeElement instead of listening for a focus event: focus
+// falling back to <body> doesn't reliably dispatch a listenable
+// focusout/focusin event, so reading the state directly is the only
+// dependable signal. Only corrects when activeElement is exactly <body>,
+// since <body> is never a real Tab-navigation target - anything else could
+// be a legitimate user focus change, so it's left alone. Keeps polling for
+// the full window even after seeing some other element, rather than giving
+// up: a third-party widget's own close teardown can transiently bounce
+// focus through its own DOM before settling on <body> a poll or two later.
 function guardFocus(target: HTMLElement): void {
-  console.log("[modalFocusContainment] guardFocus watching:", describeElement(target))
   const deadline = Date.now() + FOCUS_GUARD_WINDOW_MS
   const check = () => {
-    if (Date.now() >= deadline) {
-      console.log("[modalFocusContainment] guardFocus window elapsed for:", describeElement(target))
-      return
-    }
-    if (!document.body.contains(target)) {
-      console.log(
-        "[modalFocusContainment] guardFocus target left the DOM, stopping:",
-        describeElement(target)
-      )
-      return
-    }
+    if (Date.now() >= deadline) return
+    if (!document.body.contains(target)) return
     if (document.activeElement === target) {
       setTimeout(check, FOCUS_GUARD_POLL_MS)
       return
     }
     if (document.activeElement === document.body) {
-      console.log(
-        "[modalFocusContainment] guardFocus caught focus falling back to <body>, re-focusing:",
-        describeElement(target)
-      )
       target.focus()
       setTimeout(check, FOCUS_GUARD_POLL_MS)
       return
     }
-    // Anything else: focus moved to a different real element. Normally this
-    // means the user legitimately tabbed away and we should leave it alone -
-    // but diagnostic-only for now: keep polling/logging (without
-    // re-focusing) instead of stopping here, to see whether this is a
-    // one-tick blip (e.g. third-party teardown noise) or a sustained hold,
-    // before deciding whether/how to correct it too.
-    console.log(
-      "[modalFocusContainment] guardFocus sees focus on a different element (would normally give up here):",
-      describeElement(document.activeElement)
-    )
     setTimeout(check, FOCUS_GUARD_POLL_MS)
   }
   setTimeout(check, FOCUS_GUARD_POLL_MS)
@@ -93,33 +69,17 @@ function guardFocus(target: HTMLElement): void {
 export function restoreFocusTo(triggerElement?: HTMLElement, fallback?: HTMLElement): void {
   const activeElementAtEntry = document.activeElement
 
-  console.log("[modalFocusContainment] restoreFocusTo called with:", {
-    triggerElement: describeElement(triggerElement),
-    fallback: describeElement(fallback),
-    activeElementAtEntry: describeElement(activeElementAtEntry),
-  })
-
   if (triggerElement && document.body.contains(triggerElement)) {
-    console.log("[modalFocusContainment] focusing triggerElement:", describeElement(triggerElement))
     triggerElement.focus()
     guardFocus(triggerElement)
     return
   }
-  console.log("[modalFocusContainment] triggerElement unavailable:", {
-    truthy: !!triggerElement,
-    inBody: triggerElement ? document.body.contains(triggerElement) : null,
-  })
 
   if (fallback && document.body.contains(fallback)) {
-    console.log("[modalFocusContainment] focusing fallback:", describeElement(fallback))
     fallback.focus()
     guardFocus(fallback)
     return
   }
-  console.log("[modalFocusContainment] fallback unavailable:", {
-    truthy: !!fallback,
-    inBody: fallback ? document.body.contains(fallback) : null,
-  })
 
   reportLostFocusTarget(triggerElement, fallback, activeElementAtEntry)
 

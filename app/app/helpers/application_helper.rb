@@ -19,6 +19,10 @@ module ApplicationHelper
   # is either missing or there is no current client agency, it will attempt to render a
   # "default" key.
   def agency_translation(i18n_base_key, **options)
+    agency_translation_for(current_agency, i18n_base_key, **options)
+  end
+
+  def agency_translation_for(agency, i18n_base_key, **options)
     # Relative (leading-dot) keys are scoped to the current template's path.
     # Expand them up front so the database lookup — which stores full keys like
     # "cbv.entries.show.checkbox" — can match. Without this, DB overrides
@@ -26,13 +30,13 @@ module ApplicationHelper
     i18n_base_key = scope_key_by_partial(i18n_base_key) if i18n_base_key.start_with?(".")
 
     if i18n_base_key.include?("{agency}")
-      i18n_key = current_agency ? i18n_base_key.gsub("{agency}", current_agency.id) : nil
+      i18n_key = agency ? i18n_base_key.gsub("{agency}", agency.id) : nil
       default_key = i18n_base_key.gsub("{agency}", "default")
     else
       default_key = "#{i18n_base_key}.default"
       i18n_key =
-        if current_agency
-          "#{i18n_base_key}.#{current_agency.id}"
+        if agency
+          "#{i18n_base_key}.#{agency.id}"
         else
           default_key
         end
@@ -51,8 +55,8 @@ module ApplicationHelper
     # Expand leading-dot ("lazy") keys (e.g. ".checkbox") to their fully-qualified path first,
     # because DB translations are stored under the full key (e.g. "cbv.entries.show.checkbox").
     # Without this, a partial key would never match a DB row and would silently fall back to YAML.
-    translated = db_translation(scope_key_by_partial(i18n_key), **options) ||
-      db_translation(scope_key_by_partial(i18n_base_key), **options)
+    translated = db_translation_for(agency, scope_key_by_partial(i18n_key), **options) ||
+      db_translation_for(agency, scope_key_by_partial(i18n_base_key), **options)
 
     translated ||= if I18n.exists?(scope_key_by_partial(i18n_key))
                      t(i18n_key, **options)
@@ -91,6 +95,11 @@ module ApplicationHelper
     end
   end
 
+  def agency_acronym_or_full_name_for(agency)
+    agency_translation_for(agency, "shared.agency_acronym").presence ||
+      agency_translation_for(agency, "shared.agency_full_name")
+  end
+
   # Agency name with its acronym in parentheses (e.g. "West Carolina Department of Public Health (WC-DPH)").
   # Partners with no acronym render just the full name, with no parens.
   def agency_name_with_acronym
@@ -109,6 +118,10 @@ module ApplicationHelper
   # Alt text for the agency logo image (e.g. "DHS Logo").
   def agency_logo_alt_text
     "#{agency_acronym_or_full_name} Logo"
+  end
+
+  def agency_logo_alt_text_for(agency)
+    "#{agency_acronym_or_full_name_for(agency)} Logo"
   end
 
   # A reusable anchor tag to the agency portal
@@ -132,9 +145,13 @@ module ApplicationHelper
   # This means that in the relevant value columns, values can be entered naturally, or with a suffix that would be added by agency_translation.
   # The options argument allows the caller to specify a hash for replacing values into %{key} placeholders in the translation string.
   def db_translation(base_key, **options)
-    return nil unless current_agency && partner_translations_table_exists?
+    db_translation_for(current_agency, base_key, **options)
+  end
 
-    partner_config = cached_partner_config(current_agency.id)
+  def db_translation_for(agency, base_key, **options)
+    return nil unless agency && partner_translations_table_exists?
+
+    partner_config = cached_partner_config(agency.id)
     return nil unless partner_config
 
     locale = I18n.locale.to_s
