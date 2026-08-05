@@ -183,12 +183,6 @@ export default class extends Controller {
     this.disableButtons()
     const { responseType, id, name, isDefaultOption, providerName } = event.currentTarget.dataset
 
-    console.log("[EmployerSearchController] select() capturing triggerElement:", {
-      triggerElement: event.currentTarget?.outerHTML,
-      hasPageHeadingTarget: this.hasPageHeadingTarget,
-      pageHeadingTarget: this.hasPageHeadingTarget ? this.pageHeadingTarget.outerHTML : null,
-    })
-
     const adapter = createModalAdapter(providerName)
 
     if (!adapter) {

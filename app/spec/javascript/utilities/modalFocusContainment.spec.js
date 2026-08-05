@@ -97,6 +97,32 @@ describe("restoreFocusTo", () => {
     expect(document.activeElement).toBe(other)
   })
 
+  it("recovers if focus transiently bounces through another element before landing on document.body", async () => {
+    const trigger = document.createElement("button")
+    // Mirrors a third-party widget's own (still-present, soon-to-be-removed)
+    // DOM transiently holding focus during its close teardown, as seen in a
+    // real Argyle deploy trace - the widget's root briefly held focus for
+    // one poll, then fell through to <body> on the next one.
+    const thirdPartyElement = document.createElement("div")
+    thirdPartyElement.setAttribute("tabindex", "-1")
+    document.body.append(trigger, thirdPartyElement)
+
+    restoreFocusTo(trigger)
+    thirdPartyElement.focus()
+
+    // First poll (~100ms) sees this foreign element - it should keep
+    // watching instead of giving up permanently.
+    await wait(150)
+    expect(document.activeElement).toBe(thirdPartyElement)
+
+    thirdPartyElement.blur() // nothing else takes focus, so activeElement falls back to <body>
+    expect(document.activeElement).toBe(document.body)
+
+    await wait(150) // the next poll should catch the <body> fall and correct it
+
+    expect(document.activeElement).toBe(trigger)
+  })
+
   it("no longer reclaims focus once the guard window has elapsed", async () => {
     const trigger = document.createElement("button")
     document.body.appendChild(trigger)
