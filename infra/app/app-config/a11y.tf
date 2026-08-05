@@ -1,16 +1,20 @@
-module "dev_config" {
+module "a11y_config" {
   source                          = "./env-config"
   project_name                    = local.project_name
   app_name                        = local.app_name
   default_region                  = module.project_config.default_region
-  environment                     = "demo"
+  environment                     = "a11y"
   network_name                    = "demo"
-  domain_name                     = "demo.divt.app"
+  domain_name                     = "a11y.divt.app"
   enable_https                    = true
   has_database                    = local.has_database
   has_incident_management_service = local.has_incident_management_service
 
-  database_serverless_min_capacity = 0.5
+  # Setting minimum threshold to 0 capacity because this should only incur
+  # charges when the ECS container is connected.  This saves operational overhead
+  # from needed to destroy the DB every time we spin up and down the instance.
+  # https://aws.amazon.com/blogs/database/introducing-scaling-to-0-capacity-with-amazon-aurora-serverless-v2/
+  database_serverless_min_capacity = 0
   database_serverless_max_capacity = 1.0
   enable_aws_backup                = true
 
@@ -23,7 +27,8 @@ module "dev_config" {
 
   # Create DNS records for these `additional_domains` in the default hosted
   # zone (this is necessary to support CBV agency subdomains).
-  additional_domains = ["*.divt.app", "*.demo.divt.app"]
+  # NOTE: "*.divt.app" is shared with demo, created only in demo config
+  additional_domains = ["*.a11y.divt.app"]
 
   # Enable and configure identity provider.
   enable_identity_provider = local.enable_identity_provider

@@ -12,6 +12,10 @@ on:
         description: The branch, tag or SHA to checkout. When checking out the repository that triggered a workflow, this defaults to the reference or SHA for that event. Otherwise, use branch or tag that triggered the workflow run.
         required: true
         type: string
+    outputs:
+      commit_hash:
+        description: "The commit hash that was built and published"
+        value: ${{ jobs.get-commit-hash.outputs.commit_hash }}
   workflow_dispatch:
     inputs:
       app_name:
