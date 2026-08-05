@@ -9,17 +9,30 @@
   <%= render "shared/pdf_info_box" do %>
     <p class="margin-0"><strong><%= t("cbv.submits.show.pdf.caseworker.how_to_header") %></strong> <%= t("cbv.submits.show.pdf.caseworker.how_to") %></p>
     <% if current_agency&.include_paystubs %>
-      <% paystub_employer_names = aggregator_report.summarize_by_employer
-           .select { |_, summary| summary[:paystubs]&.any? { |p| p.payroll_document_id.present? } }
-           .filter_map { |_, summary| summary[:employment]&.employer_name } %>
-      <% if paystub_employer_names.any? %>
-        <p class="margin-top-2 margin-bottom-0"><strong><%= t("cbv.submits.show.pdf.caseworker.paystubs_available_header") %></strong></p>
-        <ul class="margin-top-1 margin-bottom-0">
-          <% paystub_employer_names.each do |name| %>
-            <li><%= name %></li>
-          <% end %>
-        </ul>
-        <p class="margin-top-1 margin-bottom-0"><%= t("cbv.submits.show.pdf.caseworker.paystubs_separate_file") %></p>
+      <% employer_groups = aggregator_report.employer_names_by_image_presence %>
+      <% employers_with_images = employer_groups[:with] %>
+      <% employers_without_images = employer_groups[:without] %>
+      <% if employers_with_images.any? || employers_without_images.any? %>
+        <p class="margin-top-2 margin-bottom-0"><strong><%= t("cbv.submits.show.pdf.caseworker.paystubs_header") %></strong></p>
+        <% if employers_with_images.any? %>
+          <p class="margin-0"><%= t("cbv.submits.show.pdf.caseworker.paystubs_with_intro") %></p>
+          <ul class="margin-top-1 margin-bottom-0">
+            <% employers_with_images.each do |name| %>
+              <li><%= name %></li>
+            <% end %>
+          </ul>
+        <% end %>
+        <% if employers_without_images.any? %>
+          <p class="<%= employers_with_images.any? ? "margin-top-2 margin-bottom-0" : "margin-0" %>"><%= t("cbv.submits.show.pdf.caseworker.paystubs_without_intro") %></p>
+          <ul class="margin-top-1 margin-bottom-0">
+            <% employers_without_images.each do |name| %>
+              <li><%= name %></li>
+            <% end %>
+          </ul>
+        <% end %>
+        <% if employers_with_images.any? %>
+          <p class="margin-top-2 margin-bottom-0"><%= t("cbv.submits.show.pdf.caseworker.paystubs_separate_file") %></p>
+        <% end %>
       <% end %>
     <% end %>
   <% end %>
@@ -157,10 +170,11 @@
 <% end %>
 
 <% if current_agency&.include_paystubs && !is_caseworker %>
-  <% employer_names = aggregator_report.summarize_by_employer
-       .select { |_, summary| summary[:paystubs]&.any? { |p| p.payroll_document_id.present? } }
-       .filter_map { |_, summary| summary[:employment]&.employer_name } %>
-  <% if employer_names.any? %>
-    <%= render "paystubs_cover_page", current_agency: current_agency, employer_names: employer_names %>
+  <% employer_groups = aggregator_report.employer_names_by_image_presence %>
+  <% if employer_groups[:with].any? || employer_groups[:without].any? %>
+    <%= render "cbv/submits/paystubs_cover_page",
+          current_agency: current_agency,
+          employers_with_images: employer_groups[:with],
+          employers_without_images: employer_groups[:without] %>
   <% end %>
 <% end %>

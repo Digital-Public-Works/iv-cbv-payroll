@@ -93,6 +93,7 @@ module Aggregators::AggregatorReports
         fetcher = full_ssn_fetcher_for(current_agency)
 
         report[:has_other_jobs] = payroll_accounts.first.cbv_flow.has_other_jobs
+        report[:paystub_images_included] = paystub_images_included?(current_agency)
         report[:employments] = summarize_by_employer.map do |account_id, summary|
           {
             applicant_first_name: summary[:identity]&.first_name,
@@ -126,6 +127,36 @@ module Aggregators::AggregatorReports
           }
         end
       end
+    end
+
+    # True when the partner has the pay stub images feature configured
+    # (include_paystubs) AND at least one paystub across all employers has an
+    # associated payroll document image. False when the feature is not
+    # configured, or configured but no images were found.
+    def paystub_images_included?(current_agency)
+      return false unless current_agency&.include_paystubs
+
+      summarize_by_employer.any? do |_account_id, summary|
+        summary[:paystubs]&.any? { |paystub| paystub.payroll_document_id.present? }
+      end
+    end
+
+    # Employer names split by whether the employer has at least one pay stub
+    # image (an associated payroll document), preserving report order.
+    # Returns { with: [names...], without: [names...] }.
+    def employer_names_by_image_presence
+      with = []
+      without = []
+
+      summarize_by_employer.each_value do |summary|
+        name = summary[:employment]&.employer_name
+        next if name.blank?
+
+        has_image = summary[:paystubs]&.any? { |paystub| paystub.payroll_document_id.present? }
+        (has_image ? with : without) << name
+      end
+
+      { with: with, without: without }
     end
 
     def summarize_by_employer
