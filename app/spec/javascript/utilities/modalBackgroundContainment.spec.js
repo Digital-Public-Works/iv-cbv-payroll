@@ -99,4 +99,27 @@ describe("containBackgroundFocus", () => {
     expect(sibling.inert).toBe(false)
     expect(visible.inert).toBeFalsy()
   })
+
+  it("contains content at every nesting level, not just document.body's direct children", () => {
+    // Simulates a third-party widget nesting its root deeper than a direct
+    // child of body, where that wrapper also holds other, unrelated content
+    // (e.g. if it turned out to be our own app's outer container rather
+    // than something belonging entirely to the widget).
+    const wrapper = document.createElement("div")
+    const visible = document.createElement("div")
+    const unrelatedInWrapper = document.createElement("button")
+    wrapper.append(visible, unrelatedInWrapper)
+    const topLevelSibling = document.createElement("div")
+    document.body.append(topLevelSibling, wrapper)
+
+    containBackgroundFocus(visible)
+
+    // The wrapper and the visible element itself must stay interactive...
+    expect(wrapper.inert).toBeFalsy()
+    expect(visible.inert).toBeFalsy()
+    // ...but anything else, at any level, must be contained: a sibling
+    // inside the wrapper, and a sibling of the wrapper at the body level.
+    expect(unrelatedInWrapper.inert).toBe(true)
+    expect(topLevelSibling.inert).toBe(true)
+  })
 })
