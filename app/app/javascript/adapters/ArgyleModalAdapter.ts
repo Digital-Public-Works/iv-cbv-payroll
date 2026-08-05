@@ -66,7 +66,11 @@ export default class ArgyleModalAdapter extends ModalAdapter {
       // widget's own focus handling once the user is already inside it.
       this.cancelInitialFocus = onceElementAppears(ARGYLE_ROOT_SELECTOR, (root) => {
         root.setAttribute("tabindex", "-1")
-        root.focus()
+        // preventScroll: the root briefly sits in normal document flow at
+        // the bottom of <body> before Argyle's own dynamically-injected CSS
+        // makes it a fixed overlay - focusing it without this scrolls the
+        // page down to bring that still-in-flow div into view.
+        root.focus({ preventScroll: true })
         // Remove again immediately - left in place, this div would become a
         // permanent focus target and could strand focus there later.
         root.removeAttribute("tabindex")
