@@ -1,4 +1,8 @@
+require_relative "../concerns/queueable"
+
 class ApplicationJob < ActiveJob::Base
+  include Queueable
+
   retry_on Exception, wait: :polynomially_longer, attempts: 3
 
   def event_logger

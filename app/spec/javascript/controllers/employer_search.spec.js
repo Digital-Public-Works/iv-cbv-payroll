@@ -1,5 +1,6 @@
 import { vi, describe, beforeEach, it, expect } from "vitest"
 import EmployerSearchController from "@js/controllers/cbv/employer_search"
+import ArgyleModalAdapter from "@js/adapters/ArgyleModalAdapter"
 import { fetchPinwheelToken, fetchArgyleToken, trackUserAction } from "@js/utilities/api"
 import loadScript from "load-script"
 import {
@@ -149,6 +150,16 @@ describe("EmployerSearchController with argyle", () => {
     expect(await fetchArgyleToken).toBeCalled()
     expect(await fetchArgyleToken.mock.results[0].value).toStrictEqual(mockArgyleAuthToken)
     expect(fetchArgyleToken.mock.calls[0]).toMatchSnapshot()
+  })
+
+  it("passes the clicked element as triggerElement to the adapter", async () => {
+    const initSpy = vi.spyOn(ArgyleModalAdapter.prototype, "init")
+
+    await stimulusElement.click()
+
+    expect(initSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ triggerElement: stimulusElement })
+    )
   })
 })
 
@@ -689,5 +700,68 @@ describe("EmployerSearchController tab focus restoration after frame reload", ()
     popularFrame.dispatchEvent(new CustomEvent("turbo:frame-load", { bubbles: true }))
 
     expect(document.activeElement).toBe(reloadedTab)
+  })
+})
+
+describe("EmployerSearchController modal focus restoration", () => {
+  let controllerElement
+  let stimulusElement
+  let pageHeading
+
+  beforeEach(async () => {
+    controllerElement = document.createElement("div")
+    controllerElement.setAttribute("data-controller", "cbv-employer-search")
+
+    pageHeading = document.createElement("h1")
+    pageHeading.setAttribute("tabindex", "-1")
+    pageHeading.setAttribute("data-cbv-employer-search-target", "pageHeading")
+    controllerElement.appendChild(pageHeading)
+
+    stimulusElement = document.createElement("button")
+    stimulusElement.setAttribute("data-action", "cbv-employer-search#select")
+    stimulusElement.setAttribute("data-cbv-employer-search-target", "employerButton")
+    stimulusElement.setAttribute("data-response-type", "employer")
+    stimulusElement.setAttribute("data-id", "uuid")
+    stimulusElement.setAttribute("data-is-default-option", false)
+    stimulusElement.setAttribute("data-name", "test-name")
+    stimulusElement.setAttribute("data-provider-name", "argyle")
+    controllerElement.appendChild(stimulusElement)
+
+    document.body.appendChild(controllerElement)
+
+    await window.Stimulus.register("cbv-employer-search", EmployerSearchController)
+  })
+
+  afterEach(() => {
+    document.body.innerHTML = ""
+  })
+
+  function getLatestArgyleTriggers() {
+    const createCallIndex = mockArgyleModule.create.mock.results.length - 1
+    return mockArgyleModule.create.mock.results[createCallIndex].value.open.mock.results[0].value
+  }
+
+  it("returns focus to the trigger button after the modal closes", async () => {
+    await stimulusElement.click()
+    // select()/open() run several sequential awaits (trackUserAction, then
+    // fetchArgyleToken) before Argyle.create() is actually called; click()
+    // isn't itself awaited by anything, so give the chain time to reach it.
+    await vi.waitFor(() => expect(mockArgyleModule.create).toHaveBeenCalled())
+    const triggers = getLatestArgyleTriggers()
+
+    await triggers.triggerClose()
+
+    expect(document.activeElement).toBe(stimulusElement)
+  })
+
+  it("falls back to the page heading if the trigger button was removed before the modal closed", async () => {
+    await stimulusElement.click()
+    await vi.waitFor(() => expect(mockArgyleModule.create).toHaveBeenCalled())
+    const triggers = getLatestArgyleTriggers()
+
+    stimulusElement.remove()
+    await triggers.triggerClose()
+
+    expect(document.activeElement).toBe(pageHeading)
   })
 })

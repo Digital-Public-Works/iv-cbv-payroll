@@ -102,6 +102,9 @@
               [ "Session Timeout", cbv_flow_preview_session_timeout_path ],
               [ "Submit (HTML)", cbv_flow_preview_submit_path ],
               [ "Submit (PDF as HTML)", cbv_flow_preview_submit_pdf_as_html_path ],
+              [ "Pay stub images cover (PDF as HTML)", cbv_flow_preview_paystubs_pdf_as_html_path ],
+              [ "Submit (PDF file – opens/downloads)", "/cbv/preview/submit.pdf" ],
+              [ "Pay stub images file (PDF – opens/downloads)", "/cbv/preview/paystubs.pdf" ],
               [ "Transmitted JSON", cbv_flow_preview_transmitted_json_path ]
             ]
              current_route = preview_routes.find { |_, path| request.path == path }&.last || request.path %>
@@ -117,6 +120,9 @@
           <%= select_tag :fixture_user,
               options_for_select(
                 [
+                  [ "Pay stub images — all jobs", "paystubs_all_images" ],
+                  [ "Pay stub images — some jobs", "paystubs_some_images" ],
+                  [ "Pay stub images — no images", "paystubs_no_images" ],
                   [ "ADP - Different Employers", "adp_paystubs_different_employer" ],
                   [ "ADP - Mixed Employers", "adp_paystubs_mixed_employers" ],
                   [ "Bob - Lyft Driver (default)", "bob" ],
@@ -153,6 +159,18 @@
               ),
               class: "preview-bar__select",
               data: { action: "change->preview-form#submit" } %>
+
+          <label for="include_paystubs" class="preview-bar__label margin-left-2 margin-right-1">Include paystubs?</label>
+          <%= select_tag :include_paystubs,
+                         options_for_select(
+                           [
+                             [ "False (default)", "false" ],
+                             [ "True", "true" ]
+                           ],
+                           params[:include_paystubs] || "false"
+                         ),
+                         class: "preview-bar__select",
+                         data: { action: "change->preview-form#submit" } %>
 
           <label for="is_caseworker" class="preview-bar__label margin-left-2 margin-right-1">Is Caseworker?</label>
           <%= select_tag :is_caseworker,

@@ -212,16 +212,19 @@ RSpec.describe Aggregators::PaystubsPdfService do
 
     let(:current_agency) do
       instance_double(ClientAgencyConfig::ClientAgency,
-        id:        "cover_test",
+        id:        "sandbox",
         logo_path: "https://example.test/logo.png" # URL logo => no asset-pipeline lookup
       ).tap { |a| allow(a).to receive(:present?).and_return(true) }
     end
 
+    let(:employers_with_images)    { %w[Aramark Target] }
+    let(:employers_without_images) { %w[Walmart] }
     let(:aggregator_report) do
       instance_double(Aggregators::AggregatorReports::CompositeReport,
-        summarize_by_employer: {},
-        from_date:             Date.new(2024, 1, 1),
-        to_date:               Date.new(2024, 1, 31)
+        summarize_by_employer:            {},
+        employer_names_by_image_presence: { with: employers_with_images, without: employers_without_images },
+        from_date:                        Date.new(2024, 1, 1),
+        to_date:                          Date.new(2024, 1, 31)
       ).tap { |r| allow(r).to receive(:present?).and_return(true) }
     end
 
@@ -260,6 +263,9 @@ RSpec.describe Aggregators::PaystubsPdfService do
       expect(result.page_count).to be > baseline                # cover added page(s)
       expect(ApplicationController).to have_received(:renderer)  # used the new render path
       expect(@cover_html).to include("cbv-header__pilot-name")   # the real template rendered
+      # Helpers that resolve the agency themselves (rather than via locals) need
+      # the renderer's assigns; without them the alt text degrades to " Logo".
+      expect(@cover_html).to include('alt="CBV Logo"')
     end
 
     it "does not silently drop the cover on a successful render" do
@@ -270,7 +276,7 @@ RSpec.describe Aggregators::PaystubsPdfService do
 
     context "when the agency has no logo configured" do
       let(:current_agency) do
-        instance_double(ClientAgencyConfig::ClientAgency, id: "cover_test", logo_path: "")
+        instance_double(ClientAgencyConfig::ClientAgency, id: "sandbox", logo_path: "")
           .tap { |a| allow(a).to receive(:present?).and_return(true) }
       end
 
@@ -280,6 +286,7 @@ RSpec.describe Aggregators::PaystubsPdfService do
 
         expect(result).to be_a(described_class::Result)
         expect(@cover_html).to include("cbv-header__pilot-name")
+        expect(@cover_html).to include("CBV Test Agency") # the fallback resolved an agency name
         expect(Rails.logger).not_to have_received(:warn).with(/caseworker cover generation failed/)
       end
     end
@@ -300,6 +307,42 @@ RSpec.describe Aggregators::PaystubsPdfService do
       described_class.new(cbv_flow: cbv_flow, argyle_service: argyle_service).generate
 
       expect(ApplicationController).not_to have_received(:renderer)
+    end
+
+    it "lists both the jobs with and the jobs without pay stub images on the cover" do
+      service_with_cover.generate
+
+      expect(@cover_html).to include("Aramark", "Target", "Walmart")
+      expect(@cover_html).to include("Pay stubs are available for the jobs listed below")
+      expect(@cover_html).to include(I18n.t("transmitters.paystubs_caseworker_cover.employers_without_images_intro"))
+      expect(@cover_html).to include(I18n.t("transmitters.paystubs_caseworker_cover.images_availability_note"))
+      expect(@cover_html).to include("Review the report for more complete information")
+    end
+
+    # Graceful degradation: a configured partner whose flow has no pay stub
+    # images still gets a (cover-only) file so the absence is explicit.
+    context "when there are no pay stub images (caseworker mode)" do
+      let(:employers_with_images)    { [] }
+      let(:employers_without_images) { %w[Aramark Target Walmart] }
+
+      before do
+        stub_docs(account: account_id, docs: []) # override outer stub: no documents
+      end
+
+      it "returns a cover-only Result instead of raising NoPaystubsError" do
+        result = nil
+        expect { result = service_with_cover.generate }.not_to raise_error
+        expect(result).to be_a(described_class::Result)
+        expect(result.content).to start_with("%PDF")
+        expect(result.page_count).to be > 0
+      end
+
+      it "renders only the 'did not find' list (no available-jobs section)" do
+        service_with_cover.generate
+
+        expect(@cover_html).to include(I18n.t("transmitters.paystubs_caseworker_cover.employers_without_images_intro"))
+        expect(@cover_html).not_to include("Pay stubs are available for the jobs listed below")
+      end
     end
   end
 end

@@ -113,6 +113,7 @@ module TrackEvent
   CaseworkerLoggedIn = "CaseworkerLoggedIn"
   CbvPageView = "CbvPageView"
   CSPViolation = "CSPViolation"
+  DiagnosticModalFocusFellBackToBody = "DiagnosticModalFocusFellBackToBody"
   EmailSent = "EmailSent"
   IncomeSummaryMatchedAgencyNames = "IncomeSummaryMatchedAgencyNames"
   InvitationLimitReached = "InvitationLimitReached"

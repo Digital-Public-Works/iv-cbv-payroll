@@ -101,6 +101,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "access_logs" {
 }
 
 
+#trivy:ignore:aws-0132 SSE-KMS is unsupported for S3 access-log destination buckets; SSE-S3 (AES256) is the correct choice here
 resource "aws_s3_bucket_server_side_encryption_configuration" "encryption" {
   bucket = aws_s3_bucket.access_logs.id
   rule {
