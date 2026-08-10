@@ -13,6 +13,10 @@ resource "aws_iam_policy" "iam_scoped" {
 }
 
 data "aws_iam_policy_document" "iam_scoped" {
+  # including resources it doesn't manage (data-source lookups, drift-check reads
+  # of the CI role / OIDC provider). Read-only, no mutation. The write statements
+  # in this document are all scoped to app-*.
+  #checkov:skip=CKV_AWS_356:IamReadOnly is read-only on *; write statements are scoped to app-*
   # allow runner to read IAM state during terraform plan and apply
   statement {
     sid       = "IamReadOnly"

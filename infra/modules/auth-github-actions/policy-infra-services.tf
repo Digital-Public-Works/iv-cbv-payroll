@@ -12,7 +12,10 @@ resource "aws_iam_policy" "infra_services" {
   policy      = data.aws_iam_policy_document.infra_services.json
 }
 
+#trivy:ignore:aws-0345 Coarse s3:* is intentional; state bucket destruction is denied in the guardrails policy.
 data "aws_iam_policy_document" "infra_services" {
+  #checkov:skip=CKV_AWS_111:Coarse service:* is intentional; escalation blocked by guardrails policy
+  #checkov:skip=CKV_AWS_356:Coarse service:* on * is intentional; see guardrails policy
   statement {
     sid       = "ManageInfraServices"
     effect    = "Allow"
