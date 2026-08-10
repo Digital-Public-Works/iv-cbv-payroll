@@ -21,7 +21,7 @@
       "cwe_id": [
         22
       ],
-      "note": "Not reachable in production. Cbv::PreviewController gates every action with `before_action :ensure_non_production_environment`, which renders 403 unless NonProductionAccessible#is_not_production? is true (development, test, or a *.divt.app demo host). The path is also read-only and resolves under spec/support/fixtures/argyle, which is not deployed to production images."
+      "note": "PF-808: Not reachable in production. Cbv::PreviewController gates every action with `before_action :ensure_non_production_environment`, which renders 403 unless NonProductionAccessible#is_not_production? is true (development, test, or a *.divt.app demo host). The path is also read-only and resolves under spec/support/fixtures/argyle, which is not deployed to production images."
     },
     {
       "warning_type": "File Access",
@@ -44,7 +44,7 @@
       "cwe_id": [
         22
       ],
-      "note": "Not reachable in production. Cbv::PreviewController gates every action with `before_action :ensure_non_production_environment`, which renders 403 unless NonProductionAccessible#is_not_production? is true (development, test, or a *.divt.app demo host). The read is confined to the spec/support/fixtures/argyle tree, which is not shipped in production images, and the parsed result is only used to pick a mock Argyle account id."
+      "note": "PF-808: Not reachable in production. Cbv::PreviewController gates every action with `before_action :ensure_non_production_environment`, which renders 403 unless NonProductionAccessible#is_not_production? is true (development, test, or a *.divt.app demo host). The read is confined to the spec/support/fixtures/argyle tree, which is not shipped in production images, and the parsed result is only used to pick a mock Argyle account id."
     },
     {
       "warning_type": "Command Injection",
@@ -67,7 +67,7 @@
       "cwe_id": [
         77
       ],
-      "note": ""
+      "note": "PF-808: No shell is involved: Open3.capture3 is called in multi-argument form, so git is exec'd directly and metacharacters are never interpreted. Neither interpolated value is attacker-controlled -- BASE_BRANCH is the literal \"main\", and `path` comes from get_locale_file_path, which returns either EN_LOCALE_PATH or ES_LOCALE_PATH and raises ArgumentError for any other locale. LocaleDiffService is a developer/CI tool with no web-reachable caller."
     },
     {
       "warning_type": "Path Traversal",
@@ -90,7 +90,7 @@
       "cwe_id": [
         22
       ],
-      "note": "Not reachable in production. Api::LoadTestSessionsController gates every action with `before_action :ensure_non_production_environment`, which renders 403 unless NonProductionAccessible#is_not_production? is true (development, test, or a *.divt.app demo host). The path is only used for a read-only File.exist?/File.read of load-test fixtures under spec/support/fixtures/argyle, which is not deployed to production images."
+      "note": "PF-808: Not reachable in production. Api::LoadTestSessionsController gates every action with `before_action :ensure_non_production_environment`, which renders 403 unless NonProductionAccessible#is_not_production? is true (development, test, or a *.divt.app demo host). The path is only used for a read-only File.exist?/File.read of load-test fixtures under spec/support/fixtures/argyle, which is not deployed to production images."
     },
     {
       "warning_type": "Path Traversal",
@@ -113,7 +113,7 @@
       "cwe_id": [
         22
       ],
-      "note": "Not reachable in production. Cbv::PreviewController gates every action with `before_action :ensure_non_production_environment`, which renders 403 unless NonProductionAccessible#is_not_production? is true (development, test, or a *.divt.app demo host). The path is only used for a read-only File.exist?/File.read of preview fixtures under spec/support/fixtures/argyle, which is not deployed to production images."
+      "note": "PF-808: Not reachable in production. Cbv::PreviewController gates every action with `before_action :ensure_non_production_environment`, which renders 403 unless NonProductionAccessible#is_not_production? is true (development, test, or a *.divt.app demo host). The path is only used for a read-only File.exist?/File.read of preview fixtures under spec/support/fixtures/argyle, which is not deployed to production images."
     },
     {
       "warning_type": "Command Injection",
@@ -136,7 +136,7 @@
       "cwe_id": [
         77
       ],
-      "note": ""
+      "note": "PF-808: No shell is involved: Open3.capture3 is called in multi-argument form, so git is exec'd directly and metacharacters are never interpreted. Neither interpolated value is attacker-controlled -- `merge_base_commit` is a SHA from `git merge-base` behind a status.success? guard, and `path` comes from get_locale_file_path, which returns either EN_LOCALE_PATH or ES_LOCALE_PATH and raises ArgumentError for any other locale. LocaleDiffService is a developer/CI tool with no web-reachable caller."
     }
   ],
   "brakeman_version": "7.0.2"

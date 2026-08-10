@@ -34,7 +34,20 @@ jobs:
     - uses: ./.github/actions/setup-languages
 
     # Execute Brakeman CLI.
+    #
+    # Suppressions live in app/config/brakeman.ignore. Every entry must carry a
+    # justification and a ticket number in its `note`; the PR adding it is the
+    # approval record. The --ensure flags enforce what Brakeman can check itself:
+    #   exit 3  unsuppressed warning
+    #   exit 8  --ensure-ignore-notes: an entry has an empty note
+    #   exit 9  --ensure-no-obsolete-ignore-entries: an entry matches no warning
+    #
+    # On exit 9, list the stale fingerprints and delete those entries:
+    #   bundle exec brakeman . -f json --no-exit-on-warn \
+    #     | ruby -rjson -e 'puts JSON.parse($stdin.read)["obsolete"]'
     - name: Scan
       working-directory: app
       run: |
-        bundle exec brakeman .
+        bundle exec brakeman . \
+          --ensure-ignore-notes \
+          --ensure-no-obsolete-ignore-entries
