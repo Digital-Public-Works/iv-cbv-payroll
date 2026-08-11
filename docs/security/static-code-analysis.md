@@ -79,6 +79,15 @@ setup, which requires repository admin.
 The `paths: ['app/**']` filter does not create a coverage gap: Brakeman analyzes only
 the Rails application, so a change outside `app/**` is outside its analysis surface.
 
+> **Status — known continuity gap.** The Brakeman Scan workflow was found **disabled**
+> in the Actions UI on 2026-08-11 and has been re-enabled. A disabled workflow is
+> disabled repository-wide and for all triggers, so for the duration of that period
+> there were no PR scans, no post-merge scans, and no weekly scheduled scans — the
+> continuous-operation evidence described above has a hole in it, and the gating
+> policy in section 3 was not in force because no check was produced at all. The start
+> of the gap has not yet been established; it can be bounded by the date of the last
+> `Brakeman Scan` run in the Actions tab. See Open items #8.
+
 ## 3. Gating policy
 
 **A non-zero Brakeman exit blocks the merge.** The scan step is:
@@ -307,4 +316,5 @@ Brakeman reports. Not implemented — see Open items.
 | 5b | Create a task to enable code scanning merge protection for CodeQL — Settings → Rules → Rulesets → branch ruleset on `main` → Code scanning → tool `CodeQL`, with alert and security-alert thresholds. Requires admin. Note default setup's own check is not a gate on its own. | Gating parity with Brakeman |
 | 5c | Investigate CodeQL's Go coverage (1/2 files) and Ruby (469/473). Small gaps, but an assessor will ask what the unscanned files are. | Complete coverage claim |
 | 7 | **CodeQL evidence is not archived** (section 6). Results live only in GitHub, under GitHub's retention and with no immutability. Decide whether to build the scheduled REST-API export to S3, or to accept and document GitHub-held retention as sufficient. | AU-11 parity across both scanners |
+| 8 | **Establish the Brakeman continuity gap** (section 2). The workflow was found disabled on 2026-08-11 and re-enabled. Record the date of the last run before that from the Actions tab, then state the gap explicitly in sections 2 and 3 rather than leaving both describing controls that were not operating. Consider whether anything merged during the gap needs a retrospective scan. | Truthful continuity and gating claims |
 | 6 | Add a functional `CODEOWNERS` file so approver review is enforced, not merely documented (section 4) | Mechanical approval control |
