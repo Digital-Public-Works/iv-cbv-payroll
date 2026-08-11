@@ -24,10 +24,18 @@ defaults:
   run:
     working-directory: ./app
 
+env:
+  # Must match local.bucket_name in infra/app/security-scan-reports/main.tf
+  REPORTS_BUCKET: dpw-iv-cbv-payroll-security-scan-reports
+
 jobs:
   brakeman-scan:
     name: Brakeman Scan
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Required for OIDC federation in ./.github/actions/configure-aws-credentials
+      id-token: write
     steps:
     - uses: actions/checkout@v4
 
@@ -45,6 +53,48 @@ jobs:
     # On exit 9, list the stale fingerprints and delete those entries:
     #   bundle exec brakeman . -f json --no-exit-on-warn \
     #     | ruby -rjson -e 'puts JSON.parse($stdin.read)["obsolete"]'
+    # Generate the archival report first, without failing the build. The gate runs last.
+    - name: Generate JSON report
+      working-directory: app
+      run: |
+        bundle exec brakeman . \
+          -f json \
+          -o "${GITHUB_WORKSPACE}/brakeman-report.json" \
+          --no-exit-on-warn
+
+    - name: Add CI provenance to report
+      working-directory: ${{ github.workspace }}
+      run: ruby .github/scripts/enrich_brakeman_report.rb brakeman-report.json
+
+    # continue-on-error on the two publishing steps below is a ROLLOUT ALLOWANCE,
+    # not a permanent setting: the bucket is created by a manual
+    # `make infra-update-app-security-scan-reports APP_NAME=app`, so until that has
+    # been applied these steps fail and would take main red. Remove both once the
+    # bucket exists, otherwise a silently broken archive looks like a passing build.
+    #
+    # Fork PRs cannot assume the OIDC role, and PR-run reports are not the audit
+    # record -- only main and the weekly schedule are archived.
+    - name: Configure AWS credentials
+      if: ${{ always() && github.event_name != 'pull_request' }}
+      continue-on-error: true
+      uses: ./.github/actions/configure-aws-credentials
+      with:
+        app_name: app
+        environment: prod
+
+    # Keyed by date and commit SHA. run id + attempt keep re-runs of the same
+    # commit from overwriting each other (the bucket is versioned regardless).
+    - name: Publish report to S3
+      if: ${{ always() && github.event_name != 'pull_request' }}
+      continue-on-error: true
+      working-directory: ${{ github.workspace }}
+      run: |
+        key="brakeman/$(date -u +%Y/%m/%d)/${GITHUB_SHA}/run-${GITHUB_RUN_ID}-attempt-${GITHUB_RUN_ATTEMPT}.json"
+        echo "Publishing to s3://${REPORTS_BUCKET}/${key}"
+        aws s3 cp brakeman-report.json "s3://${REPORTS_BUCKET}/${key}" \
+          --content-type application/json
+
+    # Gate last, so a failing scan is still archived above.
     - name: Scan
       working-directory: app
       run: |
