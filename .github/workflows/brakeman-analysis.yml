@@ -10,7 +10,11 @@ name: Brakeman Scan
 
 on:
   push:
-    branches: [ main ]
+    # TEMPORARY -- REVERT BEFORE MERGING TO main.
+    # rg/pf-808-fix-static-analysis is listed only so this workflow can be
+    # exercised on a feature branch without opening a pull request. Restore this
+    # to `branches: [ main ]` before the real PR.
+    branches: [ main, rg/pf-808-fix-static-analysis ]
     paths: ['app/**']
   pull_request:
     # The branches below must be a subset of the branches above
