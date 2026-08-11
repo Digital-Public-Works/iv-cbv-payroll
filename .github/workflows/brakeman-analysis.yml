@@ -11,11 +11,13 @@ name: Brakeman Scan
 on:
   push:
     # TEMPORARY -- REVERT BEFORE MERGING TO main.
-    # rg/pf-808-fix-static-analysis is listed only so this workflow can be
-    # exercised on a feature branch without opening a pull request. Restore this
-    # to `branches: [ main ]` before the real PR.
+    # The test branch is listed AND the `paths` filter is removed, so every push to
+    # the branch runs this workflow. The filter had to go too: a commit touching only
+    # .github/** does not match 'app/**', so adding the branch alone was not enough
+    # to trigger a run. Restore both lines before the real PR:
+    #   branches: [ main ]
+    #   paths: ['app/**']
     branches: [ main, rg/pf-808-fix-static-analysis ]
-    paths: ['app/**']
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ main ]
