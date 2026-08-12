@@ -78,6 +78,14 @@ jobs:
     # been applied these steps fail and would take main red. Remove both once the
     # bucket exists, otherwise a silently broken archive looks like a passing build.
     #
+    # configure-aws-credentials shells out to `terraform` to resolve the network,
+    # account id, and role ARN, so Terraform must be on the runner first. Every other
+    # workflow that uses that action does this too; omitting it fails with exit 127.
+    - name: Set up Terraform
+      if: ${{ always() && github.event_name != 'pull_request' }}
+      continue-on-error: true
+      uses: ./.github/actions/setup-terraform
+
     # Fork PRs cannot assume the OIDC role, and PR-run reports are not the audit
     # record -- only main and the weekly schedule are archived.
     - name: Configure AWS credentials
