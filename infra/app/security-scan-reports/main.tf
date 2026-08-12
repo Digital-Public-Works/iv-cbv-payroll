@@ -88,10 +88,12 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "reports" {
   }
 }
 
-# Default retention applied to every uploaded object version. In COMPLIANCE mode
-# no principal -- including the account root -- can delete or overwrite a version
-# before its retention expires, which is the point: the GitHub Actions role that
-# writes these reports currently has account-admin permissions (see PF-795).
+# Default retention applied to every uploaded object version: 3 years, GOVERNANCE mode.
+# GOVERNANCE blocks deletion and overwrite for every principal EXCEPT those holding
+# s3:BypassGovernanceRetention. The GitHub Actions role that writes these reports
+# currently has account-admin permissions (see PF-795) and therefore holds that
+# permission, so this protects against accident, not against a determined actor with
+# deploy access. See the trade-off recorded on var.object_lock_mode.
 resource "aws_s3_bucket_object_lock_configuration" "reports" {
   bucket = aws_s3_bucket.reports.id
 

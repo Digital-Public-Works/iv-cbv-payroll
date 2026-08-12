@@ -44,12 +44,15 @@ variable "expiration_days" {
   }
 }
 
-# No default, deliberately -- this is the irreversible one. In COMPLIANCE mode no
-# principal including the account root can shorten it or delete a version before it
-# expires. Set it to what you are certain of; it can be raised later.
+# 3 years, matching expiration_days. Chosen deliberately rather than read off the
+# control matrix, which has not yet been consulted -- see the AU-11 open item in
+# docs/security/static-code-analysis.md. Under GOVERNANCE mode this is adjustable in
+# either direction by a principal holding s3:BypassGovernanceRetention, so an
+# incorrect value here is recoverable; under COMPLIANCE it would not be.
 variable "object_lock_retention_days" {
-  description = "Object Lock default retention in days. IRREVERSIBLE: can be increased later but never decreased, and no principal can delete a version before it expires."
+  description = "Object Lock default retention in days. Under GOVERNANCE mode this can be raised or lowered by a principal with s3:BypassGovernanceRetention; under COMPLIANCE it could only ever be raised."
   type        = number
+  default     = 1095 # 3 years
 
   validation {
     condition     = var.object_lock_retention_days >= 90
@@ -57,10 +60,19 @@ variable "object_lock_retention_days" {
   }
 }
 
+# GOVERNANCE, not COMPLIANCE. This is a deliberate trade-off:
+#
+#   + Recoverable. Brakeman JSON embeds source-code snippets, so a scan that captures
+#     a hardcoded secret would otherwise be undeletable for the full retention window.
+#   + Retention can be corrected in either direction before the matrix is confirmed.
+#   - Weaker immutability claim. Any principal with s3:BypassGovernanceRetention can
+#     delete a locked version, and the GitHub Actions role that writes these reports
+#     currently has account-admin permissions (see PF-795), so the writer can remove
+#     its own evidence. Scoping that role would restore the guarantee.
 variable "object_lock_mode" {
   description = "Object Lock retention mode. COMPLIANCE cannot be bypassed by any principal including the account root; GOVERNANCE can be bypassed by principals holding s3:BypassGovernanceRetention."
   type        = string
-  default     = "COMPLIANCE"
+  default     = "GOVERNANCE"
 
   validation {
     condition     = contains(["COMPLIANCE", "GOVERNANCE"], var.object_lock_mode)

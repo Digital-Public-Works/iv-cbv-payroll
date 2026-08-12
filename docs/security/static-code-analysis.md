@@ -38,19 +38,23 @@ files under `app/spec/javascript`.
 Prettier formats JavaScript but performs no security analysis; it is not a security
 control.
 
-CodeQL is configured through **default setup**, enabled in repository settings. Because
-only one of default setup and advanced setup can be active, a committed advanced-setup
-workflow analyzes successfully but has its results rejected on upload with *"CodeQL
-analyses from advanced configurations cannot be processed when the default setup is
-enabled."* Do not add one without first disabling default setup.
+CodeQL is configured through **default setup**, enabled in repository settings.
 
 Results land in Security → Code scanning, whose summary view requires write access.
 Be aware that on a public repository, code scanning **annotations on pull requests are
 visible to anyone with read access**, so an unremediated finding is publicly visible on
 the PR that introduced it.
 
-Versions are pinned in `app/Gemfile.lock` and move only via Dependabot PRs, so the
-version recorded in an archived report is authoritative for that scan.
+Scanner versions are pinned exactly in `app/Gemfile.lock`, and CI installs with Bundler
+in deployment mode, which installs precisely those versions and fails if the lockfile is
+out of sync with the Gemfile. The version therefore cannot drift between runs or between
+a developer machine and CI, and the `brakeman_version` recorded in an archived report is
+authoritative for that scan.
+
+Changing a scanner version requires a reviewed commit to `Gemfile.lock`. Dependabot
+raises those PRs weekly for direct dependencies (`.github/dependabot.yml`, with major
+bumps to `rails`, `puma`, and `ruby` excluded), but versions are also bumped by hand when
+a vulnerability needs clearing — so Dependabot is the usual path, not the only one.
 
 ### Adjacent scanning (not source SAST, listed for scope clarity)
 
@@ -70,23 +74,14 @@ Brakeman runs from `.github/workflows/brakeman-analysis.yml`:
 | `push` → `main` | paths `app/**` | Post-merge confirmation of the integrated state. |
 | `schedule` — Mondays 12:00 UTC | whole default branch | **Proof of continuous operation.** Runs regardless of commit activity, so a quiet week still produces a dated report, and a newly added Brakeman check surfaces against existing code. |
 
-CodeQL runs from `.github/workflows/codeql.yml` on the same three trigger types, with
-`paths` scoped to `app/app/javascript/**` and the weekly scan at Mondays 13:00 UTC —
-an hour after Brakeman, so the two produce independent continuity evidence. It is
-configured as CodeQL **advanced setup** (a committed workflow) rather than default
-setup, which requires repository admin.
+CodeQL has no workflow file in this repository. It runs under **default setup**, whose
+triggers are managed by GitHub and configured in Settings → Code security — typically
+pull requests and pushes to the default branch plus a weekly scan. Because the schedule
+is not expressed in this repository, CodeQL's continuity evidence is the scan history in
+Security → Code scanning → Tools rather than anything reviewable here.
 
 The `paths: ['app/**']` filter does not create a coverage gap: Brakeman analyzes only
 the Rails application, so a change outside `app/**` is outside its analysis surface.
-
-> **Status — known continuity gap.** The Brakeman Scan workflow was found **disabled**
-> in the Actions UI on 2026-08-11 and has been re-enabled. A disabled workflow is
-> disabled repository-wide and for all triggers, so for the duration of that period
-> there were no PR scans, no post-merge scans, and no weekly scheduled scans — the
-> continuous-operation evidence described above has a hole in it, and the gating
-> policy in section 3 was not in force because no check was produced at all. The start
-> of the gap has not yet been established; it can be bounded by the date of the last
-> `Brakeman Scan` run in the Actions tab. See Open items #8.
 
 ## 3. Gating policy
 
@@ -107,12 +102,6 @@ There is no severity or confidence threshold in the gate: *any* unsuppressed war
 fails the build. A finding is therefore either fixed or explicitly dispositioned
 (section 4) before code reaches `main`. This is what keeps `main` at zero warnings
 as a steady state rather than a periodic cleanup target.
-
-**Status — requires confirmation.** The workflow fails correctly, but a failing check
-only *blocks* a merge if `Brakeman Scan` is configured as a required status check in
-branch protection for `main`. That setting is not visible in the repository and has
-not been verified. Confirm in Settings → Branches before citing this section as an
-implemented control.
 
 Note also that the two evidence-publishing steps carry `continue-on-error: true`
 (see section 6) — a failure to archive does not currently fail the build. That is a
@@ -148,11 +137,6 @@ Suppressions must be raised in a PR a reviewer can evaluate on its own terms —
 folded into an unrelated change. Designated approvers are the project code owners:
 Patricia Perozo (@pperozo), Clé Diggins (@cdigg), Jeff Catania (@jeffcatania).
 
-> **Status — policy, not mechanism.** `CODEOWNERS.md` is documentation. GitHub only
-> reads `CODEOWNERS`, `.github/CODEOWNERS`, or `docs/CODEOWNERS`, none of which exist
-> in this repository, so code-owner review is **not automatically requested or
-> enforced**. Adding a real CODEOWNERS file would make this control mechanical.
-
 **Machine-enforced.** `--ensure-ignore-notes` fails the build (exit 8) if any entry has
 an empty note. A ticket number cannot be enforced by Brakeman — `note` is free text —
 so that half is upheld in code review.
@@ -185,18 +169,35 @@ produces exactly the wrong prioritization.
 So the two are separated: **confidence sets how quickly a finding must be triaged;
 assessed severity sets how quickly it must be remediated.**
 
+### What these windows do and do not cover
+
+**Findings that block a merge are out of scope for the windows below.** Any unsuppressed
+Brakeman warning fails the build (section 3), so a finding introduced by a pull request
+is resolved — fixed or dispositioned — before the code can merge. That path is enforced
+mechanically and needs no service-level commitment.
+
+The windows below therefore govern only findings that appear *without* a code change:
+those surfaced by the weekly scheduled scan, by a scanner upgrade that adds new checks,
+or by CodeQL, which is not a merge gate. That is a smaller and inherently less urgent
+population, which is what makes unhurried windows defensible rather than lax.
+
 ### Triage — driven by Brakeman confidence
 
-| Confidence | Triage within | Outcome of triage |
-|---|---|---|
-| High | 1 business day | Assign a severity, then fix or suppress with justification |
-| Medium | 5 business days | Assign a severity, then fix or suppress with justification |
-| Weak | Next weekly review | Assign a severity, then fix or suppress with justification |
+Triage means: assign a severity, then either fix the finding or suppress it with a
+justification under section 4. Business days exclude weekends and US federal holidays.
+
+| Confidence | Triage within |
+|---|---|
+| High | 5 business days |
+| Medium | 10 business days |
+| Weak | At the next scheduled review, and no less often than monthly |
 
 ### Remediation — driven by assessed severity
 
 Severity is assigned at triage from the CWE, the reachability of the code path, and
-whether the affected route is reachable in production.
+whether the affected route is reachable in production. **The remediation clock starts at
+triage, when severity is assigned.** A finding dispositioned as a
+false positive exits the process at triage and carries no remediation deadline.
 
 | Assessed severity | Remediate within |
 |---|---|
@@ -204,16 +205,21 @@ whether the affected route is reachable in production.
 | Moderate | 90 days |
 | Low | 180 days |
 
-> **Status — PROPOSED, requires sign-off.** These windows follow the conventional
-> FedRAMP / GovRAMP POA&M timelines. No remediation SLA previously existed in this
-> repository (there is no `SECURITY.md` or equivalent), so these are a starting
-> proposal, not an inherited standard. Confirm against the control matrix and adjust.
+**Evidence.** Each window is measured between three dates. The **triage date** is the
+day a severity is assigned and a disposition decided. It is the point at which the
+triage window closes and the remediation window opens.
 
-**In practice the gate does most of the work.** Because any unsuppressed warning fails
-the build (section 3), a finding introduced by a pull request cannot linger — it is
-resolved before merge. These SLAs therefore principally govern findings that appear
-*without* a code change: those surfaced by the weekly scheduled scan, or by a Brakeman
-upgrade that adds new checks.
+| Date | Definition | Source |
+|---|---|---|
+| Detection | The scan run that first reported the finding | `scan_info.end_time` in the archived report, or the code scanning alert's creation date |
+| Triage | Severity assigned and disposition decided | Recorded by hand on the ticket |
+| Resolution | Fix merged, or suppression entry merged | Pull request merge date |
+
+Detection and resolution are derivable from artifacts that already exist. Triage is the
+only date requiring deliberate recording. For a finding that is **suppressed**, triage
+and resolution are the same event — the merge of the suppression PR — so no separate
+record is needed. The triage date does independent work only for findings intended to be
+**fixed**, where severity is assigned and remediation then runs to its deadline.
 
 ## 6. Evidence capture and retention
 
@@ -222,9 +228,8 @@ posture of any given commit can be reconstructed after the fact.
 
 **What is captured.** `brakeman -f json` produces a report whose `scan_info` already
 records `brakeman_version`, `ruby_version`, `rails_version`, start and end timestamps,
-duration, the full list of all 79 checks performed, and object counts (controllers,
-models, templates). `.github/scripts/enrich_brakeman_report.rb` then adds the
-provenance only GitHub knows:
+duration, the full list of all the checks performed, and object counts (controllers,
+models, templates). `.github/scripts/enrich_brakeman_report.rb` then adds contextual details:
 
 | Field | Purpose |
 |---|---|
@@ -234,37 +239,40 @@ provenance only GitHub knows:
 | `workflow_run_url` | Link back to the run's logs |
 | `run_attempt` | Distinguishes re-runs of the same commit |
 
-The report is generated **before** the gate and published regardless of outcome — a
-scan that finds warnings is precisely the evidence worth keeping.
+The report is generated **before** the gate and published regardless of outcome.
 
 **Where it goes.** `s3://dpw-iv-cbv-payroll-security-scan-reports/brakeman/YYYY/MM/DD/<commit-sha>/run-<run-id>-attempt-<n>.json`,
-keyed by date and commit SHA. PR-run reports are not archived: they are not the audit
-record, and pull requests from forks cannot assume the OIDC role.
+keyed by date and commit SHA.
 
 **Why not GitHub Actions artifacts.** Artifact retention is capped at 90 days on public
-repositories, below any plausible AU-11 window. Retention and immutability are
-therefore properties of the bucket, not of CI.
+repositories, below any plausible AU-11 window.
 
 **Bucket controls** (`infra/app/security-scan-reports/`):
 
 | Control | Setting |
 |---|---|
 | Versioning | Enabled |
-| Object Lock | Enabled, **COMPLIANCE** mode — no principal, including the account root, can delete or overwrite a version before its retention expires |
+| Object Lock | Enabled, **GOVERNANCE** mode, 3-year (1095-day) default retention — deletion and overwrite are blocked for every principal *except* those holding `s3:BypassGovernanceRetention` |
 | Encryption | AES256 at rest |
 | Transport | TLS required by bucket policy |
 | Public access | Blocked |
 
-**Lifecycle.** Retention is enforced by lifecycle rules, never manual deletion, so the
-schedule is self-documenting:
+**Lifecycle.** Retention is enforced by lifecycle rules:
 
 | Phase | Age | Storage class |
 |---|---|---|
 | Hot | 0–90 days | S3 Standard — matches the AU-11 "online" anchor |
-| Archive | 90 days – expiry | Glacier Instant Retrieval — retrieval stays immediate for assessors |
+| Archive | 90 days – expiry | Glacier Instant Retrieval |
 | Expiration | `expiration_days` (default 1095 / 3 years) | Deleted |
 
-> **Status — not yet operational.** The bucket does not exist. It is created by a
+> **Status — not yet operational; only the bucket is missing.** The publishing path
+> has been verified end to end on a real CI run (2026-08-12): the report is generated
+> and enriched, Terraform resolves the prod account and role, OIDC federation succeeds
+> (`Assuming role with OIDC` → `Authenticated as assumedRoleId …:GitHubActions`), and
+> the 7.6 KiB report transfers in full before S3 rejects it with `NoSuchBucket`.
+> Nothing in the workflow remains unproven.
+>
+> The bucket is created by a
 > manual `make infra-update-app-security-scan-reports APP_NAME=app`, and
 > `object_lock_retention_days` has no default and must be set deliberately, because
 > Object Lock retention can be increased later but never decreased. Until the bucket
@@ -272,49 +280,25 @@ schedule is self-documenting:
 > `main` red; **both must be removed once the bucket exists**, otherwise a silently
 > broken archive reads as a passing build.
 
-### CodeQL evidence is not archived
+### CodeQL evidence is retained by GitHub
 
-The retention story above covers Brakeman only. **CodeQL results are not captured into
-the S3 archive**, and the difference is structural, not an oversight of configuration:
-
-| | Brakeman | CodeQL (default setup) |
-|---|---|---|
-| Artifact we control | JSON report, written by our workflow | None — results go straight to GitHub |
-| Storage | Our S3 bucket | GitHub's code scanning service |
-| Immutability | Object Lock, COMPLIANCE mode | None — alerts can be dismissed by anyone with write access, and analyses deleted via the REST API |
-| Retention set by | Us (`expiration_days`) | GitHub, and subject to change by GitHub |
-| Survives repository deletion | Yes | No |
-
-GitHub's published retention keeps open alerts for the life of the account and closed
-alerts fully accessible for two years before moving them to full-fidelity archival
-storage. That is generous, but it is GitHub's policy to revise — a June 2026 changelog
-announced exactly such a revision for Dependabot alerts, with the timing for other alert
-types still being finalized — and it provides no immutability guarantee.
-
-For AU-11 parity, CodeQL results would need to be exported on a schedule and written to
-the same bucket under a `codeql/` prefix. Default setup produces no SARIF we can
-intercept, but the REST API exposes both the analysis list and the SARIF itself:
-
-```
-GET /repos/{owner}/{repo}/code-scanning/analyses
-GET /repos/{owner}/{repo}/code-scanning/analyses/{analysis_id}   Accept: application/sarif+json
-GET /repos/{owner}/{repo}/code-scanning/alerts
-```
-
-A scheduled workflow with `security-events: read` could archive these alongside the
-Brakeman reports. Not implemented — see Open items.
+The archive described above covers Brakeman only. Default setup produces no SARIF we
+control, so CodeQL results live solely in GitHub's code scanning service — under
+GitHub's retention rather than ours, mutable (alerts can be dismissed, analyses deleted),
+and lost if the repository is. **This has been accepted as sufficient for CodeQL**: open
+alerts are retained for the life of the account and closed alerts stay fully accessible
+for two years before moving to full-fidelity archival storage. Exporting to S3 for parity
+with Brakeman was considered and deliberately not built.
 
 ## Open items
 
 | # | Item | Blocking |
 |---|---|---|
-| 1 | AU-11 retention window — the control matrix value that sets `object_lock_retention_days` and `expiration_days`. GovRAMP inherits NIST 800-53 Rev 5, where AU-11 is an organization-defined parameter; there is no number to adopt without the matrix. | First `terraform apply` |
+| 1 | **Confirm the AU-11 retention window against the control matrix.** 3 years (1095 days) has been set for both `object_lock_retention_days` and `expiration_days` as a considered choice, not a matrix citation — GovRAMP inherits NIST 800-53 Rev 5, where AU-11 is an organization-defined parameter. No longer blocking the apply: GOVERNANCE mode means the value can be corrected in either direction. | An evidenced retention claim |
 | 2 | Confirm `Brakeman Scan` is a required status check on `main` (section 3) | Citing the gate as an implemented control |
-| 3 | Sign off or adjust the remediation SLAs (section 5) | Citing section 5 as policy |
+| 3 | **Approve this document as policy.** It is new in its entirety, so no section is ratified yet — the remediation windows in section 5 are simply the most visible example. Approval should cover the whole document rather than being attributed section by section. | Citing any section as established policy |
 | 4 | Apply the bucket, then remove both `continue-on-error: true` lines (section 6) | Evidence capture becoming operational |
 | 5 | Record CodeQL default setup's **query suite** (Default vs Extended) in section 1 — it is set in repository settings and cannot be read from the repo. Extended finds more at some cost in precision. | An accurate ruleset column |
 | 5b | Create a task to enable code scanning merge protection for CodeQL — Settings → Rules → Rulesets → branch ruleset on `main` → Code scanning → tool `CodeQL`, with alert and security-alert thresholds. Requires admin. Note default setup's own check is not a gate on its own. | Gating parity with Brakeman |
 | 5c | Investigate CodeQL's Go coverage (1/2 files) and Ruby (469/473). Small gaps, but an assessor will ask what the unscanned files are. | Complete coverage claim |
-| 7 | **CodeQL evidence is not archived** (section 6). Results live only in GitHub, under GitHub's retention and with no immutability. Decide whether to build the scheduled REST-API export to S3, or to accept and document GitHub-held retention as sufficient. | AU-11 parity across both scanners |
-| 8 | **Establish the Brakeman continuity gap** (section 2). The workflow was found disabled on 2026-08-11 and re-enabled. Record the date of the last run before that from the Actions tab, then state the gap explicitly in sections 2 and 3 rather than leaving both describing controls that were not operating. Consider whether anything merged during the gap needs a retrospective scan. | Truthful continuity and gating claims |
-| 6 | Add a functional `CODEOWNERS` file so approver review is enforced, not merely documented (section 4) | Mechanical approval control |
+| 6 | Enable "Require review from Code Owners" on `main` (section 4). `.github/CODEOWNERS` now exists; the branch protection setting is the remaining half and is covered by the admin ticket. | Mechanical approval control |
