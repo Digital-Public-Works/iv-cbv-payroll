@@ -389,6 +389,9 @@ input#invitation_link {
     min-width: 0;
     padding-right: units(5);
 
+    // Keep breathing room above the input with "back to top" button
+    scroll-margin-top: units(8);
+
     &::-webkit-search-cancel-button,
     &::-webkit-search-decoration {
       -webkit-appearance: none;

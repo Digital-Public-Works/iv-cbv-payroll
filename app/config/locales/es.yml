@@ -167,18 +167,20 @@ es:
           heading: "¿Necesita ayuda para conectarse a su proveedor de nómina?"
           help_options: Obtenga ayuda aquí.
         app_based_providers: Empleadores basados
+        back_to_top: Volver al inicio
         blank_query_error: Escriba letras o números
         can_not_find_employer: Explore sus opciones
         clear_search: Borrar búsqueda
         company_examples: 'Ejemplos: Uber, McDonald''s, ADP'
         company_name: Nombre de la empresa
         employer_not_listed: "¿Tiene problemas para encontrar a su empleador o proveedor de nómina?"
-        header: Busque su empleador o empresa de nómina
+        header: Resultados de búsqueda
         payroll_providers: Proveedores de nómina
         popular_providers: O elija entre los proveedores o aplicaciones de nómina más populares
-        results: Resultados
+        results: Se encontraron (%{result_count}) resultado(s)
         search: Buscar
         select: Seleccione
+        select_item_instruction: Seleccione un trabajo de la lista. Se abrirá una ventana nueva. Siga las instrucciones para iniciar sesión y verificar sus ingresos.
         type_the_full_name_tooltip: Escribe el nombre completo usando letras o números
         unemployment_search_tips:
           go_back: Volver a la búsqueda

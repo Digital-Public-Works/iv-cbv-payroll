@@ -5,8 +5,9 @@
 
   <% if @query.present? %>
     <h2 class="site-preview-heading margin-bottom-2" data-cbv-employer-search-target="resultsHeading">
-      <%= t("cbv.employer_searches.show.results") %> (<%= @employers.count %>)
+      <%= t("cbv.employer_searches.show.results", result_count: @employers.count) %>
     </h2>
+    <p><%= t("cbv.employer_searches.show.select_item_instruction") %></p>
   <% end %>
   <div class="usa-card-group">
     <% @employers.each do |employer| %>
@@ -52,6 +53,19 @@
       <h2 class="margin-bottom-2"><%= t("cbv.employer_searches.show.employer_not_listed") %></h2>
       <%= link_to cbv_flow_missing_results_path, class: "usa-button usa-button--outline", data: { turbo_frame: "_top", action: "click->click-tracker#track", element_type: ClickTracker::ElementType::InternalLink, element_name: "cannot_find_employer", track_event: TrackEvent::ApplicantClickedCannotFindEmployer } do %>
           <%= t("cbv.employer_searches.show.can_not_find_employer") %>
+      <% end %>
+      <% if @employers.count >= 5 %>
+        <button
+          href="#query"
+           class="usa-button usa-button--outline display-flex flex-align-center"
+           type="button"
+           data-controller="anchor-scroll"
+           data-action="click->anchor-scroll#scroll">
+          <svg class="usa-icon margin-right-05" aria-hidden="true" focusable="false" role="img">
+            <use href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#expand_less") %>"></use>
+          </svg>
+          <%= t("cbv.employer_searches.show.back_to_top") %>
+        </button>
       <% end %>
     </div>
 

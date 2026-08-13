@@ -265,18 +265,20 @@ en:
           heading: Need help connecting to your payroll provider?
           help_options: Get help here.
         app_based_providers: App-based employers
+        back_to_top: Go back to top
         blank_query_error: Enter letters or numbers
         can_not_find_employer: Explore your options
         clear_search: Clear search
         company_examples: 'Examples: Uber, McDonald''s, ADP'
         company_name: Company Name
         employer_not_listed: Trouble finding your employer or payroll provider?
-        header: Find your employer or payroll company
+        header: Search results
         payroll_providers: Payroll providers
         popular_providers: Or choose from popular payroll providers or apps
-        results: Results
+        results: Results found (%{result_count})
         search: Search
         select: Select
+        select_item_instruction: Select a job from the list. A pop-up window will appear. Follow the screens to log in and verify your income.
         type_the_full_name_tooltip: Type the full name using letters or numbers
         unemployment_search_tips:
           go_back: Go back to search
