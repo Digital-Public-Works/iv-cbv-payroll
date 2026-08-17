@@ -30,9 +30,7 @@ describe("anchor_scroll_controller", () => {
       </button>
     `)
     const target = document.getElementById("query")
-    // jsdom doesn't implement scrollIntoView; stub it on the target instance
-    // (stubbing a prototype is unreliable — the element resolves it higher up
-    // the chain than Element.prototype).
+    // jsdom doesn't implement scrollIntoView
     target.scrollIntoView = vi.fn()
     const focusSpy = vi.spyOn(target, "focus")
 
@@ -40,7 +38,6 @@ describe("anchor_scroll_controller", () => {
 
     expect(target.scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth" })
     // Focus, not just scroll: keyboard/screen-reader users land on the input.
-    // preventScroll keeps focus() from overriding the smooth scroll.
     expect(focusSpy).toHaveBeenCalledWith({ preventScroll: true })
   })
 
@@ -56,7 +53,6 @@ describe("anchor_scroll_controller", () => {
 
     document.querySelector("a").dispatchEvent(event)
 
-    // Non-hash link: the controller returns early and never calls preventDefault.
     expect(event.defaultPrevented).toBe(false)
   })
 })

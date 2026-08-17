@@ -1,8 +1,6 @@
 import { describe, beforeEach, afterEach, it, expect, vi } from "vitest"
 import { Application } from "@hotwired/stimulus"
 
-// The controller pulls in heavy provider/modal machinery on boot; stub it so the
-// controller can connect and we can test the page-heading behavior in isolation.
 vi.mock("@js/utilities/loadProviderResources.ts", () => ({
   loadProviderResources: vi.fn().mockResolvedValue(undefined),
 }))
@@ -78,8 +76,6 @@ describe("cbv/employer_search — page heading", () => {
     loadEmployersFrame()
     expect(h1().textContent).toBe(RESULTS)
 
-    // Clearing the input leaves the previous results on screen, so the heading
-    // should stay until the results actually change (a new frame load).
     document.querySelector("form").dispatchEvent(new Event("reset", { bubbles: true }))
 
     expect(h1().textContent).toBe(RESULTS)
