@@ -20,12 +20,7 @@ describe("anchor_scroll_controller", () => {
     vi.restoreAllMocks()
   })
 
-  it("scrolls to and focuses the target on click", async () => {
-    // jsdom does not implement scrollIntoView, so stub it on the prototype.
-    const scrollIntoView = vi
-      .spyOn(Element.prototype, "scrollIntoView")
-      .mockImplementation(() => {})
-
+  it("smooth-scrolls to and moves focus to the target on click", async () => {
     application = await setupController(`
       <input id="query" type="search" />
       <button href="#query"
@@ -34,18 +29,22 @@ describe("anchor_scroll_controller", () => {
           Back to top
       </button>
     `)
+    const target = document.getElementById("query")
+    // jsdom doesn't implement scrollIntoView; stub it on the target instance
+    // (stubbing a prototype is unreliable — the element resolves it higher up
+    // the chain than Element.prototype).
+    target.scrollIntoView = vi.fn()
+    const focusSpy = vi.spyOn(target, "focus")
 
     document.querySelector("button").click()
 
-    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth" })
-    expect(document.activeElement).toBe(document.getElementById("query"))
+    expect(target.scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth" })
+    // Focus, not just scroll: keyboard/screen-reader users land on the input.
+    // preventScroll keeps focus() from overriding the smooth scroll.
+    expect(focusSpy).toHaveBeenCalledWith({ preventScroll: true })
   })
 
-  it("ignores non-hash links", async () => {
-    const scrollIntoView = vi
-      .spyOn(Element.prototype, "scrollIntoView")
-      .mockImplementation(() => {})
-
+  it("ignores non-hash links (does not hijack the click)", async () => {
     application = await setupController(`
       <a href="/somewhere"
           data-controller="anchor-scroll"
@@ -53,9 +52,11 @@ describe("anchor_scroll_controller", () => {
           Elsewhere
       </a>
     `)
+    const event = new Event("click", { bubbles: true, cancelable: true })
 
-    document.querySelector("a").dispatchEvent(new Event("click", { bubbles: true }))
+    document.querySelector("a").dispatchEvent(event)
 
-    expect(scrollIntoView).not.toHaveBeenCalled()
+    // Non-hash link: the controller returns early and never calls preventDefault.
+    expect(event.defaultPrevented).toBe(false)
   })
 })

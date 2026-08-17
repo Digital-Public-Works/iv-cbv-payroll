@@ -198,6 +198,20 @@ RSpec.describe Cbv::EmployerSearchesController do
         expect(back_to_top["data-element-type"]).to eq("anchor_link")
       end
 
+      context "when there are fewer than 5 results" do
+        before do
+          # hack the BLOCKED_ARGYLE_EMPLOYERS constant to remove 1 result from bob's default 5 results.
+          stub_const("ProviderSearchService::BLOCKED_ARGYLE_EMPLOYERS", [ "item_000017502" ])
+        end
+
+        it "does not render the back to top button" do
+          get :show, params: { query: "results" }
+
+          expect(response).to be_successful
+          expect(Capybara.string(response.body)).to have_no_css("button[data-element-name='back_to_top']")
+        end
+      end
+
       context "when some results should be blocked" do
         before do
           argyle_stub_request_employer_search_response('bob')
