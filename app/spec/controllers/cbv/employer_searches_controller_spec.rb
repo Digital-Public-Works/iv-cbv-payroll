@@ -188,6 +188,16 @@ RSpec.describe Cbv::EmployerSearchesController do
         get :show, params: { query: "results" }
       end
 
+      it "renders the back to top button with correct tracking attributes" do
+        get :show, params: { query: "results" }
+
+        html = Capybara.string(response.body)
+        back_to_top = html.find("button[data-element-name='back_to_top']")
+        expect(back_to_top["data-action"]).to include("click->click-tracker#track")
+        expect(back_to_top["data-track-event"]).to eq("ApplicantClickedGoBackToTop")
+        expect(back_to_top["data-element-type"]).to eq("anchor_link")
+      end
+
       context "when some results should be blocked" do
         before do
           argyle_stub_request_employer_search_response('bob')

@@ -72,7 +72,10 @@
               class="usa-button"
               type="button"
               data-controller="anchor-scroll"
-              data-action="click->anchor-scroll#scroll">
+              data-action="click->anchor-scroll#scroll click->click-tracker#track"
+              data-element-type="<%= ClickTracker::ElementType::AnchorLink %>"
+              data-element-name="back_to_top"
+              data-track-event="<%= TrackEvent::ApplicantClickedGoBackToTop %>">
               <svg class="usa-icon" aria-hidden="true" focusable="false" role="img">
                 <use href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#expand_less") %>"></use>
               </svg>
