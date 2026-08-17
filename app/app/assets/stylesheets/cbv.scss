@@ -370,6 +370,16 @@ input#invitation_link {
   }
 }
 
+.cbv-employer-card__logo-fallback {
+  aspect-ratio: 1;
+  max-width: 6.25rem; // 100px — same visual weight as a real logo
+}
+
+.cbv-employer-card__logo-fallback-icon {
+  width: 40%;
+  height: 40%;
+}
+
 // USWDS flag layout does not work for mobile (it stacks the media on top, as it assumes the content is larger).
 // Because we have fixed sizing on logo's, we want to override this behavior and force flag on mobile.
 @include at-media-max("tablet") {

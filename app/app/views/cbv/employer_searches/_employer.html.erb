@@ -16,8 +16,8 @@
           <div class="usa-card__header">
             <h3 class="usa-card__heading"><%= employer.name %></h3>
           </div>
-          <% if employer.logo_url.present? %>
-            <div class="usa-card__media usa-card__media--inset display-flex flex-justify-center">
+          <div class="usa-card__media usa-card__media--inset display-flex flex-justify-center">
+            <% if employer.logo_url.present? %>
               <div class="usa-card__img cbv-employer-card__img">
                 <%# alt is intentionally blank to mark this as a decorative image %>
                 <img
@@ -25,8 +25,16 @@
                   alt=""
                 >
               </div>
-            </div>
-          <% end %>
+            <% else %>
+              <div class="usa-card__img cbv-employer-card__img cbv-employer-card__logo-fallback bg-gray-10 width-full flex-align-self-center display-flex flex-align-center flex-justify-center">
+                <svg class="usa-icon cbv-employer-card__logo-fallback-icon text-gray-50" viewBox="0 0 24 24" aria-hidden="true" focusable="false" role="img">
+                  <use href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#image") %>"></use>
+                  <line x1="21" y1="3" x2="3" y2="21" stroke="#e6e6e6" stroke-width="4" stroke-linecap="round" />
+                  <line x1="21" y1="3" x2="3" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                </svg>
+              </div>
+            <% end %>
+          </div>
           <div class="usa-card__footer">
             <button
               data-action="click->cbv-employer-search#select"
