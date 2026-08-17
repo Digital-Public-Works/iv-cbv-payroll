@@ -130,7 +130,7 @@ RSpec.describe Report::W2MonthlySummaryTableComponent, type: :component do
       end
 
       it "includes table header" do
-        expect(subject.css("h2").to_html).to include "Monthly summary"
+        expect(subject.css("h3").to_html).to include "Monthly summary"
         expect(subject.css("thead tr.subheader-row th").length).to eq(4)
       end
 
@@ -195,7 +195,7 @@ RSpec.describe Report::W2MonthlySummaryTableComponent, type: :component do
       end
 
       it "includes table header" do
-        expect(subject.css("h2").to_html).to include "Monthly summary"
+        expect(subject.css("h3").to_html).to include "Monthly summary"
         expect(subject.css("thead tr.subheader-row th").length).to eq(4)
       end
 

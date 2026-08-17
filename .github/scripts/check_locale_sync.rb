@@ -4,6 +4,14 @@ require 'open3'
 require_relative '../../app/services/locale_diff_service'
 
 class LocaleSyncChecker
+  I18N_TASKS_CONFIG_PATH = "app/config/i18n-tasks.yml"
+  # Locales under i18n-tasks' `ignore_missing` whose keys are intentionally not
+  # required in Spanish: `es` (Spanish-specific English-only keys) and `all`
+  # (keys allowed missing in every non-base locale). Reusing that list keeps the
+  # "English-only" policy declared in exactly one place, so these keys are exempt
+  # from the sync check just as they are exempt from i18n-tasks' missing check.
+  IGNORE_MISSING_LOCALES = %w[all es].freeze
+
   def initialize
     @en_locale_path = 'app/config/locales/en.yml'
     @es_locale_path = 'app/config/locales/es.yml'
@@ -25,6 +33,17 @@ class LocaleSyncChecker
     en_changed_keys = en_changed_keys.map { |key| remove_language_prefix(key) }
     es_changed_keys = es_changed_keys.map { |key| remove_language_prefix(key) }
 
+    # Keys declared English-only in i18n-tasks (`ignore_missing`) are exempt from
+    # Spanish parity, matching how i18n-tasks and the rest of the app treat them.
+    english_only_keys = (en_changed_keys + es_changed_keys).uniq.select { |key| english_only?(key) }
+    unless english_only_keys.empty?
+      puts "\n=== Skipping keys declared English-only in #{I18N_TASKS_CONFIG_PATH} ==="
+      english_only_keys.sort.each { |key| puts "  - #{key}" }
+    end
+
+    en_changed_keys = en_changed_keys.reject { |key| english_only?(key) }
+    es_changed_keys = es_changed_keys.reject { |key| english_only?(key) }
+
     if en_changed_keys == es_changed_keys
       puts "\n✅ SUCCESS: English and Spanish locales are synchronized!"
       exit 0
@@ -36,6 +55,19 @@ class LocaleSyncChecker
   end
 
   private
+
+  def english_only?(key)
+    english_only_patterns.any? { |pattern| File.fnmatch(pattern, key, File::FNM_EXTGLOB) }
+  end
+
+  def english_only_patterns
+    @english_only_patterns ||= begin
+      config_path = File.join(@locale_diff_service.project_root, I18N_TASKS_CONFIG_PATH)
+      config = YAML.load_file(config_path) || {}
+      ignore_missing = config["ignore_missing"] || {}
+      IGNORE_MISSING_LOCALES.flat_map { |locale| Array(ignore_missing[locale]) }.compact
+    end
+  end
 
   def remove_language_prefix(key)
     puts "Normalizing key: #{key}"
@@ -63,4 +95,4 @@ class LocaleSyncChecker
   end
 end
 
-LocaleSyncChecker.new.run
+LocaleSyncChecker.new.run if __FILE__ == $PROGRAM_NAME

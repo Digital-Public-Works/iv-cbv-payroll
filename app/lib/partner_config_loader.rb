@@ -2,14 +2,28 @@ require "yaml"
 require "net/http"
 require "uri"
 
+# Loads a partner configuration from TWO documents and upserts it into the
+# database:
+#
+#   * settings    — shared, environment-agnostic config that is IDENTICAL across
+#                   environments (identity, feature flags, application
+#                   attributes, translations). Safe to reuse verbatim in demo and
+#                   prod.
+#   * credentials — the per-environment values that MUST differ between
+#                   environments and must never be promoted (argyle mode,
+#                   weekly report recipients, and the whole transmission_methods
+#                   block including secrets).
+#
+# The two documents are fetched independently (each may be a local file path or
+# an https:// URL — mix and match is fine) and shallow-merged before validate/
+# apply
 class PartnerConfigLoader
   class ValidationError < StandardError; end
   class SourceError < StandardError; end
 
-  # Columns on PartnerConfig that we manage via YAML.
-  PARTNER_CONFIG_ATTRS = %w[
+  # Column attrs that belong in the SETTINGS document (shared across envs).
+  SETTINGS_ATTRS = %w[
     partner_id name state_name timezone domain website logo_path
-    argyle_environment default_origin
     active_demo active_prod pilot_ended
     staff_portal_enabled generic_links_enabled invitation_links_enabled
     invitation_valid_days_default
@@ -17,20 +31,56 @@ class PartnerConfigLoader
     report_customization_show_earnings_list
     include_paystubs
     include_full_ssn include_direct_deposit_last_4
-    weekly_report_enabled weekly_report_recipients weekly_report_variant
+    weekly_report_enabled weekly_report_variant
     include_invitation_details_on_weekly_report
     partner_identifier_name
+    default_origin
   ].freeze
+
+  # Column attrs that belong in the CREDENTIALS document (per-environment).
+  # `partner_id` is duplicated here purely as a pairing cross-check.
+  CREDENTIAL_ATTRS = %w[
+    partner_id
+    argyle_environment weekly_report_recipients
+  ].freeze
+
+  # Structural (non-column) top-level keys, partitioned the same way.
+  SETTINGS_STRUCTURAL = %w[application_attributes translations].freeze
+  CREDENTIAL_STRUCTURAL = %w[transmission_methods].freeze
+
+  SETTINGS_TOP_LEVEL = (SETTINGS_ATTRS + SETTINGS_STRUCTURAL).freeze
+  CREDENTIAL_TOP_LEVEL = (CREDENTIAL_ATTRS + CREDENTIAL_STRUCTURAL).freeze
+
+  # DB columns to assign on the model — the union of both partitions.
+  PARTNER_CONFIG_ATTRS = (SETTINGS_ATTRS | CREDENTIAL_ATTRS).freeze
 
   REQUIRED_ATTRS = %w[partner_id name timezone pay_income_days_w2 pay_income_days_gig partner_identifier_name].freeze
 
-  # Structural top-level keys (beyond the column attrs above) that the loader understands.
-  # Any top-level key NOT in PARTNER_CONFIG_ATTRS or this list is rejected by
-  # #validate_no_unknown_keys so that typos / stale formats (e.g. the singular
-  # `transmission_method` or a top-level `transmission_configs`) fail loudly
-  # rather than being silently ignored.
-  STRUCTURAL_TOP_LEVEL_KEYS = %w[transmission_methods application_attributes translations].freeze
-  KNOWN_TOP_LEVEL_KEYS = (PARTNER_CONFIG_ATTRS + STRUCTURAL_TOP_LEVEL_KEYS).freeze
+  # Credential attrs that must be present (with a valid value) in every env.
+  REQUIRED_CREDENTIAL_ATTRS = %w[argyle_environment].freeze
+  VALID_ARGYLE_ENVIRONMENTS = %w[sandbox production].freeze
+
+  # Config keys each transmission method must supply, per method_type. Enforced
+  # so a credentials file that omits (or leaves blank) a value fails loudly at
+  # apply instead of producing a silently-broken transmitter. Keys listed in
+  # BLANK_ALLOWED_KEYS must be present but may be blank (e.g. path_prefix = root).
+  # Derived from the transmitter services (SftpGateway, WebhookTransmitter, etc.).
+  REQUIRED_CREDENTIAL_KEYS = {
+    "sftp" => %w[url user password path_prefix],
+    "webhook" => %w[webhook_url api_key],
+    "json" => %w[url],
+    "shared_email" => %w[email],
+    "encrypted_s3" => %w[public_key path_prefix],
+    "unencrypted_s3" => %w[path_prefix]
+  }.freeze
+  BLANK_ALLOWED_KEYS = %w[path_prefix].freeze
+
+  # Sentinel written by .export in place of an encrypted secret value. It is a
+  # human-readable placeholder, NOT a real value — applying it verbatim is a
+  # mistake, so #validate_no_masked_placeholders rejects it.
+  MASKED_PLACEHOLDER = "$ENCRYPTED".freeze
+
+  # Structural key-name allowlists for nested sections (typo/stale-format guard).
   TRANSMISSION_METHOD_KEYS = %w[method_type configs].freeze
   TRANSMISSION_CONFIG_KEYS = %w[key value encrypted].freeze
   APPLICATION_ATTRIBUTE_KEYS = %w[
@@ -55,13 +105,16 @@ class PartnerConfigLoader
     shared.header.preheader
   ].freeze
 
-  attr_reader :yaml_data, :errors, :warnings
+  attr_reader :yaml_data, :settings_data, :credentials_data, :errors, :warnings
 
-  def initialize(source)
-    @source = source
+  def initialize(settings_source, credentials_source)
+    @settings_source = settings_source
+    @credentials_source = credentials_source
     @errors = []
     @warnings = []
     @yaml_data = nil
+    @settings_data = nil
+    @credentials_data = nil
   end
 
   # ---------------------------------------------------------------------------
@@ -69,8 +122,11 @@ class PartnerConfigLoader
   # ---------------------------------------------------------------------------
 
   def load!
-    raw = fetch_source(@source)
-    @yaml_data = YAML.safe_load(raw, permitted_classes: [ Symbol ]).to_h.with_indifferent_access
+    @settings_data = parse(fetch_source(@settings_source))
+    @credentials_data = parse(fetch_source(@credentials_source))
+    # Shallow merge: the partition is clean (no shared key but partner_id, which
+    # is identical), so credentials simply overlay settings.
+    @yaml_data = @settings_data.merge(@credentials_data)
     self
   rescue Psych::SyntaxError => e
     raise SourceError, "Invalid YAML: #{e.message}"
@@ -85,12 +141,16 @@ class PartnerConfigLoader
     @errors = []
     @warnings = []
 
-    validate_no_unknown_keys
+    validate_partition
+    validate_partner_id_match
+    validate_no_unknown_nested_keys
     validate_required_attrs
+    validate_required_credential_attrs
     validate_transmission_methods
+    validate_required_credential_keys
+    validate_no_masked_placeholders
     validate_pay_income_days
     validate_domain
-    validate_transmission_configs
     validate_application_attributes
     validate_partner_identifier_name
     validate_translations
@@ -103,7 +163,7 @@ class PartnerConfigLoader
   end
 
   # ---------------------------------------------------------------------------
-  # Apply (upsert DB to match YAML)
+  # Apply (upsert DB to match the merged config)
   # ---------------------------------------------------------------------------
 
   def apply!
@@ -134,28 +194,21 @@ class PartnerConfigLoader
   end
 
   # ---------------------------------------------------------------------------
-  # Export (DB -> YAML hash)
+  # Export (DB -> { settings:, credentials: } hashes)
   # ---------------------------------------------------------------------------
-
+  #
+  # Returns two string-keyed hashes ready to be written as the shared settings
+  # document and the (env-specific) credentials document. Encrypted transmission
+  # values are masked with MASKED_PLACEHOLDER so an export never leaks secrets;
+  # the resulting credentials document is therefore a snapshot/skeleton, not a
+  # re-appliable file (masked values must be replaced with the real secret).
   def self.export(partner_id)
     pc = PartnerConfig.find_by!(partner_id: partner_id)
-    data = {}
 
-    PARTNER_CONFIG_ATTRS.each do |attr|
-      data[attr] = pc.send(attr)
-    end
+    settings = {}
+    SETTINGS_ATTRS.each { |attr| settings[attr] = pc.send(attr) }
 
-    data["transmission_methods"] = pc.partner_transmission_methods.map do |ptm|
-      method_data = { "method_type" => ptm.method_type }
-      method_data["configs"] = ptm.partner_transmission_configs.map do |tc|
-        entry = { "key" => tc.key, "encrypted" => tc.is_encrypted }
-        entry["value"] = tc.is_encrypted ? "$ENCRYPTED" : tc[:value]
-        entry
-      end
-      method_data
-    end
-
-    data["application_attributes"] = pc.partner_application_attributes.map do |attr|
+    settings["application_attributes"] = pc.partner_application_attributes.map do |attr|
       {
         "name" => attr.name,
         "description" => attr.description,
@@ -170,17 +223,34 @@ class PartnerConfigLoader
       }.compact
     end
 
-    data["translations"] = {}
+    settings["translations"] = {}
     pc.partner_translations.order(:locale, :key).each do |t|
-      data["translations"][t.locale] ||= {}
-      data["translations"][t.locale][t.key] = t.value
+      settings["translations"][t.locale] ||= {}
+      settings["translations"][t.locale][t.key] = t.value
     end
-    data["translations"] = nil if data["translations"].empty?
+    settings["translations"] = nil if settings["translations"].empty?
 
-    data.compact
+    credentials = {}
+    CREDENTIAL_ATTRS.each { |attr| credentials[attr] = pc.send(attr) }
+
+    credentials["transmission_methods"] = pc.partner_transmission_methods.map do |ptm|
+      method_data = { "method_type" => ptm.method_type }
+      method_data["configs"] = ptm.partner_transmission_configs.map do |tc|
+        entry = { "key" => tc.key, "encrypted" => tc.is_encrypted }
+        entry["value"] = tc.is_encrypted ? MASKED_PLACEHOLDER : tc[:value]
+        entry
+      end
+      method_data
+    end
+
+    { settings: settings.compact, credentials: credentials.compact }
   end
 
   private
+
+  def parse(raw)
+    YAML.safe_load(raw, permitted_classes: [ Symbol ]).to_h.with_indifferent_access
+  end
 
   # ---------------------------------------------------------------------------
   # Source fetching
@@ -203,43 +273,46 @@ class PartnerConfigLoader
   end
 
   # ---------------------------------------------------------------------------
-  # ENV var resolution
-  # ---------------------------------------------------------------------------
-
-  def resolve_env_value(value)
-    return value unless value.is_a?(String) && value.start_with?("$")
-    return value[1..] if value.start_with?("$$") # escape: $$ -> literal $
-
-    env_var = value[1..]
-    ENV.fetch(env_var) { raise ValidationError, "Environment variable #{env_var} is not set (referenced as #{value})" }
-  end
-
-  def resolve_env_value_safe(value)
-    return [ value, nil ] unless value.is_a?(String) && value.start_with?("$")
-    return [ value[1..], nil ] if value.start_with?("$$")
-
-    env_var = value[1..]
-    if ENV.key?(env_var)
-      [ ENV[env_var], nil ]
-    else
-      [ nil, "Environment variable #{env_var} is not set (referenced as #{value})" ]
-    end
-  end
-
-  # ---------------------------------------------------------------------------
   # Validation helpers
   # ---------------------------------------------------------------------------
 
-  # Reject any key the loader does not recognize, so a typo or a stale format
-  # fails loudly instead of being silently dropped on apply. Covers the
-  # top level plus the structured `transmission_methods[].configs[]` and
-  # `application_attributes[]` sections. Translation keys are data, not schema,
-  # so they are intentionally not checked here.
-  def validate_no_unknown_keys
-    (@yaml_data.keys.map(&:to_s) - KNOWN_TOP_LEVEL_KEYS).sort.each do |key|
-      @errors << "Unknown top-level key: '#{key}'"
+  # Enforce the settings/credentials partition at the top level: a key found in
+  # the wrong document fails loudly (so a credential can't hide in the settings
+  # document, or a shared setting drift into a per-env file), and an entirely
+  # unknown key is rejected as a typo/stale format.
+  def validate_partition
+    (@settings_data.keys.map(&:to_s) - SETTINGS_TOP_LEVEL).sort.each do |key|
+      @errors << if CREDENTIAL_TOP_LEVEL.include?(key)
+                   "Settings file contains credential key '#{key}' (belongs in the credentials file)"
+                 else
+                   "Settings file: unknown top-level key '#{key}'"
+                 end
     end
 
+    (@credentials_data.keys.map(&:to_s) - CREDENTIAL_TOP_LEVEL).sort.each do |key|
+      @errors << if SETTINGS_TOP_LEVEL.include?(key)
+                   "Credentials file contains settings key '#{key}' (belongs in the settings file)"
+                 else
+                   "Credentials file: unknown top-level key '#{key}'"
+                 end
+    end
+  end
+
+  def validate_partner_id_match
+    settings_id = @settings_data[:partner_id]
+    credentials_id = @credentials_data[:partner_id]
+    @errors << "Missing partner_id in settings file" if settings_id.blank?
+    @errors << "Missing partner_id in credentials file" if credentials_id.blank?
+    if settings_id.present? && credentials_id.present? && settings_id.to_s != credentials_id.to_s
+      @errors << "partner_id mismatch: settings='#{settings_id}' vs credentials='#{credentials_id}'"
+    end
+  end
+
+  # Reject unknown keys inside the structured `transmission_methods[].configs[]`
+  # and `application_attributes[]` sections so a typo fails loudly instead of
+  # being silently dropped on apply. Translation keys are data, not schema, so
+  # they are intentionally not checked here.
+  def validate_no_unknown_nested_keys
     Array(@yaml_data[:transmission_methods]).each_with_index do |tm, i|
       next unless tm.respond_to?(:keys)
       (tm.keys.map(&:to_s) - TRANSMISSION_METHOD_KEYS).sort.each do |key|
@@ -267,6 +340,15 @@ class PartnerConfigLoader
     end
   end
 
+  def validate_required_credential_attrs
+    env = @credentials_data[:argyle_environment]
+    if env.blank?
+      @errors << "Missing required credential: argyle_environment"
+    elsif !VALID_ARGYLE_ENVIRONMENTS.include?(env.to_s)
+      @errors << "Invalid argyle_environment '#{env}'. Valid: #{VALID_ARGYLE_ENVIRONMENTS.join(', ')}"
+    end
+  end
+
   def validate_transmission_methods
     if @yaml_data.key?(:transmission_method)
       @errors << "Use 'transmission_methods' (plural), not 'transmission_method'"
@@ -289,10 +371,39 @@ class PartnerConfigLoader
 
       (tm[:configs] || []).each_with_index do |tc, j|
         @errors << "transmission_methods[#{i}].configs[#{j}]: missing 'key'" if tc[:key].blank?
-        if tc[:value].present?
-          _, err = resolve_env_value_safe(tc[:value])
-          @warnings << "transmission_methods[#{i}].configs[#{j}] (#{tc[:key]}): #{err}" if err
+      end
+    end
+  end
+
+  # Every transmission method must supply the config keys its transmitter needs
+  # (see REQUIRED_CREDENTIAL_KEYS) — present, and non-blank unless the key is
+  # explicitly blank-allowed. This is the "throw errors if missing" guarantee at
+  # the individual-credential level.
+  def validate_required_credential_keys
+    Array(@yaml_data[:transmission_methods]).each_with_index do |tm, i|
+      method_type = tm[:method_type].to_s
+      required = REQUIRED_CREDENTIAL_KEYS[method_type]
+      next if required.nil?
+
+      values = Array(tm[:configs]).each_with_object({}) { |tc, h| h[tc[:key].to_s] = tc[:value] }
+      required.each do |key|
+        if !values.key?(key)
+          @errors << "transmission_methods[#{i}] (#{method_type}): missing required credential '#{key}'"
+        elsif BLANK_ALLOWED_KEYS.exclude?(key) && values[key].to_s.strip.empty?
+          @errors << "transmission_methods[#{i}] (#{method_type}): credential '#{key}' must not be blank"
         end
+      end
+    end
+  end
+
+  # An exported credentials document masks encrypted secrets as MASKED_PLACEHOLDER.
+  # Applying that verbatim would store the literal sentinel as the secret, so
+  # reject it — the operator must substitute the real value first.
+  def validate_no_masked_placeholders
+    Array(@yaml_data[:transmission_methods]).each_with_index do |tm, i|
+      Array(tm[:configs]).each_with_index do |tc, j|
+        next unless tc[:value].to_s == MASKED_PLACEHOLDER
+        @errors << "transmission_methods[#{i}].configs[#{j}] (#{tc[:key]}): value is the masked placeholder #{MASKED_PLACEHOLDER}; replace it with the real secret before applying"
       end
     end
   end
@@ -312,17 +423,6 @@ class PartnerConfigLoader
     return if domain.blank?
     if RESERVED_DOMAIN_PREFIXES.include?(domain.to_s.downcase)
       @errors << "Invalid domain '#{domain}'. Reserved prefixes: #{RESERVED_DOMAIN_PREFIXES.join(', ')}"
-    end
-  end
-
-  def validate_transmission_configs
-    configs = @yaml_data[:transmission_configs] || []
-    configs.each_with_index do |tc, i|
-      @errors << "transmission_configs[#{i}]: missing 'key'" if tc[:key].blank?
-      if tc[:value].present?
-        _, err = resolve_env_value_safe(tc[:value])
-        @warnings << "transmission_configs[#{i}] (#{tc[:key]}): #{err}" if err
-      end
     end
   end
 
@@ -374,7 +474,7 @@ class PartnerConfigLoader
     yaml_methods = @yaml_data[:transmission_methods] || []
     yaml_method_types = yaml_methods.map { |m| m[:method_type].to_s }
 
-    # Delete transmission methods not in YAML
+    # Delete transmission methods not in the merged config
     pc.partner_transmission_methods.where.not(method_type: yaml_method_types).destroy_all.tap { |d| counts[:deleted] = d.size }
 
     yaml_methods.each do |tm_data|
@@ -388,16 +488,16 @@ class PartnerConfigLoader
       ptm.partner_transmission_configs.where.not(key: yaml_keys).destroy_all
 
       yaml_configs.each do |tc_data|
-        resolved_value = resolve_env_value(tc_data[:value])
+        value = tc_data[:value]
         existing = ptm.partner_transmission_configs.find_by(key: tc_data[:key])
         if existing
-          existing.update!(is_encrypted: tc_data.fetch(:encrypted, false), value: resolved_value)
+          existing.update!(is_encrypted: tc_data.fetch(:encrypted, false), value: value)
           counts[:updated] += 1
         else
           ptm.partner_transmission_configs.create!(
             key: tc_data[:key],
             is_encrypted: tc_data.fetch(:encrypted, false),
-            value: resolved_value
+            value: value
           )
           counts[:created] += 1
         end
@@ -444,13 +544,13 @@ class PartnerConfigLoader
     counts = { created: 0, updated: 0, deleted: 0 }
     translations = @yaml_data[:translations] || {}
 
-    # Build set of (locale, key) pairs from YAML
+    # Build set of (locale, key) pairs from the merged config
     yaml_pairs = Set.new
     translations.each do |locale, entries|
       (entries || {}).each_key { |translation_key| yaml_pairs.add([ locale.to_s, translation_key.to_s ]) }
     end
 
-    # Delete translations not in YAML
+    # Delete translations not in the merged config
     pc.partner_translations.each do |t|
       unless yaml_pairs.include?([ t.locale, t.key ])
         t.destroy!
@@ -458,7 +558,7 @@ class PartnerConfigLoader
       end
     end
 
-    # Upsert translations from YAML
+    # Upsert translations from the merged config
     translations.each do |locale, entries|
       (entries || {}).each do |translation_key, translation_value|
         existing = pc.partner_translations.find_by(locale: locale.to_s, key: translation_key.to_s)

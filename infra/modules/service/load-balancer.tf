@@ -3,6 +3,7 @@
 #---------------
 
 # ALB for an app running in ECS
+#trivy:ignore:aws-0053 Public web application; internet-facing ALB is intentional
 resource "aws_lb" "alb" {
   depends_on      = [aws_s3_bucket_policy.access_logs]
   name            = var.service_name
@@ -15,9 +16,9 @@ resource "aws_lb" "alb" {
   # checkov:skip=CKV_AWS_150:Allow deletion for automated tests
   enable_deletion_protection = !var.is_temporary
 
-  # checkov:skip=CKV2_AWS_20:Redirect HTTP to HTTPS as part of implementing HTTPS support
+  # checkov:skip=CKV2_AWS_20:Redirect HTTP to HTTPS as part of implementing HTTPS support; tracked in PF-800
 
-  # checkov:skip=CKV2_AWS_28:Implement WAF in issue #165
+  # checkov:skip=CKV2_AWS_28:No WAF in front of the app ALB. see PF-796
 
   # Drop invalid HTTP headers for improved security
   # Note that header names cannot contain underscores
@@ -31,12 +32,12 @@ resource "aws_lb" "alb" {
   }
 }
 
-# NOTE: for the demo we expose private http endpoint
-# due to the complexity of acquiring a valid TLS/SSL cert.
-# In a production system we would provision an https listener
+# TODO PF-800: redirect HTTP->HTTPS at the ALB. HTTP->HTTPS enforced by Rails config.force_ssl
+# See `navapbc/template-infra`'s fix: https://github.com/navapbc/template-infra/commit/f9785a860360d849e6733a26f358f50dfd4d6a80
+#trivy:ignore:aws-0054
 resource "aws_lb_listener" "alb_listener_http" {
-  # checkov:skip=CKV_AWS_2:Implement HTTPS in issue #163
-  # checkov:skip=CKV_AWS_103:Require TLS 1.2 as part of implementing HTTPS support
+  # checkov:skip=CKV_AWS_2:HTTP->HTTPS enforced by Rails config.force_ssl; see PF-800
+  # checkov:skip=CKV_AWS_103:Require TLS 1.2 as part of implementing HTTPS support; tracked in PF-800
 
   load_balancer_arn = aws_lb.alb.arn
   port              = "80"
@@ -108,6 +109,7 @@ resource "aws_lb_listener_rule" "app_https_forward" {
 }
 
 resource "aws_lb_target_group" "app_tg" {
+  # checkov:skip=CKV_AWS_378:TLS terminates at the ALB; HTTP between ALB and container is within the VPC
   # you must use a prefix, to facilitate successful tg changes
   name_prefix          = "app-"
   port                 = var.container_port
