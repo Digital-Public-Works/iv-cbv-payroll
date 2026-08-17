@@ -13,15 +13,25 @@ resource "aws_iam_policy" "iam_scoped" {
 }
 
 data "aws_iam_policy_document" "iam_scoped" {
-  # including resources it doesn't manage (data-source lookups, drift-check reads
-  # of the CI role / OIDC provider). Read-only, no mutation. The write statements
-  # in this document are all scoped to app-*.
-  #checkov:skip=CKV_AWS_356:IamReadOnly is read-only on *; write statements are scoped to app-*
-  # allow runner to read IAM state during terraform plan and apply
+  # Read-only role/policy/OIDC metadata that terraform needs during plan and apply. Note: List* commands
+  # need * resource scoping.
+  #checkov:skip=CKV_AWS_356:Read-only iam role & policy metadata
   statement {
-    sid       = "IamReadOnly"
-    effect    = "Allow"
-    actions   = ["iam:Get*", "iam:List*"]
+    sid    = "IamReadOnly"
+    effect = "Allow"
+    actions = [
+      "iam:GetRole",
+      "iam:GetRolePolicy",
+      "iam:GetPolicy",
+      "iam:GetPolicyVersion",
+      "iam:GetOpenIDConnectProvider",
+      "iam:ListRolePolicies",
+      "iam:ListAttachedRolePolicies",
+      "iam:ListInstanceProfilesForRole",
+      "iam:ListPolicyVersions",
+      "iam:ListPolicies",
+      "iam:ListOpenIDConnectProviders",
+    ]
     resources = ["*"]
   }
 
