@@ -370,12 +370,12 @@ input#invitation_link {
   }
 }
 
-.cbv-employer-card__logo-fallback {
+.employer-logo-placeholder {
   aspect-ratio: 1;
   max-width: 6.25rem; // 100px — same visual weight as a real logo
 }
 
-.cbv-employer-card__logo-fallback-icon {
+.employer-logo-placeholder__icon {
   width: 40%;
   height: 40%;
 }
