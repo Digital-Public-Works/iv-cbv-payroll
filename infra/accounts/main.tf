@@ -50,5 +50,9 @@ module "auth_github_actions" {
   source                   = "../modules/auth-github-actions"
   github_actions_role_name = module.project_config.github_actions_role_name
   github_repository        = module.project_config.code_repository
-  allowed_actions          = [for aws_service in module.project_config.aws_services : "${aws_service}:*"]
+
+  aws_account_id         = data.aws_caller_identity.current.account_id
+  aws_region             = data.aws_region.current.name
+  tf_state_bucket_name   = module.backend.tf_state_bucket_name
+  tf_backend_kms_key_arn = module.backend.tf_backend_kms_key_arn
 }
