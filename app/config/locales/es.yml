@@ -174,10 +174,11 @@ es:
         company_examples: 'Ejemplos: Uber, McDonald''s, ADP'
         company_name: Nombre de la empresa
         employer_not_listed: "¿Tiene problemas para encontrar a su empleador o proveedor de nómina?"
-        header: Resultados de búsqueda
+        header: Busque su empleador o empresa de nómina
         payroll_providers: Proveedores de nómina
         popular_providers: O elija entre los proveedores o aplicaciones de nómina más populares
         results: Se encontraron (%{result_count}) resultado(s)
+        results_header: Resultados de búsqueda
         search: Buscar
         select: Seleccione
         select_item_instruction: Seleccione un trabajo de la lista. Se abrirá una ventana nueva. Siga las instrucciones para iniciar sesión y verificar sus ingresos.

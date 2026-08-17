@@ -272,10 +272,11 @@ en:
         company_examples: 'Examples: Uber, McDonald''s, ADP'
         company_name: Company Name
         employer_not_listed: Trouble finding your employer or payroll provider?
-        header: Search results
+        header: Find your employer or payroll company
         payroll_providers: Payroll providers
         popular_providers: Or choose from popular payroll providers or apps
         results: Results found (%{result_count})
+        results_header: Search results
         search: Search
         select: Select
         select_item_instruction: Select a job from the list. A pop-up window will appear. Follow the screens to log in and verify your income.

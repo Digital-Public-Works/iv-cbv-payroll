@@ -22,6 +22,14 @@ RSpec.describe Cbv::EmployerSearchesController do
         expect(response).to be_successful
       end
 
+      it "shows the search prompt as the page header on initial load (no query)" do
+        get :show
+
+        html = Capybara.string(response.body)
+        expect(html.find("#employer-search-h1").text.strip).to eq("Find your employer or payroll company")
+        expect(html).to have_no_css("#employer-search-h1", text: "Search results")
+      end
+
       it "tracks an event" do
         allow(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
         expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantAccessedSearchPage", anything, hash_including(
@@ -171,6 +179,13 @@ RSpec.describe Cbv::EmployerSearchesController do
       it "renders successfully" do
         get :show, params: { query: "results" }
         expect(response).to be_successful
+      end
+
+      it "shows 'Search results' as the page header once a query is present" do
+        get :show, params: { query: "results" }
+
+        html = Capybara.string(response.body)
+        expect(html.find("#employer-search-h1").text.strip).to eq("Search results")
       end
 
       it "tracks a Mixpanel event" do
