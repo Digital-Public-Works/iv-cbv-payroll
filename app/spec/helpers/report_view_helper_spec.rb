@@ -14,11 +14,20 @@ RSpec.describe ReportViewHelper, type: :helper do
   end
 
   describe '#federal_cents_per_mile' do
-    it "test different years" do
-      expect(helper.federal_cents_per_mile(2024)).to eq(67)
-      expect(helper.federal_cents_per_mile(2025)).to eq(70)
-      expect(helper.federal_cents_per_mile(2026)).to eq(72.5)
-      expect(helper.federal_cents_per_mile(2027)).to eq(72.5)
+    it "handles legacy years" do
+      expect(helper.federal_cents_per_mile(2024, 1)).to eq(67)
+      expect(helper.federal_cents_per_mile(2025, 1)).to eq(70)
+    end
+
+    it "handles 2026 with subcents & change within year" do
+      # test different months in 2026
+      expect(helper.federal_cents_per_mile(2026, 1)).to eq(72.5)
+      expect(helper.federal_cents_per_mile(2026, 6)).to eq(72.5)
+      expect(helper.federal_cents_per_mile(2026, 7)).to eq(76)
+    end
+
+    it "handles the future" do
+      expect(helper.federal_cents_per_mile(2027, 1)).to eq(76)
     end
   end
 

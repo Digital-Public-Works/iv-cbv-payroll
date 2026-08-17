@@ -107,6 +107,8 @@ Rails.application.routes.draw do
         get "submit", to: "preview#submit", defaults: { format: :html }
         get "submit.pdf", to: "preview#submit", defaults: { format: :pdf }
         get "submit_pdf_as_html", to: "preview#submit_pdf_as_html"
+        get "paystubs.pdf", to: "preview#paystubs", defaults: { format: :pdf }
+        get "paystubs_pdf_as_html", to: "preview#paystubs_pdf_as_html"
         get "transmitted_json", to: "preview#transmitted_json"
       end
     end

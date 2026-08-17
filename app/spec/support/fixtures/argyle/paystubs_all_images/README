@@ -1,0 +1,9 @@
+Demo fixture for the pay stub images feature (derived from busy_joe).
+
+Three W2 employers: Aramark, Target, Walmart.
+  Employers WITH pay stub images: Aramark, Target, Walmart
+  Employers WITHOUT pay stub images: (none)
+
+Used to exercise the client income-report cover page, the caseworker
+pay stub images file, and the paystub_images_included structured-output
+field. See docs/manual-transmitter-testing.md and the Cbv::PreviewController.
