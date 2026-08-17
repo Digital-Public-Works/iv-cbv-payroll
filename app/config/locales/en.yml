@@ -265,7 +265,9 @@ en:
           heading: Need help connecting to your payroll provider?
           help_options: Get help here.
         app_based_providers: App-based employers
+        blank_query_error: Enter letters or numbers
         can_not_find_employer: Explore your options
+        clear_search: Clear search
         company_examples: 'Examples: Uber, McDonald''s, ADP'
         company_name: Company Name
         employer_not_listed: Trouble finding your employer or payroll provider?
@@ -398,6 +400,9 @@ en:
         additional_information_header: Additional comments (Optional)
         additional_information_label: Share any comments or additional information about the income details above that you’d like %{agency_acronym} to know. For example, you can share if the information is inaccurate or if you’re no longer working at that job.
         additional_information_placeholder: Enter up to 1000 characters
+        character_count_description: 1000 characters allowed
+        character_count_over_limit: "{count} characters over limit."
+        character_count_shorten: Please make your comment shorter.
         continue: Continue
         deductions: 'Deduction: %{category} (%{tax})'
         deposit_accounts:
@@ -470,8 +475,8 @@ en:
             how_to: This report includes payment information from the past 90 days. In most cases, you only need to review income from the last 30 days for eligibility purposes. Use data beyond the 30-day period only if necessary. Key fields for income verification are highlighted in yellow.
             how_to_header: 'How to use this report:'
             pay_period: Pay period (%{pay_frequency})
-            paystubs_available_header: 'Pay stub images are available for the following employers:'
-            paystubs_separate_file: Pay stub images are provided in a separate file for reference.
+            paystubs_header: Pay stub images
+            paystubs_separate_file: Pay stub images are provided in a separate file for reference, when available.
             snap_agency_id: SNAP Agency ID
             ssn: SSN
             staff_beacon_id_wel_id: Staff BEACON ID (WELID)
@@ -489,9 +494,10 @@ en:
           footer:
             page_footer: Income Verification Report | Page [page] of [topage]
           paystubs_cover:
-            footer: The pay stub images are shown on the next page, and have been shared with %{agency_name}.
             header: 'Income Verification Report: Pay stub images'
-            intro: 'There are pay stub images for these jobs:'
+            intro: When pay stub images are available they are shared with %{agency_name}. Pay stub images do not impact your income report's accuracy.
+            with_intro: 'There are pay stub images for these jobs:'
+            without_intro: 'Verify My Income did not find pay stub images for these jobs:'
           shared:
             additional_jobs_to_report: Does the client have additional jobs they will verify separately?
             additional_jobs_to_report_html: Does the client have additional jobs they will verify separately?<sup>1</sup>
@@ -605,8 +611,8 @@ en:
             definition_accrued_gross_earnings_html: "<strong>“Accrued gross earnings”</strong> is the sum of all gross payments made in that month."
             definition_self_employment_html: "<strong>“Self-employment”</strong> is a label for a self-employed or 1099 contractor job from an online app (like Uber or Doordash). All business expenses should be factored into the total gross income for this job."
             definition_total_hours_worked_html: "<strong>“Total hours worked”</strong> is a sum of the time it took to complete each gig. The monthly total shows when a payout happened, not when the work was done."
-            definition_verified_mileage_expenses_html: "<strong>“Verified mileage expenses”</strong> are car-related expenses based on the miles driven and recorded in the Platform/App. This tool multiplies the miles driven by the IRS-defined mileage expense rate ($.725 per mile in 2026). This rate includes gas, car payments or leasing fees, car insurance, repairs, and maintenance."
-            mileage_rate_note: Some reports may include income from multiple years. You'll see the mileage rate that applies to each year.
+            definition_verified_mileage_expenses_html: "<strong>“Verified mileage expenses”</strong> are car-related expenses based on the miles driven and recorded in the Platform/App. This tool multiplies the miles driven by the IRS-defined mileage expense rate ($.725 per mile for January through June 2026, and $.76 per mile starting in July 2026). This rate includes gas, car payments or leasing fees, car insurance, repairs, and maintenance."
+            mileage_rate_note: Some reports may include income from multiple years. You'll see the mileage rate that applies to each year or part of a year.
             what_does_this_mean: What does the information in the ‘Monthly Summary’ table mean?
         dollars_times_miles: "(%{dollar_amount} x %{number_of_miles} miles)"
         month: Month
@@ -832,9 +838,12 @@ en:
       consent_timestamp: Agreement Consent Timestamp
       date_range: Date range for the income report
       employer_list_intro: 'Verify My Income pulled pay stubs from the client''s payroll account(s). Pay stubs are available for the jobs listed below:'
+      employers_without_images_intro: 'Verify My Income did not find pay stub images for the following jobs:'
+      images_availability_note: Pay stub images may not be available for all jobs, but that does not affect the accuracy of the income report.
       report_created: Date the income report was created
       report_details: Report details
-      supplement_body: The income report is a separate file. It shows monthly summaries of the pay stubs in this file, and any client comments. Review the report for more complete information about the client's jobs.
+      review_note: Review the report for more complete information about the client's jobs.
+      supplement_body: The income report is a separate file. It shows monthly summaries of the pay stubs in this file, and any client comments.
       supplement_heading: This file is a supplement to the Income Verification Report
       title: 'Income Verification Report: Pay stub images'
   us_form_with:

@@ -1,4 +1,4 @@
-# List of vulnerabilities to ignore for the anchore scan
+# List of vulnerabilities to ignore for the Grype scan (run via anchore/scan-action)
 # https://github.com/anchore/grype#specifying-matches-to-ignore
 # More info can be found in the docs/infra/vulnerability-management.md file
 

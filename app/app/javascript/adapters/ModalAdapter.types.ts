@@ -2,6 +2,8 @@ export interface ModalAdapterArgs {
   requestData: RequestData
   onSuccess?: Function
   onExit?: Function
+  triggerElement?: HTMLElement
+  fallbackFocusElement?: HTMLElement
 }
 
 export interface RequestData {

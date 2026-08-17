@@ -34,15 +34,10 @@ RSpec.describe MatchAgencyNamesJob do
       tracker_instance = instance_double(GenericEventTracker)
       allow(GenericEventTracker).to receive(:new).and_return(tracker_instance)
 
+      # "bob" is a contractor (gig), so we do not log per-paystub hours events.
       expect(tracker_instance)
-        .to receive(:track)
-        .with("ArgylePaystubHours", nil, include(
-          time: anything,
-          argyle_total_hours: anything,
-          gross_pay_sum: anything,
-          synthetic_total_hours: anything,
-          argyle_hours_null: anything
-        )).exactly(10).times
+        .not_to receive(:track)
+        .with("ArgylePaystubHours", any_args)
 
       expect(tracker_instance)
         .to receive(:track)

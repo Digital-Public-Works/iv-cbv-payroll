@@ -7,6 +7,7 @@ resource "aws_cloudwatch_log_group" "dns_query_logging" {
   retention_in_days = 30
 
   # checkov:skip=CKV_AWS_158:No need to manage KMS key for DNS query logs or audit access to these logs
+  # checkov:skip=CKV_AWS_338:DNS query logs have no long-term forensic value here; 30 days is sufficient
 }
 
 resource "aws_route53_query_log" "dns_query_logging" {

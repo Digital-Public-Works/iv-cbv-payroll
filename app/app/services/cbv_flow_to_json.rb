@@ -47,6 +47,7 @@ class CbvFlowToJson
       report_metadata: build_report_metadata,
       client_information: build_client_information,
       employment_records: build_employment_records,
+      paystub_images_included: @aggregator_report.paystub_images_included?(@current_agency),
       attachments: build_attachments
     }.compact
   end
