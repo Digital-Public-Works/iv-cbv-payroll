@@ -9,9 +9,9 @@
     </h2>
     <p><%= t("cbv.employer_searches.show.select_item_instruction") %></p>
   <% end %>
-  <div class="usa-card-group">
+  <ul class="usa-card-group">
     <% @employers.each do |employer| %>
-      <div class="usa-card usa-card--flag usa-card--media-right desktop:grid-col-6">
+      <li class="usa-card usa-card--flag desktop:grid-col-6">
         <div class="usa-card__container">
           <div class="usa-card__header">
             <h3 class="usa-card__heading"><%= employer.name %></h3>
@@ -44,9 +44,9 @@
             </button>
           </div>
         </div>
-      </div>
+      </li>
     <% end %>
-  </div>
+  </ul>
 
   <% if @query.present? %>
     <div class="margin-top-5" data-controller="click-tracker" data-click-tracker-page-value="employer_search">
