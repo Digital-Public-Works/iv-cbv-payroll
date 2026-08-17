@@ -66,6 +66,7 @@ resource "aws_s3_bucket_public_access_block" "static_assets" {
   restrict_public_buckets = true
 }
 
+#trivy:ignore:aws-0132 AES256 encryption is sufficient; KMS not required (see CKV_AWS_145 skip above)
 resource "aws_s3_bucket_server_side_encryption_configuration" "static_assets" {
   bucket = aws_s3_bucket.static_assets.id
 
@@ -140,6 +141,7 @@ resource "aws_cloudfront_origin_access_control" "static_assets" {
 }
 
 # CloudFront distribution
+#trivy:ignore:aws-0011 WAF not required for static asset distribution
 resource "aws_cloudfront_distribution" "static_assets" {
   # checkov:skip=CKV_AWS_68:WAF not required for static asset distribution
   # checkov:skip=CKV_AWS_86:Access logging not needed for static assets

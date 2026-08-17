@@ -6,7 +6,7 @@
 class CbvFlowTransmissionJob < ApplicationJob
   include Cbv::AggregatorDataHelper
 
-  queue_as :report_sender
+  queue_as { self.class.queue_with_suffix(:report_sender) }
 
   def perform(cbv_flow_transmission_id)
     transmission = CbvFlowTransmission.find_by(id: cbv_flow_transmission_id)
