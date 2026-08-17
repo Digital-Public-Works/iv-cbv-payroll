@@ -211,6 +211,15 @@ RSpec.describe Cbv::EmployerSearchesController do
         expect(back_to_top["data-action"]).to include("click->click-tracker#track")
         expect(back_to_top["data-track-event"]).to eq("ApplicantClickedGoBackToTop")
         expect(back_to_top["data-element-type"]).to eq("anchor_link")
+        expect(back_to_top["data-context-query"]).to eq("results")
+      end
+
+      it "downcases the search query on the back to top tracking context" do
+        get :show, params: { query: "ReSuLtS" }
+
+        html = Capybara.string(response.body)
+        back_to_top = html.find("button[data-element-name='back_to_top']")
+        expect(back_to_top["data-context-query"]).to eq("results")
       end
 
       context "when there are fewer than 5 results" do
