@@ -13,7 +13,7 @@
 #      > make release-build OPTS="--tag iv-cbv-payroll:latest"
 # 5. Ensure that `wkhtmltopdf` runs:
 #      > docker run iv-cbv-payroll:latest bundle exec wkhtmltopdf --version
-ARG RUBY_VERSION=3.4.5
+ARG RUBY_VERSION=3.4.10
 
 
 ##########################################################################################

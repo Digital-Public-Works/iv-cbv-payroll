@@ -373,3 +373,41 @@ input#invitation_link {
 .usa-list--explainer li {
   margin-bottom: 1rem;
 }
+
+/*
+ * Employer search — accessible clear button
+ */
+ .cbv-employer-search__input-wrapper {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: units($theme-input-max-width);
+
+  .usa-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding-right: units(5);
+
+    &::-webkit-search-cancel-button,
+    &::-webkit-search-decoration {
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    &::-ms-clear {
+      display: none;
+    }
+  }
+}
+
+.cbv-employer-search__clear-button {
+  position: absolute;
+  top: 50%;
+  right: units(1);
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}

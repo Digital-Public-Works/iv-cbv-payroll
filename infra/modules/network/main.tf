@@ -9,6 +9,7 @@ locals {
 }
 
 module "aws_vpc" {
+  # checkov:skip=CKV_TF_1:Registry version-pinning is standard practice; commit-hash pinning is high-friction for a well-maintained public module
   source  = "terraform-aws-modules/vpc/aws"
   version = "5.2.0"
 

@@ -7,28 +7,18 @@ require "rails_helper"
 RSpec.describe "partner_config.rake" do
   let(:partner_id) { "wc_test" }
 
-  let(:valid_config) do
+  let(:settings_config) do
     {
       "partner_id" => partner_id,
       "name" => "West Carolina Test",
       "timezone" => "America/Chicago",
       "domain" => "wctest",
-      "argyle_environment" => "sandbox",
       "active_demo" => true,
       "active_prod" => false,
       "pay_income_days_w2" => 90,
       "pay_income_days_gig" => 90,
       "partner_identifier_name" => "case_number",
       "include_paystubs" => true,
-      "transmission_methods" => [
-        {
-          "method_type" => "unencrypted_s3",
-          "configs" => [
-            { "key" => "bucket", "encrypted" => false, "value" => "test-bucket" },
-            { "key" => "path_prefix", "encrypted" => false, "value" => "outout" }
-          ]
-        }
-      ],
       "application_attributes" => [
         {
           "name" => "case_number",
@@ -54,27 +44,48 @@ RSpec.describe "partner_config.rake" do
     }
   end
 
-  let(:source) do
-    file = Tempfile.new([ "partner_config", ".yml" ])
-    file.write(valid_config.to_yaml)
-    file.rewind
-    file
+  let(:credentials_config) do
+    {
+      "partner_id" => partner_id,
+      "argyle_environment" => "sandbox",
+      "transmission_methods" => [
+        {
+          "method_type" => "unencrypted_s3",
+          "configs" => [
+            { "key" => "bucket", "encrypted" => false, "value" => "test-bucket" },
+            { "key" => "path_prefix", "encrypted" => false, "value" => "outout" }
+          ]
+        }
+      ]
+    }
   end
 
-  after { source.close! if source.respond_to?(:close!) }
+  let(:tempfiles) { [] }
+  after { tempfiles.each { |f| f.close! if f.respond_to?(:close!) } }
+
+  def write_file(hash)
+    f = Tempfile.new([ "partner_config", ".yml" ])
+    f.write(hash.to_yaml)
+    f.rewind
+    tempfiles << f
+    f.path
+  end
+
+  let(:settings_source) { write_file(settings_config) }
+  let(:credentials_source) { write_file(credentials_config) }
 
   describe "partner_config:validate" do
     before { Rake::Task["partner_config:validate"].reenable }
 
     it "passes (without aborting) for a valid config" do
       expect {
-        Rake::Task["partner_config:validate"].invoke(partner_id, source.path)
+        Rake::Task["partner_config:validate"].invoke(partner_id, settings_source, credentials_source)
       }.to output(/Validation passed for #{partner_id}/).to_stdout
     end
 
-    it "aborts when the partner_id argument does not match the file" do
+    it "aborts when the partner_id argument does not match the files" do
       expect {
-        Rake::Task["partner_config:validate"].invoke("some_other_id", source.path)
+        Rake::Task["partner_config:validate"].invoke("some_other_id", settings_source, credentials_source)
       }.to raise_error(SystemExit)
     end
   end
@@ -82,9 +93,9 @@ RSpec.describe "partner_config.rake" do
   describe "partner_config:apply" do
     before { Rake::Task["partner_config:apply"].reenable }
 
-    it "creates the partner config from the YAML" do
+    it "creates the partner config from the two documents" do
       expect {
-        Rake::Task["partner_config:apply"].invoke(partner_id, source.path)
+        Rake::Task["partner_config:apply"].invoke(partner_id, settings_source, credentials_source)
       }.to change { PartnerConfig.where(partner_id: partner_id).count }.from(0).to(1)
 
       pc = PartnerConfig.find_by(partner_id: partner_id)
@@ -94,13 +105,10 @@ RSpec.describe "partner_config.rake" do
     end
 
     it "aborts without writing when the config is invalid" do
-      valid_config["pay_income_days_w2"] = 45 # invalid value
-      source.reopen(source.path, "w")
-      source.write(valid_config.to_yaml)
-      source.rewind
+      settings_config["pay_income_days_w2"] = 45 # invalid value
 
       expect {
-        Rake::Task["partner_config:apply"].invoke(partner_id, source.path)
+        Rake::Task["partner_config:apply"].invoke(partner_id, settings_source, credentials_source)
       }.to raise_error(SystemExit)
       expect(PartnerConfig.where(partner_id: partner_id)).not_to exist
     end
@@ -109,12 +117,12 @@ RSpec.describe "partner_config.rake" do
   describe "partner_config:export" do
     before { Rake::Task["partner_config:export"].reenable }
 
-    it "prints the partner's DB config as YAML" do
+    it "prints the partner's DB config split into settings + credentials YAML" do
       create(:partner_config, partner_id: "exp_partner")
 
       expect {
         Rake::Task["partner_config:export"].invoke("exp_partner")
-      }.to output(/partner_id: exp_partner/).to_stdout
+      }.to output(/settings\.yml.*partner_id: exp_partner.*credentials.*partner_id: exp_partner/m).to_stdout
     end
   end
 end

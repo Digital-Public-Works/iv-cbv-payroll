@@ -31,12 +31,26 @@ RSpec.describe "e2e CBV flow test", type: :feature, js: true do
     # /cbv/employer_search
     verify_page(page, title: I18n.t("cbv.employer_searches.show.header"), wait: 10)
 
+    # Note: @e2e.replay_modal_callbacks below replays a fixed recorded fixture
+    # (aggregator_modal_callbacks.yml) rather than driving the real Argyle SDK,
+    # so this only exercises the successful-login path (onSuccess) - it can't
+    # verify focus restoration after a close/cancel (see the separate "returns
+    # focus to the trigger button after the Argyle modal is closed without
+    # logging in" test below for that case).
     @e2e.replay_modal_callbacks(page.driver.browser) do
       click_button "Paychex"
     end
 
     @e2e.record_modal_callbacks(page.driver.browser) do
       argyle_container = find("div[id*=\"argyle-link-root\"]")
+
+      # These two only run here, inside record_modal_callbacks - i.e. only
+      # when re-recording cassettes locally (E2E_RECORD_MODE) against the
+      # real Argyle widget, not in normal CI runs, which replay recorded
+      # callbacks instead of rendering the real widget.
+      expect(page.evaluate_script("document.activeElement")).to eq(argyle_container.native)
+      expect(page.evaluate_script("document.getElementById('root').inert")).to eq(true)
+
       page.within(argyle_container) do
         fill_in "username", with: "test_1", wait: 10
         fill_in "password", with: "passgood"
@@ -81,6 +95,79 @@ RSpec.describe "e2e CBV flow test", type: :feature, js: true do
     # /cbv/success
     verify_page(page, title: I18n.t("cbv.successes.show.header", agency_acronym: "CBV"))
     # TODO: Test PDF rendering by writing it to a file
+  end
+
+  it "returns focus to the trigger button after the Argyle modal is closed without logging in" do
+    raise "Argyle not in supported_providers!" unless Rails.application.config.supported_providers.include?(:argyle)
+
+    # /cbv/entry
+    visit URI(root_url).request_uri
+    visit URI(cbv_flow_invitation.to_url).request_uri
+    find("label", text: I18n.t("cbv.entries.show.checkbox.default", agency_full_name: I18n.t("shared.agency_full_name.sandbox"))).click
+    click_button I18n.t("cbv.entries.show.continue")
+
+    # /cbv/employer_search
+    verify_page(page, title: I18n.t("cbv.employer_searches.show.header"), wait: 10)
+
+    # This uses a hand-rolled replay payload (rather than @e2e.replay_modal_callbacks,
+    # which always plays back the fixed "aggregator_modal_callbacks.yml" recording)
+    # because that recording only ever completes a successful login - it never
+    # exercises Argyle's onClose callback, so it can't be used to verify focus
+    # restoration after the user closes the modal without logging in.
+    #
+    # Must run after the initial navigation above, not before it - executing
+    # script against sessionStorage before the browser has visited any real
+    # page throws "Access is denied for this document" (no origin yet to
+    # scope storage to).
+    page.driver.browser.execute_script(<<~JS)
+      window.sessionStorage.setItem("e2eInvokedCallbacks", "[]");
+      window.sessionStorage.setItem(
+        "e2eCallbacksToInvoke",
+        #{JSON.generate([ { callbackName: "onClose", callbackArguments: [] } ]).inspect}
+      );
+    JS
+
+    click_button "Paychex"
+
+    # Closing without logging in shouldn't navigate away from employer_search...
+    verify_page(page, title: I18n.t("cbv.employer_searches.show.header"), wait: 10)
+    # ...and focus should return to the button that opened the modal, not fall
+    # back to the top of the page.
+    expect(page.evaluate_script("document.activeElement.textContent")).to include("Paychex")
+  end
+
+  it "closes the Argyle modal and returns focus to the trigger button when Escape is pressed" do
+    raise "Argyle not in supported_providers!" unless Rails.application.config.supported_providers.include?(:argyle)
+
+    # /cbv/entry
+    visit URI(root_url).request_uri
+    visit URI(cbv_flow_invitation.to_url).request_uri
+    find("label", text: I18n.t("cbv.entries.show.checkbox.default", agency_full_name: I18n.t("shared.agency_full_name.sandbox"))).click
+    click_button I18n.t("cbv.entries.show.continue")
+
+    # /cbv/employer_search
+    verify_page(page, title: I18n.t("cbv.employer_searches.show.header"), wait: 10)
+
+    # An empty replay list (rather than @e2e.replay_modal_callbacks, which
+    # always plays back the fixed "aggregator_modal_callbacks.yml" recording)
+    # is enough here - this test isn't exercising a login attempt, only that
+    # the Escape key on our own page reaches the modal adapter's close()
+    # call. See the "returns focus..." test above for why this has to run
+    # after the initial navigation, not before it.
+    page.driver.browser.execute_script(<<~JS)
+      window.sessionStorage.setItem("e2eInvokedCallbacks", "[]");
+      window.sessionStorage.setItem("e2eCallbacksToInvoke", "[]");
+    JS
+
+    click_button "Paychex"
+
+    find("body").send_keys(:escape)
+
+    # Closing without logging in shouldn't navigate away from employer_search...
+    verify_page(page, title: I18n.t("cbv.employer_searches.show.header"), wait: 10)
+    # ...and focus should return to the button that opened the modal, not fall
+    # back to the top of the page.
+    expect(page.evaluate_script("document.activeElement.textContent")).to include("Paychex")
   end
 
   it "ensures the back buttons work", :allow_playback_repeats do
