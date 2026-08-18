@@ -201,12 +201,12 @@ GEM
       responders
       warden (~> 1.2.3)
     diff-lcs (1.6.2)
-    discard (1.4.0)
-      activerecord (>= 4.2, < 9.0)
-    dotenv (2.8.1)
-    dotenv-rails (2.8.1)
-      dotenv (= 2.8.1)
-      railties (>= 3.2)
+    discard (2.0.0)
+      activerecord (>= 7.0, < 9.0)
+    dotenv (3.2.0)
+    dotenv-rails (3.2.0)
+      dotenv (= 3.2.0)
+      railties (>= 6.1)
     drb (2.2.3)
     dumb_delegator (1.1.0)
     erb (6.0.4)
@@ -234,20 +234,22 @@ GEM
       mini_portile2 (~> 2.7)
     hashdiff (1.2.1)
     hashery (2.1.2)
-    highline (3.1.0)
+    highline (3.1.2)
       reline
     htmlentities (4.3.4)
     i18n (1.15.2)
       concurrent-ruby (~> 1.0)
-    i18n-tasks (1.0.14)
+    i18n-tasks (1.1.2)
       activesupport (>= 4.0.2)
       ast (>= 2.1.0)
       erubi
-      highline (>= 2.0.0)
+      highline (>= 3.0.0)
       i18n
       parser (>= 3.2.2.1)
+      prism
       rails-i18n
       rainbow (>= 2.2.2, < 4.0)
+      ruby-progressbar (~> 1.8, >= 1.8.1)
       terminal-table (>= 1.5.1)
     ice_nine (0.11.2)
     io-console (0.8.2)
@@ -309,11 +311,11 @@ GEM
       racc (~> 1.4)
     nokogiri (1.19.4-x86_64-linux-gnu)
       racc (~> 1.4)
-    openssl (3.3.2)
+    openssl (4.0.2)
     orm_adapter (0.5.0)
     ostruct (0.6.2)
     parallel (1.27.0)
-    parser (3.3.10.2)
+    parser (3.3.11.1)
       ast (~> 2.4.1)
       racc
     pdf-reader (2.15.0)
@@ -592,14 +594,14 @@ DEPENDENCIES
   debug
   device_detector
   devise (~> 5.0)
-  discard (~> 1.4)
-  dotenv-rails (~> 2.7)
+  discard (~> 2.0)
+  dotenv-rails (~> 3.2)
   erb_lint
   factory_bot (~> 6.5)
   faker (~> 3.5)
   faraday (~> 2.13)
   gpgme (~> 2.0, >= 2.0.12)
-  i18n-tasks (~> 1.0)
+  i18n-tasks (~> 1.1)
   jsbundling-rails
   mixpanel-ruby
   mutex_m
