@@ -28,7 +28,7 @@
     "prettier:fix": "prettier --write ."
   },
   "devDependencies": {
-    "jsdom": "^27.0.0",
+    "jsdom": "^30.0.1",
     "prettier": "^3.9.6",
     "vitest": "^4.1.10"
   },
