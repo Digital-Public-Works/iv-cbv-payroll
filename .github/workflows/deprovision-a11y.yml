@@ -1,0 +1,41 @@
+name: Deprovision A11y Service
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+
+jobs:
+  deprovision:
+    name: Deprovision A11y Service
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - name: Verify branch is release-a11y
+        if: github.ref != 'refs/heads/release-a11y'
+        run: |
+          echo "Error: This workflow can only be triggered from the release-a11y branch"
+          echo "Current branch: ${{ github.ref }}"
+          exit 1
+
+      - uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: ./.github/actions/setup-terraform
+
+      - name: Configure AWS credentials
+        uses: ./.github/actions/configure-aws-credentials
+        with:
+          app_name: "app"
+          environment: "a11y"
+
+      - name: Deprovision service infrastructure
+        working-directory: infra/app/service
+        run: |
+          echo "Deprovisioning A11y service layer (ECS, ALB, Cognito, etc.)..."
+          echo "Note: RDS database, backups, and logs will be preserved."
+          terraform init -input=false -reconfigure -backend-config="a11y.s3.tfbackend"
+          terraform destroy -input=false -auto-approve -var="environment_name=a11y"
+          echo "A11y service deprovisioned successfully"

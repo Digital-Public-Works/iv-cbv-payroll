@@ -335,7 +335,7 @@ RSpec.describe Api::InvitationsController do
       it "returns unprocessable entity" do
         post :create, params: invalid_user_params
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         parsed_response = JSON.parse(response.body)
         expect(parsed_response).to have_key("errors")
         expect(parsed_response["errors"].map { |e| e["field"] }).to include("language")
@@ -356,7 +356,7 @@ RSpec.describe Api::InvitationsController do
         let(:expiration_params) { { expiration_date: valid_expiration_date, expiration_days: valid_expiration_days } }
 
         it "returns an error with a descriptive message" do
-          expect(response).to have_http_status(:unprocessable_entity)
+          expect(response).to have_http_status(:unprocessable_content)
           parsed_response = JSON.parse(response.body)
           expect(parsed_response["errors"][0]["message"]).to include("either expiration_days or expiration_date, but not both")
         end
@@ -392,7 +392,7 @@ RSpec.describe Api::InvitationsController do
           let(:expiration_params) { { expiration_date: 3.days.ago.iso8601 } }
 
           it "returns an error with a descriptive message" do
-            expect(response).to have_http_status(:unprocessable_entity)
+            expect(response).to have_http_status(:unprocessable_content)
             parsed_response = JSON.parse(response.body)
             expect(parsed_response["errors"][0]["message"]).to include("cannot be in the past")
           end
@@ -402,7 +402,7 @@ RSpec.describe Api::InvitationsController do
           let(:expiration_params) { { expiration_days: 400 } }
 
           it "returns an error with a descriptive message" do
-              expect(response).to have_http_status(:unprocessable_entity)
+              expect(response).to have_http_status(:unprocessable_content)
               parsed_response = JSON.parse(response.body)
               expect(parsed_response["errors"][0]["message"]).to include("cannot be more than 1 year")
             end
@@ -412,7 +412,7 @@ RSpec.describe Api::InvitationsController do
           let(:expiration_params) { { expiration_date: 367.days.from_now.iso8601 } }
 
           it "returns an error with a descriptive message" do
-            expect(response).to have_http_status(:unprocessable_entity)
+            expect(response).to have_http_status(:unprocessable_content)
             parsed_response = JSON.parse(response.body)
             expect(parsed_response["errors"][0]["message"]).to include("cannot be more than 1 year")
           end
@@ -422,7 +422,7 @@ RSpec.describe Api::InvitationsController do
           let(:expiration_params) { { expiration_date: "not a date" } }
 
           it "returns an error with a descriptive message" do
-            expect(response).to have_http_status(:unprocessable_entity)
+            expect(response).to have_http_status(:unprocessable_content)
             parsed_response = JSON.parse(response.body)
             expect(parsed_response["errors"][0]["message"]).to include("must be a full ISO8601 datetime")
           end

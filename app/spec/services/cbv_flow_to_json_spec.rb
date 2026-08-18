@@ -55,6 +55,23 @@ RSpec.describe CbvFlowToJson do
       expect(payload).to include(:report_metadata, :client_information, :employment_records)
     end
 
+    describe "paystub_images_included" do
+      it "is always present, even when include_paystubs is off" do
+        expect(payload).to have_key(:paystub_images_included)
+        expect(payload[:paystub_images_included]).to eq(false)
+      end
+
+      it "reflects the aggregator report's paystub_images_included? for the agency" do
+        allow(aggregator_report).to receive(:paystub_images_included?).with(mock_client_agency).and_return(true)
+        expect(payload[:paystub_images_included]).to eq(true)
+      end
+
+      it "stays present as false (survives compact) when the report reports no images" do
+        allow(aggregator_report).to receive(:paystub_images_included?).and_return(false)
+        expect(payload[:paystub_images_included]).to eq(false)
+      end
+    end
+
     describe "report_metadata" do
       it "includes confirmation_code" do
         expect(payload[:report_metadata][:confirmation_code]).to eq("WEBHOOK123")

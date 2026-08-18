@@ -30,6 +30,12 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
     Timecop.freeze(today, &ex)
   end
 
+  describe "config.max_paystubs_per_account" do
+    it "ships a deliberately high default so gig workers are not constrained" do
+      expect(Rails.application.config.max_paystubs_per_account).to eq(1000)
+    end
+  end
+
   describe "#check_paystub_volume (anomalous-paystub-count guardrail)" do
     let(:report) do
       Aggregators::AggregatorReports::ArgyleReport.new(
@@ -40,8 +46,17 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
       )
     end
 
+    let(:max_paystubs_per_account) { 10 }
+
+    around do |ex|
+      old_value = Rails.application.config.max_paystubs_per_account
+      Rails.application.config.max_paystubs_per_account = max_paystubs_per_account
+      ex.run
+    ensure
+      Rails.application.config.max_paystubs_per_account = old_value
+    end
+
     before do
-      # cap = @fetched_days * MAX_PAYSTUBS_PER_LOOKBACK_DAY(2) = 10
       report.instance_variable_set(:@fetched_days, 5)
       allow(Rails.logger).to receive(:error)
       allow(NewRelic::Agent).to receive(:notice_error)
@@ -66,6 +81,26 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
       report.send(:check_paystub_volume, under_cap, payroll_account)
 
       expect(NewRelic::Agent).not_to have_received(:notice_error)
+    end
+
+    context "when the configured cap is disabled" do
+      let(:max_paystubs_per_account) { nil }
+
+      it "does not report regardless of the paystub count" do
+        report.send(:check_paystub_volume, { "results" => Array.new(50_000) { {} } }, payroll_account)
+
+        expect(NewRelic::Agent).not_to have_received(:notice_error)
+      end
+    end
+
+    context "with the app's shipped default cap" do
+      let(:max_paystubs_per_account) { 1000 }
+
+      it "does not trip for a gig worker with many frequent cashouts" do
+        report.send(:check_paystub_volume, { "results" => Array.new(999) { {} } }, payroll_account)
+
+        expect(NewRelic::Agent).not_to have_received(:notice_error)
+      end
     end
   end
 
@@ -186,6 +221,67 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
       end
     end
 
+
+    describe "ArgylePaystubHours Mixpanel events" do
+      let(:tracker_instance) { instance_double(GenericEventTracker, track: nil) }
+      let(:w2_identity) { argyle_load_relative_json_file("joe", "request_identity.json")["results"].first }
+      let(:w2_paystubs) { argyle_load_relative_json_file("joe", "request_paystubs.json")["results"] }
+
+      before do
+        allow(GenericEventTracker).to receive(:new).and_return(tracker_instance)
+      end
+
+      it "does not log paystub hours for a gig employment's paystubs" do
+        allow(argyle_service).to receive(:fetch_identities_api).and_return(argyle_load_relative_json_file("bob", "request_identity.json"))
+        allow(argyle_service).to receive(:fetch_paystubs_api).and_return(argyle_load_relative_json_file("bob", "request_paystubs.json"))
+
+        argyle_report.send(:fetch_report_data)
+
+        expect(tracker_instance).not_to have_received(:track)
+          .with(TrackEvent::ArgylePaystubHours, any_args)
+      end
+
+      it "logs paystub hours for a W-2 employment's paystubs" do
+        allow(argyle_service).to receive(:fetch_identities_api).and_return(argyle_load_relative_json_file("joe", "request_identity.json"))
+        allow(argyle_service).to receive(:fetch_paystubs_api).and_return({ "results" => w2_paystubs })
+
+        argyle_report.send(:fetch_report_data)
+
+        expect(tracker_instance).to have_received(:track)
+          .with(TrackEvent::ArgylePaystubHours, nil, anything)
+          .exactly(w2_paystubs.size).times
+      end
+
+      it "logs only the W-2 paystubs when an account has both a gig and a W-2 employment" do
+        gig_identity = w2_identity.merge("employment_type" => "contractor", "employment" => "gig-employment-id")
+        gig_paystubs = w2_paystubs.first(3).each_with_index.map do |paystub, index|
+          paystub.merge("id" => "gig-paystub-#{index}", "employment" => "gig-employment-id")
+        end
+
+        allow(argyle_service).to receive(:fetch_identities_api).and_return({ "results" => [ w2_identity, gig_identity ] })
+        allow(argyle_service).to receive(:fetch_paystubs_api).and_return({ "results" => w2_paystubs + gig_paystubs })
+
+        argyle_report.send(:fetch_report_data)
+
+        expect(tracker_instance).to have_received(:track)
+          .with(TrackEvent::ArgylePaystubHours, nil, anything)
+          .exactly(w2_paystubs.size).times
+      end
+
+      it "logs paystubs that carry no employment id, even on a gig-only account" do
+        gig_identity = w2_identity.merge("employment_type" => "contractor")
+        orphan_paystubs = w2_paystubs.first(2).map { |paystub| paystub.merge("employment" => nil) }
+
+        allow(argyle_service).to receive(:fetch_identities_api).and_return({ "results" => [ gig_identity ] })
+        allow(argyle_service).to receive(:fetch_paystubs_api).and_return({ "results" => orphan_paystubs })
+
+        argyle_report.send(:fetch_report_data)
+
+        expect(tracker_instance).to have_received(:track)
+          .with(TrackEvent::ArgylePaystubHours, nil, anything)
+          .exactly(orphan_paystubs.size).times
+      end
+    end
 
     describe "Hours validations that trigger warnings" do
       {

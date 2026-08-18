@@ -119,7 +119,7 @@ class Cbv::PaymentDetailsController < Cbv::BaseController
   end
 
   def sanitize_comment(comment)
-    ActionController::Base.helpers.sanitize(comment)
+    ActionController::Base.helpers.sanitize(comment).to_s.first(1000)
   end
 
   def track_viewed_event

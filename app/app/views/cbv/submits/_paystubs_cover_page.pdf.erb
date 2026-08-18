@@ -10,9 +10,9 @@
       <% if current_agency.logo_path.present? %>
         <div class="display-inline-block text-middle">
           <% if current_agency.logo_path.start_with?("http", "data:") %>
-            <%= image_tag current_agency.logo_path, class: "cbv-header__agency-logo--#{current_agency.id}" %>
+            <%= image_tag current_agency.logo_path, class: "cbv-header__agency-logo--#{current_agency.id}", alt: agency_logo_alt_text %>
           <% else %>
-            <%= image_tag wicked_pdf_asset_base64(current_agency.logo_path), class: "cbv-header__agency-logo--#{current_agency.id}" %>
+            <%= image_tag wicked_pdf_asset_base64(current_agency.logo_path), class: "cbv-header__agency-logo--#{current_agency.id}", alt: agency_logo_alt_text %>
           <% end %>
         </div>
       <% else %>
@@ -22,11 +22,24 @@
   </strong>
 
   <h1><%= t("cbv.submits.show.pdf.paystubs_cover.header") %></h1>
-  <p><%= t("cbv.submits.show.pdf.paystubs_cover.intro") %></p>
-  <ul>
-    <% employer_names.each do |name| %>
-      <li><%= name %></li>
-    <% end %>
-  </ul>
-  <p><%= t("cbv.submits.show.pdf.paystubs_cover.footer", agency_name: agency_acronym_or_full_name) %></p>
+
+  <p><%= t("cbv.submits.show.pdf.paystubs_cover.intro", agency_name: agency_acronym_or_full_name) %></p>
+
+  <% if employers_with_images.any? %>
+    <p class="margin-bottom-0"><%= t("cbv.submits.show.pdf.paystubs_cover.with_intro") %></p>
+    <ul class="margin-top-1">
+      <% employers_with_images.each do |name| %>
+        <li><%= name %></li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <% if employers_without_images.any? %>
+    <p class="margin-bottom-0"><%= t("cbv.submits.show.pdf.paystubs_cover.without_intro") %></p>
+    <ul class="margin-top-1">
+      <% employers_without_images.each do |name| %>
+        <li><%= name %></li>
+      <% end %>
+    </ul>
+  <% end %>
 </div>

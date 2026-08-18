@@ -7,15 +7,27 @@
 
 <%= render "shared/pdf_info_box" do %>
   <p class="margin-0"><strong><%= t("transmitters.paystubs_caseworker_cover.supplement_heading") %></strong></p>
-  <p class="margin-top-1 margin-bottom-0"><%= t("transmitters.paystubs_caseworker_cover.supplement_body") %></p>
+  <p class="margin-top-1 margin-bottom-0"><%= t("transmitters.paystubs_caseworker_cover.supplement_body") %> <%= t("transmitters.paystubs_caseworker_cover.review_note") %></p>
+  <p class="margin-top-2 margin-bottom-0"><%= t("transmitters.paystubs_caseworker_cover.images_availability_note") %></p>
 <% end %>
 
-<p><%= t("transmitters.paystubs_caseworker_cover.employer_list_intro") %></p>
-<ul>
-  <% employer_names.each do |name| %>
-    <li><%= name %></li>
-  <% end %>
-</ul>
+<% if employers_with_images.any? %>
+  <p><%= t("transmitters.paystubs_caseworker_cover.employer_list_intro") %></p>
+  <ul>
+    <% employers_with_images.each do |name| %>
+      <li><%= name %></li>
+    <% end %>
+  </ul>
+<% end %>
+
+<% if employers_without_images.any? %>
+  <p><%= t("transmitters.paystubs_caseworker_cover.employers_without_images_intro") %></p>
+  <ul>
+    <% employers_without_images.each do |name| %>
+      <li><%= name %></li>
+    <% end %>
+  </ul>
+<% end %>
 
 <h2><%= t("transmitters.paystubs_caseworker_cover.client_and_report_information") %></h2>
 

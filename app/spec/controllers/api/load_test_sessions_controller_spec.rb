@@ -152,6 +152,30 @@ RSpec.describe Api::LoadTestSessionsController, type: :controller do
         end
       end
 
+      context "synced scenario with a multi-employer fixture_user" do
+        let(:params) { { client_agency_id: "sandbox", scenario: "synced", fixture_user: "paystubs_some_images" } }
+        let(:expected_ids) do
+          JSON.parse(File.read(Rails.root.join("spec/support/fixtures/argyle/paystubs_some_images/request_accounts.json")))["results"].map { |a| a["id"] }
+        end
+
+        it "creates one payroll account per account in the fixture" do
+          expect {
+            post :create, params: params
+          }.to change(PayrollAccount::Argyle, :count).by(expected_ids.size)
+
+          expect(CbvFlow.last.payroll_accounts.map(&:aggregator_account_id)).to match_array(expected_ids)
+        end
+
+        it "returns the seeded account_ids and fixture_user" do
+          post :create, params: params
+
+          json_response = JSON.parse(response.body)
+          expect(json_response["account_ids"]).to match_array(expected_ids)
+          expect(json_response["account_id"]).to eq(expected_ids.first)
+          expect(json_response["fixture_user"]).to eq("paystubs_some_images")
+        end
+      end
+
       context "pending scenario" do
         let(:params) { { client_agency_id: "sandbox", scenario: "pending" } }
 
@@ -266,7 +290,7 @@ RSpec.describe Api::LoadTestSessionsController, type: :controller do
         it "returns unprocessable_entity status" do
           post :create, params: params
 
-          expect(response).to have_http_status(:unprocessable_entity)
+          expect(response).to have_http_status(:unprocessable_content)
         end
 
         it "returns error message" do
@@ -289,7 +313,7 @@ RSpec.describe Api::LoadTestSessionsController, type: :controller do
         it "returns unprocessable_entity status" do
           post :create, params: params
 
-          expect(response).to have_http_status(:unprocessable_entity)
+          expect(response).to have_http_status(:unprocessable_content)
         end
 
         it "returns error message with scenario name" do

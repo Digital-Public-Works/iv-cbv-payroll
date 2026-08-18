@@ -140,6 +140,7 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
     it 'income information' do
       expect(report.income_report).to eq(
         has_other_jobs: false,
+        paystub_images_included: false,
         employments: [
           {
             applicant_first_name: "Cool",
@@ -191,6 +192,73 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
       expect(employment[:applicant_full_name]).to be_nil
       expect(employment[:applicant_ssn]).to be_nil
       expect(employment[:employer_name]).to eq("Cool Company")
+    end
+  end
+
+  describe '#paystub_images_included?' do
+    let(:report) { build(:argyle_report, :with_argyle_account) }
+    let(:agency_on)  { instance_double(ClientAgencyConfig::ClientAgency, include_paystubs: true) }
+    let(:agency_off) { instance_double(ClientAgencyConfig::ClientAgency, include_paystubs: false) }
+
+    def paystub(with_image:)
+      Aggregators::ResponseObjects::Paystub.new(payroll_document_id: with_image ? "doc-1" : nil)
+    end
+
+    it 'is false when the agency does not have include_paystubs configured' do
+      expect(report.paystub_images_included?(agency_off)).to be(false)
+    end
+
+    it 'is false when the agency is nil' do
+      expect(report.paystub_images_included?(nil)).to be(false)
+    end
+
+    it 'is false when configured but no paystub has an image' do
+      allow(report).to receive(:summarize_by_employer).and_return(
+        "a" => { paystubs: [ paystub(with_image: false) ] },
+        "b" => { paystubs: [] }
+      )
+      expect(report.paystub_images_included?(agency_on)).to be(false)
+    end
+
+    it 'is true when configured and at least one paystub has an image' do
+      allow(report).to receive(:summarize_by_employer).and_return(
+        "a" => { paystubs: [ paystub(with_image: false) ] },
+        "b" => { paystubs: [ paystub(with_image: true) ] }
+      )
+      expect(report.paystub_images_included?(agency_on)).to be(true)
+    end
+  end
+
+  describe '#employer_names_by_image_presence' do
+    let(:report) { build(:argyle_report, :with_argyle_account) }
+
+    def paystub(with_image:)
+      Aggregators::ResponseObjects::Paystub.new(payroll_document_id: with_image ? "doc-1" : nil)
+    end
+
+    def employment(name)
+      instance_double(Aggregators::ResponseObjects::Employment, employer_name: name)
+    end
+
+    it 'splits employers by image presence, preserving report order' do
+      allow(report).to receive(:summarize_by_employer).and_return(
+        "a" => { employment: employment("Aramark"), paystubs: [ paystub(with_image: true) ] },
+        "b" => { employment: employment("Walmart"), paystubs: [ paystub(with_image: false) ] },
+        "c" => { employment: employment("Target"),  paystubs: [] }
+      )
+
+      expect(report.employer_names_by_image_presence).to eq(
+        with: %w[Aramark],
+        without: %w[Walmart Target]
+      )
+    end
+
+    it 'skips employers with a blank employer name' do
+      allow(report).to receive(:summarize_by_employer).and_return(
+        "a" => { employment: nil, paystubs: [ paystub(with_image: true) ] }
+      )
+
+      expect(report.employer_names_by_image_presence).to eq(with: [], without: [])
     end
   end
 end

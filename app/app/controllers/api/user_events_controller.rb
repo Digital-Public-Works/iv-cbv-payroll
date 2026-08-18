@@ -19,7 +19,9 @@ class Api::UserEventsController < ApplicationController
     event_attributes = (user_action_params[:attributes] || {}).merge(base_attributes)
     event_name = user_action_params[:event_name]
 
-    if TrackEvent.constants.map(&:to_s).include?(event_name)
+    if event_name == "DiagnosticModalFocusFellBackToBody"
+      NewRelic::EventLogger.track(TrackEvent::DiagnosticModalFocusFellBackToBody, event_attributes.to_h)
+    elsif TrackEvent.constants.map(&:to_s).include?(event_name)
       event_logger.track(
         event_name,
         request,
@@ -40,7 +42,7 @@ class Api::UserEventsController < ApplicationController
 
     NewRelic::Agent.notice_error(ex)
     Rails.logger.error "Unable to process user action: #{ex}"
-    render json: { status: :error }, status: :unprocessable_entity
+    render json: { status: :error }, status: :unprocessable_content
   end
 
   private

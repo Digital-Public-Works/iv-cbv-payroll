@@ -15,6 +15,7 @@ import PreviewFormController from "./preview_form_controller.js"
 import PreviewToggleController from "./preview_toggle_controller.js"
 import ClickTrackerController from "./click_tracker_controller.js"
 import AttestationCheckController from "./cbv/attestation_check_controller.js"
+import CharacterCountController from "./cbv/character_count_controller.js"
 import TooltipTrackerController from "./employer_search_tooltip_tracker_controller.js"
 import AccordionController from "./accordion_controller.js"
 import UnemployedTipsController from "./unemployed_tips_controller.js"
@@ -35,6 +36,7 @@ application.register("preview-form", PreviewFormController)
 application.register("preview-toggle", PreviewToggleController)
 application.register("session-timeout", SessionTimeoutPageController)
 application.register("cbv-attestation-check", AttestationCheckController)
+application.register("cbv-character-count", CharacterCountController)
 application.register("tooltip-tracker", TooltipTrackerController)
 application.register("accordion", AccordionController)
 application.register("unemployed-tips", UnemployedTipsController)

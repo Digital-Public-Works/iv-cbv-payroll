@@ -10,13 +10,6 @@ module Aggregators::AggregatorReports
 
     DISCONNECTED_STATES = %w[disconnected]
 
-    # Upper bound on how many paystubs we expect to retrieve for a single
-    # account, expressed as a multiple of the lookback window in days. Even
-    # daily pay would not exceed one paystub per day, so 2x is a generous
-    # guardrail — exceeding it signals a data anomaly (e.g. duplicate paystubs
-    # or runaway pagination) that we want surfaced in New Relic.
-    MAX_PAYSTUBS_PER_LOOKBACK_DAY = 2
-
     validates_with Aggregators::Validators::UsefulReportValidator, on: :useful_report
 
     attr_reader :argyle_service
@@ -71,10 +64,13 @@ module Aggregators::AggregatorReports
         account: payroll_account.aggregator_account_id
       )
 
-      # Override the date range to fetch when fetching a gig job.
-      has_gig_job = identities_json["results"].any? do |identity_json|
+      gig_identities = identities_json["results"].select do |identity_json|
         Aggregators::FormatMethods::Argyle.employment_type(identity_json["employment_type"]) == :gig
       end
+
+      gig_employment_ids = gig_identities.filter_map { |identity_json| identity_json["employment"].presence }
+
+      has_gig_job = gig_identities.any?
       if has_gig_job
         @fetched_days = @days_to_fetch_for_gig
       end
@@ -99,7 +95,7 @@ module Aggregators::AggregatorReports
                                                  paystubs_json,
                                                  account_json))
       @incomes.append(*transform_incomes(identities_json))
-      @paystubs.append(*transform_paystubs(paystubs_json))
+      @paystubs.append(*transform_paystubs(paystubs_json, gig_employment_ids: gig_employment_ids))
       @gigs.append(*transform_gigs(gigs_json))
 
       check_hours(paystubs_json)
@@ -113,13 +109,16 @@ module Aggregators::AggregatorReports
       end
     end
 
-    # Guardrail against retrieving an anomalously large number of paystubs.
-    # The cap is the lookback window (in days) x MAX_PAYSTUBS_PER_LOOKBACK_DAY.
-    # If the retrieved count reaches the cap, we surface the error to New Relic.
-    # We are not blocked the flow, so the user can still continue and finish, but we will want to look into why this happened.
+    # Guardrail against retrieving an anomalously large number of paystubs for a
+    # single account. The cap is set high enough that legitimate gig workers
+    # with frequent cashouts should never reach it; reaching it signals a data
+    # anomaly that we want surfaced in New Relic.
+    #
+    # This is observability only — we do not raise, so the applicant can still
+    # continue and finish the flow, but we will want to look into why it happened.
     def check_paystub_volume(paystubs_json, payroll_account)
-      max_paystubs = @fetched_days.to_i * MAX_PAYSTUBS_PER_LOOKBACK_DAY
-      return if max_paystubs.zero?
+      max_paystubs = max_paystubs_per_account
+      return if max_paystubs.nil? || max_paystubs <= 0
 
       paystub_count = paystubs_json["results"].size
       return if paystub_count < max_paystubs
@@ -127,7 +126,7 @@ module Aggregators::AggregatorReports
       error = PaystubLimitExceededError.new(
         "Retrieved #{paystub_count} paystubs for account " \
         "#{payroll_account.aggregator_account_id}, reaching the max of #{max_paystubs} " \
-        "(#{@fetched_days} lookback days x #{MAX_PAYSTUBS_PER_LOOKBACK_DAY})"
+        "(#{@fetched_days} lookback days)"
       )
       Rails.logger.error(error.message)
       NewRelic::Agent.notice_error(error, custom_params: {
@@ -137,6 +136,10 @@ module Aggregators::AggregatorReports
         max_paystubs: max_paystubs,
         lookback_days: @fetched_days
       })
+    end
+
+    def max_paystubs_per_account
+      Rails.application.config.max_paystubs_per_account
     end
 
     def transform_identities(identities_json)
@@ -157,9 +160,10 @@ module Aggregators::AggregatorReports
       end
     end
 
-    def transform_paystubs(paystubs_json)
+    def transform_paystubs(paystubs_json, gig_employment_ids:)
       paystubs_json["results"].map do |paystub_json|
-        Paystub.from_argyle(paystub_json)
+        is_gig_paystub = gig_employment_ids.include?(paystub_json["employment"])
+        Paystub.from_argyle(paystub_json, log_hours_to_mixpanel: !is_gig_paystub)
       end
     end
 
