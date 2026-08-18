@@ -5,7 +5,7 @@ RSpec.describe DataRetentionService do
     let!(:cbv_flow_invitation) do
       create(:cbv_flow_invitation, :sandbox)
     end
-    let(:service) { DataRetentionService.new }
+    let(:service) { described_class.new }
     let(:now) { Time.now }
 
     around do |ex|
@@ -101,7 +101,7 @@ RSpec.describe DataRetentionService do
       create(:cbv_flow_invitation)
     end
     let!(:cbv_flow) { CbvFlow.create_from_invitation(cbv_flow_invitation, "test_device_id") }
-    let(:service) { DataRetentionService.new }
+    let(:service) { described_class.new }
     let(:deletion_threshold) { cbv_flow.created_at + DataRetentionService::REDACT_CBV_FLOWS_AFTER }
     let(:now) { Time.now }
 
@@ -282,7 +282,7 @@ RSpec.describe DataRetentionService do
   end
 
   describe "#redact_backstop!" do
-    let(:service) { DataRetentionService.new }
+    let(:service) { described_class.new }
     let(:now) { Time.now }
     let(:event_logger) { instance_double(GenericEventTracker, track: nil) }
 
@@ -466,10 +466,10 @@ RSpec.describe DataRetentionService do
   describe "#delete_argyle_user" do
     let(:argyle_user_id) { "argyle_123" }
     let(:client_agency_id) { "sandbox" }
-    let(:service) { DataRetentionService.new }
+    let(:service) { described_class.new }
     let(:argyle_service) { instance_double(Aggregators::Sdk::ArgyleService) }
     let(:argyle_environment) { "sandbox" }
-    let(:client_agency_double) { instance_double("ClientAgencyConfig::ClientAgency", argyle_environment: argyle_environment) }
+    let(:client_agency_double) { instance_double(ClientAgencyConfig::ClientAgency, argyle_environment: argyle_environment) }
 
     before do
       # Mock the config lookup
@@ -558,7 +558,7 @@ RSpec.describe DataRetentionService do
     let!(:payroll_account) { create(:payroll_account, cbv_flow: second_cbv_flow) }
 
     it "redacts the invitation, all flow objects, and the metadata jsonb keys flagged redactable" do
-      DataRetentionService.manually_redact_by_partner_identifier!("sandbox", "DELETEME001")
+      described_class.manually_redact_by_partner_identifier!("sandbox", "DELETEME001")
 
       expect(cbv_flow.reload).to have_attributes(
         redacted_at: within(1.second).of(Time.now)
@@ -590,7 +590,7 @@ RSpec.describe DataRetentionService do
         cbv_applicant_attributes: { client_agency_id: "sandbox", case_number: "DELETEME001" })
       duplicate_flow = CbvFlow.create_from_invitation(duplicate_invitation, "another_device")
 
-      DataRetentionService.manually_redact_by_partner_identifier!("sandbox", "DELETEME001")
+      described_class.manually_redact_by_partner_identifier!("sandbox", "DELETEME001")
 
       expect(duplicate_flow.reload.redacted_at).to be_within(1.second).of(Time.now)
       expect(duplicate_flow.cbv_applicant.reload.redacted_at).to be_within(1.second).of(Time.now)
@@ -602,7 +602,7 @@ RSpec.describe DataRetentionService do
                                      first_name: "Other", last_name: "Person" })
       other_flow = CbvFlow.create_from_invitation(other_agency_invitation, "az_device")
 
-      DataRetentionService.manually_redact_by_partner_identifier!("sandbox", "DELETEME001")
+      described_class.manually_redact_by_partner_identifier!("sandbox", "DELETEME001")
 
       expect(other_flow.reload.redacted_at).to be_nil
       expect(other_flow.cbv_applicant.reload.redacted_at).to be_nil
@@ -611,7 +611,7 @@ RSpec.describe DataRetentionService do
 
     it "raises when no applicant matches" do
       expect {
-        DataRetentionService.manually_redact_by_partner_identifier!("sandbox", "DOES_NOT_EXIST")
+        described_class.manually_redact_by_partner_identifier!("sandbox", "DOES_NOT_EXIST")
       }.to raise_error(ActiveRecord::RecordNotFound)
     end
 
@@ -625,7 +625,7 @@ RSpec.describe DataRetentionService do
       end
 
       it "redacts the partner_identifier column" do
-        DataRetentionService.manually_redact_by_partner_identifier!("sandbox", "DELETEME001")
+        described_class.manually_redact_by_partner_identifier!("sandbox", "DELETEME001")
 
         expect(cbv_flow.cbv_applicant.reload.partner_identifier).to eq("REDACTED")
       end
@@ -637,15 +637,15 @@ RSpec.describe DataRetentionService do
       end
 
       it "deletes the argyle user" do
-        expect_any_instance_of(DataRetentionService).to receive(:delete_argyle_user).with("sandbox", "argyle_manual_123")
-        DataRetentionService.manually_redact_by_partner_identifier!("sandbox", "DELETEME001")
+        expect_any_instance_of(described_class).to receive(:delete_argyle_user).with("sandbox", "argyle_manual_123")
+        described_class.manually_redact_by_partner_identifier!("sandbox", "DELETEME001")
       end
     end
   end
 
   describe "#redact_cbv_flow" do
     let(:cbv_flow) { create(:cbv_flow, argyle_user_id: "argyle_123", client_agency_id: "sandbox") }
-    let(:service) { DataRetentionService.new }
+    let(:service) { described_class.new }
 
     it "deletes the argyle user when argyle_user_id is present" do
       expect(service).to receive(:delete_argyle_user).with(cbv_flow.client_agency_id, cbv_flow.argyle_user_id)
@@ -840,7 +840,7 @@ RSpec.describe DataRetentionService do
   end
 
   describe "iteration resilience: one bad record never poisons the rest of the batch" do
-    let(:service) { DataRetentionService.new }
+    let(:service) { described_class.new }
     let(:fake_argyle) { instance_double(Aggregators::Sdk::ArgyleService) }
     let(:now) { Time.now }
 
@@ -882,7 +882,7 @@ RSpec.describe DataRetentionService do
       end
     end
 
-    context "#redact_cbv_flows (primary)" do
+    describe "#redact_cbv_flows (primary)" do
       # Age the flows past the primary 7-day rule by backdating created_at.
       let(:created_at) { now - DataRetentionService::REDACT_CBV_FLOWS_AFTER - 1.day }
       let!(:flows) { make_two_flows(created_at: created_at) }
@@ -909,7 +909,7 @@ RSpec.describe DataRetentionService do
       end
     end
 
-    context "#redact_backstop!" do
+    describe "#redact_backstop!" do
       let(:created_at) { now - DataRetentionService::REDACT_BACKSTOP - 1.day }
       let!(:flows) { make_two_flows(created_at: created_at) }
       let(:good_flow) { flows.first }
@@ -929,7 +929,7 @@ RSpec.describe DataRetentionService do
       end
     end
 
-    context "#redact_invitations" do
+    describe "#redact_invitations" do
       let!(:good_invitation) { create(:cbv_flow_invitation, :sandbox) }
       let!(:bad_invitation) { create(:cbv_flow_invitation, :sandbox) }
 
@@ -961,7 +961,7 @@ RSpec.describe DataRetentionService do
   end
 
   describe ".redact_all! end-to-end" do
-    let(:service) { DataRetentionService.new }
+    let(:service) { described_class.new }
     let(:now) { Time.now }
     let(:fake_argyle) { instance_double(Aggregators::Sdk::ArgyleService) }
 

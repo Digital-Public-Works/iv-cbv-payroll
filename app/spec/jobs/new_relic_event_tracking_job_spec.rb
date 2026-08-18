@@ -17,7 +17,7 @@ RSpec.describe NewRelicEventTrackingJob, type: :job do
     allow(NewRelicEventTracker).to receive(:new).and_return(tracker)
   end
 
-  context "#perform" do
+  describe "#perform" do
     it "passes the attributes to NewRelicEventTracker" do
       expect(tracker).to receive(:track).with(event_type, attributes)
 
