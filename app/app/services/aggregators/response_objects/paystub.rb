@@ -43,12 +43,14 @@ module Aggregators::ResponseObjects
       )
     end
 
-    def self.from_argyle(response_body)
-      begin
-        self.log_paystub_to_mixpanel(response_body)
-      rescue => ex
-        NewRelic::Agent.notice_error(ex)
-        Rails.logger.error "Error logging paystub to MixPanel: #{ex}"
+    def self.from_argyle(response_body, log_hours_to_mixpanel: true)
+      if log_hours_to_mixpanel
+        begin
+          self.log_paystub_to_mixpanel(response_body)
+        rescue => ex
+          NewRelic::Agent.notice_error(ex)
+          Rails.logger.error "Error logging paystub to MixPanel: #{ex}"
+        end
       end
 
       new(

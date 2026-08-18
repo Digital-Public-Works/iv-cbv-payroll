@@ -17,7 +17,11 @@ export default class E2ECallbackRecorder {
             return Argyle.create(params).open()
           }
         },
-        close: () => {}, // usused by application
+        // Mirrors the real SDK's close(), which fires onClose - used by the
+        // Escape-to-close handler in ArgyleModalAdapter.
+        close: () => {
+          params.onClose?.()
+        },
       }
     },
   }

@@ -1,10 +1,14 @@
 require 'pdf-reader'
 
 module TestHelpers
+  # Sets an environment variable for the duration of the block, then restores
+  # the previous value. The restore runs in an `ensure` so a raising block (a
+  # failing example, for instance) doesn't leak the override into later tests.
   def stub_environment_variable(variable, value, &block)
     previous_value = ENV[variable]
     ENV[variable] = value
     block.call
+  ensure
     ENV[variable] = previous_value
   end
 

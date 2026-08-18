@@ -1,9 +1,12 @@
 import type { RequestData, ModalAdapterArgs } from "./ModalAdapter.types.ts"
+import { restoreFocusTo } from "@js/utilities/modalFocusContainment.js"
 
 export abstract class ModalAdapter {
   requestData?: RequestData
   successCallback?: Function
   exitCallback?: Function
+  triggerElement?: HTMLElement
+  fallbackFocusElement?: HTMLElement
   modalSdk: Argyle | Pinwheel
 
   abstract open(): void
@@ -23,6 +26,16 @@ export abstract class ModalAdapter {
     if (args.requestData) {
       this.requestData = args.requestData
     }
+    if (args.triggerElement) {
+      this.triggerElement = args.triggerElement
+    }
+    if (args.fallbackFocusElement) {
+      this.fallbackFocusElement = args.fallbackFocusElement
+    }
+  }
+
+  restoreFocus() {
+    restoreFocusTo(this.triggerElement, this.fallbackFocusElement)
   }
 
   async onExit(eventPayload: any = {}) {

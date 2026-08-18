@@ -71,6 +71,40 @@ Integration specs carry the tag `integration: true` and are excluded from the de
 | `unencrypted_s3_transmitter_integration_spec.rb` | `UnencryptedS3Transmitter` | s3proxy (port 9000) |
 | `encrypted_s3_transmitter_integration_spec.rb` | `EncryptedS3Transmitter` | s3proxy (port 9000) + locally generated GPG keypair |
 
+## Running the webhook spec against a customer environment
+
+The webhook integration spec can also run against a **partner's** webhook endpoint instead of the local reference server. This is a conformance check: it verifies that our outbound payload, request signing (`X-VMI-*` headers, HMAC-SHA512), and error handling are compatible with a receiver the partner built independently from our contract.
+
+It is the same spec — only the target and a few inputs change, supplied via environment variables:
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `WEBHOOK_TEST_URL` | `http://localhost:9292/api/v1/income-report` | Full endpoint URL, **including path**. Point this at the partner's host. |
+| `WEBHOOK_TEST_API_KEY` | `my-secure-guid` | API key used for the `X-VMI-API-Key` header and the HMAC signature. |
+| `WEBHOOK_TEST_CLIENT_INFORMATION` | `case_number=ABC1234` | Comma-separated `key=value` pairs sent in the payload's `client_information` block. Values are sent verbatim, so you can match a partner's expected custom attributes. |
+| `WEBHOOK_TEST_DEBUG` | _(unset)_ | When set, logs each request's outbound payload and the server's raw response (status + body), and enables an extra diagnostic example. Off by default so CI output stays clean. |
+
+No Docker reference server is needed when targeting a partner — you hit their host directly. The spec turns VCR off and allows real network connections automatically, so HTTPS endpoints behave the same as the local HTTP one.
+
+Run it inside the app container, against the partner's QA:
+
+```bash
+docker compose run --rm \
+  -e RAILS_ENV=test \
+  -e INTEGRATION_RUN_TESTS=1 \
+  -e WEBHOOK_TEST_URL="https://partner-host/their/path" \
+  -e WEBHOOK_TEST_API_KEY="<partner key>" \
+  -e WEBHOOK_TEST_CLIENT_INFORMATION="case_number=ABC1234" \
+  -e WEBHOOK_TEST_DEBUG=1 \
+  app_rails bundle exec rspec spec/services/transmitters/webhook_transmitter_integration_spec.rb
+```
+
+- `RAILS_ENV=test` is **required** — the compose service defaults to `development`, where Factory Bot is not loaded (you'd get `uninitialized constant FactoryBot`).
+- `INTEGRATION_RUN_TESTS=1` un-skips the `integration: true` tag when invoking `rspec` directly. (The `integration:rspec:*` rake tasks already pass `--tag integration`, so they don't need it.)
+- If a gem was added/bumped since the image was last built, rebuild first with `docker compose build app_rails`.
+
+**Interpreting failures:** the assertions are strict and faithful to our published contract — status codes *and* error-envelope shape (e.g. `error_code: "VALIDATION_ERROR"`, `AUTHENTICATION_ERROR`). The local reference server matches the contract, so CI stays green. A partner's independent implementation may diverge; when it does, the failures are **conformance findings to reconcile with the partner**, not bugs in the test. Use `WEBHOOK_TEST_DEBUG=1` to capture the exact request/response for those conversations.
+
 ## End-to-End Browser Testing (optional)
 
 The `integration:partner:setup` task creates an `integration_test` partner and a service-account user with an API access token. This lets you exercise the full CBV flow end-to-end through a browser, with real webhook delivery to the Docker services.

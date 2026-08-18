@@ -57,8 +57,9 @@
   <%= form_with(model: @cbv_flow, url: cbv_flow_payment_details_path, method: :patch, class: "usa-form usa-form--large", data: { action: "submit->cbv-character-count#guardSubmit" }) do |form| %>
     <%= hidden_field_tag "user[account_id]", params[:user][:account_id] %>
     <%= form.label :additional_information, t(".additional_information_label", agency_acronym: agency_acronym_or_full_name), class: "usa-label", id: "additional_information_description" %>
-    <%= form.text_area :additional_information, class: "usa-textarea", rows: 5, value: @account_comment, placeholder: t(".additional_information_placeholder"), "aria-labelledby": "additional_info_header additional_information_description", "aria-describedby": "additional_information_count", data: { cbv_character_count_target: "input", action: "input->cbv-character-count#update" } %>
-    <%= content_tag :div, "0/1000", id: "additional_information_count", class: "usa-hint margin-top-1", data: { cbv_character_count_target: "message" } %>
+    <%= content_tag :span, t(".character_count_description"), id: "additional_information_count_description", class: "usa-sr-only" %>
+    <%= form.text_area :additional_information, class: "usa-textarea", rows: 5, value: @account_comment, placeholder: t(".additional_information_placeholder"), "aria-labelledby": "additional_info_header additional_information_description", "aria-describedby": "additional_information_count_description", data: { cbv_character_count_target: "input", action: "input->cbv-character-count#update" } %>
+    <%= content_tag :div, "0/1000", class: "usa-hint margin-top-1", "aria-hidden": "true", data: { cbv_character_count_target: "message" } %>
     <%= content_tag :div, "", class: "usa-sr-only", "aria-live": "polite", data: { cbv_character_count_target: "srMessage" } %>
     <%= form.submit t(".continue"), class: "usa-button usa-button--primary", data: { cbv_character_count_target: "submitButton" } %>
   <% end %>

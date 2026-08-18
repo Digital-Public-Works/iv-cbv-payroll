@@ -61,17 +61,20 @@ describe("CharacterCountController", () => {
 
     application = Application.start()
     application.register("character-count", CharacterCountController)
+
+    vi.useFakeTimers()
   })
 
   afterEach(() => {
     application.stop()
     document.body.innerHTML = ""
+    vi.useRealTimers()
     vi.restoreAllMocks()
   })
 
-  it("shows an initial count, enables the submit button, and keeps it focusable", () => {
+  it("shows an initial count, announces it immediately, enables the submit button, and keeps it focusable", () => {
     expect(message.textContent).toBe("0/1000")
-    expect(srMessage.textContent).toBe("")
+    expect(srMessage.textContent).toBe("0/1000")
     expect(submitButton.disabled).toBe(false)
     expect(submitButton.getAttribute("aria-disabled")).toBe("false")
 
@@ -83,9 +86,16 @@ describe("CharacterCountController", () => {
       setValue("a".repeat(500))
     })
 
-    it("updates the visible counter without announcing anything, and allows submission", () => {
+    it("updates the visible counter immediately, but delays the screen reader announcement", () => {
       expect(message.textContent).toBe("500/1000")
-      expect(srMessage.textContent).toBe("")
+      expect(srMessage.textContent).toBe("0/1000")
+
+      vi.advanceTimersByTime(1000)
+
+      expect(srMessage.textContent).toBe("500/1000")
+    })
+
+    it("allows submission", () => {
       expect(input.hasAttribute("aria-invalid")).toBe(false)
       expect(submitButton.disabled).toBe(false)
       expect(submitButton.getAttribute("aria-disabled")).toBe("false")
@@ -99,10 +109,14 @@ describe("CharacterCountController", () => {
       setValue("a".repeat(1050))
     })
 
-    it("shows the combined error message and marks the field invalid", () => {
+    it("shows the combined error message immediately, but delays the screen reader announcement", () => {
       const expected = "50 characters over limit. Please make your comment shorter."
 
       expect(message.textContent).toBe(expected)
+      expect(srMessage.textContent).toBe("0/1000")
+
+      vi.advanceTimersByTime(1000)
+
       expect(srMessage.textContent).toBe(expected)
       expect(input.getAttribute("aria-invalid")).toBe("true")
     })
@@ -124,12 +138,19 @@ describe("CharacterCountController", () => {
 
       it("clears the error state, re-enables the submit button, and allows submission", () => {
         expect(message.textContent).toBe("200/1000")
-        expect(srMessage.textContent).toBe("")
         expect(input.hasAttribute("aria-invalid")).toBe(false)
         expect(submitButton.disabled).toBe(false)
         expect(submitButton.getAttribute("aria-disabled")).toBe("false")
 
         expect(dispatchSubmit().defaultPrevented).toBe(false)
+      })
+
+      it("delays the screen reader announcement of the cleared state", () => {
+        expect(srMessage.textContent).toBe("0/1000")
+
+        vi.advanceTimersByTime(1000)
+
+        expect(srMessage.textContent).toBe("200/1000")
       })
     })
   })
