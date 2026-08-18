@@ -95,6 +95,12 @@ RSpec.describe Cbv::EmployerSearchesController do
         expect(response.body).to include("Results")
       end
 
+      it "marks the results heading with the target JS uses to announce it to screen readers" do
+        get :show, params: { query: "unemployed" }
+        expect(response).to be_successful
+        expect(response.body).to include('data-cbv-employer-search-target="resultsHeading"')
+      end
+
       it "tracks ApplicantAccessedUnemployedHelp with search source" do
         allow(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
         allow(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantSearchedForEmployer", anything, anything)

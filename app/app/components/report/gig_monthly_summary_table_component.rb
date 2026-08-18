@@ -68,14 +68,16 @@ class Report::GigMonthlySummaryTableComponent < ViewComponent::Base
   def format_verified_mileage_expenses(month_summary, month_string)
     return I18n.t("shared.not_applicable") if month_summary[:gigs].empty?
     year = parse_month_safely(month_string).year
-    cents_per_mile = self.federal_cents_per_mile(year)
+    month = parse_month_safely(month_string).month
+    cents_per_mile = self.federal_cents_per_mile(year, month)
 
     format_money(month_summary[:total_mileage].to_f * cents_per_mile)
   end
 
   def format_verified_mileage_expense_rate(month_summary, month_string)
     year = parse_month_safely(month_string).year
-    cents_per_mile = self.federal_cents_per_mile(year)
+    month = parse_month_safely(month_string).month
+    cents_per_mile = self.federal_cents_per_mile(year, month)
     t("components.report.monthly_summary_table.dollars_times_miles",
       dollar_amount: format_money_with_subcents(cents_per_mile), number_of_miles: number_with_precision(month_summary[:total_mileage].to_f, precision: 2, strip_insignificant_zeros: true))
   end

@@ -299,5 +299,34 @@ RSpec.describe Api::UserEventsController, type: :controller do
         end
       end
     end
+
+    context "when tracking a DiagnosticModalFocusFellBackToBody event" do
+      let(:event_name) { "DiagnosticModalFocusFellBackToBody" }
+      let(:event_attributes) do
+        {
+          triggerElement: "none",
+          fallback: "none",
+          activeElementAtEntry: "<body> isConnected=true"
+        }
+      end
+
+      it "tracks the event with New Relic" do
+        expect(NewRelic::EventLogger).to receive(:track).with(
+          "DiagnosticModalFocusFellBackToBody",
+          hash_including(
+            time: be_a(Integer),
+            cbv_flow_id: cbv_flow.id,
+            invitation_id: cbv_flow.cbv_flow_invitation_id,
+            triggerElement: "none"
+          )
+        )
+        post :user_action, params: valid_params
+      end
+
+      it "does not track the event with Mixpanel" do
+        expect(MixpanelEventTrackingJob).not_to receive(:perform_later)
+        post :user_action, params: valid_params
+      end
+    end
   end
 end

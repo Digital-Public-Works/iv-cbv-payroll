@@ -7,7 +7,7 @@ class Cbv::PreviewController < ApplicationController
   before_action :ensure_non_production_environment
   before_action :setup_preview_flow
   before_action :override_has_account_with_required_data
-  before_action :set_aggregator_report, only: %i[payment_details summary submit submit_pdf_as_html validation_failures transmitted_json]
+  before_action :set_aggregator_report, only: %i[payment_details summary submit submit_pdf_as_html paystubs paystubs_pdf_as_html validation_failures transmitted_json]
   before_action :relax_csp_for_html_preview
 
   helper_method :current_agency, :employer_name, :gross_pay, :employment_start_date,
@@ -135,6 +135,45 @@ class Cbv::PreviewController < ApplicationController
     render template: "cbv/preview/transmitted_json"
   end
 
+  # Renders the caseworker "pay stub images" supplemental file (cover page +
+  # any pay stub image pages), forced through the mock Argyle service. Select
+  # the state with ?fixture_user= (paystubs_all_images | paystubs_some_images |
+  # paystubs_no_images). The no-images fixture renders a cover-only file.
+  def paystubs
+    result = Aggregators::PaystubsPdfService.new(
+      cbv_flow: @cbv_flow,
+      argyle_service: argyle,
+      current_agency: current_agency,
+      aggregator_report: @aggregator_report
+    ).generate
+
+    send_data result.content,
+      filename: "#{@cbv_flow.id}_paystubs.pdf",
+      type: "application/pdf",
+      disposition: "inline"
+  rescue Aggregators::PaystubsPdfService::NoPaystubsError => e
+    render plain: "No pay stub images file generated: #{e.message}", status: :ok
+  end
+
+  def paystubs_pdf_as_html
+    groups = @aggregator_report.employer_names_by_image_presence
+
+    html_content = render_to_string(
+      template: "aggregators/paystubs_pdf/caseworker_cover",
+      formats: [ :pdf ],
+      layout: "pdf",
+      locals: {
+        current_agency: current_agency,
+        cbv_flow: @cbv_flow,
+        aggregator_report: @aggregator_report,
+        employers_with_images: groups[:with],
+        employers_without_images: groups[:without]
+      }
+    )
+
+    render html: html_content.html_safe, layout: "preview"
+  end
+
   def submit_pdf_as_html
     # Render the PDF template as HTML for debugging (no wkhtmltopdf conversion)
     is_caseworker = is_not_production? && params[:is_caseworker] == "true"
@@ -214,6 +253,22 @@ class Cbv::PreviewController < ApplicationController
     end
   end
 
+  # All account IDs for the selected fixture user (multi-employer fixtures list
+  # several under request_accounts.json). Falls back to the single account so
+  # existing single-employer fixtures behave exactly as before.
+  def argyle_account_ids
+    fixture_user = params[:fixture_user] || "bob"
+    accounts_path = Rails.root.join("spec", "support", "fixtures", "argyle", fixture_user, "request_accounts.json")
+
+    if File.exist?(accounts_path)
+      results = JSON.parse(File.read(accounts_path))["results"]
+      ids = Array(results).filter_map { |a| a["id"] }
+      return ids if ids.any?
+    end
+
+    [ argyle_account_id ]
+  end
+
   def create_synced_flow(client_agency_id)
     cbv_applicant = CbvApplicant.create!(
       client_agency_id: client_agency_id,
@@ -228,25 +283,28 @@ class Cbv::PreviewController < ApplicationController
       consented_to_authorized_use_at: Time.current
     )
 
-    # Create fully synced payroll account
-    payroll_account = PayrollAccount::Argyle.create!(
-      cbv_flow: cbv_flow,
-      aggregator_account_id: argyle_account_id,
-      supported_jobs: %w[accounts income paystubs employment identity],
-      synchronization_status: :succeeded
-    )
-
-    # Create successful webhook events
-    [
-      { event_name: "accounts.connected", event_outcome: "success" },
-      { event_name: "identities.added", event_outcome: "success" },
-      { event_name: "paystubs.fully_synced", event_outcome: "success" }
-    ].each do |event|
-      WebhookEvent.create!(
-        payroll_account: payroll_account,
-        event_name: event[:event_name],
-        event_outcome: event[:event_outcome]
+    # Create a fully synced payroll account per employer in the fixture, so
+    # multi-employer fixtures render several employers on the report.
+    argyle_account_ids.each do |account_id|
+      payroll_account = PayrollAccount::Argyle.create!(
+        cbv_flow: cbv_flow,
+        aggregator_account_id: account_id,
+        supported_jobs: %w[accounts income paystubs employment identity],
+        synchronization_status: :succeeded
       )
+
+      # Create successful webhook events
+      [
+        { event_name: "accounts.connected", event_outcome: "success" },
+        { event_name: "identities.added", event_outcome: "success" },
+        { event_name: "paystubs.fully_synced", event_outcome: "success" }
+      ].each do |event|
+        WebhookEvent.create!(
+          payroll_account: payroll_account,
+          event_name: event[:event_name],
+          event_outcome: event[:event_outcome]
+        )
+      end
     end
 
     cbv_flow
@@ -258,19 +316,21 @@ class Cbv::PreviewController < ApplicationController
     @current_agency ||= PreviewAgencyConfig.new(
       ClientAgencyConfig.instance[@cbv_flow.client_agency_id],
       include_full_ssn: params[:include_full_ssn] == "true",
-      include_direct_deposit_last_4: params[:include_direct_deposit_last_4] == "true"
+      include_direct_deposit_last_4: params[:include_direct_deposit_last_4] == "true",
+      include_paystubs: params[:include_paystubs] == "true"
     )
   end
 
   # Wraps the real agency config so preview-only toggles can override the
   # sensitive-output flags without mutating the shared, cached config instance.
   class PreviewAgencyConfig < SimpleDelegator
-    attr_reader :include_full_ssn, :include_direct_deposit_last_4
+    attr_reader :include_full_ssn, :include_direct_deposit_last_4, :include_paystubs
 
-    def initialize(agency, include_full_ssn: false, include_direct_deposit_last_4: false)
+    def initialize(agency, include_full_ssn: false, include_direct_deposit_last_4: false, include_paystubs: false)
       super(agency)
       @include_full_ssn = include_full_ssn
       @include_direct_deposit_last_4 = include_direct_deposit_last_4
+      @include_paystubs = include_paystubs
     end
   end
 
