@@ -20,6 +20,8 @@ export default class extends Controller {
 
   static values = {
     cbvFlowId: Number,
+    headingDefault: String,
+    headingResults: String,
   }
 
   // Turbo replaces the popular-providers frame's contents on every tab
@@ -59,9 +61,21 @@ export default class extends Controller {
     // Preventing the heading from being announced when the "Popular" tab is selected and the turbo frame is loaded.
     if (event.target.id !== "employers") return
 
+    this.updatePageHeading()
+
     if (this.hasResultsHeadingTarget) {
       updateAriaLiveRegion(this.resultsHeadingTarget.textContent.trim())
     }
+  }
+
+  // The <h1> lives outside the "employers" turbo frame, so a search does not re-render the header
+  updatePageHeading() {
+    if (!this.hasPageHeadingTarget) return
+
+    const hasQuery = this.queryInputTarget.value.trim().length > 0
+    this.pageHeadingTarget.textContent = hasQuery
+      ? this.headingResultsValue
+      : this.headingDefaultValue
   }
 
   onTurboError(event) {
