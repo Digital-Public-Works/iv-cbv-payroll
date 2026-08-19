@@ -7,7 +7,7 @@
     <h2 class="site-preview-heading margin-bottom-2" data-cbv-employer-search-target="resultsHeading">
       <%= t("cbv.employer_searches.show.results", result_count: @employers.count) %>
     </h2>
-    <p><%= t("cbv.employer_searches.show.select_item_instruction") %></p>
+    <p class="margin-bottom-2"><%= t("cbv.employer_searches.show.select_item_instruction") %></p>
   <% end %>
   <ul class="usa-card-group">
     <% @employers.each do |employer| %>
@@ -26,7 +26,7 @@
                 >
               </div>
             <% else %>
-              <div class="usa-card__img cbv-employer-card__img employer-logo-placeholder bg-gray-10 width-full flex-align-self-center display-flex flex-align-center flex-justify-center">
+              <div class="usa-card__img cbv-employer-card__img employer-logo-placeholder bg-gray-10 display-flex flex-align-center flex-justify-center">
                 <svg class="usa-icon employer-logo-placeholder__icon text-gray-50" viewBox="0 0 24 24" aria-hidden="true" focusable="false" role="img">
                   <use href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#store") %>"></use>
                 </svg>
