@@ -511,18 +511,29 @@ RSpec.describe Aggregators::Sdk::ArgyleService, type: :service do
       service.fetch_paystubs_api
     end
 
-    it 'gives up after MAX_PAGINATION_PAGES when the cursor never clears' do
-      stub_const("#{described_class}::MAX_PAGINATION_PAGES", 3)
-      stub_first_page_with_next("https://api-sandbox.argyle.com/v2/paystubs?cursor=loop")
-      stub_request(:get, "https://api-sandbox.argyle.com/v2/paystubs?cursor=loop")
-        .to_return(
-          status: 200,
-          body: { results: [ { id: "loop" } ], next: "https://api-sandbox.argyle.com/v2/paystubs?cursor=loop" }.to_json,
-          headers: { 'Content-Type': 'application/json;charset=UTF-8' }
-        )
+    context 'when the cursor never clears' do
+      before do
+        stub_const("#{described_class}::MAX_PAGINATION_PAGES", 3)
+        stub_first_page_with_next("https://api-sandbox.argyle.com/v2/paystubs?cursor=loop")
+        stub_request(:get, "https://api-sandbox.argyle.com/v2/paystubs?cursor=loop")
+          .to_return(
+            status: 200,
+            body: { results: [ { id: "loop" } ], next: "https://api-sandbox.argyle.com/v2/paystubs?cursor=loop" }.to_json,
+            headers: { 'Content-Type': 'application/json;charset=UTF-8' }
+          )
+      end
 
-      # The cap bounds the total number of pages fetched.
-      expect(service.fetch_paystubs_api["results"].length).to eq(3)
+      it 'raises rather than returning truncated results' do
+        expect { service.fetch_paystubs_api }
+          .to raise_error(described_class::PaginationError, /exceeded 3 pages/)
+      end
+
+      it 'stops requesting once the cap is reached' do
+        expect { service.fetch_paystubs_api }.to raise_error(described_class::PaginationError)
+
+        expect(a_request(:get, "https://api-sandbox.argyle.com/v2/paystubs?cursor=loop"))
+          .to have_been_made.times(2)
+      end
     end
   end
 

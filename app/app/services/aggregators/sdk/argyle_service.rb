@@ -50,13 +50,15 @@ module Aggregators::Sdk
     PAYSTUB_RETRIEVAL_TIMEOUT = 60
 
     # Upper bound on pages walked by #with_pagination. Argyle terminates a list
-    # by omitting `next`; this only guards against a response that keeps
-    # handing back a cursor forever.
+    # by omitting `next`; this guards against a response that keeps handing back
+    # a cursor forever. Exceeding it raises rather than truncating, so a genuine
+    # work history longer than this surfaces instead of being silently cut off.
     MAX_PAGINATION_PAGES = 100
 
-    # Raised when a response advertises another page that we cannot safely
-    # follow. Partial results would understate a claimant's income, so this
-    # surfaces rather than returning a short list that looks complete.
+    # Raised when pagination cannot be completed -- a page we cannot safely
+    # follow, or more pages than MAX_PAGINATION_PAGES. Partial results would
+    # understate a claimant's income, so this surfaces rather than returning a
+    # short list that looks complete.
     class PaginationError < StandardError; end
 
     attr_reader :webhook_secret
@@ -313,11 +315,9 @@ module Aggregators::Sdk
 
         pages += 1
         if pages >= MAX_PAGINATION_PAGES
-          Rails.logger.warn(
-            "ArgyleService: pagination stopped at #{MAX_PAGINATION_PAGES} pages for " \
-            "#{endpoint}; results are truncated"
-          )
-          break
+          raise PaginationError,
+            "ArgyleService: pagination exceeded #{MAX_PAGINATION_PAGES} pages for #{endpoint}; " \
+            "refusing to return truncated results"
         end
       end
 
