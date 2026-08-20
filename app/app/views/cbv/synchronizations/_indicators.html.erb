@@ -6,7 +6,7 @@
     <%= render partial: "cbv/synchronizations/indicator", locals: { label: t(".employment"), status: coalesce_to_completed(payroll_account.job_status("employment")) } %>
   </div>
   <div class="desktop:grid-col-2 tablet:grid-col-fill">
-    <%= render partial: "cbv/synchronizations/indicator", locals: { label: t(".paystubs"), status: payroll_account.job_status("paystubs") } %>
+    <%= render partial: "cbv/synchronizations/indicator", locals: { label: t(".paystubs"), status: paystubs_indicator_status(payroll_account) } %>
   </div>
   <div class="desktop:grid-col-2 tablet:grid-col-fill">
     <%= render partial: "cbv/synchronizations/indicator", locals: { label: t(".identity"), status: coalesce_to_completed(payroll_account.job_status("identity")) } %>
