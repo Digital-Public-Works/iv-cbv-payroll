@@ -39,7 +39,7 @@ RSpec.describe S3Service do
           body: instance_of(File)
         )
 
-        S3Service.new(config).upload_file(file_path, file_name)
+        described_class.new(config).upload_file(file_path, file_name)
       end
     end
 
@@ -60,7 +60,7 @@ RSpec.describe S3Service do
           body: instance_of(File)
         )
 
-        S3Service.new(config).upload_file(file_path, file_name)
+        described_class.new(config).upload_file(file_path, file_name)
       end
     end
 
@@ -71,7 +71,7 @@ RSpec.describe S3Service do
         expect(Aws::S3::Client).to receive(:new).with({}).and_return(s3_client)
         expect(s3_client).to receive(:put_object)
 
-        S3Service.new(config).upload_file(file_path, file_name)
+        described_class.new(config).upload_file(file_path, file_name)
       end
     end
 
@@ -88,7 +88,7 @@ RSpec.describe S3Service do
         expect(Aws::S3::Client).to receive(:new).with({ region: "us-east-1" }).and_return(s3_client)
         expect(s3_client).to receive(:put_object)
 
-        S3Service.new(config).upload_file(file_path, file_name)
+        described_class.new(config).upload_file(file_path, file_name)
       end
     end
   end

@@ -22,7 +22,7 @@ RSpec.describe CaseworkerMailer, type: :mailer do
   let(:current_agency) { ClientAgencyConfig.new(File.join(Rails.root, 'config', 'client-agency-config', "#{cbv_flow.client_agency_id}.yml"), true) }
 
   let(:mail) {
-    CaseworkerMailer.with(
+    described_class.with(
       email_address: email_address,
       cbv_flow: cbv_flow,
       aggregator_report: pinwheel_report,

@@ -641,6 +641,7 @@ RSpec.describe Cbv::SubmitsController do
              cbv_applicant: cbv_applicant
       )
     end
+
     before do
       cbv_applicant.update(snap_application_date: current_time)
       cbv_flow.payroll_accounts.first.update(aggregator_account_id: "03e29160-f7e7-4a28-b2d8-813640e030d3")
