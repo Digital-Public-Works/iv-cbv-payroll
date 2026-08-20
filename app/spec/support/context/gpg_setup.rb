@@ -1,8 +1,9 @@
 RSpec.shared_context "gpg_setup" do
   before(:all) do
     @original_gpg_home = ENV['GNUPGHOME']
-    ENV['GNUPGHOME'] = Rails.root.join('tmp', 'gpghome').to_s
-    FileUtils.mkdir_p(ENV['GNUPGHOME'])
+    @gpg_home = Rails.root.join('tmp', 'gpghome').to_s
+    ENV['GNUPGHOME'] = @gpg_home
+    FileUtils.mkdir_p(@gpg_home)
 
     key_script = <<~SCRIPT
       %echo Generating a basic OpenPGP key
@@ -30,8 +31,15 @@ RSpec.shared_context "gpg_setup" do
     raise "Failed to import GPG key" unless @public_key
   end
 
+  # dotenv >= 3 restores ENV after every example (config.dotenv.autorestore),
+  # which wipes the GNUPGHOME set in before(:all). Re-assert it per example so
+  # gpg can still find the keyring generated above.
+  before do
+    ENV['GNUPGHOME'] = @gpg_home
+  end
+
   after(:all) do
-    FileUtils.remove_entry ENV['GNUPGHOME'] if File.exist?(ENV['GNUPGHOME'])
+    FileUtils.remove_entry @gpg_home if @gpg_home && File.exist?(@gpg_home)
     ENV['GNUPGHOME'] = @original_gpg_home
   end
 end
