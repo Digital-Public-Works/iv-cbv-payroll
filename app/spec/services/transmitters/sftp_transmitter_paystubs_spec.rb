@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.describe Transmitters::SftpTransmitter do
+  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
+
   let(:consented_at) { Time.find_zone("UTC").local(2025, 5, 1, 1) }
   let(:cbv_flow) do
     create(:cbv_flow, :invited, :with_argyle_account,
@@ -22,16 +24,13 @@ RSpec.describe Transmitters::SftpTransmitter do
   let(:expected_paystubs_filename) { TransmissionFilename.basename_for(cbv_flow: cbv_flow, agency: mock_client_agency, method_type: :sftp, suffix: "_paystubs") }
 
   before do
-    allow(mock_client_agency).to receive(:id).and_return("sandbox")
-    allow(mock_client_agency).to receive(:timezone).and_return("UTC")
-    allow(mock_client_agency).to receive(:argyle_environment).and_return("sandbox")
+    allow(mock_client_agency).to receive_messages(id: "sandbox", timezone: "UTC", argyle_environment: "sandbox")
     allow(SftpGateway).to receive(:new).and_return(sftp_gateway)
     allow(sftp_gateway).to receive(:upload_data)
     allow_any_instance_of(PdfService).to receive(:generate)
       .and_return(OpenStruct.new(content: "fake-pdf-content"))
   end
 
-  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
 
   context "when include_paystubs is false" do
     before { allow(mock_client_agency).to receive(:include_paystubs).and_return(false) }

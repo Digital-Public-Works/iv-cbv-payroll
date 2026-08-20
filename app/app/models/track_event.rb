@@ -23,6 +23,7 @@ module TrackEvent
   ApplicantClickedEditInformationLink = "ApplicantClickedEditInformationLink"
   ApplicantClickedElement = "ApplicantClickedElement"
   ApplicantClickedGenericLink = "ApplicantClickedGenericLink"
+  ApplicantClickedGoBackToTop = "ApplicantClickedGoBackToTop"
   ApplicantClickedOtherWaysToVerifyAccordion = "ApplicantClickedOtherWaysToVerifyAccordion"
   ApplicantClickedPopularAppEmployers = "ApplicantClickedPopularAppEmployers"
   ApplicantClickedPopularPayrollProviders = "ApplicantClickedPopularPayrollProviders"

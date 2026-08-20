@@ -34,7 +34,10 @@ RSpec.describe Report::EmploymentDetailsTableComponent, type: :component do
     end
 
     context "with a gig-worker" do
+      subject { render_inline(described_class.new(pinwheel_report, payroll_account)) }
+
       let(:pinwheel_report) { Aggregators::AggregatorReports::PinwheelReport.new(payroll_accounts: [ payroll_account ], pinwheel_service: pinwheel_service, days_to_fetch_for_w2: 90, days_to_fetch_for_gig: 182) }
+
       before do
         pinwheel_stub_request_identity_response
         pinwheel_stub_request_end_user_accounts_response
@@ -47,7 +50,6 @@ RSpec.describe Report::EmploymentDetailsTableComponent, type: :component do
         pinwheel_report.fetch
       end
 
-      subject { render_inline(described_class.new(pinwheel_report, payroll_account)) }
 
       it "pinwheel_report is properly fetched" do
         expect(pinwheel_report.gigs.length).to eq(3)
@@ -107,7 +109,10 @@ RSpec.describe Report::EmploymentDetailsTableComponent, type: :component do
     end
 
     context "with bob, a gig-worker" do
+      subject { render_inline(described_class.new(argyle_report, payroll_account)) }
+
       let(:argyle_report) { Aggregators::AggregatorReports::ArgyleReport.new(payroll_accounts: [ payroll_account ], argyle_service: argyle_service, days_to_fetch_for_w2: 90, days_to_fetch_for_gig: 182) }
+
       before do
         argyle_stub_request_identities_response("bob")
         argyle_stub_request_paystubs_response("bob")
@@ -120,7 +125,6 @@ RSpec.describe Report::EmploymentDetailsTableComponent, type: :component do
         Timecop.freeze(Time.local(2025, 04, 1, 0, 0), &ex)
       end
 
-      subject { render_inline(described_class.new(argyle_report, payroll_account)) }
 
       it "argyle_report is properly fetched" do
         expect(argyle_report.gigs.length).to be(100)
@@ -157,8 +161,11 @@ RSpec.describe Report::EmploymentDetailsTableComponent, type: :component do
     end
 
     context "with sarah, a w2 worker" do
+      subject { render_inline(described_class.new(argyle_report, payroll_account, show_income: true)) }
+
       let(:account_id) { "01956d5f-cb8d-af2f-9232-38bce8531f58" }
       let(:argyle_report) { Aggregators::AggregatorReports::ArgyleReport.new(payroll_accounts: [ payroll_account ], argyle_service: argyle_service, days_to_fetch_for_w2: 90, days_to_fetch_for_gig: 182) }
+
       before do
         argyle_stub_request_identities_response("sarah")
         argyle_stub_request_paystubs_response("sarah")
@@ -171,7 +178,6 @@ RSpec.describe Report::EmploymentDetailsTableComponent, type: :component do
         Timecop.freeze(Time.local(2025, 04, 1, 0, 0), &ex)
       end
 
-      subject { render_inline(described_class.new(argyle_report, payroll_account, show_income: true)) }
 
       it "argyle_report is properly fetched" do
         expect(argyle_report.gigs.length).to be(0)
@@ -242,8 +248,11 @@ RSpec.describe Report::EmploymentDetailsTableComponent, type: :component do
     end
 
     context "with joe_null, with a null value for base pay period" do
+      subject { render_inline(described_class.new(argyle_report, payroll_account, show_income: true)) }
+
       let(:account_id) { "01956d62-18a0-090f-bc09-2ac44b7edf99" }
       let(:argyle_report) { Aggregators::AggregatorReports::ArgyleReport.new(payroll_accounts: [ payroll_account ], argyle_service: argyle_service, days_to_fetch_for_w2: 90, days_to_fetch_for_gig: 182) }
+
       before do
         argyle_stub_request_identities_response("joe_null_total_hours")
         argyle_stub_request_paystubs_response("joe_null_total_hours")
@@ -256,7 +265,6 @@ RSpec.describe Report::EmploymentDetailsTableComponent, type: :component do
         Timecop.freeze(Time.local(2025, 04, 1, 0, 0), &ex)
       end
 
-      subject { render_inline(described_class.new(argyle_report, payroll_account, show_income: true)) }
 
       it "renders help text next to Compensation Amonut due to a null base pay value" do
         compensation_row = subject.css("tbody tr:nth-child(7)").to_html

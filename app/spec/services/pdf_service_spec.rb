@@ -1,15 +1,16 @@
 require "rails_helper"
 
 RSpec.describe PdfService do
-  let(:language)          { :en }
-  let(:cbv_flow)          { instance_double("CbvFlow") }
-  let(:aggregator_report) { instance_double("AggregatorReport") }
-  let(:current_agency)    { instance_double("CurrentAgency") }
-
   subject(:service) { described_class.new(language: language) }
 
-  let(:controller_double) { instance_double("Cbv::SubmitsController") }
+  let(:language)          { :en }
+  let(:controller_double) { instance_double(Cbv::SubmitsController) }
   let(:html_content)      { "<html><body>PDF HTML</body></html>" }
+  let(:cbv_flow)          { instance_double(CbvFlow) }
+  let(:aggregator_report) { instance_double(Aggregators::AggregatorReports::AggregatorReport) }
+  let(:current_agency)    { instance_double(ClientAgencyConfig::ClientAgency) }
+
+
 
   before do
     allow(Cbv::SubmitsController).to receive(:new).and_return(controller_double)

@@ -370,6 +370,54 @@ input#invitation_link {
   }
 }
 
+.employer-logo-placeholder {
+  aspect-ratio: 1;
+  max-width: 6.25rem; // 100px — same visual weight as a real logo
+}
+
+.employer-logo-placeholder__icon {
+  width: 50%;
+  height: 50%;
+}
+
+// USWDS flag layout does not work for mobile (it stacks the media on top, as it assumes the content is larger).
+// Because we have fixed sizing on logo's, we want to override this behavior and force flag on mobile.
+@include at-media-max("tablet") {
+  .usa-card--flag {
+    .usa-card__media {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: 5rem;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .usa-card__media--inset {
+      padding: 0;
+    }
+
+    .usa-card__img {
+      margin-left: 1rem;
+      margin-right: 1rem;
+    }
+
+    .usa-card__header,
+    .usa-card__body,
+    .usa-card__footer {
+      margin-left: 5rem;
+    }
+  }
+}
+
+@include at-media-max("desktop") {
+  .usa-card--flag {
+    max-width: 40rem; // same as searchbar max width
+  }
+}
+
 .usa-list--explainer li {
   margin-bottom: 1rem;
 }

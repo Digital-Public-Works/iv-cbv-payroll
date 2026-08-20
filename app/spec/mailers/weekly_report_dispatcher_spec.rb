@@ -5,41 +5,34 @@ RSpec.describe WeeklyReportDispatcher, type: :service do
   include ActiveSupport::Testing::TimeHelpers
 
   let(:now) { Time.zone.parse("2025-11-18 10:30:00") }
-
-  Config = Struct.new(:weekly_report, :timezone, keyword_init: true)
-
   let(:cfg_ok_a) do
     Config.new(
       weekly_report: { "enabled" => true, "recipient" => "a@example.com" },
       timezone: "America/New_York"
     )
   end
-
   let(:cfg_ok_b) do
     Config.new(
       weekly_report: { "enabled" => true, "recipient" => "b@example.com" },
       timezone: "America/Los_Angeles"
     )
   end
-
   let(:cfg_disabled) do
     Config.new(
       weekly_report: { "enabled" => false, "recipient" => "off@example.com" },
       timezone: "America/Chicago"
     )
   end
-
   let(:client_agency_config_hash) do
     { "agency_a" => cfg_ok_a, "agency_b" => cfg_ok_b, "agency_off" => cfg_disabled }
   end
-
-  let(:mailer_chain)    { instance_double("WeeklyReportMailerChain") }
+  # `WeeklyReportMailer.with(...)` returns an ActionMailer::Parameterized::Mailer,
+  # whose mailer actions resolve through method_missing and so cannot be verified
+  # by instance_double. Use an explicitly unverified double.
+  let(:mailer_chain)    { double("WeeklyReportMailerChain") } # rubocop:disable RSpec/VerifiedDoubles
   let(:delivery_double) { instance_double(ActionMailer::MessageDelivery, deliver_now: true) }
-
   let(:fake_event_logger) { instance_double(GenericEventTracker, track: true) }
-
   let(:clock) { -> { now } }
-
   let(:dispatcher) do
     described_class.new(
       config:       client_agency_config_hash,
@@ -47,6 +40,16 @@ RSpec.describe WeeklyReportDispatcher, type: :service do
       clock:        clock
     )
   end
+
+  Config = Struct.new(:weekly_report, :timezone, keyword_init: true)
+
+
+
+
+
+
+
+
 
   before do
     travel_to(now)

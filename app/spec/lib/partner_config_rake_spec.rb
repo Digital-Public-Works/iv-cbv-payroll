@@ -6,6 +6,8 @@ require "rails_helper"
 # not exist) can't silently rot — the class specs never invoke the tasks.
 RSpec.describe "partner_config.rake" do
   let(:partner_id) { "wc_test" }
+  let(:settings_source) { write_file(settings_config) }
+  let(:credentials_source) { write_file(credentials_config) }
 
   let(:settings_config) do
     {
@@ -61,6 +63,7 @@ RSpec.describe "partner_config.rake" do
   end
 
   let(:tempfiles) { [] }
+
   after { tempfiles.each { |f| f.close! if f.respond_to?(:close!) } }
 
   def write_file(hash)
@@ -71,8 +74,6 @@ RSpec.describe "partner_config.rake" do
     f.path
   end
 
-  let(:settings_source) { write_file(settings_config) }
-  let(:credentials_source) { write_file(credentials_config) }
 
   describe "partner_config:validate" do
     before { Rake::Task["partner_config:validate"].reenable }

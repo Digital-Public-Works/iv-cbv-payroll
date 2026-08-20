@@ -1,15 +1,16 @@
   require "rails_helper"
 
   RSpec.describe Aggregators::Argyle::FullSsnFetcher do
+    subject(:fetcher) do
+      described_class.new(argyle_service: argyle_service, event_logger: event_logger)
+    end
+
     let(:argyle_service) { instance_double(Aggregators::Sdk::ArgyleService) }
     let(:event_logger) { instance_double(GenericEventTracker, track: nil) }
     let(:cbv_flow_id) { 1011 }
     let(:client_agency_id) { "sandbox" }
     let(:account_id) { "test_argyle_account_id" }
 
-    subject(:fetcher) do
-      described_class.new(argyle_service: argyle_service, event_logger: event_logger)
-    end
 
     describe "#fetch" do
       context "unmasked SSN" do
@@ -19,7 +20,7 @@
             .and_return("results" => [ { "ssn" => "123-45-6789", "first_name" => "Jane" } ])
         end
 
-        it "returns the unmasked SSN " do
+        it "returns the unmasked SSN" do
           result = fetcher.fetch(
             account_id: account_id,
             cbv_flow_id: cbv_flow_id,
