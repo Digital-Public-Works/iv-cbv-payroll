@@ -67,7 +67,7 @@ gem "rack", "~> 3.2.6"
 # https://www.ruby-lang.org/en/news/2024/08/01/dos-rexml-cve-2024-41123/
 gem "rexml", "~> 3.4.2"
 gem "gpgme", "~> 2.0", ">= 2.0.12"
-gem "net-imap", "~> 0.5.15"  # Fixing CVE-2026-42246 (STARTTLS stripping) + GHSA-j3g3-5qv5-52mj + GHSA-8p34-64r3-mwg8 + GHSA-46q3-7gv7-qmgg
+gem "net-imap", "~> 0.6.6"   # Fixing CVE-2026-42246 (STARTTLS stripping) + GHSA-j3g3-5qv5-52mj + GHSA-8p34-64r3-mwg8 + GHSA-46q3-7gv7-qmgg
 gem "cgi", ">= 0.4.2"     # Fixing GHSA-mhwm-jh88-3gjf
 gem "thor", ">= 1.4.0"    # Fixing GHSA-mqcp-p2hv-vw6x
 gem "uri", ">= 1.0.4"     # Fixing CVE-2025-61594
