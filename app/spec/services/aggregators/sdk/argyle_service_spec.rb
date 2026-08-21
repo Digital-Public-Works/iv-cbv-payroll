@@ -385,4 +385,199 @@ RSpec.describe Aggregators::Sdk::ArgyleService, type: :service do
       expect(stub).to have_been_requested
     end
   end
+
+  # Regression coverage for the pagination SSRF / credential-leak fix. The
+  # `next` URL in an Argyle response is attacker-influenced, and @http attaches
+  # our API credentials to any absolute URL it is handed, so `next` must never
+  # be requested directly -- only its opaque `cursor` token is reused.
+  describe 'pagination cursor handling' do
+    def stub_first_page_with_next(next_url)
+      stub_request(:get, "https://api-sandbox.argyle.com/v2/paystubs?limit=200")
+        .to_return(
+          status: 200,
+          body: { results: [ { id: "page-1" } ], next: next_url }.to_json,
+          headers: { 'Content-Type': 'application/json;charset=UTF-8' }
+        )
+    end
+
+    # Every one of these passed the previous `next_cursor.include?("argyle")`
+    # guard, which matched the substring anywhere in the URL.
+    [
+      "https://evil.example.com/argyle?cursor=abc",
+      "https://argyle.evil.example.com/steal?cursor=abc",
+      "https://evil.example.com/?x=argyle&cursor=abc",
+      "http://argyle.com/downgraded?cursor=abc",
+      "http://169.254.169.254/latest/meta-data/?argyle&cursor=abc",
+      "https://user:pw@evil.example.com/argyle?cursor=abc"
+    ].each do |hostile_url|
+      it "does not request the hostile host in #{hostile_url}" do
+        stub_first_page_with_next(hostile_url)
+        hostile_host = URI.parse(hostile_url).host
+        # The cursor token is still reused -- against our own origin.
+        stub_request(:get, "https://api-sandbox.argyle.com/v2/paystubs?cursor=abc")
+          .to_return(
+            status: 200,
+            body: { results: [], next: nil }.to_json,
+            headers: { 'Content-Type': 'application/json;charset=UTF-8' }
+          )
+
+        service.fetch_paystubs_api
+
+        expect(a_request(:get, %r{\Ahttps?://#{Regexp.escape(hostile_host)}})).not_to have_been_requested
+      end
+    end
+
+    it 'reuses only the cursor token, requesting our own host' do
+      stub_first_page_with_next("https://evil.example.com/argyle?cursor=STOLEN-TOKEN")
+      page_two = stub_request(:get, "https://api-sandbox.argyle.com/v2/paystubs?cursor=STOLEN-TOKEN")
+        .to_return(
+          status: 200,
+          body: { results: [ { id: "page-2" } ], next: nil }.to_json,
+          headers: { 'Content-Type': 'application/json;charset=UTF-8' }
+        )
+
+      response = service.fetch_paystubs_api
+
+      expect(page_two).to have_been_requested
+      expect(response["results"].map { |r| r["id"] }).to eq([ "page-1", "page-2" ])
+    end
+
+    it 'ends pagination normally when next is absent' do
+      stub_first_page_with_next(nil)
+
+      expect(service.fetch_paystubs_api["results"].length).to eq(1)
+    end
+
+    # Returning a short list that looks complete would understate income, so an
+    # advertised page we cannot follow has to surface as an error.
+    it 'raises when next carries no cursor parameter' do
+      stub_first_page_with_next("https://api-sandbox.argyle.com/v2/paystubs")
+
+      expect { service.fetch_paystubs_api }
+        .to raise_error(described_class::PaginationError, /unusable pagination cursor/)
+    end
+
+    it 'raises when next is unparseable' do
+      stub_first_page_with_next("http://[not-a-url")
+
+      expect { service.fetch_paystubs_api }
+        .to raise_error(described_class::PaginationError, /unusable pagination cursor/)
+    end
+
+    context 'when Argyle advertises a different API version' do
+      let(:drifted) { "https://api-sandbox.argyle.com/v3/paystubs?cursor=V3TOKEN" }
+
+      before do
+        stub_first_page_with_next(drifted)
+        stub_request(:get, "https://api-sandbox.argyle.com/v2/paystubs?cursor=V3TOKEN")
+          .to_return(
+            status: 200,
+            body: { results: [], next: nil }.to_json,
+            headers: { 'Content-Type': 'application/json;charset=UTF-8' }
+          )
+      end
+
+      it 'warns about the path drift instead of discarding it silently' do
+        expect(Rails.logger).to receive(:warn).with(/pagination path "\/v3\/paystubs" differs from requested "\/v2\/paystubs"/)
+
+        service.fetch_paystubs_api
+      end
+
+      it 'reports the drift to NewRelic' do
+        expect(NewRelic::Agent).to receive(:notice_error)
+          .with(an_instance_of(StandardError))
+
+        service.fetch_paystubs_api
+      end
+
+      it 'still pins the request to the configured version' do
+        service.fetch_paystubs_api
+
+        expect(a_request(:get, "https://api-sandbox.argyle.com/v2/paystubs?cursor=V3TOKEN")).to have_been_requested
+        expect(a_request(:get, %r{/v3/})).not_to have_been_requested
+      end
+    end
+
+    it 'does not warn when the next path matches the request' do
+      stub_first_page_with_next("https://api-sandbox.argyle.com/v2/paystubs?cursor=abc")
+      stub_request(:get, "https://api-sandbox.argyle.com/v2/paystubs?cursor=abc")
+        .to_return(
+          status: 200,
+          body: { results: [], next: nil }.to_json,
+          headers: { 'Content-Type': 'application/json;charset=UTF-8' }
+        )
+      expect(Rails.logger).not_to receive(:warn)
+
+      service.fetch_paystubs_api
+    end
+
+    context 'when the cursor never clears' do
+      before do
+        stub_const("#{described_class}::MAX_PAGINATION_PAGES", 3)
+        stub_first_page_with_next("https://api-sandbox.argyle.com/v2/paystubs?cursor=loop")
+        stub_request(:get, "https://api-sandbox.argyle.com/v2/paystubs?cursor=loop")
+          .to_return(
+            status: 200,
+            body: { results: [ { id: "loop" } ], next: "https://api-sandbox.argyle.com/v2/paystubs?cursor=loop" }.to_json,
+            headers: { 'Content-Type': 'application/json;charset=UTF-8' }
+          )
+      end
+
+      it 'raises rather than returning truncated results' do
+        expect { service.fetch_paystubs_api }
+          .to raise_error(described_class::PaginationError, /exceeded 3 pages/)
+      end
+
+      it 'stops requesting once the cap is reached' do
+        expect { service.fetch_paystubs_api }.to raise_error(described_class::PaginationError)
+
+        expect(a_request(:get, "https://api-sandbox.argyle.com/v2/paystubs?cursor=loop"))
+          .to have_been_made.times(2)
+      end
+    end
+  end
+
+  describe '#fetch_payroll_document_file' do
+    let(:argyle_file_url) { "https://api-sandbox.argyle.com/v2/payroll-documents/doc-1/file" }
+
+    def stub_redirect_to(location)
+      stub_request(:get, argyle_file_url).to_return(status: 302, headers: { "location" => location })
+    end
+
+    it 'follows an Argyle redirect to external signed storage' do
+      stub_redirect_to("https://storage.googleapis.com/signed/doc-1.pdf")
+      storage = stub_request(:get, "https://storage.googleapis.com/signed/doc-1.pdf")
+        .to_return(status: 200, body: "PDFBYTES", headers: { "content-type" => "application/pdf" })
+
+      bytes, content_type = service.fetch_payroll_document_file(file_url: argyle_file_url)
+
+      expect(storage).to have_been_requested
+      expect(bytes).to eq("PDFBYTES")
+      expect(content_type).to eq("application/pdf")
+    end
+
+    it 'refuses to send credentials to a non-Argyle file_url' do
+      expect {
+        service.fetch_payroll_document_file(file_url: "https://evil.example.com/argyle/file")
+      }.to raise_error(ArgumentError, /non-Argyle host/)
+
+      expect(a_request(:get, %r{evil\.example\.com})).not_to have_been_requested
+    end
+
+    it 'refuses a redirect to a private address' do
+      stub_redirect_to("https://169.254.169.254/latest/meta-data/")
+
+      expect {
+        service.fetch_payroll_document_file(file_url: argyle_file_url)
+      }.to raise_error(ArgumentError, /internal address/)
+    end
+
+    it 'refuses a plaintext redirect' do
+      stub_redirect_to("http://storage.googleapis.com/signed/doc-1.pdf")
+
+      expect {
+        service.fetch_payroll_document_file(file_url: argyle_file_url)
+      }.to raise_error(ArgumentError, /storage URL/)
+    end
+  end
 end
