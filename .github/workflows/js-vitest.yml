@@ -4,6 +4,9 @@ on:
   pull_request:
     paths: ['app/**']
 
+permissions:
+  contents: read
+
 jobs:
   vitest:
     name: Vitest
