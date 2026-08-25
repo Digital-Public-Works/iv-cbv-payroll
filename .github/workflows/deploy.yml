@@ -35,7 +35,7 @@ jobs:
       contents: write
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Terraform
         uses: ./.github/actions/setup-terraform
