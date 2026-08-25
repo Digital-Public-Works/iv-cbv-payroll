@@ -230,7 +230,7 @@ GEM
       net-http (~> 0.5)
     globalid (1.4.0)
       activesupport (>= 6.1)
-    gpgme (2.0.26)
+    gpgme (2.0.25)
       mini_portile2 (~> 2.7)
     hashdiff (1.2.1)
     hashery (2.1.2)
@@ -603,7 +603,7 @@ DEPENDENCIES
   factory_bot (~> 6.5)
   faker (~> 3.5)
   faraday (~> 2.13)
-  gpgme (~> 2.0)
+  gpgme (= 2.0.25)
   i18n-tasks (~> 1.1)
   jsbundling-rails
   mixpanel-ruby
