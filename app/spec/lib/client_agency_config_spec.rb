@@ -40,21 +40,21 @@ RSpec.describe ClientAgencyConfig do
   describe "#initialize" do
     it "loads the client agency config" do
       expect do
-        ClientAgencyConfig.new(true)
+        described_class.new(true)
       end.not_to raise_error
     end
   end
 
   describe "#client_agency_ids" do
     it "returns the IDs" do
-      config = ClientAgencyConfig.new(true)
+      config = described_class.new(true)
       expect(config.client_agency_ids).to include("foo")
     end
   end
 
   describe "for a particular client agency" do
     it "returns the config for that agency" do
-      config = ClientAgencyConfig.new(true)
+      config = described_class.new(true)
       expect(config["foo"].agency_name).to eq("Foo Agency Name")
     end
   end
@@ -80,7 +80,7 @@ RSpec.describe ClientAgencyConfig do
 
       it "is unavailable and logs an error instead of raising when requested" do
         allow(Rails.logger).to receive(:error)
-        config = ClientAgencyConfig.new(true)
+        config = described_class.new(true)
 
         result = nil
         expect { result = config["bad_s3"] }.not_to raise_error
@@ -92,7 +92,7 @@ RSpec.describe ClientAgencyConfig do
       it "logs the failure during the boot validation pass without raising" do
         allow(Rails.logger).to receive(:error)
 
-        expect { ClientAgencyConfig.new(true).validate_all }.not_to raise_error
+        expect { described_class.new(true).validate_all }.not_to raise_error
         expect(Rails.logger).to have_received(:error)
           .with(%r{bad_s3 failed validation.*must not start with '/'})
       end
@@ -102,7 +102,7 @@ RSpec.describe ClientAgencyConfig do
       let(:bad_prefix) { "inbox/prod" }
 
       it "loads the agency without raising" do
-        config = ClientAgencyConfig.new(true)
+        config = described_class.new(true)
         expect(config["bad_s3"]).to be_present
       end
     end
@@ -111,11 +111,11 @@ RSpec.describe ClientAgencyConfig do
   describe "lazy loading" do
     it "does not construct any agency when the instance is created" do
       expect(ClientAgencyConfig::ClientAgency).not_to receive(:new)
-      ClientAgencyConfig.new(true)
+      described_class.new(true)
     end
 
     it "loads an agency from the database on first access and memoizes it" do
-      config = ClientAgencyConfig.new(true)
+      config = described_class.new(true)
 
       expect(PartnerConfig).to receive(:find_by).with(partner_id: "foo").once.and_call_original
 
@@ -123,16 +123,16 @@ RSpec.describe ClientAgencyConfig do
     end
 
     it "returns nil for an unknown agency and does not cache the miss" do
-      config = ClientAgencyConfig.new(true)
+      config = described_class.new(true)
 
-      expect(PartnerConfig).to receive(:find_by).with(partner_id: "ghost").exactly(2).times.and_call_original
+      expect(PartnerConfig).to receive(:find_by).with(partner_id: "ghost").twice.and_call_original
 
       expect(config["ghost"]).to be_nil
       expect(config["ghost"]).to be_nil
     end
 
     it "returns nil for a blank id without touching the database" do
-      config = ClientAgencyConfig.new(true)
+      config = described_class.new(true)
 
       expect(PartnerConfig).not_to receive(:find_by)
 
@@ -141,7 +141,7 @@ RSpec.describe ClientAgencyConfig do
     end
 
     it "serves a cached agency without re-querying while the entry is fresh" do
-      config = ClientAgencyConfig.new(true)
+      config = described_class.new(true)
       fake_time = 0.0
       allow(config).to receive(:now) { fake_time }
 
@@ -154,7 +154,7 @@ RSpec.describe ClientAgencyConfig do
 
     it "reloads on every lookup in development so config edits are immediate" do
       allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("development"))
-      config = ClientAgencyConfig.new(true)
+      config = described_class.new(true)
 
       expect(PartnerConfig).to receive(:find_by).with(partner_id: "foo").twice.and_call_original
 
@@ -163,7 +163,7 @@ RSpec.describe ClientAgencyConfig do
     end
 
     it "picks up database changes after the cache TTL expires" do
-      config = ClientAgencyConfig.new(true)
+      config = described_class.new(true)
       fake_time = 0.0
       allow(config).to receive(:now) { fake_time }
 
@@ -183,7 +183,7 @@ RSpec.describe ClientAgencyConfig do
 
   describe "#find_by_domain" do
     it "resolves an agency by its configured domain" do
-      config = ClientAgencyConfig.new(true)
+      config = described_class.new(true)
       agency = config.find_by_domain("sandbox")
 
       expect(agency).to be_present
@@ -191,25 +191,25 @@ RSpec.describe ClientAgencyConfig do
     end
 
     it "returns nil for an unrecognized domain" do
-      config = ClientAgencyConfig.new(true)
+      config = described_class.new(true)
       expect(config.find_by_domain("not-a-domain")).to be_nil
     end
   end
 
   describe "#require_applicant_information_on_invitation" do
     it "defaults to false when not configured" do
-      config = ClientAgencyConfig.new(true)
+      config = described_class.new(true)
       agency = config["foo"]
 
-      expect(agency.require_applicant_information_on_invitation).to eq(false)
+      expect(agency.require_applicant_information_on_invitation).to be(false)
     end
 
     it "is true when configured as true" do
       sample_attr.update!(required: true)
-      config = ClientAgencyConfig.new(true)
+      config = described_class.new(true)
       agency = config["foo"]
 
-      expect(agency.require_applicant_information_on_invitation).to eq(true)
+      expect(agency.require_applicant_information_on_invitation).to be(true)
     end
   end
 
@@ -231,14 +231,14 @@ RSpec.describe ClientAgencyConfig do
     it "logs an error for a partner missing application attributes without raising" do
       allow(Rails.logger).to receive(:error)
 
-      expect { ClientAgencyConfig.new(true).validate_all }.not_to raise_error
+      expect { described_class.new(true).validate_all }.not_to raise_error
       expect(Rails.logger).to have_received(:error)
         .with(/no_attrs has no partner_application_attributes/)
     end
 
     it "warns lazily on the live request that loads the misconfigured partner" do
       allow(Rails.logger).to receive(:error)
-      config = ClientAgencyConfig.new(true)
+      config = described_class.new(true)
 
       expect(config["no_attrs"]).to be_present
       expect(Rails.logger).to have_received(:error)

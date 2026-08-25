@@ -10,6 +10,13 @@
 # See https://docs.rubocop.org/rubocop/configuration
 plugins:
   - rubocop-rspec
+
+# rubocop-rails-omakase 1.1.0 replaced `AllCops/DisabledByDefault: true` with an
+# explicit list of departments to disable. RSpec is not on that list, so the
+# rubocop-rspec cops became active on upgrade. Pre-existing offenses are
+# grandfathered in .rubocop_todo.yml (regenerate with `--auto-gen-config`);
+# the cops are enforced on new and changed spec code.
+inherit_from: .rubocop_todo.yml
 inherit_gem:
   rubocop-rails-omakase: rubocop.yml
 AllCops:

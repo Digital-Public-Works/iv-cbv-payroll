@@ -60,6 +60,7 @@ RSpec.describe Aggregators::FormatMethods::Argyle, type: :service do
       expect(result).to eq({ "regular" => 75.0, "overtime" => 5.0 })
     end
   end
+
   describe '.hours_computed' do
     context 'when Argyle provides hours directly' do
       it 'uses the provided hours' do
@@ -241,12 +242,14 @@ RSpec.describe Aggregators::FormatMethods::Argyle, type: :service do
       a_paystub_json = nil
       expect(described_class.format_employer_address(a_paystub_json)).to be_nil
     end
+
     it 'handles nil employer_address' do
       a_paystub_json = {
         "employer_address" => nil
       }
       expect(described_class.format_employer_address(a_paystub_json)).to be_nil
     end
+
     it 'formats address properly without line2' do
       a_paystub_json = {
         "employer_address" => {

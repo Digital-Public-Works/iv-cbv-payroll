@@ -212,7 +212,7 @@ RSpec.configure do |config|
   end
 
 
-  config.before(:each) do
+  config.before do
     ClientAgencyConfig.reset!
   end
 
@@ -245,7 +245,7 @@ RSpec.configure do |config|
 
   # activejob helper
   config.include ActiveJob::TestHelper
-  config.before(:each) { clear_enqueued_jobs && clear_performed_jobs }
+  config.before { clear_enqueued_jobs && clear_performed_jobs }
 
   config.include ActiveSupport::Testing::TimeHelpers
 

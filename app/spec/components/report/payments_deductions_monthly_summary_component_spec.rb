@@ -44,15 +44,17 @@ RSpec.describe Report::PaymentsDeductionsMonthlySummaryComponent, type: :compone
       end
 
       context "whose paystubs synced" do
+        subject { render_inline(described_class.new(pinwheel_report, payroll_account, is_responsive: true, is_w2_worker: false, income: income)) }
+
         let(:supported_jobs) { %w[paystubs employment income shifts] }
         let(:errored_jobs) { [] }
         let(:income) { Aggregators::ResponseObjects::Income.new(pay_frequency: "monthly") }
+
         before do
           pinwheel_stub_request_end_user_paystubs_response
           pinwheel_report.fetch
         end
 
-        subject { render_inline(described_class.new(pinwheel_report, payroll_account, is_responsive: true, is_w2_worker: false, income: income)) }
 
         it "pinwheel_report is properly fetched" do
           expect(pinwheel_report.gigs.length).to eq(3)
@@ -92,15 +94,17 @@ RSpec.describe Report::PaymentsDeductionsMonthlySummaryComponent, type: :compone
       end
 
       context "whose paystubs failed to sync" do
+        subject { render_inline(described_class.new(pinwheel_report, payroll_account, is_responsive: true, is_w2_worker: false, income: income)) }
+
         let(:supported_jobs) { %w[paystubs employment income] }
         let(:errored_jobs) { [ "paystubs" ] }
         let(:income) { Aggregators::ResponseObjects::Income.new(pay_frequency: "monthly") }
+
         before do
           pinwheel_stub_request_end_user_no_paystubs_response
           pinwheel_report.fetch
         end
 
-        subject { render_inline(described_class.new(pinwheel_report, payroll_account, is_responsive: true, is_w2_worker: false, income: income)) }
 
         # Disabling Pinwheel tests.
         # it "renders nothing without the paystubs data" do
@@ -143,6 +147,7 @@ RSpec.describe Report::PaymentsDeductionsMonthlySummaryComponent, type: :compone
 
 
     let(:argyle_report) { Aggregators::AggregatorReports::ArgyleReport.new(payroll_accounts: [ payroll_account ], argyle_service: argyle_service, days_to_fetch_for_w2: 90, days_to_fetch_for_gig: 182) }
+
     before do
       argyle_stub_request_identities_response("bob")
       argyle_stub_request_gigs_response("bob")
@@ -150,13 +155,15 @@ RSpec.describe Report::PaymentsDeductionsMonthlySummaryComponent, type: :compone
     end
 
     context "with bob, a gig-worker whose paystubs synced" do
+      subject { render_inline(described_class.new(argyle_report, payroll_account, is_responsive: true, is_w2_worker: false, income: income)) }
+
       let(:income) { Aggregators::ResponseObjects::Income.new(pay_frequency: "monthly") }
+
       before do
         argyle_stub_request_paystubs_response("bob")
         argyle_report.fetch
       end
 
-      subject { render_inline(described_class.new(argyle_report, payroll_account, is_responsive: true, is_w2_worker: false, income: income)) }
 
       it "argyle_report is properly fetched" do
         expect(argyle_report.gigs.length).to be(100)
@@ -178,6 +185,8 @@ RSpec.describe Report::PaymentsDeductionsMonthlySummaryComponent, type: :compone
       # Use an account_id that does not match bob's fetched data so that no
       # employment matches and pick_employment returns nil. Empty paystubs
       # let the fetch complete cleanly.
+      subject { render_inline(described_class.new(argyle_report, payroll_account, is_responsive: true, is_w2_worker: false, income: income)) }
+
       let(:account_id) { "22222222-2222-2222-2222-222222222222" }
       let(:argyle_report) { Aggregators::AggregatorReports::ArgyleReport.new(payroll_accounts: [ payroll_account ], argyle_service: argyle_service, days_to_fetch_for_w2: 90, days_to_fetch_for_gig: 182) }
       let(:income) { Aggregators::ResponseObjects::Income.new(pay_frequency: "monthly") }
@@ -187,7 +196,6 @@ RSpec.describe Report::PaymentsDeductionsMonthlySummaryComponent, type: :compone
         argyle_report.fetch
       end
 
-      subject { render_inline(described_class.new(argyle_report, payroll_account, is_responsive: true, is_w2_worker: false, income: income)) }
 
       it "renders without error when no employments match (returns nil employment)" do
         # When no employments match, pick_employment returns nil instead of raising

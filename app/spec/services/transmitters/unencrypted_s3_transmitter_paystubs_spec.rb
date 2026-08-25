@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.describe Transmitters::UnencryptedS3Transmitter do
+  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
+
   let(:cbv_applicant) { create(:cbv_applicant, case_number: "S3CASE") }
   let(:cbv_flow) do
     create(:cbv_flow,
@@ -25,17 +27,12 @@ RSpec.describe Transmitters::UnencryptedS3Transmitter do
   let(:transmission_method_configuration) { {} }
 
   before do
-    allow(mock_client_agency).to receive(:id).and_return("sandbox")
-    allow(mock_client_agency).to receive(:timezone).and_return("UTC")
-    allow(mock_client_agency).to receive(:applicant_attributes).and_return({})
-    allow(mock_client_agency).to receive(:partner_identifier_name).and_return("case_number")
-    allow(mock_client_agency).to receive(:argyle_environment).and_return("sandbox")
+    allow(mock_client_agency).to receive_messages(id: "sandbox", timezone: "UTC", applicant_attributes: {}, partner_identifier_name: "case_number", argyle_environment: "sandbox")
     allow(S3Service).to receive(:new).and_return(s3_service)
     allow_any_instance_of(PdfService).to receive(:generate)
       .and_return(OpenStruct.new(content: "fake-pdf-content", file_size: 16, page_count: 2))
   end
 
-  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
 
   context "when include_paystubs is false" do
     before { allow(mock_client_agency).to receive(:include_paystubs).and_return(false) }

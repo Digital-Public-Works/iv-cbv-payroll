@@ -202,7 +202,7 @@ end
         argyle_stub_request_account_response("bob")
       end
 
-      it "should handle when employment job succeeds but employment data is nil" do
+      it "handles when employment job succeeds but employment data is nil" do
         allow_any_instance_of(Aggregators::AggregatorReports::AggregatorReport).to receive(:summarize_by_employer) do
           { cbv_flow.payroll_accounts.first.aggregator_account_id =>
             { has_employment_data: true, employment: nil }
