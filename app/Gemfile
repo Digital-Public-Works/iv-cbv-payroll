@@ -50,7 +50,7 @@ gem "mixpanel-ruby"
 gem "newrelic_rpm"
 
 gem "faraday", "~> 2.13"
-
+gem "faraday-retry", "~> 2.4"
 gem "wicked_pdf"
 gem "combine_pdf"
 gem "actioncable-enhanced-postgresql-adapter"

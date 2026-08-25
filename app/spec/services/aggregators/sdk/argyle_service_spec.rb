@@ -580,4 +580,56 @@ RSpec.describe Aggregators::Sdk::ArgyleService, type: :service do
       }.to raise_error(ArgumentError, /storage URL/)
     end
   end
+
+  describe 'transient failure handling' do
+    # Production sees Faraday::TimeoutError (a read timeout) against Argyle;
+    # Net::ReadTimeout is what the net_http adapter converts into it.
+    before do
+      stub_const("#{described_class}::RETRY_INTERVAL", 0)
+      stub_const("#{described_class}::RETRY_JITTER", 0)
+    end
+
+    it 'retries a read timeout and succeeds on a later attempt' do
+      stub_request(:get, "https://api-sandbox.argyle.com/v2/identities?limit=10")
+        .to_raise(Net::ReadTimeout).then
+        .to_return(
+          status: 200,
+          body: { results: [ { id: "abc" } ], next: nil }.to_json,
+          headers: { 'Content-Type': 'application/json;charset=UTF-8' }
+        )
+
+      expect(service.fetch_identities_api["results"].length).to eq(1)
+      expect(a_request(:get, "https://api-sandbox.argyle.com/v2/identities?limit=10"))
+        .to have_been_made.times(2)
+    end
+
+    it 'gives up after MAX_RETRIES and raises' do
+      stub_const("#{described_class}::MAX_RETRIES", 2)
+      stub_request(:get, "https://api-sandbox.argyle.com/v2/identities?limit=10")
+        .to_raise(Net::ReadTimeout)
+
+      expect { service.fetch_identities_api }.to raise_error(Faraday::TimeoutError)
+      # One initial attempt plus MAX_RETRIES retries.
+      expect(a_request(:get, "https://api-sandbox.argyle.com/v2/identities?limit=10"))
+        .to have_been_made.times(3)
+    end
+
+    it 'does not retry non-idempotent requests' do
+      stub_request(:post, "https://api-sandbox.argyle.com/v2/users")
+        .to_raise(Net::ReadTimeout)
+
+      expect { service.create_user }.to raise_error(Faraday::TimeoutError)
+      expect(a_request(:post, "https://api-sandbox.argyle.com/v2/users"))
+        .to have_been_made.times(1)
+    end
+
+    it 'does not retry HTTP error statuses' do
+      stub_request(:get, "https://api-sandbox.argyle.com/v2/identities?limit=10")
+        .to_return(status: 500, body: "", headers: {})
+
+      expect { service.fetch_identities_api }.to raise_error(Faraday::ServerError)
+      expect(a_request(:get, "https://api-sandbox.argyle.com/v2/identities?limit=10"))
+        .to have_been_made.times(1)
+    end
+  end
 end
