@@ -3,6 +3,7 @@ attributes:
   - timestamps
 filename: "../docs/app/rendered/database-schema"
 filetype: pdf
+generator: graphviz
 inheritance: false
 orientation: horizontal
 polymorphism: false
