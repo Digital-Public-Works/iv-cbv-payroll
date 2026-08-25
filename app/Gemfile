@@ -104,7 +104,9 @@ group :development do
 
   # Speed up commands on slow machines / big apps [https://github.com/rails/spring]
   # gem "spring"
+  # rails-erd defaults to mermaid, we are using graphviz so need to explicitly add the package
   gem "rails-erd", "~> 2.1"
+  gem "ruby-graphviz", "~> 1.2"
 end
 
 # Realistic fake data, used by the dev-only partner generator rake task.

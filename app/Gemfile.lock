@@ -474,6 +474,8 @@ GEM
     rubocop-rspec (3.9.0)
       lint_roller (~> 1.1)
       rubocop (~> 1.81)
+    ruby-graphviz (1.2.5)
+      rexml
     ruby-progressbar (1.13.0)
     ruby-rc4 (0.1.5)
     ruby2_keywords (0.0.5)
@@ -628,6 +630,7 @@ DEPENDENCIES
   rubocop
   rubocop-rails-omakase
   rubocop-rspec
+  ruby-graphviz (~> 1.2)
   selenium-webdriver (>= 4.26.0)
   shoryuken (~> 7.0)
   sinatra (~> 4.2)
