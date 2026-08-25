@@ -42,6 +42,9 @@ updates:
         update-types: [ "version-update:semver-major" ]
       - dependency-name: "ruby"
         update-types: [ "version-update:semver-major" ]
+      # 2.0.26 corrupts binary ciphertext. ignore, await future version
+      - dependency-name: "gpgme"
+        versions: [ "2.0.26" ]
 
   - package-ecosystem: "terraform"
     directory: "/infra" # path to your Terraform configs (adjust if needed)
