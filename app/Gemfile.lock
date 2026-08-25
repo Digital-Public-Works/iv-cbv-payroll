@@ -218,7 +218,7 @@ GEM
       rubocop (>= 1)
       smart_properties
     erubi (1.13.1)
-    factory_bot (6.5.6)
+    factory_bot (6.6.0)
       activesupport (>= 6.1.0)
     faker (3.8.0)
       i18n (>= 1.8.11, < 2)
@@ -605,7 +605,7 @@ DEPENDENCIES
   discard (~> 2.0)
   dotenv-rails (~> 3.2)
   erb_lint
-  factory_bot (~> 6.5)
+  factory_bot (~> 6.6)
   faker (~> 3.5)
   faraday (~> 2.13)
   faraday-retry (~> 2.4)
