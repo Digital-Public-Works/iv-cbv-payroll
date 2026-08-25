@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "faraday"
+require "faraday/retry"
 require "fileutils"
 require "ipaddr"
 require "json"
@@ -49,6 +50,17 @@ module Aggregators::Sdk
     # budget than the default 5s API request timeout.
     PAYSTUB_RETRIEVAL_TIMEOUT = 60
 
+
+    OPEN_TIMEOUT = 5
+    # How long to wait for an Argyle response; at 5s we are getting timeout errors.
+    READ_TIMEOUT = 15
+
+    # Try up to 3 times. This may result at most in a 45s open connection. Need to watch for that.
+    MAX_RETRIES = 2
+    RETRY_INTERVAL = 0.25
+    RETRY_BACKOFF_FACTOR = 2
+    RETRY_JITTER = 0.5
+
     # Upper bound on pages walked by #with_pagination. Argyle terminates a list
     # by omitting `next`; this guards against a response that keeps handing back
     # a cursor forever. Exceeding it raises rather than truncating, so a genuine
@@ -86,8 +98,8 @@ module Aggregators::Sdk
 
       client_options = {
         request: {
-          open_timeout: 5,
-          timeout: 5,
+          open_timeout: OPEN_TIMEOUT,
+          timeout: READ_TIMEOUT,
           params_encoder: Faraday::FlatParamsEncoder
         },
         url: @base_url,
@@ -97,6 +109,25 @@ module Aggregators::Sdk
       }
       @http = Faraday.new(client_options) do |conn|
         conn.set_basic_auth @api_key_id, @api_key_secret
+
+        # Implement faraday retry. Actual errors should still be raised immediately,
+        # and warn on retry so we can look at it in the logs if we need to.
+        # Only retry on fetch verbs, and only retry on timeout and connect fail
+        conn.request :retry,
+          max: MAX_RETRIES,
+          interval: RETRY_INTERVAL,
+          backoff_factor: RETRY_BACKOFF_FACTOR,
+          interval_randomness: RETRY_JITTER,
+          methods: %i[get head options],
+          exceptions: [ Faraday::TimeoutError, Faraday::ConnectionFailed ],
+          retry_block: ->(env:, options:, retry_count:, exception:, will_retry_in:) do
+            Rails.logger.warn(
+              "ArgyleService: retrying #{env.method.to_s.upcase} #{env.url.path} " \
+              "after #{exception.class} (attempt #{retry_count + 1} of #{options.max + 1}, " \
+              "next in #{will_retry_in.round(2)}s)"
+            )
+          end
+
         conn.response :raise_error
         conn.response :json, content_type: "application/json"
         conn.response :logger,
