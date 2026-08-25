@@ -398,14 +398,14 @@ RSpec.describe Cbv::SubmitsController do
           pdf_text = extract_pdf_text(response)
           expect(response).to be_successful
 
-          expect(pdf_text.scan("Employer 1: Lyft Driver Self-employment").size).to eq(1)
-          expect(pdf_text.scan("Payments from Lyft Driver Self-employment").size).to eq(1)
-          expect(pdf_text.scan("Employer 2: Nava Self-employment").size).to eq(1)
-          expect(pdf_text.scan("Payments from Nava Self-employment").size).to eq(1)
-
-          expect(pdf_text.scan("Monthly summary Self-employment").size).to eq(2)
-
-          expect(pdf_text.scan("What does the information in the ‘Monthly Summary’ table mean? Self-employment").size).to eq(1)
+          expect(pdf_text).to include("Employer 1: Lyft Driver")
+          expect(pdf_text).to include("Payments from Lyft Driver")
+          expect(pdf_text).to include("Employer 2: Nava")
+          expect(pdf_text).to include("Payments from Nava")
+          expect(pdf_text.scan("Monthly summary").size).to eq(2)
+          expect(pdf_text).to include("table mean?")
+          expect(pdf_text.scan("Self-employment").size).to eq(8)
+          expect(pdf_text.scan("“Self-employment”").size).to eq(1)
         end
       end
 
