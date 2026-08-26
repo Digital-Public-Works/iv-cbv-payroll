@@ -299,6 +299,36 @@ RSpec.describe ApplicationHelper do
     end
   end
 
+  describe "#paystubs_indicator_status" do
+    let(:cbv_flow) { create(:cbv_flow) }
+
+    context "when the account has not fully synced" do
+      # A gig account whose paystubs have already succeeded but whose gigs are
+      # still syncing: has_fully_synced? is false because gigs remain in
+      # progress. The indicator must keep spinning rather than showing "done".
+      let(:payroll_account) do
+        create(:payroll_account, :argyle, cbv_flow: cbv_flow).tap do |account|
+          create(:webhook_event, payroll_account: account, event_name: "paystubs.fully_synced", event_outcome: "success")
+        end
+      end
+
+      it "reports in_progress even though paystubs succeeded" do
+        expect(payroll_account.job_status("paystubs")).to eq(:succeeded)
+        expect(payroll_account.has_fully_synced?).to be(false)
+        expect(helper.paystubs_indicator_status(payroll_account)).to eq(:in_progress)
+      end
+    end
+
+    context "when the account has fully synced" do
+      let(:payroll_account) { create(:payroll_account, :argyle_fully_synced, cbv_flow: cbv_flow) }
+
+      it "reports the underlying paystubs job status" do
+        expect(payroll_account.has_fully_synced?).to be(true)
+        expect(helper.paystubs_indicator_status(payroll_account)).to eq(payroll_account.job_status("paystubs"))
+      end
+    end
+  end
+
   describe "#get_age_range" do
     let(:now) { Date.new(2025, 5, 15) }
 

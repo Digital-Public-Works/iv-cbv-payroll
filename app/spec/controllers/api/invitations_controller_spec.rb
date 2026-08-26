@@ -229,7 +229,7 @@ RSpec.describe Api::InvitationsController do
         expect(parsed_response["errors"]).to be_an(Array)
         first = parsed_response["errors"].first
         expect(first["field"]).to eq("body")
-        expect(first["message"]).to match(/Request body is not valid JSON/)
+        expect(first["message"]).to include('Request body is not valid JSON')
       end
 
       it "returns a structured 400 for a truncated body" do
@@ -241,7 +241,7 @@ RSpec.describe Api::InvitationsController do
         expect(response).to have_http_status(:bad_request)
         parsed_response = JSON.parse(response.body)
         expect(parsed_response["errors"].first["field"]).to eq("body")
-        expect(parsed_response["errors"].first["message"]).to match(/Request body is not valid JSON/)
+        expect(parsed_response["errors"].first["message"]).to include('Request body is not valid JSON')
       end
     end
 

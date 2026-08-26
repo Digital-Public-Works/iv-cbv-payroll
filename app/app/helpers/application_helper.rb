@@ -242,6 +242,15 @@ module ApplicationHelper
     [ :unsupported, :failed ].include?(status) ? :completed : status
   end
 
+  # The paystubs indicator doubles as the synchronization page's overall
+  # progress indicator: there is no separate "gigs" indicator, yet a gig
+  # account's sync isn't finished until its gigs have returned.
+  def paystubs_indicator_status(payroll_account)
+    return :in_progress unless payroll_account.has_fully_synced?
+
+    payroll_account.job_status("paystubs")
+  end
+
   def uswds_form_with(model: false, scope: nil, url: nil, format: nil, **options, &block)
     options[:builder] = UswdsFormBuilder
     options[:data] ||= {}
