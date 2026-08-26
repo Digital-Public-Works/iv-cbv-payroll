@@ -129,7 +129,13 @@ module ApplicationHelper
     url = current_agency&.agency_contact_website
     return label if url.blank?
 
-    link_to(label, url, target: "_blank", rel: "noopener noreferrer")
+    render(LinkWithIconComponent.new(
+      label,
+      url: url,
+      icon_position: :trailing,
+      target: "_blank",
+      rel: "noopener noreferrer"
+    ))
   end
 
   # The text for an agency website link/reference (e.g. "the COMPASS website").
