@@ -181,7 +181,7 @@ GEM
     css_parser (3.0.0)
       addressable
       ssrf_filter (~> 1.5)
-    cssbundling-rails (1.4.1)
+    cssbundling-rails (1.4.3)
       railties (>= 6.0.0)
     csv (3.3.6)
     date (3.5.1)
