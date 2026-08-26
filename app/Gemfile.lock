@@ -117,8 +117,8 @@ GEM
     aws-sdk-sesv2 (1.68.0)
       aws-sdk-core (~> 3, >= 3.210.0)
       aws-sigv4 (~> 1.5)
-    aws-sdk-sqs (1.116.0)
-      aws-sdk-core (~> 3, >= 3.248.0)
+    aws-sdk-sqs (1.117.0)
+      aws-sdk-core (~> 3, >= 3.254.0)
       aws-sigv4 (~> 1.5)
     aws-sigv4 (1.12.1)
       aws-eventstream (~> 1, >= 1.0.2)
@@ -151,8 +151,8 @@ GEM
     brakeman (8.0.6)
       racc
     builder (3.3.0)
-    bundler-audit (0.9.1)
-      bundler (>= 1.2.0, < 3)
+    bundler-audit (0.9.3)
+      bundler (>= 1.2.0)
       thor (~> 1.0)
     capybara (3.40.0)
       addressable
@@ -174,7 +174,7 @@ GEM
       ruby-rc4 (>= 0.1.5)
     concurrent-ruby (1.3.8)
     connection_pool (3.0.2)
-    crack (1.0.0)
+    crack (1.0.1)
       bigdecimal
       rexml
     crass (1.0.7)
@@ -188,7 +188,7 @@ GEM
     debase (0.2.9)
       debase-ruby_core_source (>= 3.4.1)
     debase-ruby_core_source (4.0.1)
-    debug (1.11.0)
+    debug (1.11.1)
       irb (~> 1.10)
       reline (>= 0.3.8)
     descendants_tracker (0.0.4)
@@ -228,6 +228,8 @@ GEM
       logger
     faraday-net_http (3.4.2)
       net-http (~> 0.5)
+    faraday-retry (2.4.0)
+      faraday (~> 2.0)
     globalid (1.4.0)
       activesupport (>= 6.1)
     gpgme (2.0.25)
@@ -269,7 +271,7 @@ GEM
     loofah (2.25.2)
       crass (~> 1.0.2)
       nokogiri (>= 1.12.0)
-    mail (2.9.0)
+    mail (2.9.1)
       logger
       mini_mime (>= 0.1.1)
       net-imap
@@ -305,7 +307,8 @@ GEM
     net-smtp (0.5.1)
       net-protocol
     net-ssh (7.3.3)
-    newrelic_rpm (9.21.0)
+    newrelic_rpm (10.7.1)
+      logger
     nio4r (2.7.5)
     nokogiri (1.19.4-aarch64-linux-gnu)
       racc (~> 1.4)
@@ -328,7 +331,10 @@ GEM
       hashery (~> 2.0)
       ruby-rc4
       ttfunk
-    pg (1.5.7)
+    pg (1.6.3-aarch64-linux)
+    pg (1.6.3-arm64-darwin)
+    pg (1.6.3-x86_64-darwin)
+    pg (1.6.3-x86_64-linux)
     pg-aws_rds_iam (0.7.0)
       aws-sdk-rds (~> 1.0)
       pg (~> 1.1)
@@ -348,11 +354,11 @@ GEM
       coderay (~> 1.1)
       method_source (~> 1.0)
       reline (>= 0.6.0)
-    public_suffix (6.0.2)
+    public_suffix (7.0.5)
     puma (7.2.1)
       nio4r (~> 2.0)
     racc (1.8.1)
-    rack (3.2.6)
+    rack (3.2.7)
     rack-mini-profiler (3.3.1)
       rack (>= 1.2.0)
     rack-protection (4.2.1)
@@ -531,8 +537,7 @@ GEM
     unicode-emoji (4.2.0)
     uri (1.1.1)
     useragent (0.16.11)
-    vcr (6.3.1)
-      base64
+    vcr (6.4.0)
     view_component (4.12.0)
       actionview (>= 7.1.0)
       activesupport (>= 7.1.0)
@@ -548,7 +553,7 @@ GEM
       activemodel (>= 6.0.0)
       bindex (>= 0.4.0)
       railties (>= 6.0.0)
-    webmock (3.25.1)
+    webmock (3.26.3)
       addressable (>= 2.8.0)
       crack (>= 0.3.2)
       hashdiff (>= 0.4.0, < 2.0.0)
@@ -603,6 +608,7 @@ DEPENDENCIES
   factory_bot (~> 6.5)
   faker (~> 3.5)
   faraday (~> 2.13)
+  faraday-retry (~> 2.4)
   gpgme (= 2.0.25)
   i18n-tasks (~> 1.1)
   jsbundling-rails
@@ -615,12 +621,12 @@ DEPENDENCIES
   openssl
   ostruct
   pdf-reader (~> 2.15.0)
-  pg (~> 1.1)
+  pg (~> 1.6)
   pg-aws_rds_iam (~> 0.7.0)
   premailer-rails
   pry
   puma (~> 7.2)
-  rack (~> 3.2.6)
+  rack (~> 3.2.7)
   rack-mini-profiler
   rails (~> 8.1.3)
   rails-controller-testing
