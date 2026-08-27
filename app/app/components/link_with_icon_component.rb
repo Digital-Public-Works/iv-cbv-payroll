@@ -5,9 +5,10 @@ class LinkWithIconComponent < ViewComponent::Base
     @text = text
     @url = url
     @variant = variant
-    @icon_position = icon_position
     @options = options
-    @icon = icon.nil? && opens_in_new_tab? ? "launch" : icon
+    apply_new_tab_defaults = icon.nil? && opens_in_new_tab?
+    @icon = apply_new_tab_defaults ? "launch" : icon
+    @icon_position = apply_new_tab_defaults ? :trailing : icon_position
   end
 
   private

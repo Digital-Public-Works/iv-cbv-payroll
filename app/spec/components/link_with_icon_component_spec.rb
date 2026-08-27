@@ -121,6 +121,10 @@ RSpec.describe LinkWithIconComponent, type: :component do
       it 'renders a visually-hidden "Opens in a new tab" span' do
         expect(result).to have_element(:span, class: 'usa-sr-only', text: 'Opens in a new tab')
       end
+
+      it 'positions the icon after the text, not before' do
+        expect(result.to_html).to match(/Learn more.*<svg.*usa-icon.*<\/svg>/m)
+      end
     end
 
     context 'when target is _blank and an explicit icon is given' do
@@ -133,6 +137,18 @@ RSpec.describe LinkWithIconComponent, type: :component do
 
       it 'still renders the sr-only "Opens in a new tab" text' do
         expect(result).to have_element(:span, class: 'usa-sr-only', text: 'Opens in a new tab')
+      end
+
+      it 'keeps the default leading icon position rather than forcing trailing' do
+        expect(result.to_html).to match(/<svg.*usa-icon.*<\/svg>.*Download/m)
+      end
+    end
+
+    context 'when target is _blank, an explicit icon is given, and icon_position is explicit' do
+      let(:result) { render_inline(described_class.new('Download', url: '/f.pdf', icon: 'file_download', icon_position: :leading, target: '_blank')) }
+
+      it 'respects the explicit icon_position instead of forcing trailing' do
+        expect(result.to_html).to match(/<svg.*usa-icon.*<\/svg>.*Download/m)
       end
     end
 
