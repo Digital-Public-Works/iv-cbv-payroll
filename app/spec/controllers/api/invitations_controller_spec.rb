@@ -4,6 +4,10 @@ RSpec.describe Api::InvitationsController do
   include ActiveSupport::Testing::TimeHelpers
 
   describe "#create" do
+    subject do
+      post :create, params: valid_params
+    end
+
     let(:client_agency_id) { "sandbox".to_sym }
     let(:api_access_token_instance) do
       user = create(:user, :with_access_token, email: "test@test.com", client_agency_id: client_agency_id, is_service_account: true)
@@ -27,9 +31,6 @@ RSpec.describe Api::InvitationsController do
       ).update_all(required: false)
     end
 
-    subject do
-      post :create, params: valid_params
-    end
 
     it "creates an invitation with an associated cbv_applicant" do
       expect { subject }

@@ -15,7 +15,7 @@ gem "sprockets-rails"
 gem "csv"
 
 # Use postgresql as the database for Active Record
-gem "pg", "~> 1.1"
+gem "pg", "~> 1.6"
 
 # Use the Puma web server [https://github.com/puma/puma]
 gem "puma", "~> 7.2"
@@ -50,7 +50,7 @@ gem "mixpanel-ruby"
 gem "newrelic_rpm"
 
 gem "faraday", "~> 2.13"
-
+gem "faraday-retry", "~> 2.4"
 gem "wicked_pdf"
 gem "combine_pdf"
 gem "actioncable-enhanced-postgresql-adapter"
@@ -62,12 +62,13 @@ gem "aws-actionmailer-ses"
 gem "rack-mini-profiler"
 gem "stackprof"
 
-gem "rack", "~> 3.2.6"
+gem "rack", "~> 3.2.7"
 
 # https://www.ruby-lang.org/en/news/2024/08/01/dos-rexml-cve-2024-41123/
 gem "rexml", "~> 3.4.2"
-gem "gpgme", "~> 2.0", ">= 2.0.12"
-gem "net-imap", "~> 0.5.15"  # Fixing CVE-2026-42246 (STARTTLS stripping) + GHSA-j3g3-5qv5-52mj + GHSA-8p34-64r3-mwg8 + GHSA-46q3-7gv7-qmgg
+# Pinned: .26 breaks encryption
+gem "gpgme", "2.0.25"
+gem "net-imap", "~> 0.6.6"   # Fixing CVE-2026-42246 (STARTTLS stripping) + GHSA-j3g3-5qv5-52mj + GHSA-8p34-64r3-mwg8 + GHSA-46q3-7gv7-qmgg
 gem "cgi", ">= 0.4.2"     # Fixing GHSA-mhwm-jh88-3gjf
 gem "thor", ">= 1.4.0"    # Fixing GHSA-mqcp-p2hv-vw6x
 gem "uri", ">= 1.0.4"     # Fixing CVE-2025-61594
@@ -104,7 +105,9 @@ group :development do
 
   # Speed up commands on slow machines / big apps [https://github.com/rails/spring]
   # gem "spring"
-  gem "rails-erd", "~> 1.7"
+  # rails-erd defaults to mermaid, we are using graphviz so need to explicitly add the package
+  gem "rails-erd", "~> 2.1"
+  gem "ruby-graphviz", "~> 1.2"
 end
 
 # Realistic fake data, used by the dev-only partner generator rake task.

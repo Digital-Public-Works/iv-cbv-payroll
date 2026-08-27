@@ -13,7 +13,7 @@
     "postcss": "^8.5.15",
     "postcss-cli": "^11.0.1",
     "postcss-minify": "^1.2.0",
-    "sass": "^1.102"
+    "sass": "^1.103"
   },
   "scripts": {
     "build": "esbuild app/javascript/*.* --bundle --sourcemap --outdir=app/assets/builds --public-path=assets",
@@ -30,7 +30,7 @@
   "devDependencies": {
     "jsdom": "^30.0.1",
     "prettier": "^3.9.6",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   },
   "overrides": {
     "semver": ">= 7.5.2",

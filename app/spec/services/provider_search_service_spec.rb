@@ -4,7 +4,7 @@ RSpec.describe ProviderSearchService, type: :service do
   include PinwheelApiHelper
   include ArgyleApiHelper
 
-  let(:service) { ProviderSearchService.new("sandbox", providers: providers) }
+  let(:service) { described_class.new("sandbox", providers: providers) }
   let(:providers) { %i[argyle] }
 
   describe "#search" do

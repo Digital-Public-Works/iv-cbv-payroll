@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.describe CbvFlowToJson do
+  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report) }
+
   let(:completed_at) { Time.find_zone("UTC").local(2025, 5, 1, 1) }
   let(:cbv_applicant) { create(:cbv_applicant, case_number: "ABC1234") }
   let(:cbv_flow) do
@@ -39,14 +41,10 @@ RSpec.describe CbvFlowToJson do
   end
 
   before do
-    allow(mock_client_agency).to receive(:id).and_return("sandbox")
-    allow(mock_client_agency).to receive(:timezone).and_return("America/New_York")
-    allow(mock_client_agency).to receive(:transmission_methods).and_return(configured_methods)
-    allow(mock_client_agency).to receive(:include_paystubs).and_return(false)
+    allow(mock_client_agency).to receive_messages(id: "sandbox", timezone: "America/New_York", transmission_methods: configured_methods, include_paystubs: false)
     allow(CbvApplicant).to receive(:valid_attributes_for_agency).with("sandbox").and_return([ "case_number" ])
   end
 
-  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report) }
 
   describe "#to_h" do
     let(:payload) { subject.to_h }
@@ -58,17 +56,17 @@ RSpec.describe CbvFlowToJson do
     describe "paystub_images_included" do
       it "is always present, even when include_paystubs is off" do
         expect(payload).to have_key(:paystub_images_included)
-        expect(payload[:paystub_images_included]).to eq(false)
+        expect(payload[:paystub_images_included]).to be(false)
       end
 
       it "reflects the aggregator report's paystub_images_included? for the agency" do
         allow(aggregator_report).to receive(:paystub_images_included?).with(mock_client_agency).and_return(true)
-        expect(payload[:paystub_images_included]).to eq(true)
+        expect(payload[:paystub_images_included]).to be(true)
       end
 
       it "stays present as false (survives compact) when the report reports no images" do
         allow(aggregator_report).to receive(:paystub_images_included?).and_return(false)
-        expect(payload[:paystub_images_included]).to eq(false)
+        expect(payload[:paystub_images_included]).to be(false)
       end
     end
 
