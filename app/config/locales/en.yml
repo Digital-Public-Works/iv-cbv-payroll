@@ -823,6 +823,7 @@ en:
     next_path:
       notice_no_answer: You must select an answer to continue.
     not_applicable: N/A
+    opens_in_new_tab: Opens in a new tab
     pilot_name: Verify My Income
     report_data_range:
       ninety_days: 90 days
