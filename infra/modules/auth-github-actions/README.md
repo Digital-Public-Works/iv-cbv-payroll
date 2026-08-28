@@ -4,13 +4,7 @@ This module sets up a way for GitHub Actions to access AWS resources using short
 
 1. Set up GitHub as an OpenID Connect Provider in the AWS account
 2. Create an IAM role that GitHub actions will assume
-3. Attach an IAM policy to the GitHub actions role that provides the necessary access to AWS account resources. By default this module will provide the [AWS managed Developer power user access policy `PowerUserAccess`](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_job-functions.html)
-
-## Related Implementations
-
-Similar functionality is also implemented in the [oidc-github module in the Terraform Registry](https://registry.terraform.io/modules/unfunco/oidc-github/aws/latest), but since IAM is sensitive we chose to implement it ourselves to keep the module simple, easy to understand, and in a place that's within our scope of control.
-
-## Reference
-
-* [AWS - Creating OpenID Connect (OIDC) Providers](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc.html)
-* [GitHub - Security Hardening with OpenID Connect](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect)
+3. Attach three least-privilege IAM policies to that role:
+   - `<role>-infra-services` — coarse `<service>:*` for the services this project uses
+   - `<role>-iam-scoped` — IAM read everywhere; role/policy lifecycle and `PassRole` confined to the resources named "app-*"
+   - `<role>-guardrails` — explicit `Deny` protecting the CI role itself, the OIDC provider, the Terraform state backend, and customer data in RDS
