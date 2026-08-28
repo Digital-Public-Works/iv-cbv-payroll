@@ -51,16 +51,6 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
   end
 
   context "with a standard paystub" do
-    let(:income) { build_income }
-    let(:paystub) do
-      build_paystub(
-        deductions: [
-          OpenStruct.new(category: "Dental", tax: "post-tax", amount: 4557), # $45.57
-          OpenStruct.new(category: "Garnishment", tax: "post-tax", amount: 1519) # $15.19
-        ]
-      )
-    end
-
     subject do
       render_inline(
         described_class.new(
@@ -72,6 +62,17 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
       )
     end
 
+    let(:income) { build_income }
+    let(:paystub) do
+      build_paystub(
+        deductions: [
+          OpenStruct.new(category: "Dental", tax: "post-tax", amount: 4557), # $45.57
+          OpenStruct.new(category: "Garnishment", tax: "post-tax", amount: 1519) # $15.19
+        ]
+      )
+    end
+
+
     it "renders the payment details table with proper class" do
       expect(subject.css("table.payment-details-table").length).to eq(1)
     end
@@ -82,7 +83,7 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
       expect(subject.css("thead tr.subheader-row th:nth-child(2)").to_html).to include "Details"
     end
 
-    include_examples "renders paystub correctly",
+    it_behaves_like "renders paystub correctly",
       pay_date: "March 3, 2025",
       period_start: "February 10, 2025",
       period_end: "February 24, 2025",
@@ -99,6 +100,17 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
   end
 
   context "with commission earnings" do
+    subject do
+      render_inline(
+        described_class.new(
+          paystub,
+          income: income,
+          is_caseworker: false,
+          is_responsive: true,
+        )
+      )
+    end
+
     let(:income) { build_income }
     let(:paystub) do
       build_paystub(
@@ -119,18 +131,8 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
       )
     end
 
-    subject do
-      render_inline(
-        described_class.new(
-          paystub,
-          income: income,
-          is_caseworker: false,
-          is_responsive: true,
-        )
-      )
-    end
 
-    include_examples "renders paystub correctly",
+    it_behaves_like "renders paystub correctly",
       pay_date: "February 3, 2025",
       period_start: "January 13, 2025",
       period_end: "January 27, 2025",
@@ -146,9 +148,6 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
   end
 
   context "when rendered for caseworker" do
-    let(:income) { build_income }
-    let(:paystub) { build_paystub }
-
     subject do
       render_inline(
         described_class.new(
@@ -160,6 +159,10 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
       )
     end
 
+    let(:income) { build_income }
+    let(:paystub) { build_paystub }
+
+
     it "highlights key fields for caseworkers" do
       # The component should highlight certain fields when is_caseworker is true
       # This is done via the 'highlight' parameter on table.with_data_point
@@ -168,9 +171,6 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
   end
 
   context "when rendered for PDF" do
-    let(:income) { build_income }
-    let(:paystub) { build_paystub }
-
     subject do
       render_inline(
         described_class.new(
@@ -181,6 +181,10 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
         )
       )
     end
+
+    let(:income) { build_income }
+    let(:paystub) { build_paystub }
+
 
     it "renders headers correctly" do
       # The component uses its own translation namespace
@@ -195,8 +199,6 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
   end
 
   context "when income has no pay frequency" do
-    let(:paystub) { build_paystub }
-
     subject do
       render_inline(
         described_class.new(
@@ -208,6 +210,9 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
       )
     end
 
+    let(:paystub) { build_paystub }
+
+
     it "renders 'Unknown' for pay frequency" do
       expect(subject.to_html).to include "Pay period"
       expect(subject.to_html).to include "Unknown"
@@ -218,15 +223,6 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
     let(:income) { build_income }
 
     context "when show_hours_breakdown is false" do
-      let(:paystub) do
-        build_paystub(
-          hours_by_earning_category: {
-            "Regular" => "56.0",
-            "Commission" => "2.6"
-          }
-        )
-      end
-
       subject do
         render_inline(
           described_class.new(
@@ -236,6 +232,16 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
           )
         )
       end
+
+      let(:paystub) do
+        build_paystub(
+          hours_by_earning_category: {
+            "Regular" => "56.0",
+            "Commission" => "2.6"
+          }
+        )
+      end
+
 
       it "does not render earnings breakdown" do
         expect(subject.to_html).not_to include "Regular"
@@ -250,8 +256,6 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
 
     context "when show_gross_pay_ytd is true" do
       context "with positive YTD" do
-        let(:paystub) { build_paystub(gross_pay_ytd: 819738) }
-
         subject do
           render_inline(
             described_class.new(
@@ -261,6 +265,9 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
             )
           )
         end
+
+        let(:paystub) { build_paystub(gross_pay_ytd: 819738) }
+
 
         it "renders gross pay YTD" do
           expect(subject.to_html).to include "Gross pay YTD"
@@ -269,8 +276,6 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
       end
 
       context "with zero YTD" do
-        let(:paystub) { build_paystub(gross_pay_ytd: 0) }
-
         subject do
           render_inline(
             described_class.new(
@@ -281,6 +286,9 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
           )
         end
 
+        let(:paystub) { build_paystub(gross_pay_ytd: 0) }
+
+
         it "does not render gross pay YTD when value is zero" do
           expect(subject.to_html).not_to include "Gross pay YTD"
         end
@@ -288,8 +296,6 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
     end
 
     context "when show_gross_pay_ytd is false" do
-      let(:paystub) { build_paystub(gross_pay_ytd: 819738) }
-
       subject do
         render_inline(
           described_class.new(
@@ -300,14 +306,15 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
         )
       end
 
+      let(:paystub) { build_paystub(gross_pay_ytd: 819738) }
+
+
       it "does not render gross pay YTD even with positive value" do
         expect(subject.to_html).not_to include "Gross pay YTD"
       end
     end
 
     context "when show_pay_frequency is false" do
-      let(:paystub) { build_paystub }
-
       subject do
         render_inline(
           described_class.new(
@@ -318,6 +325,9 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
         )
       end
 
+      let(:paystub) { build_paystub }
+
+
       it "does not render pay frequency" do
         expect(subject.to_html).not_to include "Pay period"
         expect(subject.to_html).not_to include "Bi-weekly"
@@ -325,8 +335,6 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
     end
 
     context "when is_personalized is true" do
-      let(:paystub) { build_paystub }
-
       subject do
         render_inline(
           described_class.new(
@@ -337,21 +345,15 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
         )
       end
 
+      let(:paystub) { build_paystub }
+
+
       it "uses the personalized translation for details header" do
         expect(subject.css("thead tr.subheader-row th:nth-child(2)").to_html).to include "Your details"
       end
     end
 
     context "when show_earnings_items is true" do
-      let(:earnings) do
-        [
-          Aggregators::ResponseObjects::Earning.new(name: "Regular Pay", amount: 100000),
-          Aggregators::ResponseObjects::Earning.new(name: "Overtime", amount: 25000),
-          Aggregators::ResponseObjects::Earning.new(name: "Bonus", amount: 50000)
-        ]
-      end
-      let(:paystub) { build_paystub(earnings: earnings) }
-
       subject do
         render_inline(
           described_class.new(
@@ -361,6 +363,16 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
           )
         )
       end
+
+      let(:earnings) do
+        [
+          Aggregators::ResponseObjects::Earning.new(name: "Regular Pay", amount: 100000),
+          Aggregators::ResponseObjects::Earning.new(name: "Overtime", amount: 25000),
+          Aggregators::ResponseObjects::Earning.new(name: "Bonus", amount: 50000)
+        ]
+      end
+      let(:paystub) { build_paystub(earnings: earnings) }
+
 
       it "renders earnings items heading" do
         expect(subject.to_html).to include "Gross pay line items"
@@ -534,13 +546,6 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
     end
 
     context "when show_earnings_items is false" do
-      let(:earnings) do
-        [
-          Aggregators::ResponseObjects::Earning.new(name: "Regular Pay", amount: 100000)
-        ]
-      end
-      let(:paystub) { build_paystub(earnings: earnings) }
-
       subject do
         render_inline(
           described_class.new(
@@ -550,6 +555,14 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
           )
         )
       end
+
+      let(:earnings) do
+        [
+          Aggregators::ResponseObjects::Earning.new(name: "Regular Pay", amount: 100000)
+        ]
+      end
+      let(:paystub) { build_paystub(earnings: earnings) }
+
 
       it "does not render earnings items section" do
         expect(subject.to_html).not_to include "Gross pay line items"
@@ -665,13 +678,14 @@ RSpec.describe Report::W2PaystubDetailsTableComponent, type: :component do
     end
 
     context "when show_direct_deposit_accounts is false (default)" do
-      let(:paystub) { build_paystub(direct_deposit_accounts: [ "1111", "2222" ], payout_card_accounts: [ "5678" ]) }
-
       subject do
         render_inline(
           described_class.new(paystub, income: income)
         )
       end
+
+      let(:paystub) { build_paystub(direct_deposit_accounts: [ "1111", "2222" ], payout_card_accounts: [ "5678" ]) }
+
 
       it "does not render any deposit section" do
         html = subject.to_html

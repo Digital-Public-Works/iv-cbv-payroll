@@ -364,9 +364,61 @@ input#invitation_link {
 /*
  * Employer search result cards
  */
-@include at-media-max($theme-header-min-width) {
-  .cbv-employer-card__img img {
-    max-height: 100px;
+.cbv-employer-card__img {
+  align-self: center;
+  aspect-ratio: 1;
+  width: 6.25rem; // 100px
+  background-color: transparent;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; // consistent square vs. uswds's crop/zoom `cover` for media
+  }
+}
+
+.employer-logo-placeholder__icon {
+  width: 50%;
+  height: 50%;
+}
+
+// force flag layout on mobile (USWDS defaults to stacked, assuming media content)
+@include at-media-max("tablet") {
+  .usa-card--flag .usa-card__media {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+  }
+}
+
+.usa-card--flag {
+  // logo column should be 25% of the card width clamped as long as its between 7.5rem-10rem
+  $logo-column: clamp(7.5rem, 25%, 10rem);
+
+  .usa-card__media {
+    width: $logo-column;
+  }
+
+  // USWDS has padding around the media that throws off the visual balance
+  .usa-card__media--inset {
+    padding: 0;
+  }
+
+  .usa-card__header,
+  .usa-card__body,
+  .usa-card__footer {
+    margin-left: $logo-column; // the logo column
+    padding-left: units(1); // small gap between the logo column and the text
+  }
+}
+
+@include at-media-max("desktop") {
+  .usa-card--flag {
+    max-width: 40rem; // same as searchbar max width
   }
 }
 

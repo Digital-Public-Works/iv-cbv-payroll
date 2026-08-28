@@ -222,12 +222,17 @@ RSpec.describe ApplicationHelper do
 
     it "builds an external link labeled with the default 'the … website' wording" do
       result = helper.agency_website_link
-      expect(result).to include(%(href="#{url}"), 'target="_blank"', 'rel="noopener noreferrer"', ">the VMI website</a>")
+      expect(result).to include(%(href="#{url}"), 'target="_blank"', 'rel="noopener noreferrer"', "the VMI website")
       expect(result).to be_html_safe
     end
 
+    it "includes the launch icon and sr-only 'opens in a new tab' text" do
+      result = helper.agency_website_link
+      expect(result).to include("usa-icon", "svg#launch", "usa-sr-only", "Opens in a new tab")
+    end
+
     it "uses a custom label when provided" do
-      expect(helper.agency_website_link(label: "Acme")).to include(">Acme</a>")
+      expect(helper.agency_website_link(label: "Acme")).to include("Acme")
     end
 
     context "when the agency has no website" do
@@ -291,6 +296,36 @@ RSpec.describe ApplicationHelper do
 
     it "returns in progress when the status is in progress" do
       expect(helper.coalesce_to_completed(:in_progress)).to eq(:in_progress)
+    end
+  end
+
+  describe "#paystubs_indicator_status" do
+    let(:cbv_flow) { create(:cbv_flow) }
+
+    context "when the account has not fully synced" do
+      # A gig account whose paystubs have already succeeded but whose gigs are
+      # still syncing: has_fully_synced? is false because gigs remain in
+      # progress. The indicator must keep spinning rather than showing "done".
+      let(:payroll_account) do
+        create(:payroll_account, :argyle, cbv_flow: cbv_flow).tap do |account|
+          create(:webhook_event, payroll_account: account, event_name: "paystubs.fully_synced", event_outcome: "success")
+        end
+      end
+
+      it "reports in_progress even though paystubs succeeded" do
+        expect(payroll_account.job_status("paystubs")).to eq(:succeeded)
+        expect(payroll_account.has_fully_synced?).to be(false)
+        expect(helper.paystubs_indicator_status(payroll_account)).to eq(:in_progress)
+      end
+    end
+
+    context "when the account has fully synced" do
+      let(:payroll_account) { create(:payroll_account, :argyle_fully_synced, cbv_flow: cbv_flow) }
+
+      it "reports the underlying paystubs job status" do
+        expect(payroll_account.has_fully_synced?).to be(true)
+        expect(helper.paystubs_indicator_status(payroll_account)).to eq(payroll_account.job_status("paystubs"))
+      end
     end
   end
 

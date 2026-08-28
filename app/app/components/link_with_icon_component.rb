@@ -4,10 +4,11 @@ class LinkWithIconComponent < ViewComponent::Base
   def initialize(text, url:, icon: nil, variant: nil, icon_position: :leading, **options)
     @text = text
     @url = url
-    @icon = icon
     @variant = variant
-    @icon_position = icon_position
     @options = options
+    apply_new_tab_defaults = icon.nil? && opens_in_new_tab?
+    @icon = apply_new_tab_defaults ? "launch" : icon
+    @icon_position = apply_new_tab_defaults ? :trailing : icon_position
   end
 
   private
@@ -45,5 +46,14 @@ class LinkWithIconComponent < ViewComponent::Base
 
   def trailing_icon?
     icon_position == :trailing
+  end
+
+  def opens_in_new_tab?
+    options[:target] == "_blank"
+  end
+
+  def new_tab_sr_text
+    return unless opens_in_new_tab?
+    helpers.sr_only_span(I18n.t("shared.opens_in_new_tab"))
   end
 end

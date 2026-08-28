@@ -129,7 +129,13 @@ module ApplicationHelper
     url = current_agency&.agency_contact_website
     return label if url.blank?
 
-    link_to(label, url, target: "_blank", rel: "noopener noreferrer")
+    render(LinkWithIconComponent.new(
+      label,
+      url: url,
+      icon_position: :trailing,
+      target: "_blank",
+      rel: "noopener noreferrer"
+    ))
   end
 
   # The text for an agency website link/reference (e.g. "the COMPASS website").
@@ -234,6 +240,15 @@ module ApplicationHelper
   # some job statuses we consider completed even if they failed
   def coalesce_to_completed(status)
     [ :unsupported, :failed ].include?(status) ? :completed : status
+  end
+
+  # The paystubs indicator doubles as the synchronization page's overall
+  # progress indicator: there is no separate "gigs" indicator, yet a gig
+  # account's sync isn't finished until its gigs have returned.
+  def paystubs_indicator_status(payroll_account)
+    return :in_progress unless payroll_account.has_fully_synced?
+
+    payroll_account.job_status("paystubs")
   end
 
   def uswds_form_with(model: false, scope: nil, url: nil, format: nil, **options, &block)

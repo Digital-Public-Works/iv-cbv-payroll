@@ -7,7 +7,7 @@ RSpec.describe PartnerTransmissionConfig, type: :model do
   describe "#value encryption logic" do
     context "when encrypted is true" do
       it "encrypts the data in the database" do
-        ptc = PartnerTransmissionConfig.create!(key: "demo-config-item", is_encrypted: true, value: cleartext, partner_transmission_method: partner_transmission_method)
+        ptc = described_class.create!(key: "demo-config-item", is_encrypted: true, value: cleartext, partner_transmission_method: partner_transmission_method)
 
         expect(ptc.value).to eq(cleartext)
 
@@ -19,7 +19,7 @@ RSpec.describe PartnerTransmissionConfig, type: :model do
 
     context "when encrypted is false" do
       it "stores the data as plain text" do
-        ptc = PartnerTransmissionConfig.create!(key: "demo-config-item", is_encrypted: false, value: cleartext, partner_transmission_method: partner_transmission_method)
+        ptc = described_class.create!(key: "demo-config-item", is_encrypted: false, value: cleartext, partner_transmission_method: partner_transmission_method)
 
         raw_value = ptc.read_attribute(:value)
         expect(raw_value).to eq(cleartext)

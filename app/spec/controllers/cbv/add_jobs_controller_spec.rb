@@ -32,7 +32,7 @@ RSpec.describe Cbv::AddJobsController do
     it 'does not set session when additional_jobs is not set' do
       post :create, params: {}
 
-      expect(session[:additional_jobs]).to eq(nil)
+      expect(session[:additional_jobs]).to be(nil)
     end
 
     it 'redirects when true radio button is selected' do

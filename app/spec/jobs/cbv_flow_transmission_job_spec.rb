@@ -17,7 +17,7 @@ RSpec.describe CbvFlowTransmissionJob, type: :job do
     )
   end
   let(:agency) { instance_double(ClientAgencyConfig::ClientAgency, id: "sandbox") }
-  let(:aggregator_report) { instance_double("AggregatorReport", paystubs: []) }
+  let(:aggregator_report) { instance_double(Aggregators::AggregatorReports::AggregatorReport, paystubs: []) }
   let(:transmitter) { instance_double(Transmitters::SharedEmailTransmitter, deliver: "ok") }
   let(:fake_event_logger) { instance_double(GenericEventTracker, track: nil) }
 

@@ -150,12 +150,12 @@ RSpec.describe ClientAgency do
     end
 
     it "is false by default" do
-      expect(ClientAgencyConfig::ClientAgency.new(partner_config).include_paystubs).to eq(false)
+      expect(ClientAgencyConfig::ClientAgency.new(partner_config).include_paystubs).to be(false)
     end
 
     it "is true when the partner config has it set" do
       partner_config.update!(include_paystubs: true)
-      expect(ClientAgencyConfig::ClientAgency.new(partner_config).include_paystubs).to eq(true)
+      expect(ClientAgencyConfig::ClientAgency.new(partner_config).include_paystubs).to be(true)
     end
   end
 end

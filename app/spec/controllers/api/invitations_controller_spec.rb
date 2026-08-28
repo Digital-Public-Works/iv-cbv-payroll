@@ -4,6 +4,10 @@ RSpec.describe Api::InvitationsController do
   include ActiveSupport::Testing::TimeHelpers
 
   describe "#create" do
+    subject do
+      post :create, params: valid_params
+    end
+
     let(:client_agency_id) { "sandbox".to_sym }
     let(:api_access_token_instance) do
       user = create(:user, :with_access_token, email: "test@test.com", client_agency_id: client_agency_id, is_service_account: true)
@@ -27,9 +31,6 @@ RSpec.describe Api::InvitationsController do
       ).update_all(required: false)
     end
 
-    subject do
-      post :create, params: valid_params
-    end
 
     it "creates an invitation with an associated cbv_applicant" do
       expect { subject }
@@ -228,7 +229,7 @@ RSpec.describe Api::InvitationsController do
         expect(parsed_response["errors"]).to be_an(Array)
         first = parsed_response["errors"].first
         expect(first["field"]).to eq("body")
-        expect(first["message"]).to match(/Request body is not valid JSON/)
+        expect(first["message"]).to include('Request body is not valid JSON')
       end
 
       it "returns a structured 400 for a truncated body" do
@@ -240,7 +241,7 @@ RSpec.describe Api::InvitationsController do
         expect(response).to have_http_status(:bad_request)
         parsed_response = JSON.parse(response.body)
         expect(parsed_response["errors"].first["field"]).to eq("body")
-        expect(parsed_response["errors"].first["message"]).to match(/Request body is not valid JSON/)
+        expect(parsed_response["errors"].first["message"]).to include('Request body is not valid JSON')
       end
     end
 

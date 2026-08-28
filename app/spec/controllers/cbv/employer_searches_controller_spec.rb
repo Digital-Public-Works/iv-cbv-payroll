@@ -22,6 +22,14 @@ RSpec.describe Cbv::EmployerSearchesController do
         expect(response).to be_successful
       end
 
+      it "shows the search prompt as the page header on initial load (no query)" do
+        get :show
+
+        html = Capybara.string(response.body)
+        expect(html.find("#employer-search-h1").text.strip).to eq("Find your employer or payroll company")
+        expect(html).to have_no_css("#employer-search-h1", text: "Search results")
+      end
+
       it "tracks an event" do
         allow(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
         expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantAccessedSearchPage", anything, hash_including(
@@ -173,6 +181,13 @@ RSpec.describe Cbv::EmployerSearchesController do
         expect(response).to be_successful
       end
 
+      it "shows 'Search results' as the page header once a query is present" do
+        get :show, params: { query: "results" }
+
+        html = Capybara.string(response.body)
+        expect(html.find("#employer-search-h1").text.strip).to eq("Search results")
+      end
+
       it "tracks a Mixpanel event" do
         allow(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
         expect(MixpanelEventTrackingJob).to receive(:perform_later).with(
@@ -186,6 +201,39 @@ RSpec.describe Cbv::EmployerSearchesController do
           argyle_result_count: 5
         ))
         get :show, params: { query: "results" }
+      end
+
+      it "renders the back to top button with correct tracking attributes" do
+        get :show, params: { query: "results" }
+
+        html = Capybara.string(response.body)
+        back_to_top = html.find("button[data-element-name='back_to_top']")
+        expect(back_to_top["data-action"]).to include("click->click-tracker#track")
+        expect(back_to_top["data-track-event"]).to eq("ApplicantClickedGoBackToTop")
+        expect(back_to_top["data-element-type"]).to eq("anchor_link")
+        expect(back_to_top["data-context-query"]).to eq("results")
+      end
+
+      it "downcases the search query on the back to top tracking context" do
+        get :show, params: { query: "ReSuLtS" }
+
+        html = Capybara.string(response.body)
+        back_to_top = html.find("button[data-element-name='back_to_top']")
+        expect(back_to_top["data-context-query"]).to eq("results")
+      end
+
+      context "when there are fewer than 5 results" do
+        before do
+          # hack the BLOCKED_ARGYLE_EMPLOYERS constant to remove 1 result from bob's default 5 results.
+          stub_const("ProviderSearchService::BLOCKED_ARGYLE_EMPLOYERS", [ "item_000017502" ])
+        end
+
+        it "does not render the back to top button" do
+          get :show, params: { query: "results" }
+
+          expect(response).to be_successful
+          expect(Capybara.string(response.body)).to have_no_css("button[data-element-name='back_to_top']")
+        end
       end
 
       context "when some results should be blocked" do
