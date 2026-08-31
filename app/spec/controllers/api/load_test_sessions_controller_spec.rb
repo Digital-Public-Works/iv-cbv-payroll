@@ -9,9 +9,7 @@ RSpec.describe Api::LoadTestSessionsController, type: :controller do
       end
 
       it "denies access in production environment" do
-        allow(Rails.env).to receive(:production?).and_return(true)
-        allow(Rails.env).to receive(:test?).and_return(false)
-        allow(Rails.env).to receive(:development?).and_return(false)
+        allow(Rails.env).to receive_messages(production?: true, test?: false, development?: false)
         allow(ENV).to receive(:[]).and_call_original
         allow(ENV).to receive(:[]).with("DOMAIN_NAME").and_return("production.example.com")
 
@@ -24,9 +22,7 @@ RSpec.describe Api::LoadTestSessionsController, type: :controller do
       end
 
       it "allows access in demo environment" do
-        allow(Rails.env).to receive(:production?).and_return(true)
-        allow(Rails.env).to receive(:test?).and_return(false)
-        allow(Rails.env).to receive(:development?).and_return(false)
+        allow(Rails.env).to receive_messages(production?: true, test?: false, development?: false)
         allow(ENV).to receive(:[]).and_call_original
         allow(ENV).to receive(:[]).with("DOMAIN_NAME").and_return("demo.divt.app")
 
@@ -37,9 +33,7 @@ RSpec.describe Api::LoadTestSessionsController, type: :controller do
       end
 
       it "allows access in Arizona demo environment" do
-        allow(Rails.env).to receive(:production?).and_return(true)
-        allow(Rails.env).to receive(:test?).and_return(false)
-        allow(Rails.env).to receive(:development?).and_return(false)
+        allow(Rails.env).to receive_messages(production?: true, test?: false, development?: false)
         allow(ENV).to receive(:[]).and_call_original
         allow(ENV).to receive(:[]).with("DOMAIN_NAME").and_return("az.demo.divt.app")
 
@@ -50,9 +44,7 @@ RSpec.describe Api::LoadTestSessionsController, type: :controller do
       end
 
       it "allows access in Pennsylvania demo environment" do
-        allow(Rails.env).to receive(:production?).and_return(true)
-        allow(Rails.env).to receive(:test?).and_return(false)
-        allow(Rails.env).to receive(:development?).and_return(false)
+        allow(Rails.env).to receive_messages(production?: true, test?: false, development?: false)
         allow(ENV).to receive(:[]).and_call_original
         allow(ENV).to receive(:[]).with("DOMAIN_NAME").and_return("pa.demo.divt.app")
 
@@ -63,9 +55,7 @@ RSpec.describe Api::LoadTestSessionsController, type: :controller do
       end
 
       it "deny access to changed non-matching TLDs" do
-        allow(Rails.env).to receive(:production?).and_return(true)
-        allow(Rails.env).to receive(:test?).and_return(false)
-        allow(Rails.env).to receive(:development?).and_return(false)
+        allow(Rails.env).to receive_messages(production?: true, test?: false, development?: false)
         allow(ENV).to receive(:[]).and_call_original
         allow(ENV).to receive(:[]).with("DOMAIN_NAME").and_return("demo.divt.app.fake.tld")
 
@@ -76,9 +66,7 @@ RSpec.describe Api::LoadTestSessionsController, type: :controller do
       end
 
       it "deny access to fake url" do
-        allow(Rails.env).to receive(:production?).and_return(true)
-        allow(Rails.env).to receive(:test?).and_return(false)
-        allow(Rails.env).to receive(:development?).and_return(false)
+        allow(Rails.env).to receive_messages(production?: true, test?: false, development?: false)
         allow(ENV).to receive(:[]).and_call_original
         allow(ENV).to receive(:[]).with("DOMAIN_NAME").and_return("pa.demo.not-divt.app")
 
@@ -122,11 +110,7 @@ RSpec.describe Api::LoadTestSessionsController, type: :controller do
           }.to change(WebhookEvent, :count).by(3)
 
           webhook_events = WebhookEvent.last(3)
-          expect(webhook_events.map(&:event_name)).to match_array([
-            "accounts.connected",
-            "identities.added",
-            "paystubs.fully_synced"
-          ])
+          expect(webhook_events.map(&:event_name)).to contain_exactly("accounts.connected", "identities.added", "paystubs.fully_synced")
           expect(webhook_events.map(&:event_outcome)).to all(eq("success"))
         end
 
@@ -142,7 +126,7 @@ RSpec.describe Api::LoadTestSessionsController, type: :controller do
           expect(response).to have_http_status(:created)
 
           json_response = JSON.parse(response.body)
-          expect(json_response["success"]).to eq(true)
+          expect(json_response["success"]).to be(true)
           expect(json_response["cbv_flow_id"]).to eq(CbvFlow.last.id)
           expect(json_response["account_id"]).to eq("019571bc-2f60-3955-d972-dbadfe0913a8")
           expect(json_response["client_agency_id"]).to eq("sandbox")
@@ -212,7 +196,7 @@ RSpec.describe Api::LoadTestSessionsController, type: :controller do
           expect(response).to have_http_status(:created)
 
           json_response = JSON.parse(response.body)
-          expect(json_response["success"]).to eq(true)
+          expect(json_response["success"]).to be(true)
           expect(json_response["scenario"]).to eq("pending")
         end
       end
@@ -243,10 +227,7 @@ RSpec.describe Api::LoadTestSessionsController, type: :controller do
           }.to change(WebhookEvent, :count).by(2)
 
           webhook_events = WebhookEvent.last(2)
-          expect(webhook_events.map(&:event_name)).to match_array([
-            "accounts.connected",
-            "paystubs.fully_synced"
-          ])
+          expect(webhook_events.map(&:event_name)).to contain_exactly("accounts.connected", "paystubs.fully_synced")
 
           success_event = webhook_events.find { |e| e.event_name == "accounts.connected" }
           error_event = webhook_events.find { |e| e.event_name == "paystubs.fully_synced" }
@@ -261,7 +242,7 @@ RSpec.describe Api::LoadTestSessionsController, type: :controller do
           expect(response).to have_http_status(:created)
 
           json_response = JSON.parse(response.body)
-          expect(json_response["success"]).to eq(true)
+          expect(json_response["success"]).to be(true)
           expect(json_response["scenario"]).to eq("failed")
         end
       end

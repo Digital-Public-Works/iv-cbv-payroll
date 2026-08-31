@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.describe Transmitters::WebhookTransmitter do
+  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
+
   let(:completed_at) { Time.find_zone("UTC").local(2025, 5, 1, 1) }
   let(:cbv_applicant) { create(:cbv_applicant, case_number: "ABC1234") }
   let(:cbv_flow) do
@@ -44,15 +46,11 @@ RSpec.describe Transmitters::WebhookTransmitter do
   end
 
   before do
-    allow(mock_client_agency).to receive(:id).and_return("sandbox")
-    allow(mock_client_agency).to receive(:timezone).and_return("America/New_York")
-    allow(mock_client_agency).to receive(:transmission_methods).and_return(configured_methods)
-    allow(mock_client_agency).to receive(:include_paystubs).and_return(false)
+    allow(mock_client_agency).to receive_messages(id: "sandbox", timezone: "America/New_York", transmission_methods: configured_methods, include_paystubs: false)
     allow(CbvApplicant).to receive(:valid_attributes_for_agency).with("sandbox").and_return([ "case_number" ])
     allow(Rails.logger).to receive(:error)
   end
 
-  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
 
   describe "#deliver" do
     context "when agency responds with 200" do

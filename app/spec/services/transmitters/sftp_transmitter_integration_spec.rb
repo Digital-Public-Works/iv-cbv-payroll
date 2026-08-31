@@ -1,8 +1,13 @@
 require "rails_helper"
 
-RSpec.describe Transmitters::SftpTransmitter, integration: true do
+RSpec.describe Transmitters::SftpTransmitter, :integration do
   # Fixed consent timestamp keeps the basename deterministic across runs.
+  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
+
   let(:consented_at) { Time.zone.local(2026, 5, 27, 12, 0, 0) }
+  # The atmoz/sftp container mounts the host's sftp_mount_root to the container's home dir
+  let(:sftp_mount_root) { Rails.root.join("tmp/integration_transmissions/sftp") }
+  let(:expected_basename) { "CBVPilot_0ABC1234_20260527_ConfSFTP001.pdf" }
   let(:cbv_applicant) { create(:cbv_applicant, case_number: "ABC1234") }
   let(:cbv_flow) do
     create(:cbv_flow,
@@ -36,11 +41,7 @@ RSpec.describe Transmitters::SftpTransmitter, integration: true do
   end
 
   before do
-    allow(mock_client_agency).to receive(:id).and_return("pa_dhs")
-    allow(mock_client_agency).to receive(:logo_path).and_return("pa_compass_logo.svg")
-    allow(mock_client_agency).to receive(:report_customization_show_earnings_list).and_return(true)
-    allow(mock_client_agency).to receive(:timezone).and_return("America/New_York")
-    allow(mock_client_agency).to receive(:include_paystubs).and_return(false)
+    allow(mock_client_agency).to receive_messages(id: "pa_dhs", logo_path: "pa_compass_logo.svg", report_customization_show_earnings_list: true, timezone: "America/New_York", include_paystubs: false)
 
     stub_pdf_generation(label: "SftpTransmitter integration test")
 
@@ -55,11 +56,7 @@ RSpec.describe Transmitters::SftpTransmitter, integration: true do
     end
   end
 
-  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
 
-  # The atmoz/sftp container mounts the host's sftp_mount_root to the container's home dir
-  let(:sftp_mount_root) { Rails.root.join("tmp/integration_transmissions/sftp") }
-  let(:expected_basename) { "CBVPilot_0ABC1234_20260527_ConfSFTP001.pdf" }
 
   describe "#deliver" do
     before do
@@ -124,8 +121,7 @@ RSpec.describe Transmitters::SftpTransmitter, integration: true do
     before do
       # Clear any PDFs left by prior runs so file-existence checks are unambiguous.
       Dir.glob(sftp_mount_root.join("**/*.pdf")).each { |f| FileUtils.rm_f(f) }
-      allow(mock_client_agency).to receive(:include_paystubs).and_return(true)
-      allow(mock_client_agency).to receive(:argyle_environment).and_return("mock")
+      allow(mock_client_agency).to receive_messages(include_paystubs: true, argyle_environment: "mock")
       allow_any_instance_of(Aggregators::PaystubsPdfService).to receive(:generate)
         .and_return(Aggregators::PaystubsPdfService::Result.new(
           content: paystubs_pdf_bytes,

@@ -22,7 +22,7 @@ RSpec.describe WeeklyReportMailer, type: :mailer do
   end
   let(:mail) do
     cbv_flow
-    WeeklyReportMailer.with(
+    described_class.with(
       report_range: report_range,
       client_id: client_agency_id,
       recipient: "test@digitalpublicworks.org"
@@ -132,7 +132,7 @@ RSpec.describe WeeklyReportMailer, type: :mailer do
           applicant_attributes: ClientAgencyConfig.instance["az_des"].applicant_attributes,
           partner_identifier_name: "case_number"
         )
-        allow_any_instance_of(WeeklyReportMailer).to receive(:client_agency_config).and_return({
+        allow_any_instance_of(described_class).to receive(:client_agency_config).and_return({
           "az_des" => az_config
         })
       end
@@ -203,7 +203,7 @@ RSpec.describe WeeklyReportMailer, type: :mailer do
           applicant_attributes: ClientAgencyConfig.instance["pa_dhs"].applicant_attributes,
           partner_identifier_name: "case_number"
         )
-        allow_any_instance_of(WeeklyReportMailer).to receive(:client_agency_config).and_return({
+        allow_any_instance_of(described_class).to receive(:client_agency_config).and_return({
           "pa_dhs" => pa_config
         })
       end

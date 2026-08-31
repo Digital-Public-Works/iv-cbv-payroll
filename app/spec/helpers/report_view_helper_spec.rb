@@ -84,8 +84,7 @@ RSpec.describe ReportViewHelper, type: :helper do
 
       it 'logs a warning and returns the original value in production if translation is missing' do
         # Simulate production environment
-        allow(Rails.env).to receive(:development?).and_return(false)
-        allow(Rails.env).to receive(:test?).and_return(false)
+        allow(Rails.env).to receive_messages(development?: false, test?: false)
 
         # Expect a warning to be logged
         expect(Rails.logger).to receive(:warn).with('Unknown aggregator value for namespace: missing_value')
@@ -128,6 +127,7 @@ RSpec.describe ReportViewHelper, type: :helper do
       end
     end
   end
+
   describe '#format_parsed_date' do
     around do |ex|
       I18n.with_locale(locale, &ex)
@@ -266,6 +266,8 @@ RSpec.describe ReportViewHelper, type: :helper do
   end
 
   describe "#report_data_range" do
+    subject { helper.report_data_range(report) }
+
     let(:report) { build(:argyle_report) }
     let(:fetched_days) { 90 }
 
@@ -275,7 +277,6 @@ RSpec.describe ReportViewHelper, type: :helper do
         .and_return(fetched_days)
     end
 
-    subject { helper.report_data_range(report) }
 
     it "renders when 90 days of data were fetched" do
       expect(subject).to eq(I18n.t("shared.report_data_range.ninety_days"))
@@ -349,16 +350,19 @@ RSpec.describe ReportViewHelper, type: :helper do
 
     context "when the field is nil" do
       let(:string) { nil }
+
       it { is_expected.to eq(I18n.t("shared.not_applicable")) }
     end
 
     context "when the field is empty string" do
       let(:string) { "" }
+
       it { is_expected.to eq(I18n.t("shared.not_applicable")) }
     end
 
     context "when the field is anything else" do
       let(:string) { "foo bar" }
+
       it { is_expected.to eq(string) }
     end
   end

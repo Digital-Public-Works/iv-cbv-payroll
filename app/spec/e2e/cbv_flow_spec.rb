@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe "e2e CBV flow test", type: :feature, js: true do
+RSpec.describe "e2e CBV flow test", :js, type: :feature do
   include E2e::TestHelpers
 
   let(:cbv_flow_invitation) { create(:cbv_flow_invitation) }
@@ -49,7 +49,7 @@ RSpec.describe "e2e CBV flow test", type: :feature, js: true do
       # real Argyle widget, not in normal CI runs, which replay recorded
       # callbacks instead of rendering the real widget.
       expect(page.evaluate_script("document.activeElement")).to eq(argyle_container.native)
-      expect(page.evaluate_script("document.getElementById('root').inert")).to eq(true)
+      expect(page.evaluate_script("document.getElementById('root').inert")).to be(true)
 
       page.within(argyle_container) do
         fill_in "username", with: "test_1", wait: 10

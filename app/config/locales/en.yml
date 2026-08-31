@@ -265,6 +265,7 @@ en:
           heading: Need help connecting to your payroll provider?
           help_options: Get help here.
         app_based_providers: App-based employers
+        back_to_top: Go back to top
         blank_query_error: Enter letters or numbers
         can_not_find_employer: Explore your options
         clear_search: Clear search
@@ -274,9 +275,11 @@ en:
         header: Find your employer or payroll company
         payroll_providers: Payroll providers
         popular_providers: Or choose from popular payroll providers or apps
-        results: Results
+        results: Results found (%{result_count})
+        results_header: Search results
         search: Search
         select: Select
+        select_item_instruction: Select a job from the list. A pop-up window will appear. Follow the screens to log in and verify your income.
         type_the_full_name_tooltip: Type the full name using letters or numbers
         unemployment_search_tips:
           go_back: Go back to search
@@ -476,9 +479,7 @@ en:
             how_to_header: 'How to use this report:'
             pay_period: Pay period (%{pay_frequency})
             paystubs_header: Pay stub images
-            paystubs_separate_file: When available, pay stub images are provided in a separate file for reference.
-            paystubs_with_intro: 'The following jobs have pay stub images:'
-            paystubs_without_intro: 'Verify My Income did not find pay stub images for the following jobs:'
+            paystubs_separate_file: Pay stub images are provided in a separate file for reference, when available.
             snap_agency_id: SNAP Agency ID
             ssn: SSN
             staff_beacon_id_wel_id: Staff BEACON ID (WELID)
@@ -497,10 +498,9 @@ en:
             page_footer: Income Verification Report | Page [page] of [topage]
           paystubs_cover:
             header: 'Income Verification Report: Pay stub images'
-            next_page_note: If pay stub images are available, they are shown on the next page. They are also shared with %{agency_name}.
-            no_images_intro: When pay stubs are available, they are shared with %{agency_name}. Your income report is accurate, even if there are no pay stub images.
+            intro: When pay stub images are available they are shared with %{agency_name}. Pay stub images do not impact your income report's accuracy.
             with_intro: 'There are pay stub images for these jobs:'
-            without_intro: 'Verify My Income did not find pay stub images for the following jobs:'
+            without_intro: 'Verify My Income did not find pay stub images for these jobs:'
           shared:
             additional_jobs_to_report: Does the client have additional jobs they will verify separately?
             additional_jobs_to_report_html: Does the client have additional jobs they will verify separately?<sup>1</sup>

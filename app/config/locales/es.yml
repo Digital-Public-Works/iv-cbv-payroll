@@ -167,6 +167,7 @@ es:
           heading: "¿Necesita ayuda para conectarse a su proveedor de nómina?"
           help_options: Obtenga ayuda aquí.
         app_based_providers: Empleadores basados
+        back_to_top: Volver al inicio
         blank_query_error: Escriba letras o números
         can_not_find_employer: Explore sus opciones
         clear_search: Borrar búsqueda
@@ -176,9 +177,11 @@ es:
         header: Busque su empleador o empresa de nómina
         payroll_providers: Proveedores de nómina
         popular_providers: O elija entre los proveedores o aplicaciones de nómina más populares
-        results: Resultados
+        results: Se encontraron (%{result_count}) resultado(s)
+        results_header: Resultados de búsqueda
         search: Buscar
         select: Seleccione
+        select_item_instruction: Seleccione un trabajo de la lista. Se abrirá una ventana nueva. Siga las instrucciones para iniciar sesión y verificar sus ingresos.
         type_the_full_name_tooltip: Escribe el nombre completo usando letras o números
         unemployment_search_tips:
           go_back: Volver a la búsqueda
@@ -383,8 +386,7 @@ es:
             page_footer: Informe de verificación de ingresos | Página [page] de [topage]
           paystubs_cover:
             header: 'Informe de Verificación de Ingresos: Imágenes de talones de pago'
-            next_page_note: Si hay imágenes de talones de pago disponibles, aparecen en la página siguiente. También se envían a %{agency_name}.
-            no_images_intro: Cuando hay imágenes de talones de pago disponibles, se envían a %{agency_name}. Su informe de ingresos sigue siendo correcto, con o sin estas imágenes.
+            intro: Cuando hay imágenes de talones de pago disponibles, se envían a %{agency_name}. Su informe de ingresos sigue siendo correcto, con o sin estas imágenes.
             with_intro: 'Hay imágenes de talones de pago para los siguientes trabajos:'
             without_intro: 'Verify My Income no encontró imágenes de talones de pago para los siguientes trabajos:'
           shared:

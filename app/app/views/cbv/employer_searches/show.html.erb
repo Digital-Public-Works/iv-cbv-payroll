@@ -1,14 +1,20 @@
-<% content_for :title, t(".header") %>
+<% page_header = @query.present? ? t(".results_header") : t(".header") %>
+<% content_for :title, page_header %>
 
-<div data-controller="scroll-reset cbv-employer-search" data-cbv-employer-search-cbv-flow-id-value="<%= @cbv_flow.id %>">
+<div
+  data-controller="scroll-reset cbv-employer-search"
+  data-cbv-employer-search-cbv-flow-id-value="<%= @cbv_flow.id %>"
+  data-cbv-employer-search-heading-default-value="<%= t(".header") %>"
+  data-cbv-employer-search-heading-results-value="<%= t(".results_header") %>"
+>
   <div data-cbv-employer-search-target="helpAlert" class="display-none margin-bottom-4">
     <%= render Uswds::Alert.new(type: :warning, heading: t(".alert.heading")) do %>
       <%= render("help/help_link", text: t(".alert.help_options"), source: "banner") %>
     <% end %>
   </div>
 
-  <h1 tabindex="-1" data-cbv-employer-search-target="pageHeading" class="margin-top-0 display-flex flex-column flex-align-start gap-1 flex-align-self-stretch padding-bottom-3">
-    <%= t(".header") %>
+  <h1 id="employer-search-h1" tabindex="-1" data-cbv-employer-search-target="pageHeading" class="margin-top-0 display-flex flex-column flex-align-start gap-1 flex-align-self-stretch padding-bottom-3">
+    <%= page_header %>
   </h1>
   <div class="display-flex flex-align-center text-ink font-sans-md">
     <%= label_tag :query, t(".company_name") %>

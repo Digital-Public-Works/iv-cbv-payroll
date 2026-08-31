@@ -38,6 +38,9 @@ export default class extends Controller {
     if (targetElement) {
       event.preventDefault()
       targetElement.scrollIntoView({ behavior: "smooth" })
+
+      // Move keyboard/screen-reader focus to the target, not just the viewport.
+      targetElement.focus({ preventScroll: true })
     }
   }
 }

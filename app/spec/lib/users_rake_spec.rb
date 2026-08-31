@@ -8,7 +8,7 @@ RSpec.describe "users.rake" do
       User.where(client_agency_id: client_agency_id).destroy_all
       expect { Rake::Task['users:create_api_token'].execute(client_agency_id: client_agency_id) }
         .to change { User.where(client_agency_id: client_agency_id).count }.by(1)
-        .and change { ApiAccessToken.count }.by(1)
+        .and change(ApiAccessToken, :count).by(1)
     end
 
     describe "when a user already exists" do
@@ -16,8 +16,8 @@ RSpec.describe "users.rake" do
 
       it "creates an API key for that user" do
         expect { Rake::Task['users:create_api_token'].execute(client_agency_id: client_agency_id) }
-          .to change { User.count }.by(0)
-          .and change { ApiAccessToken.count }.by(1)
+          .to change(User, :count).by(0)
+          .and change(ApiAccessToken, :count).by(1)
       end
     end
   end
@@ -27,7 +27,7 @@ RSpec.describe "users.rake" do
       user = create(:user)
       Rake::Task['users:promote_to_service_account'].execute(user_id: user.id.to_s)
       user.reload
-      expect(user.is_service_account).to eq(true)
+      expect(user.is_service_account).to be(true)
       expect(user.api_access_tokens.count).to eq(1)
     end
   end
@@ -37,7 +37,7 @@ RSpec.describe "users.rake" do
       user = create(:user, :with_access_token, is_service_account: true)
       Rake::Task['users:demote_service_account'].execute(user_id: user.id.to_s)
       user.reload
-      expect(user.is_service_account).to eq(false)
+      expect(user.is_service_account).to be(false)
       expect(user.api_access_tokens.where(deleted_at: nil).count).to eq(0)
     end
   end

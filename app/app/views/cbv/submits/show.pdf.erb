@@ -9,31 +9,8 @@
   <%= render "shared/pdf_info_box" do %>
     <p class="margin-0"><strong><%= t("cbv.submits.show.pdf.caseworker.how_to_header") %></strong> <%= t("cbv.submits.show.pdf.caseworker.how_to") %></p>
     <% if current_agency&.include_paystubs %>
-      <% employer_groups = aggregator_report.employer_names_by_image_presence %>
-      <% employers_with_images = employer_groups[:with] %>
-      <% employers_without_images = employer_groups[:without] %>
-      <% if employers_with_images.any? || employers_without_images.any? %>
-        <p class="margin-top-2 margin-bottom-0"><strong><%= t("cbv.submits.show.pdf.caseworker.paystubs_header") %></strong></p>
-        <% if employers_with_images.any? %>
-          <p class="margin-0"><%= t("cbv.submits.show.pdf.caseworker.paystubs_with_intro") %></p>
-          <ul class="margin-top-1 margin-bottom-0">
-            <% employers_with_images.each do |name| %>
-              <li><%= name %></li>
-            <% end %>
-          </ul>
-        <% end %>
-        <% if employers_without_images.any? %>
-          <p class="<%= employers_with_images.any? ? "margin-top-2 margin-bottom-0" : "margin-0" %>"><%= t("cbv.submits.show.pdf.caseworker.paystubs_without_intro") %></p>
-          <ul class="margin-top-1 margin-bottom-0">
-            <% employers_without_images.each do |name| %>
-              <li><%= name %></li>
-            <% end %>
-          </ul>
-        <% end %>
-        <% if employers_with_images.any? %>
-          <p class="margin-top-2 margin-bottom-0"><%= t("cbv.submits.show.pdf.caseworker.paystubs_separate_file") %></p>
-        <% end %>
-      <% end %>
+      <p class="margin-top-2 margin-bottom-0"><strong><%= t("cbv.submits.show.pdf.caseworker.paystubs_header") %></strong></p>
+      <p class="margin-0"><%= t("cbv.submits.show.pdf.caseworker.paystubs_separate_file") %></p>
     <% end %>
   <% end %>
 <% else %>

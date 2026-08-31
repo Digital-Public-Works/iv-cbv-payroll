@@ -1,6 +1,8 @@
 require "rails_helper"
 
-RSpec.describe Transmitters::WebhookTransmitter, integration: true do
+RSpec.describe Transmitters::WebhookTransmitter, :integration do
+  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
+
   let(:completed_at) { Time.find_zone("UTC").local(2025, 5, 1, 1) }
   let(:cbv_applicant) { create(:cbv_applicant, case_number: "ABC1234") }
   let(:confirmation_code) { "WEBHOOK_BASE" }
@@ -55,10 +57,7 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
   end
 
   before do
-    allow(mock_client_agency).to receive(:id).and_return("sandbox")
-    allow(mock_client_agency).to receive(:timezone).and_return("America/New_York")
-    allow(mock_client_agency).to receive(:transmission_methods).and_return(configured_methods)
-    allow(mock_client_agency).to receive(:include_paystubs).and_return(false)
+    allow(mock_client_agency).to receive_messages(id: "sandbox", timezone: "America/New_York", transmission_methods: configured_methods, include_paystubs: false)
     allow(CbvApplicant).to receive(:valid_attributes_for_agency).with("sandbox").and_return(custom_attributes.keys.map(&:to_sym))
     # Return the configured name => value pairs verbatim (string keys, matching
     # the real build_custom_attributes), bypassing the cbv_applicant factory.
@@ -78,10 +77,6 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
     if ENV["WEBHOOK_TEST_DEBUG"].present?
       allow_any_instance_of(Net::HTTP).to receive(:request).and_wrap_original do |original, *args, &block|
         original.call(*args, &block).tap do |res|
-          puts "\n----- DIAGNOSTIC server response -----"
-          puts "HTTP #{res.code} #{res.message}"
-          puts "Body: #{res.body.inspect}"
-          puts "-----------------------------------------------------"
         end
       end
     end
@@ -92,7 +87,6 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
     VCR.turn_on!
   end
 
-  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
 
   describe "#deliver" do
     let(:confirmation_code) { "WEBHOOK_DELIVER" }
@@ -120,14 +114,6 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
       req["X-VMI-Confirmation-Code"] = cbv_flow.confirmation_code
 
       res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") { |http| http.request(req) }
-
-      puts "\n===== DIAGNOSTIC: outbound request ====="
-      puts "POST #{uri}"
-      puts JSON.pretty_generate(JSON.parse(body))
-      puts "===== DIAGNOSTIC: server response ====="
-      puts "HTTP #{res.code} #{res.message}"
-      puts "Body: #{res.body.inspect}"
-      puts "=======================================\n"
     end
 
     it "sends a valid JSON payload with expected top-level keys" do
@@ -153,6 +139,13 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
 
   describe "pay_frequency nullable" do
     let(:confirmation_code) { "WEBHOOK_PAYFREQ_NULL" }
+    let(:aggregator_report) do
+      Aggregators::AggregatorReports::CompositeReport.new(
+        [ argyle_report ],
+        days_to_fetch_for_w2: 90,
+        days_to_fetch_for_gig: 90
+      )
+    end
     let(:argyle_report) { build(:argyle_report, :with_argyle_account) }
 
     before do
@@ -167,13 +160,6 @@ RSpec.describe Transmitters::WebhookTransmitter, integration: true do
       ])
     end
 
-    let(:aggregator_report) do
-      Aggregators::AggregatorReports::CompositeReport.new(
-        [ argyle_report ],
-        days_to_fetch_for_w2: 90,
-        days_to_fetch_for_gig: 90
-      )
-    end
 
     it "accepts a payload with pay_frequency null" do
       result = subject.deliver

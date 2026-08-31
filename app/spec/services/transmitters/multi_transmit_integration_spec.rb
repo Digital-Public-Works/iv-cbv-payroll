@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe "Multi-transmission delivery", integration: true do
+RSpec.describe "Multi-transmission delivery", :integration do
   let(:cbv_applicant) do
     create(:cbv_applicant,
       case_number: "MULTI001",

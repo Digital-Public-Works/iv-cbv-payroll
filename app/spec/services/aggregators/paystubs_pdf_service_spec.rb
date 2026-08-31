@@ -1,6 +1,10 @@
 require "rails_helper"
 
 RSpec.describe Aggregators::PaystubsPdfService do
+  subject do
+    described_class.new(cbv_flow: cbv_flow, argyle_service: argyle_service)
+  end
+
   let(:cbv_flow)       { create(:cbv_flow, :invited) }
   let(:argyle_service) { instance_double(Aggregators::Sdk::ArgyleService) }
 
@@ -12,6 +16,7 @@ RSpec.describe Aggregators::PaystubsPdfService do
 
   # Create a payroll account with a known ID and attach it to the flow.
   let(:account_id) { "test-acct-1" }
+
   before do
     create(:payroll_account, :argyle_fully_synced, cbv_flow: cbv_flow, aggregator_account_id: account_id)
   end
@@ -33,9 +38,6 @@ RSpec.describe Aggregators::PaystubsPdfService do
       .and_return([ bytes, content_type ])
   end
 
-  subject do
-    described_class.new(cbv_flow: cbv_flow, argyle_service: argyle_service)
-  end
 
   describe "#generate" do
     context "happy path: account has valid payout-statement docs" do
@@ -73,6 +75,7 @@ RSpec.describe Aggregators::PaystubsPdfService do
 
     context "with docs from multiple accounts in mixed order" do
       let(:account_id_b) { "test-acct-2" }
+
       before do
         create(:payroll_account, :argyle_fully_synced, cbv_flow: cbv_flow, aggregator_account_id: account_id_b)
 

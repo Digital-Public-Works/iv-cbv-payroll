@@ -1,6 +1,8 @@
 require "rails_helper"
 
-RSpec.describe Transmitters::EncryptedS3Transmitter, integration: true do
+RSpec.describe Transmitters::EncryptedS3Transmitter, :integration do
+  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
+
   include_context "gpg_setup"
 
   let(:cbv_applicant) { create(:cbv_applicant, case_number: "S3ENC1") }
@@ -39,18 +41,11 @@ RSpec.describe Transmitters::EncryptedS3Transmitter, integration: true do
   end
 
   before do
-    allow(mock_client_agency).to receive(:id).and_return("sandbox")
-    allow(mock_client_agency).to receive(:logo_path).and_return("")
-    allow(mock_client_agency).to receive(:report_customization_show_earnings_list).and_return(true)
-    allow(mock_client_agency).to receive(:timezone).and_return("America/New_York")
-    allow(mock_client_agency).to receive(:partner_identifier_name).and_return("case_number")
-    allow(mock_client_agency).to receive(:applicant_attributes).and_return({})
-    allow(mock_client_agency).to receive(:include_paystubs).and_return(false)
+    allow(mock_client_agency).to receive_messages(id: "sandbox", logo_path: "", report_customization_show_earnings_list: true, timezone: "America/New_York", partner_identifier_name: "case_number", applicant_attributes: {}, include_paystubs: false)
 
     stub_pdf_generation(label: "EncryptedS3Transmitter integration test")
   end
 
-  subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
 
   describe "#deliver" do
     it "uploads a GPG-encrypted tar.gz whose decrypted contents match what was generated" do
