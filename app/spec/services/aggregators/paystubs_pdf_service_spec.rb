@@ -26,9 +26,11 @@ RSpec.describe Aggregators::PaystubsPdfService do
     { "id" => id, "document_type" => document_type, "file_url" => file_url, "available_date" => available_date }
   end
 
+  # The service now bounds the request by availability date, so match on the
+  # account and allow whatever window it passes.
   def stub_docs(account:, docs:)
     allow(argyle_service).to receive(:fetch_payroll_documents_api)
-      .with(account: account)
+      .with(hash_including(account: account))
       .and_return({ "results" => docs })
   end
 
@@ -38,6 +40,50 @@ RSpec.describe Aggregators::PaystubsPdfService do
       .and_return([ bytes, content_type ])
   end
 
+
+  describe "document window and alignment" do
+    # Without a window Argyle returns every document it holds for the account,
+    # which is how a 90-day report ended up with 150+ statements going back years.
+    it "bounds the request by the agency's pay_income_days when there is no report" do
+      allow(argyle_service).to receive(:fetch_payroll_documents_api).and_return({ "results" => [] })
+
+      subject.generate rescue nil
+
+      days = ClientAgencyConfig.instance[cbv_flow.client_agency_id].pay_income_days.values.compact.max
+      expect(argyle_service).to have_received(:fetch_payroll_documents_api).with(
+        account: account_id,
+        from_available_date: days.days.ago.to_date,
+        to_available_date: cbv_flow.created_at.to_date
+      )
+    end
+
+    context "when a report is present" do
+      let(:report) do
+        instance_double(Aggregators::AggregatorReports::CompositeReport,
+          summarize_by_employer: {},
+          employer_names_by_image_presence: { with: [], without: [] },
+          from_date: Date.new(2026, 6, 2),
+          to_date: Date.new(2026, 8, 31)
+        ).tap { |r| allow(r).to receive(:present?).and_return(true) }
+      end
+      let(:service_with_report) do
+        described_class.new(cbv_flow: cbv_flow, argyle_service: argyle_service,
+          current_agency: nil, aggregator_report: report)
+      end
+
+      it "uses the report's own window" do
+        allow(argyle_service).to receive(:fetch_payroll_documents_api).and_return({ "results" => [] })
+
+        service_with_report.generate rescue nil
+
+        expect(argyle_service).to have_received(:fetch_payroll_documents_api).with(
+          account: account_id,
+          from_available_date: Date.new(2026, 6, 2),
+          to_available_date: Date.new(2026, 8, 31)
+        )
+      end
+    end
+  end
 
   describe "#generate" do
     context "happy path: account has valid payout-statement docs" do
