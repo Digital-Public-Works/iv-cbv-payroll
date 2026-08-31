@@ -165,6 +165,14 @@ RSpec.describe 'rake data_deletion manual erasure' do
       expect { capture_task_output { redact_ids("sandbox", 999_999) } }.to raise_error(SystemExit)
     end
 
+    it "warns about ids it skipped rather than silently ignoring them" do
+      output = capture_task_output { redact_ids("sandbox", *applicant_ids, 999_999) }
+
+      expect(output).to include("WARNING")
+      expect(output).to include("999999")
+      expect(output).to include("COMPLETE")
+    end
+
     it "does not touch applicants outside the resolved id set" do
       other = create(:cbv_flow_invitation, client_agency_id: "sandbox",
         cbv_applicant_attributes: { client_agency_id: "sandbox", case_number: "KEEP001" })

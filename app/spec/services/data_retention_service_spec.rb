@@ -491,6 +491,16 @@ RSpec.describe DataRetentionService do
       service.send(:delete_argyle_user, client_agency_id, argyle_user_id)
     end
 
+    # The manual erasure path reports the Argyle outcome to the operator, so the
+    # returned symbol is a contract, not an incidental value. Argyle holds data
+    # outside our database: if this returned nil on failure, a run that left an
+    # Argyle user undeleted would still report COMPLETE.
+    it "returns :deleted on success" do
+      allow(argyle_service).to receive(:delete_user)
+
+      expect(service.send(:delete_argyle_user, client_agency_id, argyle_user_id)).to eq(:deleted)
+    end
+
     context "when the user has already been deleted (404)" do
       before do
         allow(argyle_service).to receive(:delete_user).and_raise(Faraday::ResourceNotFound.new(nil, nil))
@@ -503,6 +513,10 @@ RSpec.describe DataRetentionService do
       it "logs an info message" do
         expect(Rails.logger).to receive(:info).with("Argyle User #{argyle_user_id} already deleted")
         service.send(:delete_argyle_user, client_agency_id, argyle_user_id)
+      end
+
+      it "returns :already_deleted" do
+        expect(service.send(:delete_argyle_user, client_agency_id, argyle_user_id)).to eq(:already_deleted)
       end
     end
 
@@ -532,6 +546,10 @@ RSpec.describe DataRetentionService do
 
         it "does not raise the error" do
           expect { service.send(:delete_argyle_user, client_agency_id, argyle_user_id) }.not_to raise_error
+        end
+
+        it "returns :failed so the manual erasure path can report it" do
+          expect(service.send(:delete_argyle_user, client_agency_id, argyle_user_id)).to eq(:failed)
         end
       end
 
@@ -744,6 +762,22 @@ RSpec.describe DataRetentionService do
 
           expect(result[:argyle][:failed]).to eq(1)
         end
+
+        # End-to-end through the real #delete_argyle_user, with production's
+        # report-rather-than-raise semantics in force. Nothing about the outcome
+        # is stubbed -- this is what proves an Argyle failure actually reaches
+        # the operator instead of being swallowed into a COMPLETE run.
+        it "surfaces a genuine Argyle API failure in production" do
+          allow(Rails.env).to receive(:production?).and_return(true)
+          argyle_service = instance_double(Aggregators::Sdk::ArgyleService)
+          allow(Aggregators::Sdk::ArgyleService).to receive(:new).and_return(argyle_service)
+          allow(argyle_service).to receive(:delete_user).and_raise(StandardError.new("API Error"))
+
+          result = manually_redact
+
+          expect(result[:argyle][:failed]).to eq(1)
+          expect(described_class.erasure_verified?(described_class.verify_erasure(result[:scope]))).to be(true)
+        end
       end
     end
 
@@ -766,19 +800,31 @@ RSpec.describe DataRetentionService do
       # only at applicants and flows would report success while the unopened
       # invitation still held an email address and auth token.
       it "catches an unopened invitation that was not redacted" do
-        create(:cbv_flow_invitation, client_agency_id: "sandbox",
+        unopened = create(:cbv_flow_invitation, client_agency_id: "sandbox",
           cbv_applicant: cbv_flow_invitation.cbv_applicant)
-
         scope = described_class.resolve_manual_erasure("sandbox", "DELETEME001")
-        allow_any_instance_of(described_class).to receive(:redact_invitation_and_applicant)
+
+        # Production reports redaction failures rather than raising, so the
+        # failure below is swallowed exactly as it would be in prod. Only the
+        # unopened invitation fails; the flow-attached one redacts normally.
+        allow(Rails.env).to receive(:production?).and_return(true)
+        allow_any_instance_of(CbvFlowInvitation).to receive(:redact!).and_wrap_original do |original, *args|
+          raise StandardError, "invitation redaction failed" if original.receiver.id == unopened.id
+
+          original.call(*args)
+        end
+
         described_class.redact_applicant_ids!("sandbox", scope.applicant_ids)
 
         verification = described_class.verify_erasure(scope)
 
+        # The applicant and both flows look clean -- the flow path stamped the
+        # applicant. An applicants-and-flows check would call this COMPLETE.
         expect(verification[:applicants]).to eq([ 1, 1 ])
         expect(verification[:cbv_flows]).to eq([ 2, 2 ])
         expect(verification[:invitations]).to eq([ 1, 2 ])
         expect(described_class.erasure_verified?(verification)).to be(false)
+        expect(unopened.reload.redacted_at).to be_nil
       end
     end
   end
