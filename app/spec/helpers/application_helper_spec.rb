@@ -222,12 +222,17 @@ RSpec.describe ApplicationHelper do
 
     it "builds an external link labeled with the default 'the … website' wording" do
       result = helper.agency_website_link
-      expect(result).to include(%(href="#{url}"), 'target="_blank"', 'rel="noopener noreferrer"', ">the VMI website</a>")
+      expect(result).to include(%(href="#{url}"), 'target="_blank"', 'rel="noopener noreferrer"', "the VMI website")
       expect(result).to be_html_safe
     end
 
+    it "includes the launch icon and sr-only 'opens in a new tab' text" do
+      result = helper.agency_website_link
+      expect(result).to include("usa-icon", "svg#launch", "usa-sr-only", "Opens in a new tab")
+    end
+
     it "uses a custom label when provided" do
-      expect(helper.agency_website_link(label: "Acme")).to include(">Acme</a>")
+      expect(helper.agency_website_link(label: "Acme")).to include("Acme")
     end
 
     context "when the agency has no website" do

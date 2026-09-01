@@ -110,5 +110,66 @@ RSpec.describe LinkWithIconComponent, type: :component do
         expect(result).not_to have_element(:svg, class: 'usa-icon')
       end
     end
+
+    context 'when target is _blank' do
+      let(:result) { render_inline(described_class.new('Learn more', url: '/details', target: '_blank')) }
+
+      it 'defaults to the launch icon' do
+        expect(result).to have_element(:use, href: /.svg#launch/)
+      end
+
+      it 'renders a visually-hidden "Opens in a new tab" span' do
+        expect(result).to have_element(:span, class: 'usa-sr-only', text: 'Opens in a new tab')
+      end
+
+      it 'positions the icon after the text, not before' do
+        expect(result.to_html).to match(/Learn more.*<svg.*usa-icon.*<\/svg>/m)
+      end
+    end
+
+    context 'when target is _blank and an explicit icon is given' do
+      let(:result) { render_inline(described_class.new('Download', url: '/f.pdf', icon: 'file_download', target: '_blank')) }
+
+      it 'keeps the explicit icon instead of overriding it with launch' do
+        expect(result).to have_element(:use, href: /.svg#file_download/)
+        expect(result).not_to have_element(:use, href: /.svg#launch/)
+      end
+
+      it 'still renders the sr-only "Opens in a new tab" text' do
+        expect(result).to have_element(:span, class: 'usa-sr-only', text: 'Opens in a new tab')
+      end
+
+      it 'keeps the default leading icon position rather than forcing trailing' do
+        expect(result.to_html).to match(/<svg.*usa-icon.*<\/svg>.*Download/m)
+      end
+    end
+
+    context 'when target is _blank, an explicit icon is given, and icon_position is explicit' do
+      let(:result) { render_inline(described_class.new('Download', url: '/f.pdf', icon: 'file_download', icon_position: :leading, target: '_blank')) }
+
+      it 'respects the explicit icon_position instead of forcing trailing' do
+        expect(result.to_html).to match(/<svg.*usa-icon.*<\/svg>.*Download/m)
+      end
+    end
+
+    context 'when target is _blank and icon: false is given' do
+      let(:result) { render_inline(described_class.new('Visit site', url: '/x', icon: false, target: '_blank')) }
+
+      it 'renders no icon' do
+        expect(result).not_to have_element(:svg, class: 'usa-icon')
+      end
+
+      it 'still renders the sr-only "Opens in a new tab" text' do
+        expect(result).to have_element(:span, class: 'usa-sr-only', text: 'Opens in a new tab')
+      end
+    end
+
+    context 'without target _blank' do
+      let(:result) { render_inline(described_class.new('Internal link', url: '/internal')) }
+
+      it 'does not render the sr-only "Opens in a new tab" text' do
+        expect(result).not_to have_text('Opens in a new tab')
+      end
+    end
   end
 end

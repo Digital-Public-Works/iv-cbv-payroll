@@ -755,6 +755,7 @@ es:
     next_path:
       notice_no_answer: Debe seleccionar una respuesta para continuar.
     not_applicable: N/C
+    opens_in_new_tab: Se abre en una pestaña nueva
     pilot_name: Verificar Mis Ingresos
     report_data_range:
       ninety_days: 90 días

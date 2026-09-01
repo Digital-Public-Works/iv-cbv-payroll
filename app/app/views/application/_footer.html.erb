@@ -9,9 +9,9 @@
       <%= render LinkWithIconComponent.new(
             t("shared.footer.feedback"),
             url: feedbacks_path(referer: request.original_url),
-            icon: "forum",
             class: "usa-button usa-button--outline usa-button--inverse maxw-mobile",
-            target: "_blank"
+            target: "_blank",
+            rel: "noopener noreferrer"
           ) %>
     </div>
   </div>
