@@ -491,6 +491,16 @@ RSpec.describe DataRetentionService do
       service.send(:delete_argyle_user, client_agency_id, argyle_user_id)
     end
 
+    # The manual erasure path reports the Argyle outcome to the operator, so the
+    # returned symbol is a contract, not an incidental value. Argyle holds data
+    # outside our database: if this returned nil on failure, a run that left an
+    # Argyle user undeleted would still report COMPLETE.
+    it "returns :deleted on success" do
+      allow(argyle_service).to receive(:delete_user)
+
+      expect(service.send(:delete_argyle_user, client_agency_id, argyle_user_id)).to eq(:deleted)
+    end
+
     context "when the user has already been deleted (404)" do
       before do
         allow(argyle_service).to receive(:delete_user).and_raise(Faraday::ResourceNotFound.new(nil, nil))
@@ -503,6 +513,10 @@ RSpec.describe DataRetentionService do
       it "logs an info message" do
         expect(Rails.logger).to receive(:info).with("Argyle User #{argyle_user_id} already deleted")
         service.send(:delete_argyle_user, client_agency_id, argyle_user_id)
+      end
+
+      it "returns :already_deleted" do
+        expect(service.send(:delete_argyle_user, client_agency_id, argyle_user_id)).to eq(:already_deleted)
       end
     end
 
@@ -533,6 +547,10 @@ RSpec.describe DataRetentionService do
         it "does not raise the error" do
           expect { service.send(:delete_argyle_user, client_agency_id, argyle_user_id) }.not_to raise_error
         end
+
+        it "returns :failed so the manual erasure path can report it" do
+          expect(service.send(:delete_argyle_user, client_agency_id, argyle_user_id)).to eq(:failed)
+        end
       end
 
       context "in non-production" do
@@ -548,7 +566,7 @@ RSpec.describe DataRetentionService do
     end
   end
 
-  describe ".manually_redact_by_partner_identifier!" do
+  describe "manual erasure (.resolve_manual_erasure / .redact_applicant_ids!)" do
     let(:cbv_flow_invitation) do
       create(:cbv_flow_invitation, client_agency_id: "sandbox",
         cbv_applicant_attributes: { client_agency_id: "sandbox", case_number: "DELETEME001" })
@@ -557,88 +575,256 @@ RSpec.describe DataRetentionService do
     let!(:second_cbv_flow) { CbvFlow.create_from_invitation(cbv_flow_invitation, "test_device_id_2") }
     let!(:payroll_account) { create(:payroll_account, cbv_flow: second_cbv_flow) }
 
-    it "redacts the invitation, all flow objects, and the metadata jsonb keys flagged redactable" do
-      described_class.manually_redact_by_partner_identifier!("sandbox", "DELETEME001")
-
-      expect(cbv_flow.reload).to have_attributes(
-        redacted_at: within(1.second).of(Time.now)
-      )
-
-      applicant = cbv_flow.cbv_applicant.reload
-      expect(applicant.redacted_at).to be_within(1.second).of(Time.now)
-
-      expect(applicant.first_name).to eq("REDACTED")
-      expect(applicant.custom_attributes).to include("first_name" => "REDACTED")
-
-      # partner_identifier is always redacted, even though sandbox's case_number
-      # is not configured as a redactable attribute.
-      expect(applicant.partner_identifier).to eq("REDACTED")
-
-      expect(second_cbv_flow.reload).to have_attributes(
-        redacted_at: within(1.second).of(Time.now)
-      )
-      expect(cbv_flow_invitation.reload).to have_attributes(
-        redacted_at: within(1.second).of(Time.now)
-      )
-      expect(payroll_account.reload).to have_attributes(
-        redacted_at: within(1.second).of(Time.now)
-      )
+    # The two-step shape the runbook and the rake tasks use: resolve the
+    # identifier to ids once, then work from the ids.
+    def manually_redact(agency = "sandbox", identifier = "DELETEME001")
+      scope = described_class.resolve_manual_erasure(agency, identifier)
+      described_class.redact_applicant_ids!(agency, scope.applicant_ids)
     end
 
-    it "redacts every matching applicant when the same partner_identifier value is reused within an agency" do
-      duplicate_invitation = create(:cbv_flow_invitation, client_agency_id: "sandbox",
-        cbv_applicant_attributes: { client_agency_id: "sandbox", case_number: "DELETEME001" })
-      duplicate_flow = CbvFlow.create_from_invitation(duplicate_invitation, "another_device")
+    describe ".resolve_manual_erasure" do
+      it "returns every id the erasure would touch without changing anything" do
+        scope = described_class.resolve_manual_erasure("sandbox", "DELETEME001")
 
-      described_class.manually_redact_by_partner_identifier!("sandbox", "DELETEME001")
-
-      expect(duplicate_flow.reload.redacted_at).to be_within(1.second).of(Time.now)
-      expect(duplicate_flow.cbv_applicant.reload.redacted_at).to be_within(1.second).of(Time.now)
-    end
-
-    it "does not touch applicants with the same partner_identifier in a different agency" do
-      other_agency_invitation = create(:cbv_flow_invitation, :az_des,
-        cbv_applicant_attributes: { client_agency_id: "az_des", case_number: "DELETEME001",
-                                     first_name: "Other", last_name: "Person" })
-      other_flow = CbvFlow.create_from_invitation(other_agency_invitation, "az_device")
-
-      described_class.manually_redact_by_partner_identifier!("sandbox", "DELETEME001")
-
-      expect(other_flow.reload.redacted_at).to be_nil
-      expect(other_flow.cbv_applicant.reload.redacted_at).to be_nil
-      expect(other_flow.cbv_applicant.partner_identifier).to eq("DELETEME001")
-    end
-
-    it "raises when no applicant matches" do
-      expect {
-        described_class.manually_redact_by_partner_identifier!("sandbox", "DOES_NOT_EXIST")
-      }.to raise_error(ActiveRecord::RecordNotFound)
-    end
-
-    context "when the agency's partner_identifier_name attribute is also flagged redactable" do
-      before do
-        sandbox_config = PartnerConfig.find_by(partner_id: "sandbox")
-        PartnerApplicationAttribute
-          .where(partner_config: sandbox_config, name: "case_number")
-          .update_all(redactable: true, redact_type: "string")
-        ClientAgencyConfig.reset!
+        expect(scope.applicant_ids).to eq([ cbv_flow_invitation.cbv_applicant.id ])
+        expect(scope.cbv_flow_ids).to contain_exactly(cbv_flow.id, second_cbv_flow.id)
+        expect(scope.invitation_ids).to eq([ cbv_flow_invitation.id ])
+        expect(scope.payroll_account_ids).to eq([ payroll_account.id ])
+        expect(cbv_flow.reload.redacted_at).to be_nil
       end
 
-      it "redacts the partner_identifier column" do
-        described_class.manually_redact_by_partner_identifier!("sandbox", "DELETEME001")
+      it "includes invitations that were never opened" do
+        unopened = create(:cbv_flow_invitation, client_agency_id: "sandbox",
+          cbv_applicant: cbv_flow_invitation.cbv_applicant)
 
-        expect(cbv_flow.cbv_applicant.reload.partner_identifier).to eq("REDACTED")
+        scope = described_class.resolve_manual_erasure("sandbox", "DELETEME001")
+
+        expect(scope.invitation_ids).to include(unopened.id)
+      end
+
+      it "raises without echoing the identifier when no applicant matches" do
+        expect {
+          described_class.resolve_manual_erasure("sandbox", "DOES_NOT_EXIST")
+        }.to raise_error(ActiveRecord::RecordNotFound) { |error|
+          expect(error.message).not_to include("DOES_NOT_EXIST")
+        }
+      end
+
+      # The reason the destructive step takes ids: redaction overwrites the
+      # column this lookup keys on, so it can only ever succeed once.
+      it "cannot be repeated once redaction has run" do
+        manually_redact
+
+        expect {
+          described_class.resolve_manual_erasure("sandbox", "DELETEME001")
+        }.to raise_error(ActiveRecord::RecordNotFound)
       end
     end
 
-    context "when a flow has an argyle_user_id" do
-      before do
-        second_cbv_flow.update!(argyle_user_id: "argyle_manual_123", client_agency_id: "sandbox")
+    describe ".redact_applicant_ids!" do
+      it "redacts the invitation, all flow objects, and the metadata jsonb keys flagged redactable" do
+        manually_redact
+
+        expect(cbv_flow.reload).to have_attributes(
+          redacted_at: within(1.second).of(Time.now)
+        )
+
+        applicant = cbv_flow.cbv_applicant.reload
+        expect(applicant.redacted_at).to be_within(1.second).of(Time.now)
+
+        expect(applicant.first_name).to eq("REDACTED")
+        expect(applicant.custom_attributes).to include("first_name" => "REDACTED")
+
+        # partner_identifier is always redacted, even though sandbox's case_number
+        # is not configured as a redactable attribute.
+        expect(applicant.partner_identifier).to eq("REDACTED")
+
+        expect(second_cbv_flow.reload).to have_attributes(
+          redacted_at: within(1.second).of(Time.now)
+        )
+        expect(cbv_flow_invitation.reload).to have_attributes(
+          redacted_at: within(1.second).of(Time.now)
+        )
+        expect(payroll_account.reload).to have_attributes(
+          redacted_at: within(1.second).of(Time.now)
+        )
       end
 
-      it "deletes the argyle user" do
-        expect_any_instance_of(described_class).to receive(:delete_argyle_user).with("sandbox", "argyle_manual_123")
-        described_class.manually_redact_by_partner_identifier!("sandbox", "DELETEME001")
+      it "redacts an invitation that was created but never opened" do
+        unopened = create(:cbv_flow_invitation, client_agency_id: "sandbox",
+          cbv_applicant: cbv_flow_invitation.cbv_applicant)
+
+        result = manually_redact
+
+        expect(unopened.reload.redacted_at).to be_within(1.second).of(Time.now)
+        expect(result[:attempted][:invitations_without_flows]).to eq(1)
+      end
+
+      it "redacts every matching applicant when the same partner_identifier value is reused within an agency" do
+        duplicate_invitation = create(:cbv_flow_invitation, client_agency_id: "sandbox",
+          cbv_applicant_attributes: { client_agency_id: "sandbox", case_number: "DELETEME001" })
+        duplicate_flow = CbvFlow.create_from_invitation(duplicate_invitation, "another_device")
+
+        manually_redact
+
+        expect(duplicate_flow.reload.redacted_at).to be_within(1.second).of(Time.now)
+        expect(duplicate_flow.cbv_applicant.reload.redacted_at).to be_within(1.second).of(Time.now)
+      end
+
+      it "does not touch applicants with the same partner_identifier in a different agency" do
+        other_agency_invitation = create(:cbv_flow_invitation, :az_des,
+          cbv_applicant_attributes: { client_agency_id: "az_des", case_number: "DELETEME001",
+                                       first_name: "Other", last_name: "Person" })
+        other_flow = CbvFlow.create_from_invitation(other_agency_invitation, "az_device")
+
+        manually_redact
+
+        expect(other_flow.reload.redacted_at).to be_nil
+        expect(other_flow.cbv_applicant.reload.redacted_at).to be_nil
+        expect(other_flow.cbv_applicant.partner_identifier).to eq("DELETEME001")
+      end
+
+      it "drops ids belonging to another agency rather than redacting them" do
+        other_agency_invitation = create(:cbv_flow_invitation, :az_des,
+          cbv_applicant_attributes: { client_agency_id: "az_des", case_number: "KEEPME001",
+                                       first_name: "Other", last_name: "Person" })
+        other_applicant = other_agency_invitation.cbv_applicant
+
+        described_class.redact_applicant_ids!(
+          "sandbox", [ cbv_flow_invitation.cbv_applicant.id, other_applicant.id ]
+        )
+
+        expect(other_applicant.reload.redacted_at).to be_nil
+      end
+
+      it "raises when no id matches the agency" do
+        expect {
+          described_class.redact_applicant_ids!("sandbox", [ 999_999 ])
+        }.to raise_error(ActiveRecord::RecordNotFound)
+      end
+
+      it "is safe to re-run with the same ids" do
+        scope = described_class.resolve_manual_erasure("sandbox", "DELETEME001")
+        described_class.redact_applicant_ids!("sandbox", scope.applicant_ids)
+
+        expect {
+          described_class.redact_applicant_ids!("sandbox", scope.applicant_ids)
+        }.not_to raise_error
+
+        expect(described_class.erasure_verified?(described_class.verify_erasure(scope))).to be(true)
+      end
+
+      it "counts attempts rather than outcomes" do
+        result = manually_redact
+
+        expect(result[:attempted]).to eq(
+          applicants: 1, cbv_flows: 2, invitations_without_flows: 0
+        )
+      end
+
+      context "when the agency's partner_identifier_name attribute is also flagged redactable" do
+        before do
+          sandbox_config = PartnerConfig.find_by(partner_id: "sandbox")
+          PartnerApplicationAttribute
+            .where(partner_config: sandbox_config, name: "case_number")
+            .update_all(redactable: true, redact_type: "string")
+          ClientAgencyConfig.reset!
+        end
+
+        it "redacts the partner_identifier column" do
+          manually_redact
+
+          expect(cbv_flow.cbv_applicant.reload.partner_identifier).to eq("REDACTED")
+        end
+      end
+
+      context "when a flow has an argyle_user_id" do
+        before do
+          second_cbv_flow.update!(argyle_user_id: "argyle_manual_123", client_agency_id: "sandbox")
+        end
+
+        it "deletes the argyle user" do
+          deletions = []
+          allow_any_instance_of(described_class).to receive(:delete_argyle_user) do |_service, agency, user_id|
+            deletions << [ agency, user_id ]
+            :deleted
+          end
+
+          manually_redact
+
+          expect(deletions).to include([ "sandbox", "argyle_manual_123" ])
+        end
+
+        it "reports the argyle outcome back to the caller" do
+          allow_any_instance_of(described_class).to receive(:delete_argyle_user).and_return(:failed)
+
+          result = manually_redact
+
+          expect(result[:argyle][:failed]).to eq(1)
+        end
+
+        # End-to-end through the real #delete_argyle_user, with production's
+        # report-rather-than-raise semantics in force. Nothing about the outcome
+        # is stubbed -- this is what proves an Argyle failure actually reaches
+        # the operator instead of being swallowed into a COMPLETE run.
+        it "surfaces a genuine Argyle API failure in production" do
+          allow(Rails.env).to receive(:production?).and_return(true)
+          argyle_service = instance_double(Aggregators::Sdk::ArgyleService)
+          allow(Aggregators::Sdk::ArgyleService).to receive(:new).and_return(argyle_service)
+          allow(argyle_service).to receive(:delete_user).and_raise(StandardError.new("API Error"))
+
+          result = manually_redact
+
+          expect(result[:argyle][:failed]).to eq(1)
+          expect(described_class.erasure_verified?(described_class.verify_erasure(result[:scope]))).to be(true)
+        end
+      end
+    end
+
+    describe ".verify_erasure" do
+      it "reports every record class as fully redacted after a clean run" do
+        scope = described_class.resolve_manual_erasure("sandbox", "DELETEME001")
+        described_class.redact_applicant_ids!("sandbox", scope.applicant_ids)
+
+        verification = described_class.verify_erasure(scope)
+
+        expect(verification[:applicants]).to eq([ 1, 1 ])
+        expect(verification[:cbv_flows]).to eq([ 2, 2 ])
+        expect(verification[:invitations]).to eq([ 1, 1 ])
+        expect(verification[:payroll_accounts]).to eq([ 1, 1 ])
+        expect(described_class.erasure_verified?(verification)).to be(true)
+      end
+
+      # Regression: an applicant holding both a flow and a separate never-opened
+      # invitation. The flow path stamps the applicant, so a check that looked
+      # only at applicants and flows would report success while the unopened
+      # invitation still held an email address and auth token.
+      it "catches an unopened invitation that was not redacted" do
+        unopened = create(:cbv_flow_invitation, client_agency_id: "sandbox",
+          cbv_applicant: cbv_flow_invitation.cbv_applicant)
+        scope = described_class.resolve_manual_erasure("sandbox", "DELETEME001")
+
+        # Production reports redaction failures rather than raising, so the
+        # failure below is swallowed exactly as it would be in prod. Only the
+        # unopened invitation fails; the flow-attached one redacts normally.
+        allow(Rails.env).to receive(:production?).and_return(true)
+        allow_any_instance_of(CbvFlowInvitation).to receive(:redact!).and_wrap_original do |original, *args|
+          raise StandardError, "invitation redaction failed" if original.receiver.id == unopened.id
+
+          original.call(*args)
+        end
+
+        described_class.redact_applicant_ids!("sandbox", scope.applicant_ids)
+
+        verification = described_class.verify_erasure(scope)
+
+        # The applicant and both flows look clean -- the flow path stamped the
+        # applicant. An applicants-and-flows check would call this COMPLETE.
+        expect(verification[:applicants]).to eq([ 1, 1 ])
+        expect(verification[:cbv_flows]).to eq([ 2, 2 ])
+        expect(verification[:invitations]).to eq([ 1, 2 ])
+        expect(described_class.erasure_verified?(verification)).to be(false)
+        expect(unopened.reload.redacted_at).to be_nil
       end
     end
   end
