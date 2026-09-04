@@ -395,7 +395,8 @@ en:
         header: Do you need to verify any jobs outside Verify My Income?
         header_html: Do you need to verify any jobs <em>outside</em> Verify My Income?
         header_sub_text: 'Tell us about any other jobs you’ve had in the past 90 days, even if you’re no longer at that job. This includes current or recent jobs you’ve had in the past 90 days that may:'
-        note_html: 'Note: If you’ve had other jobs in the past 90 days that you won’t verify using Verify My Income, you will need to submit that income information separately. <a href="%{agency_site}" target="_blank" rel="noopener noreferrer">Learn more on %{agency_portal_name}.</a>'
+        learn_more_link: Learn more on %{agency_portal_name}
+        note_html: 'Note: If you’ve had other jobs in the past 90 days that you won’t verify using Verify My Income, you will need to submit that income information separately. %{website_link}'
         radio_no: No, I don’t have another job to verify separately
         radio_yes: Yes, I have another job I’ll verify separately
     payment_details:
@@ -575,14 +576,14 @@ en:
       other_ways_no_employer:
         go_to_agency_portal: Go to %{agency_portal_name}
         other_ways_description: 'If there is not another account to log into, you will need to submit income for this job outside of Verify My Income. You can submit the last 30 days of income to %{agency_name} by:'
-        other_ways_option_1_html: Using the document uploader in %{website_link}.
+        other_ways_option_1_html: Using the document uploader in %{website_link}
         other_ways_option_2: Mailing or faxing printed income documents
         other_ways_option_3: Taking income documents to a %{agency_acronym} office
         try_searching_again: Try searching again
       other_ways_with_employer:
         continue_to_income_summary: Continue to Income Summary
         more_options: More options
-        more_options_1_html: Using the document uploader in %{website_link}.
+        more_options_1_html: Using the document uploader in %{website_link}
         more_options_2: Mailing or faxing printed income documents
         more_options_3: Taking income documents to a %{agency_acronym} office
         more_options_text: 'You can submit the last 30 days of income to %{agency_name} by:'

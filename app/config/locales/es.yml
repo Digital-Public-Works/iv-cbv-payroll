@@ -297,7 +297,8 @@ es:
         header: "¿Tiene que verificar de algún trabajo sin usar la herramienta Verificar Mis Ingresos?"
         header_html: "¿Tiene que verificar de algún trabajo <em>sin usar</em> la herramienta Verificar Mis Ingresos?"
         header_sub_text: 'Cuéntenos sobre cualquier otro trabajo que haya tenido en los últimos 90 días, incluso si ya no está en ese trabajo. Al hacerlo, incluya cualquier trabajo, actual o reciente, que haya tenido en los últimos 90 días que reúna estos requisitos:'
-        note_html: 'Importante: Si tuvo otros trabajos en los últimos 90 días que no va a verificar usando la herramienta Verify My Income, debe enviar esa información de ingresos por separado. <a href="%{agency_site}" target="_blank" rel="noopener noreferrer">Más información en %{agency_portal_name}.</a>'
+        learn_more_link: Más información en %{agency_portal_name}
+        note_html: 'Importante: Si tuvo otros trabajos en los últimos 90 días que no va a verificar usando la herramienta Verify My Income, debe enviar esa información de ingresos por separado. %{website_link}'
         radio_no: No, no tengo ningún otro trabajo que verificar por separado.
         radio_yes: Sí, tengo otro trabajo que verificar por separado
     payment_details:
@@ -463,14 +464,14 @@ es:
       other_ways_no_employer:
         go_to_agency_portal: Ir a %{agency_portal_name}
         other_ways_description: 'Si no hay otra cuenta en la que pueda iniciar sesión, es necesario entregar información de ingresos para este trabajo fuera de Verify My Income. Puede entregar los últimos 30 días de ingresos a %{agency_name}:'
-        other_ways_option_1_html: Usando el cargador de documentos en %{website_link}.
+        other_ways_option_1_html: Usando el cargador de documentos en %{website_link}
         other_ways_option_2: Enviando por correo o por fax documentos de ingresos impresos
         other_ways_option_3: Llevando documentos de ingresos a una oficina de %{agency_acronym}
         try_searching_again: Intente buscar de nuevo
       other_ways_with_employer:
         continue_to_income_summary: Continuar al Resumen de Ingresos
         more_options: Más opciones
-        more_options_1_html: Usando el cargador de documentos en %{website_link}.
+        more_options_1_html: Usando el cargador de documentos en %{website_link}
         more_options_2: Enviando por correo o por fax documentos de ingresos impresos
         more_options_3: Llevando documentos de ingresos a una oficina de %{agency_acronym}
         more_options_text: 'Puede entregar los últimos 30 días de ingresos a %{agency_name}:'
