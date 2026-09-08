@@ -40,6 +40,7 @@
   }
 }
 
+
 // Make the navbar a bit taller on mobile, and increase the size of the "Menu"
 // button to compensate.
 $mobile-navbar-height: 4rem;
@@ -70,7 +71,7 @@ tr td:first-child {
 }
 
 // Responsive heading adjustments for mobile
-@include at-media-max("tablet") {
+@include at-media-max('tablet') {
   h1 {
     @include u-font-size("sans", 11);
   }
