@@ -170,7 +170,7 @@ html {
 
 .cbv-row-highlight td,
 .cbv-row-highlight th {
-  @include u-bg('yellow-5v');
+  @include u-bg("yellow-5v");
 }
 
 .rotate {
@@ -198,6 +198,9 @@ html {
   @include u-text("left");
   @include u-margin-bottom(1);
   @include u-display("block");
+  .usa-icon {
+    margin-left: 0.5em;
+  }
 }
 
 /*
@@ -212,8 +215,8 @@ html {
 * Session timeout page
 */
 .timeout-notice {
-  background-color: #EFF6FB;
-  border-color: #005EA2;
+  background-color: #eff6fb;
+  border-color: #005ea2;
   margin-left: 0;
   max-width: 72ex;
 
@@ -229,7 +232,7 @@ html {
 .divider {
   width: 125px;
   height: 10px;
-  background-color: #D9E8F6
+  background-color: #d9e8f6;
 }
 
 /*
@@ -242,7 +245,7 @@ html {
   text-align: center;
   word-break: break-word;
 
-  @include at-media('tablet') {
+  @include at-media("tablet") {
     flex-direction: column;
   }
 }
@@ -253,7 +256,7 @@ html {
   @include u-padding(1);
   @include u-border(0.5);
   @include u-radius("pill");
-  @include at-media('tablet') {
+  @include at-media("tablet") {
     margin-right: 0;
   }
 }
@@ -268,7 +271,7 @@ input#invitation_link {
   // hide on smaller screens
   display: none;
 
-  @include at-media('tablet') {
+  @include at-media("tablet") {
     display: block;
   }
 }
@@ -277,7 +280,7 @@ input#invitation_link {
   height: 3rem;
   margin-top: 0 !important;
 
-  @include at-media('tablet') {
+  @include at-media("tablet") {
     border-radius: 0 0.25rem 0.25rem 0;
     border-left: none;
   }
@@ -303,12 +306,12 @@ input#invitation_link {
 .subheader-row {
   > th {
     font-weight: bold;
-    background-color: color('gray-cool-10');
+    background-color: color("gray-cool-10");
   }
 }
 
 .usa-table--borderless .subheader-row th {
-  background-color: color('gray-cool-10');
+  background-color: color("gray-cool-10");
 }
 
 /*
@@ -352,13 +355,13 @@ input#invitation_link {
 }
 
 .yellow-highlight-label {
-  background-color: #FEE685;
-  padding: .5rem;
+  background-color: #fee685;
+  padding: 0.5rem;
   border-radius: 2px;
 }
 
 .font-size-pdf-header-tag {
-  font-size: font-size('sans', 7);
+  font-size: font-size("sans", 7);
 }
 
 /*
@@ -429,7 +432,7 @@ input#invitation_link {
 /*
  * Employer search — accessible clear button
  */
- .cbv-employer-search__input-wrapper {
+.cbv-employer-search__input-wrapper {
   position: relative;
   display: flex;
   flex: 1 1 auto;
