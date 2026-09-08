@@ -17,6 +17,12 @@
   vertical-align: middle;
 }
 
+.usa-link:not(.usa-button) .usa-icon {
+  height: 1.75ex;
+  width: 1.75ex;
+  margin-left: 2px;
+}
+
 // Form styles
 .usa-form .usa-button {
   margin: units(4) 0;

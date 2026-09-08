@@ -11,6 +11,18 @@ class LinkWithIconComponent < ViewComponent::Base
     @icon_position = apply_new_tab_defaults ? :trailing : icon_position
   end
 
+  # Rendered via #call (instead of erb) so no whitespace is injected into the link, which would render as an underlined gap.
+  def call
+    link_to url, link_options do
+      safe_join([
+        (icon_svg if leading_icon?),
+        text,
+        new_tab_sr_text,
+        (icon_svg if trailing_icon?)
+      ].compact)
+    end
+  end
+
   private
 
   attr_reader :text, :url, :icon, :variant, :icon_position, :options
