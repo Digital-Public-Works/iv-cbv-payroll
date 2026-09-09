@@ -520,6 +520,7 @@ en:
         confirmation_code_html: "<strong>Your confirmation code</strong>: %{confirmation_code}"
         copied_link: Copied link
         copy_link: Copy link
+        copy_link_accessible_context: to share with your household
         download: Download my report
         header: Your income report was successfully sent to %{agency_acronym}.
         invitation_link_label: Invitation link
