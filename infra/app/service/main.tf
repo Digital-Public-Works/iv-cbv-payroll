@@ -176,7 +176,7 @@ module "sqs_queues" {
   # resource name conflicts. Standard environments (demo, prod) keep original names
   # for backward compatibility and to avoid state migration issues.
   use_environment_suffix     = var.environment_name != "demo" && var.environment_name != "prod"
-  queue_names                = ["report_sender", "mixpanel_events", "newrelic_events"]
+  queue_names                = ["report_sender", "sms_sender", "mixpanel_events", "newrelic_events"]
   dlq_name                   = "dead_letter_queue"
   visibility_timeout_seconds = 75 # ~30s job → 2x+buffer
   receive_wait_time_seconds  = 10

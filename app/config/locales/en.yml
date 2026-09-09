@@ -119,6 +119,10 @@ en:
         sandbox: CBV Test Agency has sent you an invitation to verify your income
       subject:
         default: Verify your income for your SNAP application or renewal
+  applicant_sms:
+    invitation:
+      body:
+        default: "%{agency_acronym} invites you to verify your income for your SNAP case. Use your secure link before %{deadline}: %{link} This link is unique to you. Please do not share it."
   back: Back
   caseworker:
     cbv_flow_invitations:

@@ -42,11 +42,25 @@ class CbvInvitationService
     case communication_channel
     when :email
       send_invitation_email(cbv_flow_invitation)
+    when :sms
+      enqueue_invitation_sms(cbv_flow_invitation)
     when :link, nil
       Rails.logger.info "Generated invitation ID: #{cbv_flow_invitation.id} (no communication channel specified)"
     else
       raise ArgumentError.new("Unknown communication_channel: #{communication_channel}")
     end
+  end
+
+  def enqueue_invitation_sms(cbv_flow_invitation)
+    communication = cbv_flow_invitation.invitation_communications.create!(channel: :sms)
+    InvitationSmsJob.perform_later(communication.id)
+
+    @event_logger.track(TrackEvent::SmsEnqueued, nil, {
+      time: Time.now.to_i,
+      invitation_id: cbv_flow_invitation.id,
+      invitation_communication_id: communication.id,
+      client_agency_id: cbv_flow_invitation.client_agency_id
+    })
   end
 
   def send_invitation_email(cbv_flow_invitation)

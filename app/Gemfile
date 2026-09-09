@@ -57,6 +57,7 @@ gem "actioncable-enhanced-postgresql-adapter"
 gem "aws-sdk-rails"
 gem "aws-sdk-s3"
 gem "aws-actionmailer-ses"
+gem "twilio-ruby"
 
 # profiling
 gem "rack-mini-profiler"

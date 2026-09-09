@@ -115,6 +115,18 @@ locals {
       manage_method     = "manual"
       secret_store_name = "/service/${var.app_name}-${var.environment}/argyle-api-token-sandbox-secret"
     },
+    TWILIO_ACCOUNT_SID = {
+      manage_method     = "manual"
+      secret_store_name = "/service/${var.app_name}-${var.environment}/twilio-account-sid"
+    },
+    TWILIO_AUTH_TOKEN = {
+      manage_method     = "manual"
+      secret_store_name = "/service/${var.app_name}-${var.environment}/twilio-auth-token"
+    },
+    TWILIO_MESSAGING_SERVICE_SID = {
+      manage_method     = "manual"
+      secret_store_name = "/service/${var.app_name}-${var.environment}/twilio-messaging-service-sid"
+    },
     ARGYLE_SANDBOX_WEBHOOK_SECRET = {
       manage_method     = "manual"
       secret_store_name = "/service/${var.app_name}-${var.environment}/argyle-sandbox-webhook-secret"

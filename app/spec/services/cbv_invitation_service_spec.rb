@@ -105,6 +105,58 @@ RSpec.describe CbvInvitationService, type: :service do
       end
     end
 
+    context 'when the communication channel is :sms' do
+      let(:sms_invitation_params) do
+        cbv_flow_invitation_params.merge(email_address: nil, phone_number: "555-234-5678")
+      end
+
+      it 'creates a communication row and enqueues the SMS job' do
+        invitation = nil
+        expect do
+          invitation = service.invite(
+            sms_invitation_params,
+            current_user,
+            communication_channel: :sms
+          )
+        end.to have_enqueued_job(InvitationSmsJob)
+
+        communication = invitation.invitation_communications.last
+        expect(communication.channel).to eq("sms")
+        expect(communication.status).to eq("created")
+        expect(InvitationSmsJob).to have_been_enqueued.with(communication.id)
+      end
+
+      it 'does not send an email' do
+        expect do
+          service.invite(sms_invitation_params, current_user, communication_channel: :sms)
+        end.not_to change { ActionMailer::Base.deliveries.count }
+      end
+
+      it 'tracks the enqueued event' do
+        invitation = service.invite(sms_invitation_params, current_user, communication_channel: :sms)
+
+        expect(event_logger).to have_received(:track).with(
+          'SmsEnqueued',
+          nil,
+          hash_including(
+            invitation_id: invitation.id,
+            invitation_communication_id: invitation.invitation_communications.last.id
+          )
+        )
+      end
+
+      it 'requires a phone number' do
+        invitation = service.invite(
+          sms_invitation_params.merge(phone_number: nil),
+          current_user,
+          communication_channel: :sms
+        )
+
+        expect(invitation.errors[:phone_number]).to be_present
+        expect(invitation.invitation_communications).to be_empty
+      end
+    end
+
     context 'metrics_attributes' do
       it 'merges supplied metrics_attributes into the tracked event' do
         service.invite(

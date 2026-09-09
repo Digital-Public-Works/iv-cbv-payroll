@@ -119,5 +119,8 @@ module TrackEvent
   IncomeSummaryMatchedAgencyNames = "IncomeSummaryMatchedAgencyNames"
   InvitationLimitReached = "InvitationLimitReached"
   QueueJobFailed = "QueueJobFailed"
+  SmsEnqueued = "SmsEnqueued"
+  SmsSendFailed = "SmsSendFailed"
+  SmsSent = "SmsSent"
   WeeklySummaryEmail = "WeeklySummaryEmail"
 end

@@ -265,6 +265,8 @@ GEM
       railties (>= 6.0.0)
     json (2.21.2)
     json-logic-rb (0.1.5)
+    jwt (3.2.0)
+      base64
     language_server-protocol (3.17.0.6)
     lint_roller (1.1.0)
     logger (1.7.0)
@@ -531,6 +533,10 @@ GEM
     turbo-rails (2.0.23)
       actionpack (>= 7.1.0)
       railties (>= 7.1.0)
+    twilio-ruby (7.11.1)
+      faraday (>= 2.0, < 3.0)
+      jwt (>= 1.5, < 4.0)
+      nokogiri (>= 1.6, < 2.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     unicode-display_width (3.2.0)
@@ -646,6 +652,7 @@ DEPENDENCIES
   thor (>= 1.4.0)
   timecop
   turbo-rails
+  twilio-ruby
   tzinfo-data
   uri (>= 1.0.4)
   vcr
