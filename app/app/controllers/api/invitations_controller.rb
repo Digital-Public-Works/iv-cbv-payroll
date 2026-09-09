@@ -21,7 +21,7 @@ class Api::InvitationsController < ApplicationController
     end
 
     cbv_flow_invitation = CbvInvitationService.new(event_logger)
-      .invite(cbv_flow_invitation_params, @current_user, delivery_method: nil, metrics_attributes: metrics_attributes_hash)
+      .invite(cbv_flow_invitation_params, @current_user, communication_channel: nil, metrics_attributes: metrics_attributes_hash)
 
     errors = cbv_flow_invitation.errors
     if errors.any?

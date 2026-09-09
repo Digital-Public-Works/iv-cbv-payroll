@@ -42,6 +42,9 @@ en:
               invalid_format: Enter an email address in the correct format, like name@example.com
             language:
               invalid_format: Language must be either English (en) or Spanish (es).
+            phone_number:
+              blank: Enter the client's phone number.
+              invalid_format: Enter a 10-digit US phone number, like (555) 555-1234.
   aggregator_strings:
     deductions:
       401k: 401k

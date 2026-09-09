@@ -60,7 +60,7 @@ RSpec.describe CbvFlowInvitation, type: :model do
         invitation = described_class.new(valid_attributes.merge(email_address: nil))
         expect(invitation).not_to be_valid
         expect(invitation.errors[:email_address]).to include(
-          I18n.t('activerecord.errors.models.cbv_flow_invitation.attributes.email_address.invalid_format'),
+          I18n.t('activerecord.errors.models.cbv_flow_invitation.attributes.email_address.blank'),
         )
       end
 
@@ -70,6 +70,66 @@ RSpec.describe CbvFlowInvitation, type: :model do
         expect(invitation.errors[:email_address]).to include(
           I18n.t('activerecord.errors.models.cbv_flow_invitation.attributes.email_address.invalid_format')
         )
+      end
+
+      context "communication channels" do
+        it "rejects unknown channels" do
+          invitation = described_class.new(valid_attributes.merge(communication_channel: "fax"))
+          expect(invitation).not_to be_valid
+          expect(invitation.errors[:communication_channel]).to be_present
+        end
+
+        it "does not require contact fields for the link channel" do
+          invitation = described_class.new(valid_attributes.merge(communication_channel: "link", email_address: nil))
+          expect(invitation).to be_valid
+        end
+
+        context "for the sms channel" do
+          let(:sms_attributes) { valid_attributes.merge(communication_channel: "sms", email_address: nil) }
+
+          it "requires a phone number" do
+            invitation = described_class.new(sms_attributes)
+            expect(invitation).not_to be_valid
+            expect(invitation.errors[:phone_number]).to include(
+              I18n.t("activerecord.errors.models.cbv_flow_invitation.attributes.phone_number.blank")
+            )
+          end
+
+          it "normalizes US phone formats to E.164" do
+            {
+              "(555) 234-5678" => "+15552345678",
+              "1-555-234-5678" => "+15552345678",
+              "+1 555 234 5678" => "+15552345678",
+              "5552345678" => "+15552345678"
+            }.each do |input, normalized|
+              invitation = described_class.new(sms_attributes.merge(phone_number: input))
+              expect(invitation).to be_valid, "expected #{input.inspect} to be valid"
+              expect(invitation.phone_number).to eq(normalized)
+            end
+          end
+
+          it "rejects invalid US phone numbers" do
+            [ "555-234", "01234567890", "555-234-5678 ext 2", "(155) 234-5678" ].each do |input|
+              invitation = described_class.new(sms_attributes.merge(phone_number: input))
+              expect(invitation).not_to be_valid, "expected #{input.inspect} to be invalid"
+              expect(invitation.errors[:phone_number]).to include(
+                I18n.t("activerecord.errors.models.cbv_flow_invitation.attributes.phone_number.invalid_format")
+              )
+            end
+          end
+
+          it "redacts the phone number" do
+            invitation = described_class.create!(sms_attributes.merge(phone_number: "5552345678"))
+            invitation.redact!
+            expect(invitation.phone_number).to eq("REDACTED")
+          end
+
+          it "returns the last 4 digits for display" do
+            invitation = described_class.new(sms_attributes.merge(phone_number: "5552345678"))
+            invitation.valid?
+            expect(invitation.phone_number_last_4).to eq("5678")
+          end
+        end
       end
 
       context "validates expiration params" do

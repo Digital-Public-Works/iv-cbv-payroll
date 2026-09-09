@@ -12,10 +12,16 @@ class Caseworker::CbvFlowInvitationsController < Caseworker::BaseController
   def create
     # handle errors from the mail service
     begin
+      # client_agency_id must be assigned before any partner-defined applicant
+      # attribute: CbvApplicant resolves those dynamically per agency, and
+      # assignment happens in hash order.
+      applicant_attributes = { client_agency_id: client_agency_id }
+        .merge(invitation_params[:cbv_applicant_attributes]&.to_h || {})
+
       @cbv_flow_invitation = CbvInvitationService.new(event_logger).invite(
-        invitation_params.deep_merge(client_agency_id: client_agency_id, cbv_applicant_attributes: { client_agency_id: client_agency_id }),
+        invitation_params.merge(client_agency_id: client_agency_id, cbv_applicant_attributes: applicant_attributes),
         current_user,
-        delivery_method: :email
+        communication_channel: :email
       )
     rescue => e
       Rails.logger.error("Error inviting applicant: #{e.message}")

@@ -3,7 +3,18 @@ class User < ApplicationRecord
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
   devise :rememberable, :trackable, :timeoutable
 
+  # Owner of invitations created through the /admin portal before real admin
+  # identities exist (see ADR-0002). One per agency, since email uniqueness is
+  # scoped by client_agency_id.
+  ADMIN_SYSTEM_USER_EMAIL = "platform-admin-system@digitalpublicworks.org".freeze
+
   has_many :api_access_tokens, dependent: :destroy
+
+  def self.admin_system_user_for(client_agency_id)
+    find_or_create_by!(email: ADMIN_SYSTEM_USER_EMAIL, client_agency_id: client_agency_id) do |user|
+      user.is_service_account = true
+    end
+  end
 
   def self.find_by_access_token(token)
     token_user = ApiAccessToken.find_by(access_token: token, deleted_at: nil)&.user

@@ -7,6 +7,11 @@ FactoryBot.define do
 
     cbv_applicant
 
+    trait :sms do
+      communication_channel { "sms" }
+      phone_number { "+15552345678" }
+    end
+
     trait :sandbox do
       client_agency_id { "sandbox" }
 

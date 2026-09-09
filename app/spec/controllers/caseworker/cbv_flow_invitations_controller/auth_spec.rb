@@ -73,17 +73,24 @@ RSpec.describe Caseworker::CbvFlowInvitationsController, type: :controller do
       end
 
       it "sends an invitation" do
-        post :create, params: {
-            client_agency_id: 'sandbox',
-          cbv_flow_invitation: valid_params
-        }
+        expect do
+          post :create, params: {
+              client_agency_id: 'sandbox',
+            cbv_flow_invitation: valid_params
+          }
+        end.to change(CbvFlowInvitation, :count).by(1)
 
         expect(response).to redirect_to(caseworker_dashboard_url(client_agency_id: valid_params[:client_agency_id]))
+        expect(controller.flash[:alert]).to be_blank
+        expect(controller.flash[:slim_alert]).to be_present
       end
 
       context "when the CbvInvitationService has an error" do
         it "takes the user back to the invitation form with the error" do
-          post :create, params: valid_params.merge(email_address: "bad-email@")
+          post :create, params: {
+            client_agency_id: "sandbox",
+            cbv_flow_invitation: valid_params.merge(email_address: "bad-email@")
+          }
           expect(controller.flash[:alert]).to include(I18n.t('activerecord.errors.models.cbv_flow_invitation.attributes.email_address.invalid_format'))
         end
       end

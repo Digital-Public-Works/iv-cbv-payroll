@@ -3,13 +3,14 @@ class CbvInvitationService
     @event_logger = event_logger
   end
 
-  def invite(cbv_flow_invitation_params, current_user, delivery_method: :email, metrics_attributes: {})
+  def invite(cbv_flow_invitation_params, current_user, communication_channel: :email, metrics_attributes: {})
     cbv_flow_invitation_params[:user] = current_user
     cbv_flow_invitation = CbvFlowInvitation.new(cbv_flow_invitation_params)
+    cbv_flow_invitation.communication_channel = communication_channel.to_s if communication_channel.present?
 
     return cbv_flow_invitation unless cbv_flow_invitation.save
 
-    deliver(cbv_flow_invitation, delivery_method)
+    deliver(cbv_flow_invitation, communication_channel)
 
     track_event(cbv_flow_invitation, current_user, metrics_attributes)
 
@@ -25,7 +26,8 @@ class CbvInvitationService
       caseworker_email_address: current_user.email,
       client_agency_id: current_user.client_agency_id,
       cbv_applicant_id: cbv_flow_invitation.cbv_applicant_id,
-      invitation_id: cbv_flow_invitation.id
+      invitation_id: cbv_flow_invitation.id,
+      communication_channel: cbv_flow_invitation.communication_channel
     }
 
     # guard against possible future key collision, system_property will override
@@ -36,14 +38,14 @@ class CbvInvitationService
     )
   end
 
-  def deliver(cbv_flow_invitation, delivery_method)
-    case delivery_method
+  def deliver(cbv_flow_invitation, communication_channel)
+    case communication_channel
     when :email
       send_invitation_email(cbv_flow_invitation)
-    when nil
-      Rails.logger.info "Generated invitation ID: #{cbv_flow_invitation.id} (no delivery method specified)"
+    when :link, nil
+      Rails.logger.info "Generated invitation ID: #{cbv_flow_invitation.id} (no communication channel specified)"
     else
-      raise ArgumentError.new("Unknown delivery_method: #{delivery_method}")
+      raise ArgumentError.new("Unknown communication_channel: #{communication_channel}")
     end
   end
 

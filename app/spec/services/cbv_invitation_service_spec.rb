@@ -20,7 +20,7 @@ RSpec.describe CbvInvitationService, type: :service do
         service.invite(
           cbv_flow_invitation_params,
           current_user,
-          delivery_method: :email
+          communication_channel: :email
         )
 
         invitation = CbvFlowInvitation.last
@@ -35,7 +35,7 @@ RSpec.describe CbvInvitationService, type: :service do
           service.invite(
             cbv_flow_invitation_params,
             current_user,
-            delivery_method: :email
+            communication_channel: :email
           )
         end.to change { ActionMailer::Base.deliveries.count }
           .by(1)
@@ -48,7 +48,7 @@ RSpec.describe CbvInvitationService, type: :service do
         service.invite(
           cbv_flow_invitation_params,
           current_user,
-          delivery_method: :email
+          communication_channel: :email
         )
 
         invitation = CbvFlowInvitation.last
@@ -65,7 +65,7 @@ RSpec.describe CbvInvitationService, type: :service do
         service.invite(
           cbv_flow_invitation_params,
           current_user,
-          delivery_method: nil
+          communication_channel: nil
         )
 
         invitation = CbvFlowInvitation.last
@@ -82,7 +82,7 @@ RSpec.describe CbvInvitationService, type: :service do
           service.invite(
             cbv_flow_invitation_params,
             current_user,
-            delivery_method: nil
+            communication_channel: nil
           )
         end.not_to change { ActionMailer::Base.deliveries.count }
 
@@ -93,7 +93,7 @@ RSpec.describe CbvInvitationService, type: :service do
         service.invite(
           cbv_flow_invitation_params,
           current_user,
-          delivery_method: nil
+          communication_channel: nil
         )
 
         invitation = CbvFlowInvitation.last
@@ -110,7 +110,7 @@ RSpec.describe CbvInvitationService, type: :service do
         service.invite(
           cbv_flow_invitation_params,
           current_user,
-          delivery_method: nil,
+          communication_channel: nil,
           metrics_attributes: { "source" => "ops_console", "campaign" => "spring2026" }
         )
 
@@ -125,7 +125,7 @@ RSpec.describe CbvInvitationService, type: :service do
         service.invite(
           cbv_flow_invitation_params,
           current_user,
-          delivery_method: nil,
+          communication_channel: nil,
           metrics_attributes: { invitation_id: "spoofed", user_id: "spoofed" }
         )
 
@@ -138,7 +138,7 @@ RSpec.describe CbvInvitationService, type: :service do
       end
 
       it 'still tracks the event when metrics_attributes is empty or omitted' do
-        service.invite(cbv_flow_invitation_params, current_user, delivery_method: nil)
+        service.invite(cbv_flow_invitation_params, current_user, communication_channel: nil)
 
         expect(event_logger).to have_received(:track).with(
           'CaseworkerInvitedApplicantToFlow',

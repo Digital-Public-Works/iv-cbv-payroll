@@ -8,15 +8,27 @@ class CbvFlowInvitation < ApplicationRecord
   # to be of practical use here.
   EMAIL_REGEX = /\A[\w+\-](?:[^\w+\-]?[\w+\-])*[^\w+\-]?@[a-z\d\-]+(?:\.[a-z\d\-]+)*\.[a-z\d\-]+\z/i
 
+  # E.164-normalized NANP number: +1, then a valid area code and exchange.
+  US_PHONE_REGEX = /\A\+1[2-9]\d{2}[2-9]\d{6}\z/
+
   MAX_FLOWS_PER_INVITATION = 100
 
   VALID_LOCALES = Rails.application.config.i18n.available_locales.map(&:to_s).freeze
 
+  # How the invitation is communicated to the applicant. Determines which
+  # contact fields are required. "link" means no send: the caller copies the
+  # tokenized URL. Defaults to "email" so callers that predate channels (the
+  # API) keep requiring an email address.
+  COMMUNICATION_CHANNELS = %w[email sms link].freeze
+
   attr_accessor :expiration_days, :expiration_date
+
+  attribute :communication_channel, :string, default: "email"
 
   belongs_to :user
   belongs_to :cbv_applicant, optional: true
   has_many :cbv_flows
+  has_many :invitation_communications, dependent: :destroy
 
   has_secure_token :auth_token, length: 10
 
@@ -24,9 +36,15 @@ class CbvFlowInvitation < ApplicationRecord
 
   before_create :set_expires_at, if: :new_record?
   before_validation :normalize_language
+  before_validation :normalize_communication_channel
+  before_validation :normalize_phone_number
 
   validates :client_agency_id, inclusion: { in: ->(_) { ClientAgencyConfig.instance.client_agency_ids } }
-  validates :email_address, format: { with: EMAIL_REGEX, message: :invalid_format }
+  validates :communication_channel, inclusion: { in: COMMUNICATION_CHANNELS }
+  validates :email_address, presence: true, if: :email_communication_channel?
+  validates :email_address, format: { with: EMAIL_REGEX, message: :invalid_format }, allow_blank: true
+  validates :phone_number, presence: true, if: :sms_communication_channel?
+  validates :phone_number, format: { with: US_PHONE_REGEX, message: :invalid_format }, allow_blank: true
   validates_associated :cbv_applicant
   validates :language, inclusion: {
     in: VALID_LOCALES,
@@ -41,6 +59,7 @@ class CbvFlowInvitation < ApplicationRecord
   include Redactable
   has_redactable_fields(
     email_address: :email,
+    phone_number: :string,
     auth_token: :string
   )
 
@@ -81,6 +100,32 @@ class CbvFlowInvitation < ApplicationRecord
 
   def normalize_language
     self.language = language.to_s.downcase if language.present?
+  end
+
+  def normalize_communication_channel
+    self.communication_channel = communication_channel.to_s.presence || "email"
+  end
+
+  # Normalizes user-entered US phone numbers ("(555) 234-5678", "1-555-234-5678")
+  # to E.164 (+15552345678). Invalid input is left for the format validation.
+  def normalize_phone_number
+    return if phone_number.blank?
+
+    digits = phone_number.gsub(/\D/, "")
+    digits = digits.delete_prefix("1") if digits.length == 11
+    self.phone_number = "+1#{digits}"
+  end
+
+  def email_communication_channel?
+    communication_channel == "email"
+  end
+
+  def sms_communication_channel?
+    communication_channel == "sms"
+  end
+
+  def phone_number_last_4
+    phone_number&.last(4)
   end
 
   def applicant_information
