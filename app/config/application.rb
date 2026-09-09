@@ -35,6 +35,11 @@ module IvCbvPayroll
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
 
+    # Platform-admin portal (/admin). No authentication yet, so it is routable
+    # only where this flag is on (development and test). ADR-0002: a follow-up
+    # adds Google Workspace OmniAuth and opens it to deployed environments.
+    config.admin_portal_enabled = false
+
     # Allow specifying /404 and /500 routes for error pages
     config.exceptions_app = self.routes
 

@@ -1,0 +1,42 @@
+<%# Stop polling once the send reaches a final state, or once it has rested
+    at "sent" long enough that a delivery receipt is unlikely to change it. %>
+<% polling_complete = communication.terminal? || (communication.status_sent? && communication.updated_at <= 3.minutes.ago) %>
+<div id="invitation_status" <%= "data-polling-complete" if polling_complete %>>
+  <ol class="usa-process-list">
+    <li class="usa-process-list__item">
+      <h3 class="usa-process-list__heading"><%= t(".created_heading") %></h3>
+      <p class="margin-top-05"><%= t(".created_body") %></p>
+    </li>
+
+    <li class="usa-process-list__item">
+      <h3 class="usa-process-list__heading"><%= t(".sending_heading") %></h3>
+      <p class="margin-top-05">
+        <% if communication.status_created? %>
+          <%= t(".sending_queued") %>
+        <% elsif communication.status_sending? %>
+          <%= t(".sending_in_progress") %>
+        <% else %>
+          <%= t(".sending_done") %>
+        <% end %>
+      </p>
+    </li>
+
+    <li class="usa-process-list__item">
+      <% if communication.status_failed? %>
+        <h3 class="usa-process-list__heading text-secondary-dark"><%= t(".failed_heading") %></h3>
+        <p class="margin-top-05"><%= t(".failed_body") %></p>
+        <% if communication.last_error.present? %>
+          <p class="margin-top-05 text-secondary-dark"><%= communication.last_error %></p>
+        <% end %>
+      <% elsif communication.status_delivered? %>
+        <h3 class="usa-process-list__heading"><%= t(".delivered_heading") %></h3>
+        <p class="margin-top-05"><%= t(".delivered_body") %></p>
+      <% elsif communication.status_sent? %>
+        <h3 class="usa-process-list__heading"><%= t(".sent_heading") %></h3>
+        <p class="margin-top-05"><%= t(".sent_body") %></p>
+      <% else %>
+        <h3 class="usa-process-list__heading text-base"><%= t(".pending_heading") %></h3>
+      <% end %>
+    </li>
+  </ol>
+</div>

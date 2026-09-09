@@ -1,0 +1,26 @@
+<% content_for :title, t(".header") %>
+<%= render "admin/shared/nav" %>
+
+<h1><%= t(".header") %></h1>
+<p class="usa-intro"><%= t(".intro") %></p>
+
+<ol class="usa-process-list">
+  <li class="usa-process-list__item">
+    <h2 class="usa-process-list__heading"><%= t(".step_1_heading") %></h2>
+    <p><%= t(".step_1_body") %></p>
+  </li>
+  <li class="usa-process-list__item">
+    <h2 class="usa-process-list__heading"><%= t(".step_2_heading") %></h2>
+    <p><%= t(".step_2_body") %></p>
+  </li>
+  <li class="usa-process-list__item">
+    <h2 class="usa-process-list__heading"><%= t(".step_3_heading") %></h2>
+    <p><%= t(".step_3_body") %></p>
+  </li>
+</ol>
+
+<h2><%= t(".pages_heading") %></h2>
+<ul class="usa-list">
+  <li><%= link_to t(".pages_create"), new_admin_invitation_path %> — <%= t(".pages_create_description") %></li>
+  <li><%= link_to t(".pages_index"), admin_invitations_path %> — <%= t(".pages_index_description") %></li>
+</ul>

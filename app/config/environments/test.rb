@@ -25,6 +25,10 @@ Rails.application.configure do
 
   # Show full error reports and disable caching.
   config.consider_all_requests_local = true
+
+  # Enabled so the /admin portal is testable; production-like environments
+  # leave the application.rb default (false).
+  config.admin_portal_enabled = true
   config.action_controller.perform_caching = false
   config.cache_store = :null_store
   routes.default_url_options[:host] = ENV.fetch("DOMAIN_NAME", "localhost")

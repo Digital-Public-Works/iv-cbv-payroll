@@ -1,0 +1,45 @@
+<% content_for :title, t(".header") %>
+<%= render "admin/shared/nav" %>
+
+<h1><%= t(".header") %></h1>
+<p>
+  <%= t(".invitation_id", id: @invitation.id) %>
+  <% if @communication %>
+    · <%= t(".communication_id", id: @communication.id) %>
+  <% end %>
+</p>
+
+<div data-controller="copy-link" class="margin-bottom-4">
+  <label class="usa-label" for="invitation-url"><%= t(".link_label") %></label>
+  <input
+    id="invitation-url"
+    class="usa-input maxw-tablet"
+    type="text"
+    readonly
+    autocomplete="off"
+    value="<%= @invitation.to_url %>"
+    data-copy-link-target="input"
+  >
+  <button type="button" class="usa-button margin-top-1" data-action="copy-link#copy" data-copy-link-target="copyLinkButton">
+    <%= t(".copy_link") %>
+  </button>
+  <button type="button" class="usa-button usa-button--outline margin-top-1 invisible" data-copy-link-target="successButton" tabindex="-1">
+    <%= t(".copied") %>
+  </button>
+</div>
+
+<% if @communication %>
+  <h2><%= t(".status_header") %></h2>
+  <div
+    aria-live="polite"
+    data-controller="polling"
+    data-polling-url-value="<%= status_admin_invitation_path(id: @invitation.id) %>"
+  >
+    <%= render "status", invitation: @invitation, communication: @communication %>
+  </div>
+<% end %>
+
+<div class="margin-top-4">
+  <%= link_to t(".create_another"), new_admin_invitation_path, class: "usa-button" %>
+  <%= link_to t(".view_invitations"), admin_invitations_path, class: "usa-button usa-button--outline" %>
+</div>

@@ -45,6 +45,90 @@ en:
             phone_number:
               blank: Enter the client's phone number.
               invalid_format: Enter a 10-digit US phone number, like (555) 555-1234.
+  admin:
+    home:
+      index:
+        header: Invitation tools
+        intro: Create and track income-verification invitations for applicants, on behalf of a partner agency.
+        pages_create: Create invitation
+        pages_create_description: invite one applicant to verify their income.
+        pages_heading: Pages
+        pages_index: View invitations
+        pages_index_description: invitations created in the last 24 hours, with delivery status.
+        step_1_body: Use the agency selector at the top of every page to pick which partner the invitation is for.
+        step_1_heading: Choose the agency
+        step_2_body: Enter the applicant's case information, pick English or Spanish, and choose how to get the link to them — copy it yourself, or send it by text message.
+        step_2_heading: Create an invitation
+        step_3_body: Each invitation has a status page showing whether the text message was sent, and the invitations list shows everything created in the last 24 hours.
+        step_3_heading: Track delivery
+    invitations:
+      create:
+        attestation_required: Confirm the applicant has agreed to receive a text message at this number.
+      index:
+        channel_link: Link only
+        channel_sms: Text message
+        column_actions: Actions
+        column_channel: Delivery
+        column_created_at: Created
+        column_identifier: Case number
+        column_phone: Phone
+        column_status: Status
+        description: Invitations created through this portal for %{agency}.
+        empty: No invitations have been created in the last 24 hours for this agency.
+        header: Invitations from the last 24 hours
+        phone_ending_in: Phone number ending in %{last_4}
+        status_created: Queued
+        status_delivered: Delivered
+        status_failed: Failed
+        status_none: "—"
+        status_sending: Sending
+        status_sent: Sent
+        table_caption: Invitations created in the last 24 hours
+        view: View
+      new:
+        agency_note: This invitation will be created for %{agency}.
+        attestation_label: The applicant has agreed to receive a text message at this number.
+        channel_legend: How do you want to get the link to the applicant?
+        channel_link: Copy a link
+        channel_link_description: We'll generate the invitation link for you to copy and share yourself.
+        channel_sms: Send a text message (SMS)
+        channel_sms_description: We'll text the invitation link to the applicant's phone.
+        header: Create an invitation
+        language_legend: What language should the invitation use?
+        phone_hint: 10-digit US phone number, like (555) 555-1234. The applicant must have agreed to receive a text at this number.
+        phone_label: Applicant's mobile phone number
+        submit: Create invitation
+      show:
+        communication_id: Message %{id}
+        copied: Copied!
+        copy_link: Copy link
+        create_another: Create another invitation
+        header: Invitation created
+        invitation_id: Invitation %{id}
+        link_label: Invitation link
+        status_header: Text message status
+        view_invitations: View invitations
+      status:
+        created_body: The invitation link is ready to copy above.
+        created_heading: Invitation created
+        delivered_body: The applicant's phone confirmed delivery.
+        delivered_heading: Text message delivered
+        failed_body: The text message could not be sent. You can still copy the link above and share it another way.
+        failed_heading: Failed to send text message
+        pending_heading: Waiting to send
+        sending_done: Done.
+        sending_heading: Sending text message
+        sending_in_progress: Sending now…
+        sending_queued: Waiting to send…
+        sent_body: The message was accepted by the carrier network.
+        sent_heading: Text message sent
+    shared:
+      nav:
+        agency_label: Agency
+        create_invitation: Create invitation
+        home: Home
+        invitations: View invitations
+        label: Admin
   aggregator_strings:
     deductions:
       401k: 401k

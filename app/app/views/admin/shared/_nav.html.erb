@@ -1,0 +1,23 @@
+<div class="border-bottom border-base-lighter padding-bottom-2 margin-bottom-4">
+  <div class="display-flex flex-align-center flex-justify flex-wrap">
+    <nav aria-label="<%= t("admin.shared.nav.label") %>" class="display-flex flex-align-center">
+      <%= link_to t("admin.shared.nav.home"), admin_root_path, class: "usa-link margin-right-2" %>
+      <%= link_to t("admin.shared.nav.invitations"), admin_invitations_path, class: "usa-link margin-right-2" %>
+    </nav>
+
+    <div class="display-flex flex-align-center">
+      <%= form_with url: admin_agency_selection_path, method: :post, data: { controller: "auto-submit" } do %>
+        <label class="usa-label display-inline-block margin-top-0 margin-right-1" for="admin-agency-select">
+          <%= t("admin.shared.nav.agency_label") %>
+        </label>
+        <%= select_tag :client_agency_id,
+              options_for_select(agency_options.map { |id| [ id.titleize, id ] }, selected_agency_id),
+              id: "admin-agency-select",
+              class: "usa-select display-inline-block width-card",
+              data: { action: "change->auto-submit#submit" } %>
+      <% end %>
+
+      <%= link_to t("admin.shared.nav.create_invitation"), new_admin_invitation_path, class: "usa-button margin-left-2" %>
+    </div>
+  </div>
+</div>

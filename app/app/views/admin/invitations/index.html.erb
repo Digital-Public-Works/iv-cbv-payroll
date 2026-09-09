@@ -1,0 +1,42 @@
+<% content_for :title, t(".header") %>
+<%= render "admin/shared/nav" %>
+
+<h1><%= t(".header") %></h1>
+<p><%= t(".description", agency: selected_agency_id.titleize) %></p>
+
+<% if @invitations.any? %>
+  <table class="usa-table usa-table--striped width-full">
+    <caption class="usa-sr-only"><%= t(".table_caption") %></caption>
+    <thead>
+      <tr>
+        <th scope="col"><%= t(".column_created_at") %></th>
+        <th scope="col"><%= t(".column_identifier") %></th>
+        <th scope="col"><%= t(".column_channel") %></th>
+        <th scope="col"><%= t(".column_phone") %></th>
+        <th scope="col"><%= t(".column_status") %></th>
+        <th scope="col"><span class="usa-sr-only"><%= t(".column_actions") %></span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @invitations.each do |invitation| %>
+        <% communication = invitation.invitation_communications.max_by(&:created_at) %>
+        <tr>
+          <td><%= l(invitation.created_at.in_time_zone(Time.zone), format: :short) %></td>
+          <td><%= invitation.cbv_applicant&.partner_identifier %></td>
+          <td><%= communication ? t(".channel_#{communication.channel}") : t(".channel_link") %></td>
+          <td>
+            <% if invitation.phone_number.present? %>
+              <span aria-label="<%= t(".phone_ending_in", last_4: invitation.phone_number_last_4) %>">
+                ···<%= invitation.phone_number_last_4 %>
+              </span>
+            <% end %>
+          </td>
+          <td><%= communication ? t(".status_#{communication.status}") : t(".status_none") %></td>
+          <td><%= link_to t(".view"), admin_invitation_path(id: invitation.id), class: "usa-link" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p><%= t(".empty") %></p>
+<% end %>

@@ -7,6 +7,9 @@ Rails.application.configure do
   config.web_console.allowed_ips = "192.168.65.1" if ENV["DOCKERIZED"] == "true"
   # Settings specified here will take precedence over those in config/application.rb.
 
+  # The unauthenticated /admin portal is local-development-only (ADR-0002).
+  config.admin_portal_enabled = true
+
   # In the development environment your application's code is reloaded any time
   # it changes. This slows down response time but is perfect for development
   # since you don't have to restart the web server when you make code changes.

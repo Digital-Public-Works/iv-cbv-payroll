@@ -113,6 +113,22 @@ Rails.application.routes.draw do
       end
     end
 
+    # Platform-admin portal (ADR-0002). Must be declared before the
+    # /:client_agency_id catch-all below so "admin" is never treated as a
+    # partner id. The constraint is evaluated per request, so the portal
+    # simply does not route where admin_portal_enabled is off.
+    namespace :admin do
+      constraints ->(_request) { Rails.application.config.admin_portal_enabled } do
+        root to: "home#index"
+        post "/agency_selection", to: "agency_selections#create", as: :agency_selection
+        resources :invitations, only: %i[index new create show] do
+          member do
+            patch :status
+          end
+        end
+      end
+    end
+
     # Caseworker portal, scoped per partner. The client_agency_id segment is
     # validated dynamically per request against the database (see
     # ClientAgencyIdConstraint) rather than enumerating partners into the route

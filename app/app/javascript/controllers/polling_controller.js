@@ -17,8 +17,17 @@ export default class extends Controller {
           if (html.includes('turbo-stream action="redirect')) {
             clearInterval(this.interval)
           }
+          // a response marked data-polling-complete has reached a final state;
+          // render it one last time and stop polling
+          if (html.includes("data-polling-complete")) {
+            clearInterval(this.interval)
+          }
           return Turbo.renderStreamMessage(html)
         })
     }, 2000)
+  }
+
+  disconnect() {
+    if (this.interval) clearInterval(this.interval)
   }
 }
