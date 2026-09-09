@@ -23,17 +23,26 @@ class SmsService
   class PermanentDeliveryError < DeliveryError; end
 
   def send_message(to:, body:)
-    client.messages.create(
-      messaging_service_sid: ENV.fetch("TWILIO_MESSAGING_SERVICE_SID"),
-      to: to,
-      body: body
-    )
+    client.messages.create(**sender_params, to: to, body: body)
   rescue Twilio::REST::RestError => e
     error_class = PERMANENT_ERROR_CODES.include?(e.code) ? PermanentDeliveryError : DeliveryError
     raise error_class.new("Twilio error #{e.code}: #{e.message}", error_code: e.code)
   end
 
   private
+
+  # Prefer a Messaging Service (production: pooled senders, per-number
+  # compliance handled by Twilio); fall back to a single from-number, which is
+  # all a trial account has.
+  def sender_params
+    if ENV["TWILIO_MESSAGING_SERVICE_SID"].present?
+      { messaging_service_sid: ENV["TWILIO_MESSAGING_SERVICE_SID"] }
+    elsif ENV["TWILIO_FROM_NUMBER"].present?
+      { from: ENV["TWILIO_FROM_NUMBER"] }
+    else
+      raise KeyError.new("Set TWILIO_MESSAGING_SERVICE_SID or TWILIO_FROM_NUMBER")
+    end
+  end
 
   def client
     @client ||= Twilio::REST::Client.new(

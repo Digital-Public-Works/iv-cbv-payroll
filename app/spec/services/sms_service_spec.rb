@@ -42,6 +42,37 @@ RSpec.describe SmsService, type: :service do
     end
   end
 
+  it "falls back to a from-number when no messaging service is configured" do
+    stub_const("ENV", ENV.to_h.merge(
+      "TWILIO_ACCOUNT_SID" => "ACtest",
+      "TWILIO_AUTH_TOKEN" => "token",
+      "TWILIO_MESSAGING_SERVICE_SID" => "",
+      "TWILIO_FROM_NUMBER" => "+15005550006"
+    ))
+    message = instance_double(Twilio::REST::Api::V2010::AccountContext::MessageInstance, sid: "SMtest")
+    allow(messages).to receive(:create).and_return(message)
+
+    service.send_message(to: "+15552345678", body: "hello")
+
+    expect(messages).to have_received(:create).with(
+      from: "+15005550006",
+      to: "+15552345678",
+      body: "hello"
+    )
+  end
+
+  it "raises when neither sender configuration is present" do
+    stub_const("ENV", ENV.to_h.merge(
+      "TWILIO_ACCOUNT_SID" => "ACtest",
+      "TWILIO_AUTH_TOKEN" => "token",
+      "TWILIO_MESSAGING_SERVICE_SID" => "",
+      "TWILIO_FROM_NUMBER" => ""
+    ))
+
+    expect { service.send_message(to: "+15552345678", body: "hello") }
+      .to raise_error(KeyError, /TWILIO_MESSAGING_SERVICE_SID or TWILIO_FROM_NUMBER/)
+  end
+
   it "raises a retryable DeliveryError for other Twilio codes" do
     allow(messages).to receive(:create).and_raise(twilio_error(20429))
 
