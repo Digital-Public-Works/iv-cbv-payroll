@@ -98,6 +98,8 @@ en:
         phone_hint: 10-digit US phone number, like (555) 555-1234. The applicant must have agreed to receive a text at this number.
         phone_label: Applicant's mobile phone number
         submit: Create invitation
+      resend:
+        not_failed: This message is not in a failed state, so it was not re-sent.
       show:
         communication_id: Message %{id}
         copied: Copied!
@@ -116,6 +118,7 @@ en:
         failed_body: The text message could not be sent. You can still copy the link above and share it another way.
         failed_heading: Failed to send text message
         pending_heading: Waiting to send
+        retry: Send text message again
         sending_done: Done.
         sending_heading: Sending text message
         sending_in_progress: Sending now…

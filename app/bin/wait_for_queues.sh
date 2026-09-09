@@ -4,7 +4,7 @@ set -euo pipefail
 ENDPOINT="${SQS_ENDPOINT:-http://localhost:3456}"
 REGION="${AWS_REGION:-us-east-1}"
 
-QUEUES=(report_sender mixpanel_events newrelic_events)
+QUEUES=(report_sender sms_sender mixpanel_events newrelic_events)
 
 echo "[wait] Ensuring Moto is up at $ENDPOINT ..."
 for i in {1..120}; do

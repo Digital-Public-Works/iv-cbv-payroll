@@ -124,6 +124,7 @@ Rails.application.routes.draw do
         resources :invitations, only: %i[index new create show] do
           member do
             patch :status
+            post :resend
           end
         end
       end

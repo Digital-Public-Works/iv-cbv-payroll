@@ -28,6 +28,11 @@
         <% if communication.last_error.present? %>
           <p class="margin-top-05 text-secondary-dark"><%= communication.last_error %></p>
         <% end %>
+        <%= button_to t(".retry"),
+              resend_admin_invitation_path(id: invitation.id),
+              method: :post,
+              class: "usa-button margin-top-1",
+              form: { data: { turbo: false } } %>
       <% elsif communication.status_delivered? %>
         <h3 class="usa-process-list__heading"><%= t(".delivered_heading") %></h3>
         <p class="margin-top-05"><%= t(".delivered_body") %></p>

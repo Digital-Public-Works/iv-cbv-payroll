@@ -72,6 +72,23 @@ class Admin::InvitationsController < Admin::BaseController
     )
   end
 
+  # Manual retry of a failed send. Each attempt is its own communication row
+  # (see InvitationCommunication), so the failed attempt stays in the history
+  # and the status board follows the new one.
+  def resend
+    @invitation = admin_invitations.find(params[:id])
+    communication = latest_communication(@invitation)
+
+    if communication&.status_failed?
+      retry_communication = @invitation.invitation_communications.create!(channel: communication.channel)
+      InvitationSmsJob.perform_later(retry_communication.id)
+    else
+      flash[:alert] = t(".not_failed")
+    end
+
+    redirect_to admin_invitation_path(id: @invitation.id)
+  end
+
   private
 
   def latest_communication(invitation)

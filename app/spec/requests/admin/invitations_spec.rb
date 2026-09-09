@@ -142,6 +142,48 @@ RSpec.describe "Admin invitations", type: :request do
     end
   end
 
+  describe "POST /admin/invitations/:id/resend" do
+    it "creates a fresh communication for a failed send and enqueues the job" do
+      post admin_invitations_path, params: sms_params
+      invitation = CbvFlowInvitation.last
+      failed = invitation.invitation_communications.last
+      failed.update!(status: :failed, last_error: "Twilio error 20003")
+
+      expect do
+        post resend_admin_invitation_path(id: invitation.id)
+      end.to change(invitation.invitation_communications, :count).by(1)
+        .and have_enqueued_job(InvitationSmsJob)
+
+      retry_communication = invitation.invitation_communications.order(:created_at).last
+      expect(InvitationSmsJob).to have_been_enqueued.with(retry_communication.id)
+      expect(retry_communication.status).to eq("created")
+      expect(failed.reload.status).to eq("failed")
+      expect(response).to redirect_to(admin_invitation_path(id: invitation.id))
+    end
+
+    it "does not re-send when the latest communication has not failed" do
+      post admin_invitations_path, params: sms_params
+      invitation = CbvFlowInvitation.last
+
+      expect do
+        post resend_admin_invitation_path(id: invitation.id)
+      end.to not_change(invitation.invitation_communications, :count)
+
+      expect(response).to redirect_to(admin_invitation_path(id: invitation.id))
+    end
+
+    it "shows the retry button on a failed status board" do
+      post admin_invitations_path, params: sms_params
+      invitation = CbvFlowInvitation.last
+      invitation.invitation_communications.last.update!(status: :failed, last_error: "boom")
+
+      get admin_invitation_path(id: invitation.id)
+
+      expect(response.body).to include(resend_admin_invitation_path(id: invitation.id))
+      expect(response.body).to include("Send text message again")
+    end
+  end
+
   describe "GET /admin/invitations" do
     it "lists only the selected agency's portal invitations from the last 24 hours" do
       post admin_invitations_path, params: sms_params
