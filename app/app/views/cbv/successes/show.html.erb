@@ -47,7 +47,8 @@
             <%= form_with(builder: UswdsFormBuilder, html: { class: "display-contents" }) do |f| %>
               <%= f.label :invitation_link, t(".invitation_link_label"), class: "usa-sr-only" %>
               <input value="<%= @invitation_link %>" autocomplete="off" readonly class="usa-input margin-top-0 maxw-card-lg" data-copy-link-target="input" type="text" name="invitation_link" id="invitation_link">
-              <%= f.button_with_icon(t(".copy_link"),
+              <%= f.button_with_icon(
+                safe_join([ t(".copy_link"), sr_only_span(t(".copy_link_accessible_context")) ], " "),
                 class: "copy-link-button usa-button--outline maxw-card",
                 icon: "content_copy",
                 icon_position: :leading,
