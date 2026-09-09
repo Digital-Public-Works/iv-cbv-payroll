@@ -33,6 +33,11 @@ RSpec.describe Cbv::SuccessesController do
         expect(response.body).to have_selector('button[data-copy-link-target="copyLinkButton"]')
       end
 
+      it "gives the copy link button a descriptive accessible name" do
+        get :show
+        expect(response.body).to include(I18n.t("cbv.successes.show.copy_link_accessible_context"))
+      end
+
       it "shows a link to the CBV survey" do
         get :show
         page = Nokogiri::HTML(response.body)
