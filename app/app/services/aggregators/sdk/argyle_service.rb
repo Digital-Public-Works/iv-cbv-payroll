@@ -268,8 +268,23 @@ module Aggregators::Sdk
     end
 
     # https://docs.argyle.com/api-reference/payroll-documents#list
-    def fetch_payroll_documents_api(account: nil, user: nil, employment: nil, limit: 200)
-      params = { account: account, user: user, employment: employment, limit: limit }.compact
+    # from_available_date/to_available_date bound the window server-side.
+    def fetch_payroll_documents_api(
+      account: nil,
+      user: nil,
+      employment: nil,
+      from_available_date: nil,
+      to_available_date: nil,
+      limit: 200
+    )
+      params = {
+        account: account,
+        user: user,
+        employment: employment,
+        from_available_date: from_available_date,
+        to_available_date: to_available_date,
+        limit: limit }.compact
+
       with_pagination(PAYROLL_DOCUMENTS_ENDPOINT, params)
     end
 
