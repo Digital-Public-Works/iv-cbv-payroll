@@ -6,9 +6,10 @@
 # the failure and stop; any other DeliveryError is worth retrying.
 class SmsService
   PERMANENT_ERROR_CODES = [
-    21211, # 'To' number is not a valid phone number
-    21408, # Permission to send to this region is not enabled
-    21610  # Recipient has opted out of messages from this sender
+    21211,  # 'To' number is not a valid phone number
+    21408,  # Permission to send to this region is not enabled
+    21610,  # Recipient has opted out of messages from this sender
+    572006  # Trial accounts can only send predefined templates, never our body
   ].freeze
 
   class DeliveryError < StandardError

@@ -4,6 +4,12 @@ set -euo pipefail
 ENDPOINT="${SQS_ENDPOINT:-http://localhost:3456}"
 REGION="${AWS_REGION:-us-east-1}"
 
+# Moto accepts any credentials, but the aws CLI refuses to run without some —
+# without these, every probe below fails and the retry loops burn ~90s per
+# queue before this script gives up and lets Shoryuken start anyway.
+export AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID:-test}"
+export AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-test}"
+
 QUEUES=(report_sender sms_sender mixpanel_events newrelic_events)
 
 echo "[wait] Ensuring Moto is up at $ENDPOINT ..."
