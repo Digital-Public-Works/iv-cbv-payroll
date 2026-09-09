@@ -10,7 +10,7 @@ REGION="${AWS_REGION:-us-east-1}"
 export AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID:-test}"
 export AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-test}"
 
-QUEUES=(report_sender sms_sender mixpanel_events newrelic_events)
+QUEUES=(report_sender sms_sender email_sender mixpanel_events newrelic_events)
 
 echo "[wait] Ensuring Moto is up at $ENDPOINT ..."
 for i in {1..120}; do

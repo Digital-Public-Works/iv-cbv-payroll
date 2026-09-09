@@ -29,7 +29,7 @@
 </div>
 
 <% if @communication %>
-  <h2><%= t(".status_header") %></h2>
+  <h2><%= t(".status_header_#{@communication.channel}") %></h2>
   <div
     aria-live="polite"
     data-controller="polling"

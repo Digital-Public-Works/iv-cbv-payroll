@@ -1,7 +1,6 @@
 class Admin::InvitationsController < Admin::BaseController
-  # Channels offered by this form. Email is deliberately absent until email
-  # delivery ships.
-  FORM_CHANNELS = %w[link sms].freeze
+  # Channels offered by this form.
+  FORM_CHANNELS = %w[link sms email].freeze
 
   helper_method :language_options
 
@@ -81,7 +80,8 @@ class Admin::InvitationsController < Admin::BaseController
 
     if communication&.status_failed?
       retry_communication = @invitation.invitation_communications.create!(channel: communication.channel)
-      InvitationSmsJob.perform_later(retry_communication.id)
+      job = retry_communication.channel_email? ? InvitationEmailJob : InvitationSmsJob
+      job.perform_later(retry_communication.id)
     else
       flash[:alert] = t(".not_failed")
     end
@@ -116,6 +116,7 @@ class Admin::InvitationsController < Admin::BaseController
     params.fetch(:cbv_flow_invitation, {}).permit(
       :language,
       :phone_number,
+      :email_address,
       :communication_channel,
       cbv_applicant_attributes: valid_applicant_attributes
     )

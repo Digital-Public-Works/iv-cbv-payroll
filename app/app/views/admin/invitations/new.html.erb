@@ -69,7 +69,7 @@
       <% end %>
     </div>
 
-    <div data-communication-channel-target="smsFields" hidden>
+    <div data-communication-channel-target="channelFields" data-channel="sms" hidden>
       <div class="usa-form-group <%= "usa-form-group--error" if f.field_error(:phone_number).present? %>">
         <label class="usa-label" for="cbv_flow_invitation_phone_number"><%= t(".phone_label") %></label>
         <p class="usa-hint margin-top-0" id="phone-number-hint"><%= t(".phone_hint") %></p>
@@ -94,6 +94,23 @@
           value="1"
         >
         <label class="usa-checkbox__label" for="sms_attestation"><%= t(".attestation_label") %></label>
+      </div>
+    </div>
+
+    <div data-communication-channel-target="channelFields" data-channel="email" hidden>
+      <div class="usa-form-group <%= "usa-form-group--error" if f.field_error(:email_address).present? %>">
+        <label class="usa-label" for="cbv_flow_invitation_email_address"><%= t(".email_label") %></label>
+        <p class="usa-hint margin-top-0" id="email-address-hint"><%= t(".email_hint") %></p>
+        <%= f.field_error :email_address %>
+        <input
+          class="usa-input"
+          type="email"
+          id="cbv_flow_invitation_email_address"
+          name="<%= f.object_name %>[email_address]"
+          aria-describedby="email-address-hint"
+          autocomplete="off"
+          value="<%= f.object.email_address %>"
+        >
       </div>
     </div>
   </div>

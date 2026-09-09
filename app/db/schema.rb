@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_09_120100) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_09_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -97,12 +97,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_09_120100) do
     t.datetime "created_at", null: false
     t.datetime "delivered_at"
     t.text "last_error"
+    t.string "provider_message_id"
     t.datetime "sent_at"
     t.string "status", default: "created", null: false
-    t.string "twilio_message_sid"
     t.datetime "updated_at", null: false
     t.index ["cbv_flow_invitation_id"], name: "index_invitation_communications_on_cbv_flow_invitation_id"
-    t.index ["twilio_message_sid"], name: "index_invitation_communications_on_twilio_message_sid", unique: true, where: "(twilio_message_sid IS NOT NULL)"
+    t.index ["provider_message_id"], name: "index_invitation_communications_on_provider_message_id", unique: true, where: "(provider_message_id IS NOT NULL)"
   end
 
   create_table "partner_application_attributes", force: :cascade do |t|

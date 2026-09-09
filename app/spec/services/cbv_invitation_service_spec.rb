@@ -30,15 +30,35 @@ RSpec.describe CbvInvitationService, type: :service do
         )
       end
 
-      it 'sends an email invitation' do
+      it 'creates a communication row and enqueues the email job' do
+        invitation = nil
         expect do
+          invitation = service.invite(
+            cbv_flow_invitation_params,
+            current_user,
+            communication_channel: :email
+          )
+        end.to have_enqueued_job(InvitationEmailJob)
+
+        communication = invitation.invitation_communications.last
+        expect(communication.channel).to eq("email")
+        expect(InvitationEmailJob).to have_been_enqueued.with(communication.id)
+
+        expect(event_logger).to have_received(:track).with(
+          'EmailEnqueued',
+          nil,
+          hash_including(invitation_communication_id: communication.id)
+        )
+      end
+
+      it 'delivers the email when the job runs' do
+        perform_enqueued_jobs do
           service.invite(
             cbv_flow_invitation_params,
             current_user,
             communication_channel: :email
           )
-        end.to change { ActionMailer::Base.deliveries.count }
-          .by(1)
+        end
 
         email = ActionMailer::Base.deliveries.last
         expect(email.to).to include(cbv_flow_invitation_params[:email_address])

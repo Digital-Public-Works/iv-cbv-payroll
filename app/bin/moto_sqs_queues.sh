@@ -28,6 +28,7 @@ create_q () {
 echo "[moto-seed] Creating queues if they don't exist"
 create_q "report_sender"
 create_q "sms_sender"
+create_q "email_sender"
 create_q "mixpanel_events"
 create_q "newrelic_events"
 echo "[moto-seed] Done."

@@ -94,6 +94,59 @@ RSpec.describe "Admin invitations", type: :request do
     end
   end
 
+  describe "POST /admin/invitations with the email channel" do
+    let(:email_params) do
+      {
+        cbv_flow_invitation: {
+          language: "en",
+          communication_channel: "email",
+          email_address: "applicant@example.com",
+          cbv_applicant_attributes: applicant_attributes
+        }
+      }
+    end
+
+    it "creates a communication and enqueues the email job" do
+      expect do
+        post admin_invitations_path, params: email_params
+      end.to change(InvitationCommunication, :count).by(1)
+        .and have_enqueued_job(InvitationEmailJob)
+
+      invitation = CbvFlowInvitation.last
+      expect(invitation.email_address).to eq("applicant@example.com")
+      expect(invitation.invitation_communications.last.channel).to eq("email")
+      expect(response).to redirect_to(admin_invitation_path(id: invitation.id))
+    end
+
+    it "requires an email address" do
+      email_params[:cbv_flow_invitation][:email_address] = ""
+
+      expect do
+        post admin_invitations_path, params: email_params
+      end.not_to change(CbvFlowInvitation, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+    end
+
+    it "does not require the attestation checkbox" do
+      post admin_invitations_path, params: email_params
+
+      expect(response).to have_http_status(:redirect)
+    end
+
+    it "resends a failed email through the email job" do
+      post admin_invitations_path, params: email_params
+      invitation = CbvFlowInvitation.last
+      invitation.invitation_communications.last.update!(status: :failed, last_error: "boom")
+
+      expect do
+        post resend_admin_invitation_path(id: invitation.id)
+      end.to change(invitation.invitation_communications, :count).by(1)
+
+      expect(InvitationEmailJob).to have_been_enqueued.with(invitation.invitation_communications.order(:created_at).last.id)
+    end
+  end
+
   describe "GET /admin/invitations/:id" do
     it "shows the copyable link and status board" do
       post admin_invitations_path, params: sms_params

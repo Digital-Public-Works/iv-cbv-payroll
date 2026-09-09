@@ -8,5 +8,6 @@ delay: 15
 queues:
   - ["report_sender<%= ENV.fetch('QUEUE_SUFFIX', '') %>", 2]
   - ["sms_sender<%= ENV.fetch('QUEUE_SUFFIX', '') %>", 2]
+  - ["email_sender<%= ENV.fetch('QUEUE_SUFFIX', '') %>", 2]
   - ["mixpanel_events<%= ENV.fetch('QUEUE_SUFFIX', '') %>", 1]
   - ["newrelic_events<%= ENV.fetch('QUEUE_SUFFIX', '') %>", 1]

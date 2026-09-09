@@ -41,9 +41,11 @@ class CbvInvitationService
   def deliver(cbv_flow_invitation, communication_channel)
     case communication_channel
     when :email
-      send_invitation_email(cbv_flow_invitation)
+      enqueue_communication(cbv_flow_invitation,
+        channel: :email, job: InvitationEmailJob, event: TrackEvent::EmailEnqueued)
     when :sms
-      enqueue_invitation_sms(cbv_flow_invitation)
+      enqueue_communication(cbv_flow_invitation,
+        channel: :sms, job: InvitationSmsJob, event: TrackEvent::SmsEnqueued)
     when :link, nil
       Rails.logger.info "Generated invitation ID: #{cbv_flow_invitation.id} (no communication channel specified)"
     else
@@ -51,21 +53,17 @@ class CbvInvitationService
     end
   end
 
-  def enqueue_invitation_sms(cbv_flow_invitation)
-    communication = cbv_flow_invitation.invitation_communications.create!(channel: :sms)
-    InvitationSmsJob.perform_later(communication.id)
+  # One InvitationCommunication row per send attempt; the job records the
+  # outcome on it and the admin status board polls it.
+  def enqueue_communication(cbv_flow_invitation, channel:, job:, event:)
+    communication = cbv_flow_invitation.invitation_communications.create!(channel: channel)
+    job.perform_later(communication.id)
 
-    @event_logger.track(TrackEvent::SmsEnqueued, nil, {
+    @event_logger.track(event, nil, {
       time: Time.now.to_i,
       invitation_id: cbv_flow_invitation.id,
       invitation_communication_id: communication.id,
       client_agency_id: cbv_flow_invitation.client_agency_id
     })
-  end
-
-  def send_invitation_email(cbv_flow_invitation)
-    ApplicantMailer.with(
-      cbv_flow_invitation: cbv_flow_invitation
-    ).invitation_email.deliver_now
   end
 end

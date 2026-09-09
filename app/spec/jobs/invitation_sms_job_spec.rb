@@ -22,7 +22,7 @@ RSpec.describe InvitationSmsJob, type: :job do
 
       communication.reload
       expect(communication.status).to eq("sent")
-      expect(communication.twilio_message_sid).to eq("SM123")
+      expect(communication.provider_message_id).to eq("SM123")
       expect(communication.sent_at).to be_present
     end
 
@@ -41,7 +41,7 @@ RSpec.describe InvitationSmsJob, type: :job do
     end
 
     it "is idempotent for already-sent communications" do
-      communication.update!(status: :sent, twilio_message_sid: "SM123")
+      communication.update!(status: :sent, provider_message_id: "SM123")
       expect(sms_service).not_to receive(:send_message)
 
       described_class.perform_now(communication.id)

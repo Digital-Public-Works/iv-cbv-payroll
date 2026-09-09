@@ -5,7 +5,8 @@ class InvitationCommunication < ApplicationRecord
   belongs_to :cbv_flow_invitation
 
   enum :channel, {
-    sms: "sms"                      # defines the method: channel_sms?
+    sms: "sms",                     # defines the method: channel_sms?
+    email: "email"                  # defines the method: channel_email?
   }, prefix: "channel"
 
   enum :status, {

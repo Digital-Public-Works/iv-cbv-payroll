@@ -25,7 +25,7 @@ class InvitationSmsJob < ApplicationJob
 
     communication.update!(
       status: :sent,
-      twilio_message_sid: message.sid,
+      provider_message_id: message.sid,
       sent_at: Time.current,
       last_error: nil
     )

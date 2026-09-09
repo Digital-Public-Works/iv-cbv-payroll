@@ -65,6 +65,7 @@ en:
       create:
         attestation_required: Confirm the applicant has agreed to receive a text message at this number.
       index:
+        channel_email: Email
         channel_link: Link only
         channel_sms: Text message
         column_actions: Actions
@@ -88,11 +89,15 @@ en:
       new:
         agency_note: This invitation will be created for %{agency}.
         attestation_label: The applicant has agreed to receive a text message at this number.
+        channel_email: Send an email
+        channel_email_description: We'll email the invitation link to the applicant.
         channel_legend: How do you want to get the link to the applicant?
         channel_link: Copy a link
         channel_link_description: We'll generate the invitation link for you to copy and share yourself.
         channel_sms: Send a text message (SMS)
         channel_sms_description: We'll text the invitation link to the applicant's phone.
+        email_hint: The applicant's email address, like name@example.com.
+        email_label: Applicant's email address
         header: Create an invitation
         language_legend: What language should the invitation use?
         phone_hint: 10-digit US phone number, like (555) 555-1234. The applicant must have agreed to receive a text at this number.
@@ -108,23 +113,29 @@ en:
         header: Invitation created
         invitation_id: Invitation %{id}
         link_label: Invitation link
-        status_header: Text message status
+        status_header_email: Email status
+        status_header_sms: Text message status
         view_invitations: View invitations
       status:
         created_body: The invitation link is ready to copy above.
         created_heading: Invitation created
         delivered_body: The applicant's phone confirmed delivery.
         delivered_heading: Text message delivered
-        failed_body: The text message could not be sent. You can still copy the link above and share it another way.
-        failed_heading: Failed to send text message
+        failed_body: The message could not be sent. You can still copy the link above and share it another way.
+        failed_heading_email: Failed to send email
+        failed_heading_sms: Failed to send text message
         pending_heading: Waiting to send
-        retry: Send text message again
+        retry_email: Send email again
+        retry_sms: Send text message again
         sending_done: Done.
-        sending_heading: Sending text message
+        sending_heading_email: Sending email
+        sending_heading_sms: Sending text message
         sending_in_progress: Sending now…
         sending_queued: Waiting to send…
-        sent_body: The message was accepted by the carrier network.
-        sent_heading: Text message sent
+        sent_body_email: The email was handed to the mail service.
+        sent_body_sms: The message was accepted by the carrier network.
+        sent_heading_email: Email sent
+        sent_heading_sms: Text message sent
     shared:
       nav:
         agency_label: Agency

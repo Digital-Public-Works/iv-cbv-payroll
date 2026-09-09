@@ -9,7 +9,7 @@
     </li>
 
     <li class="usa-process-list__item">
-      <h3 class="usa-process-list__heading"><%= t(".sending_heading") %></h3>
+      <h3 class="usa-process-list__heading"><%= t(".sending_heading_#{communication.channel}") %></h3>
       <p class="margin-top-05">
         <% if communication.status_created? %>
           <%= t(".sending_queued") %>
@@ -23,12 +23,12 @@
 
     <li class="usa-process-list__item">
       <% if communication.status_failed? %>
-        <h3 class="usa-process-list__heading text-secondary-dark"><%= t(".failed_heading") %></h3>
+        <h3 class="usa-process-list__heading text-secondary-dark"><%= t(".failed_heading_#{communication.channel}") %></h3>
         <p class="margin-top-05"><%= t(".failed_body") %></p>
         <% if communication.last_error.present? %>
           <p class="margin-top-05 text-secondary-dark"><%= communication.last_error %></p>
         <% end %>
-        <%= button_to t(".retry"),
+        <%= button_to t(".retry_#{communication.channel}"),
               resend_admin_invitation_path(id: invitation.id),
               method: :post,
               class: "usa-button margin-top-1",
@@ -37,8 +37,8 @@
         <h3 class="usa-process-list__heading"><%= t(".delivered_heading") %></h3>
         <p class="margin-top-05"><%= t(".delivered_body") %></p>
       <% elsif communication.status_sent? %>
-        <h3 class="usa-process-list__heading"><%= t(".sent_heading") %></h3>
-        <p class="margin-top-05"><%= t(".sent_body") %></p>
+        <h3 class="usa-process-list__heading"><%= t(".sent_heading_#{communication.channel}") %></h3>
+        <p class="margin-top-05"><%= t(".sent_body_#{communication.channel}") %></p>
       <% else %>
         <h3 class="usa-process-list__heading text-base"><%= t(".pending_heading") %></h3>
       <% end %>

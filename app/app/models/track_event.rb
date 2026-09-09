@@ -115,6 +115,8 @@ module TrackEvent
   CbvPageView = "CbvPageView"
   CSPViolation = "CSPViolation"
   DiagnosticModalFocusFellBackToBody = "DiagnosticModalFocusFellBackToBody"
+  EmailEnqueued = "EmailEnqueued"
+  EmailSendFailed = "EmailSendFailed"
   EmailSent = "EmailSent"
   IncomeSummaryMatchedAgencyNames = "IncomeSummaryMatchedAgencyNames"
   InvitationLimitReached = "InvitationLimitReached"
