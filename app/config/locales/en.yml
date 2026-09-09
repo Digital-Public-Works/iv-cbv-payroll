@@ -213,6 +213,20 @@ en:
       create:
         invite_failed: 'Error sending invitation to %{email_address}: %{error_message}.'
         invite_success: Successfully delivered invitation to %{email_address}.
+      default:
+        invite:
+          agency_id_number: Client's agency ID number
+          beacon_id: Client's beacon ID
+          case_number: Client's case number
+          client_id_number: Client's ID number
+          date_of_birth: Client's date of birth
+          doc_id: Client's document ID
+          email_address: Client's email address
+          first_name: Client's first name
+          language_label: In what language should we send the invitation?
+          last_name: Client's last name
+          middle_name: Client's middle name
+          snap_application_date: SNAP application or recertification interview date
       incorrect_client_agency_id: Unable to send invitation due to missing client agency configuration.
       new:
         description_html:
