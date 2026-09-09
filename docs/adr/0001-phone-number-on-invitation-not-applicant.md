@@ -1,0 +1,3 @@
+# Phone number lives on the invitation, not the applicant
+
+The SMS-invitations spec said to "extend the applicant table to track phone number," but we store the phone number on `cbv_flow_invitations` instead, mirroring `email_address`. The phone number is the delivery address of one communication, not an attribute of the applicant — the codebase already made this call for email, and keeping the two channels parallel means one redaction path (`has_redactable_fields`) and one retention schedule cover both. Putting it on `cbv_applicants` would have split delivery details across two tables and pulled fresh PII onto a record with partner-driven redaction rules.
