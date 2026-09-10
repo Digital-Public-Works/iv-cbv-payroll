@@ -50,6 +50,23 @@ Rails.application.configure do
   # Don't care if the mailer can't send.
   config.action_mailer.raise_delivery_errors = false
 
+  # Optional real email delivery in development: set SMTP_HOST (and friends)
+  # in .env.local to actually receive invitation emails (e.g. Mailtrap,
+  # MailHog, or a Gmail app password). Unset = default no-op delivery.
+  # Production is unaffected; it delivers via the SES v2 API, not SMTP.
+  if ENV["SMTP_HOST"].present?
+    config.action_mailer.delivery_method = :smtp
+    config.action_mailer.raise_delivery_errors = true
+    config.action_mailer.smtp_settings = {
+      address: ENV["SMTP_HOST"],
+      port: ENV.fetch("SMTP_PORT", "587").to_i,
+      user_name: ENV["SMTP_USERNAME"].presence,
+      password: ENV["SMTP_PASSWORD"].presence,
+      authentication: ENV["SMTP_USERNAME"].present? ? :plain : nil,
+      enable_starttls_auto: ENV.fetch("SMTP_STARTTLS", "true") == "true"
+    }.compact
+  end
+
   config.action_mailer.perform_caching = false
 
   # Print deprecation notices to the Rails logger.
