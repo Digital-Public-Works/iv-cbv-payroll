@@ -908,6 +908,8 @@ en:
     agency_full_name:
       la_ldh: Louisiana Department of Health
       sandbox: CBV Test Agency
+    agency_portal:
+      default: your agency's online portal
     agency_portal_name:
       la_ldh: LDH
       sandbox: VMI

@@ -725,6 +725,8 @@ es:
     agency_full_name:
       la_ldh: Departamento de Salud de Luisiana
       sandbox: Agencia de pruebas CBV
+    agency_portal:
+      default: el portal en línea de su agencia
     agency_portal_name:
       la_ldh: LDH
       sandbox: VMI
