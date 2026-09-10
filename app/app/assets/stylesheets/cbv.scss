@@ -198,6 +198,9 @@ html {
   @include u-text("left");
   @include u-margin-bottom(1);
   @include u-display("block");
+  .usa-icon {
+    margin-left: 0.5em;
+  }
 }
 
 /*
