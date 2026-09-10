@@ -28,7 +28,10 @@ Rails.application.configure do
   config.hosts << ".ngrok-free.dev"
 
   routes.default_url_options[:host] = ENV.fetch("DOMAIN_NAME", "localhost")
-  routes.default_url_options[:port] = ENV.fetch("PORT", 3000)
+  # Deliberately NOT ENV["PORT"]: foreman assigns each Procfile process its
+  # own PORT (worker gets 3500), and URLs generated inside background jobs
+  # (e.g. invitation links in emails/SMS) must point at the web server.
+  routes.default_url_options[:port] = ENV.fetch("RAILS_PORT", 3000)
 
   # Enable/disable caching. By default caching is disabled.
   # Run rails dev:cache to toggle caching.
