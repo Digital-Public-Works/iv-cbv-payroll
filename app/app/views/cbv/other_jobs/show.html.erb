@@ -15,7 +15,7 @@
 
   <%= f.hidden_field(:return_to_path, value: params[:return_to_path]) %>
 
-  <p><%= t(".note_html", agency_site: current_agency.agency_contact_website, agency_portal_name: agency_translation("shared.agency_portal_name")) %></p>
+  <p><%= t(".note_html", website_link: agency_website_link(label: t(".learn_more_link", agency_portal_name: agency_translation("shared.agency_portal_name")))) %></p>
 
   <%= f.submit t("continue"),
         class: "margin-top-4 margin-bottom-2" %>
