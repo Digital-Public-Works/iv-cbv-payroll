@@ -92,6 +92,22 @@ html {
   @include u-padding-x(1);
 }
 
+// Admin portal (VMI Caseworker Portal) header: compact the basic header's
+// default logo margins, and restore standard usa-button padding for the
+// primary action — the .usa-nav__primary anchor rules otherwise stack their
+// nav-link padding onto the button, inflating it.
+.cbv-admin-header {
+  .usa-logo {
+    @include u-margin-y(1);
+  }
+
+  @include at-media($theme-header-min-width) {
+    .usa-nav__primary a.usa-button {
+      padding: units(1.5) units(2.5);
+    }
+  }
+}
+
 .cbv-header__agency-logo {
   @include u-margin-right(1);
   height: 45px;
