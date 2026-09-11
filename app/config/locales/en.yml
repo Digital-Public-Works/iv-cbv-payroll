@@ -92,7 +92,7 @@ en:
         language_legend: What language should the invitation use?
         phone_hint: 10-digit US phone number, like (555) 555-1234. The applicant must have agreed to receive a text at this number.
         phone_label: Applicant's mobile phone number
-        required_note_html: Required fields are marked with an asterisk (%{abbr}).
+        required_note_html: Required fields are marked with an asterisk <span class="text-no-wrap">(%{abbr})</span>.
         submit_email: Create and send email
         submit_link: Create invitation
         submit_sms: Create and send text message
