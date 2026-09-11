@@ -238,6 +238,8 @@ module ApplicationHelper
   end
 
   def page_title
+    return t("admin.shared.nav.brand") if admin_portal_page?
+
     parts = [ content_for(:title).presence, t("shared.pilot_name") ].compact
     safe_join(parts, " | ")
   end

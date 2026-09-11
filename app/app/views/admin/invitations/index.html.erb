@@ -1,7 +1,6 @@
-<%= render "admin/shared/nav" %>
 
 <h1><%= t(".header") %></h1>
-<p><%= t(".description", agency: selected_agency_id.titleize) %></p>
+<p><%= t(".description", agency: agency_translation_for(selected_agency, "shared.agency_full_name")) %></p>
 
 <% if @invitations.any? %>
   <table class="usa-table usa-table--striped width-full">

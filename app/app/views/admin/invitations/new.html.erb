@@ -1,7 +1,6 @@
-<%= render "admin/shared/nav" %>
 
 <h1><%= t(".header") %></h1>
-<p><%= t(".agency_note", agency: selected_agency_id.titleize) %></p>
+<p><%= t(".agency_note", agency: agency_translation_for(selected_agency, "shared.agency_full_name")) %></p>
 <p class="usa-hint"><%= t(".required_note_html", abbr: usa_required_abbr) %></p>
 
 <%= uswds_form_with(model: @cbv_flow_invitation, url: admin_invitations_path,

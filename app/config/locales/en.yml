@@ -65,7 +65,7 @@ en:
         column_phone: Phone
         column_status: Status
         description: Invitations created through this portal for %{agency}.
-        empty: No invitations have been created in the last 24 hours for this agency.
+        empty: No invitations have been created in the last 24 hours.
         header: Invitations from the last 24 hours
         phone_ending_in: Phone number ending in %{last_4}
         status_created: Queued
@@ -131,7 +131,6 @@ en:
         sent_heading_sms: Text message sent
     shared:
       nav:
-        agency_label: Agency
         brand: VMI Caseworker Portal
         manage_invitations: Manage Invitations
         new_invitation: New invitation
