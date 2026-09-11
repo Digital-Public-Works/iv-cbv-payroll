@@ -1,7 +1,8 @@
 <% if admin_portal_page? %>
+  <div class="usa-overlay"></div>
   <header class="usa-header usa-header--basic" aria-label="<%= t("shared.header.aria_label") %>">
     <div class="usa-nav-container">
-      <div class="usa-navbar width-auto">
+      <div class="usa-navbar">
         <div class="usa-logo display-flex flex-align-center">
           <em class="usa-logo__text text-no-wrap"><span class="text-secondary"><%= t("admin.shared.nav.brand") %></span></em>
           <% if current_agency && current_agency.logo_path.present? %>
@@ -10,11 +11,23 @@
                   alt: agency_logo_alt_text %>
           <% end %>
         </div>
+        <% if current_agency.present? %>
+          <button type="button" class="usa-menu-btn"><%= t("shared.header.menu") %></button>
+        <% end %>
       </div>
       <% if current_agency.present? %>
-        <nav aria-label="<%= t("shared.header.primary") %>" class="usa-nav padding-y-2">
-          <%= link_to t("admin.shared.nav.manage_invitations"), admin_invitations_path, class: "usa-button usa-button--outline" %>
-          <%= link_to t("admin.shared.nav.new_invitation"), new_admin_invitation_path, class: "usa-button margin-left-1" %>
+        <nav aria-label="<%= t("shared.header.primary") %>" class="usa-nav">
+          <button type="button" class="usa-nav__close">
+            <%= image_tag "@uswds/uswds/dist/img/usa-icons/close.svg", role: "img", alt: t("shared.header.close") %>
+          </button>
+          <ul class="usa-nav__primary usa-accordion">
+            <li class="usa-nav__primary-item">
+              <%= link_to t("admin.shared.nav.manage_invitations"), admin_invitations_path, class: "usa-nav__link" %>
+            </li>
+            <li class="usa-nav__primary-item display-flex flex-align-center">
+              <%= link_to t("admin.shared.nav.new_invitation"), new_admin_invitation_path, class: "usa-button text-white margin-y-1" %>
+            </li>
+          </ul>
         </nav>
       <% end %>
     </div>
