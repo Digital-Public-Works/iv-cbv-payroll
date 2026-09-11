@@ -1,23 +1,22 @@
 <% if admin_portal_page? %>
-  <header class="usa-header usa-header--basic border-bottom border-base-lighter" aria-label="<%= t("shared.header.aria_label") %>">
+  <header class="usa-header usa-header--basic" aria-label="<%= t("shared.header.aria_label") %>">
     <div class="usa-nav-container">
-      <div class="display-flex flex-align-center flex-justify flex-wrap padding-y-2">
-        <div class="display-flex flex-align-center">
-          <em class="usa-logo__text text-secondary font-heading-lg"><%= t("admin.shared.nav.brand") %></em>
+      <div class="usa-navbar width-auto">
+        <div class="usa-logo display-flex flex-align-center">
+          <em class="usa-logo__text text-no-wrap"><span class="text-secondary"><%= t("admin.shared.nav.brand") %></span></em>
           <% if current_agency && current_agency.logo_path.present? %>
             <%= image_tag current_agency.logo_path,
                   class: "cbv-header__agency-logo cbv-header__agency-logo--#{current_agency.id} margin-left-2",
                   alt: agency_logo_alt_text %>
           <% end %>
         </div>
-
-        <% if current_agency.present? %>
-          <div class="display-flex flex-align-center">
-            <%= link_to t("admin.shared.nav.manage_invitations"), admin_invitations_path, class: "usa-button usa-button--outline" %>
-            <%= link_to t("admin.shared.nav.new_invitation"), new_admin_invitation_path, class: "usa-button margin-left-1" %>
-          </div>
-        <% end %>
       </div>
+      <% if current_agency.present? %>
+        <nav aria-label="<%= t("shared.header.primary") %>" class="usa-nav padding-y-2">
+          <%= link_to t("admin.shared.nav.manage_invitations"), admin_invitations_path, class: "usa-button usa-button--outline" %>
+          <%= link_to t("admin.shared.nav.new_invitation"), new_admin_invitation_path, class: "usa-button margin-left-1" %>
+        </nav>
+      <% end %>
     </div>
   </header>
 <% else %>

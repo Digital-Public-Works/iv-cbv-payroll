@@ -233,8 +233,9 @@ module ApplicationHelper
   end
 
   # Standard USWDS required-field marker, appended to labels/legends.
+  # text-no-underline suppresses the browser's dotted abbr[title] underline.
   def usa_required_abbr
-    content_tag(:abbr, "*", title: "required", class: "usa-hint usa-hint--required")
+    content_tag(:abbr, "*", title: "required", class: "usa-hint usa-hint--required text-no-underline")
   end
 
   def page_title
