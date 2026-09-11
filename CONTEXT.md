@@ -9,12 +9,16 @@ A tenant agency (state or non-state) configured in the system. The legacy code t
 _Avoid_: Client agency (in new writing), tenant
 
 **Platform admin**:
-A Digital Public Works staff member who operates the `/admin` portal to create and send invitations on behalf of any partner. Not tied to a single agency.
+A Digital Public Works staff member who operates the `/admin` portal to create and send invitations on behalf of any partner. Not tied to a single agency; the working agency is inferred from the partner subdomain.
 _Avoid_: Caseworker, superuser
 
 **Caseworker**:
-An agency staff member (partner-side persona). Reserved for a future agency-facing portal; today's `/admin` operators are platform admins, not caseworkers.
+An agency staff member (partner-side persona). The `/admin` portal is *branded* "VMI Caseworker Portal" in anticipation of caseworker users, but its operators today are platform admins.
 _Avoid_: Staff user, agent
+
+**VMI Caseworker Portal**:
+The product name of the `/admin` portal. A branding term only — see Platform admin for who actually operates it.
+_Avoid_: Admin portal (in user-facing copy)
 
 **Applicant**:
 The benefit applicant whose income is being verified (`CbvApplicant`). Identified to the partner by a partner identifier (e.g. case number).

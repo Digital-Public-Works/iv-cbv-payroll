@@ -228,6 +228,15 @@ module ApplicationHelper
     APPLICANT_FEEDBACK_FORM
   end
 
+  def admin_portal_page?
+    controller_path.start_with?("admin/")
+  end
+
+  # Standard USWDS required-field marker, appended to labels/legends.
+  def usa_required_abbr
+    content_tag(:abbr, "*", title: "required", class: "usa-hint usa-hint--required")
+  end
+
   def page_title
     parts = [ content_for(:title).presence, t("shared.pilot_name") ].compact
     safe_join(parts, " | ")

@@ -21,7 +21,6 @@ import AccordionController from "./accordion_controller.js"
 import UnemployedTipsController from "./unemployed_tips_controller.js"
 import JsonViewerController from "./json_viewer_controller.js"
 import CommunicationChannelController from "./communication_channel_controller.js"
-import AutoSubmitController from "./auto_submit_controller.js"
 
 application.register("anchor-scroll", AnchorScrollController)
 application.register("scroll-reset", ScrollResetController)
@@ -44,7 +43,6 @@ application.register("accordion", AccordionController)
 application.register("unemployed-tips", UnemployedTipsController)
 application.register("json-viewer", JsonViewerController)
 application.register("communication-channel", CommunicationChannelController)
-application.register("auto-submit", AutoSubmitController)
 
 Turbo.StreamActions.redirect = function () {
   Turbo.visit(this.target)

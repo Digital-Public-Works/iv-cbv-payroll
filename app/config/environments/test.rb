@@ -35,6 +35,9 @@ Rails.application.configure do
 
   # Allow E2E tests to make requests of the Rails server
   config.hosts << "www.example.com"
+  # Partner-subdomain hosts (sandbox.example.com etc.) used by request specs
+  # that exercise agency inference from the subdomain.
+  config.hosts << ".example.com"
   config.hosts << IPAddr.new("127.0.0.1")
   config.hosts << ".ngrok-free.app"
   config.hosts << "verifymyincome.org"

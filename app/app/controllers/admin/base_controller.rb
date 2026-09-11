@@ -1,11 +1,12 @@
-# Platform-admin portal (ADR-0002): operated by DPW staff across all
-# partners. No authentication yet — the route constraint plus
-# ensure_portal_enabled keep it out of deployed environments until the
-# OmniAuth follow-up.
+# Platform-admin portal (ADR-0002), branded "VMI Caseworker Portal": operated
+# by DPW staff across all partners. No authentication yet — the route
+# constraint plus ensure_portal_enabled keep it out of deployed environments
+# until the OmniAuth follow-up.
 class Admin::BaseController < ApplicationController
   before_action :ensure_portal_enabled
+  before_action :require_agency!
 
-  helper_method :selected_agency, :selected_agency_id, :agency_options
+  helper_method :selected_agency, :selected_agency_id
 
   private
 
@@ -13,33 +14,25 @@ class Admin::BaseController < ApplicationController
     raise ActionController::RoutingError.new("Admin portal is disabled") unless Rails.application.config.admin_portal_enabled
   end
 
-  # The portal is cross-agency; the working agency comes from (in order) the
-  # explicit selector param, the session, the partner subdomain, or the first
-  # configured agency.
+  # The working agency is inferred from the partner subdomain
+  # (e.g. wc.<domain>/admin). The bare domain has no agency; require_agency!
+  # sends those requests to the agency sitemap.
   def selected_agency_id
-    @selected_agency_id ||= begin
-      candidate = params[:client_agency_id].presence ||
-        session[:admin_client_agency_id].presence ||
-        detect_client_agency_from_domain
-
-      id = agency_config.client_agency_ids.include?(candidate) ? candidate : agency_config.client_agency_ids.first
-      session[:admin_client_agency_id] = id
-      id
-    end
+    @selected_agency_id ||= detect_client_agency_from_domain
   end
 
   def selected_agency
-    agency_config[selected_agency_id]
+    selected_agency_id && agency_config[selected_agency_id]
   end
 
-  # In the admin portal the "current" agency is always the selected one, so
+  # In the admin portal the "current" agency is always the inferred one, so
   # agency-aware helpers (agency_translation, acronyms) work unchanged.
   def current_agency
     selected_agency
   end
 
-  def agency_options
-    agency_config.client_agency_ids
+  def require_agency!
+    redirect_to admin_agencies_path if selected_agency_id.blank?
   end
 
   # Invitations created through /admin are owned by the per-agency system

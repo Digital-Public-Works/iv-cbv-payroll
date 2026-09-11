@@ -26,7 +26,7 @@ RSpec.describe "Admin invitations", type: :request do
   end
 
   before do
-    post admin_agency_selection_path, params: { client_agency_id: "sandbox" }
+    host! "sandbox.example.com"
   end
 
   describe "portal availability" do
@@ -38,11 +38,24 @@ RSpec.describe "Admin invitations", type: :request do
       expect(response).to have_http_status(:not_found)
     end
 
-    it "renders the home page when enabled" do
+    it "renders the invitations list as the portal home" do
       get admin_root_path
 
       expect(response).to be_successful
-      expect(response.body).to include("Invitation tools")
+      expect(response.body).to include("Invitations from the last 24 hours")
+      expect(response.body).to include("VMI Caseworker Portal")
+    end
+
+    it "redirects the bare domain to the agency sitemap" do
+      host! "www.example.com"
+
+      get admin_root_path
+      expect(response).to redirect_to(admin_agencies_path)
+
+      get admin_agencies_path
+      expect(response).to be_successful
+      expect(response.body).to include("Agency portals")
+      expect(response.body).to include("sandbox.")
     end
   end
 
@@ -253,10 +266,10 @@ RSpec.describe "Admin invitations", type: :request do
       expect(response.body).to include("···5678")
     end
 
-    it "scopes to the agency selected in the session" do
+    it "scopes to the agency inferred from the subdomain" do
       post admin_invitations_path, params: sms_params
 
-      post admin_agency_selection_path, params: { client_agency_id: "az_des" }
+      host! "az.example.com"
       get admin_invitations_path
 
       expect(response.body).not_to include("···5678")

@@ -119,8 +119,8 @@ Rails.application.routes.draw do
     # simply does not route where admin_portal_enabled is off.
     namespace :admin do
       constraints ->(_request) { Rails.application.config.admin_portal_enabled } do
-        root to: "home#index"
-        post "/agency_selection", to: "agency_selections#create", as: :agency_selection
+        root to: "invitations#index"
+        get "/agencies", to: "home#index", as: :agencies
         resources :invitations, only: %i[index new create show] do
           member do
             patch :status

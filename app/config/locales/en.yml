@@ -48,19 +48,9 @@ en:
   admin:
     home:
       index:
-        header: Invitation tools
-        intro: Create and track income-verification invitations for applicants, on behalf of a partner agency.
-        pages_create: Create invitation
-        pages_create_description: invite one applicant to verify their income.
-        pages_heading: Pages
-        pages_index: View invitations
-        pages_index_description: invitations created in the last 24 hours, with delivery status.
-        step_1_body: Use the agency selector at the top of every page to pick which partner the invitation is for.
-        step_1_heading: Choose the agency
-        step_2_body: Enter the applicant's case information, pick English or Spanish, and choose how to get the link to them — copy it yourself, or send it by text message.
-        step_2_heading: Create an invitation
-        step_3_body: Each invitation has a status page showing whether the text message was sent, and the invitations list shows everything created in the last 24 hours.
-        step_3_heading: Track delivery
+        description: Open the caseworker portal for a partner agency.
+        empty: No partner agencies are configured.
+        header: Agency portals
     invitations:
       create:
         attestation_required: Confirm the applicant has agreed to receive a text message at this number.
@@ -102,7 +92,10 @@ en:
         language_legend: What language should the invitation use?
         phone_hint: 10-digit US phone number, like (555) 555-1234. The applicant must have agreed to receive a text at this number.
         phone_label: Applicant's mobile phone number
-        submit: Create invitation
+        required_note_html: Required fields are marked with an asterisk (%{abbr}).
+        submit_email: Create and send email
+        submit_link: Create invitation
+        submit_sms: Create and send text message
       resend:
         not_failed: This message is not in a failed state, so it was not re-sent.
       show:
@@ -139,10 +132,9 @@ en:
     shared:
       nav:
         agency_label: Agency
-        create_invitation: Create invitation
-        home: Home
-        invitations: View invitations
-        label: Admin
+        brand: VMI Caseworker Portal
+        manage_invitations: Manage Invitations
+        new_invitation: New invitation
   aggregator_strings:
     deductions:
       401k: 401k
