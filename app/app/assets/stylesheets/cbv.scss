@@ -95,15 +95,29 @@ html {
 // Admin portal (VMI Caseworker Portal) header: compact the basic header's
 // default logo margins, and restore standard usa-button padding for the
 // primary action — the .usa-nav__primary anchor rules otherwise stack their
-// nav-link padding onto the button, inflating it.
+// nav-link padding onto the button, inflating it. At mobile widths the brand
+// text and agency logo shrink so brand + logo + menu button fit the viewport
+// without horizontal overflow.
 .cbv-admin-header {
   .usa-logo {
-    @include u-margin-y(1);
+    @include u-margin-y(2);
   }
 
-  @include at-media($theme-header-min-width) {
-    .usa-nav__primary a.usa-button {
-      padding: units(1.5) units(2.5);
+  @include at-media-max($theme-header-min-width) {
+    .usa-logo {
+      @include u-margin-y(1.5);
+    }
+
+    .usa-logo__text {
+      font-size: 0.93rem;
+    }
+
+    .cbv-header__agency-logo {
+      height: 24px;
+      width: auto;
+      max-width: 96px;
+      min-width: 0; // partner variants (e.g. pa_dhs) set a min-width that would overflow this compact bar
+      object-fit: contain;
     }
   }
 }
