@@ -44,4 +44,46 @@ RSpec.describe TableComponent, type: :component do
       expect(result.css('table[data-testid="test"]')).to be_present
     end
   end
+
+  context "thead rendering" do
+    subject(:result) do
+      table = described_class.new
+      table.with_row { |row| row.with_data_cell.with_content("Cell content") }
+      table.with_header { "Header content" } if with_header
+      table.with_subheader_row do |row|
+        row.with_data_cell(is_header: true).with_content("Month")
+      end if with_subheader_row
+      render_inline(table)
+    end
+
+    let(:with_header) { false }
+    let(:with_subheader_row) { false }
+
+    context "when only header is provided" do
+      let(:with_header) { true }
+
+      it "wraps the header in exactly one non-empty <tr>" do
+        rows = result.css("thead > tr")
+        expect(rows.length).to eq(1)
+        expect(rows.first.text).to include("Header content")
+      end
+    end
+
+    context "when only subheader_row is provided" do
+      let(:with_subheader_row) { true }
+
+      it "does not render a leading empty <tr> before the subheader row" do
+        rows = result.css("thead > tr")
+        expect(rows.length).to eq(1)
+        expect(rows.first.text.strip).not_to be_empty
+        expect(rows.first.text).to include("Month")
+      end
+    end
+
+    context "when neither header nor subheader_row is provided" do
+      it "does not render a <thead> at all" do
+        expect(result.css("thead")).to be_empty
+      end
+    end
+  end
 end
