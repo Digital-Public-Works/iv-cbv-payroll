@@ -266,6 +266,22 @@ RSpec.describe "Admin invitations", type: :request do
       expect(response.body).to include("···5678")
     end
 
+    it "shows AM/PM agency-timezone timestamps and the email domain as destination" do
+      post admin_invitations_path, params: {
+        cbv_flow_invitation: {
+          language: "en",
+          communication_channel: "email",
+          email_address: "applicant@example.com",
+          cbv_applicant_attributes: applicant_attributes
+        }
+      }
+
+      get admin_invitations_path
+
+      expect(response.body).to match(/\b(AM|PM)\b/)
+      expect(response.body).to include("@example.com")
+    end
+
     it "scopes to the agency inferred from the subdomain" do
       post admin_invitations_path, params: sms_params
 

@@ -10,7 +10,7 @@
         <th scope="col"><%= t(".column_created_at") %></th>
         <th scope="col"><%= t(".column_identifier") %></th>
         <th scope="col"><%= t(".column_channel") %></th>
-        <th scope="col"><%= t(".column_phone") %></th>
+        <th scope="col"><%= t(".column_destination") %></th>
         <th scope="col"><%= t(".column_status") %></th>
         <th scope="col"><span class="usa-sr-only"><%= t(".column_actions") %></span></th>
       </tr>
@@ -19,13 +19,17 @@
       <% @invitations.each do |invitation| %>
         <% communication = invitation.invitation_communications.max_by(&:created_at) %>
         <tr>
-          <td><%= l(invitation.created_at.in_time_zone(Time.zone), format: :short) %></td>
+          <td><%= invitation.created_at.in_time_zone(selected_agency.timezone.presence || "America/New_York").strftime("%b %-d, %-l:%M %p %Z") %></td>
           <td><%= invitation.cbv_applicant&.partner_identifier %></td>
           <td><%= communication ? t(".channel_#{communication.channel}") : t(".channel_link") %></td>
           <td>
-            <% if invitation.phone_number.present? %>
+            <% if communication&.channel_sms? && invitation.phone_number.present? %>
               <span aria-label="<%= t(".phone_ending_in", last_4: invitation.phone_number_last_4) %>">
                 ···<%= invitation.phone_number_last_4 %>
+              </span>
+            <% elsif communication&.channel_email? && invitation.email_address.present? %>
+              <span aria-label="<%= t(".email_at_domain", domain: invitation.email_address.split("@").last) %>">
+                @<%= invitation.email_address.split("@").last %>
               </span>
             <% end %>
           </td>

@@ -61,10 +61,11 @@ en:
         column_actions: Actions
         column_channel: Delivery
         column_created_at: Created
+        column_destination: Destination
         column_identifier: Case number
-        column_phone: Phone
         column_status: Status
         description: Invitations created through this portal for %{agency}.
+        email_at_domain: Email address at %{domain}
         empty: No invitations have been created in the last 24 hours.
         header: Invitations from the last 24 hours
         phone_ending_in: Phone number ending in %{last_4}
