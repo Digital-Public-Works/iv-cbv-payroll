@@ -20,44 +20,51 @@ rescue LoadError
   # no-op, probably in a production environment
 end
 
+# Severity at or above which npm audit findings fail the build. The command flag
+# and the helper's filter are both derived from this one value.
+NPM_AUDIT_LEVEL = "high".freeze
+NPM_AUDIT_BLOCKING = %w[info low moderate high critical]
+  .drop_while { |severity| severity != NPM_AUDIT_LEVEL }.freeze
+
 namespace :npm do
   desc "Run npm audit"
   task :audit do
     require "open3"
-    stdout, stderr, status = Open3.capture3("npm audit --json")
+    require "json"
+    # --audit-level makes npm exit non-zero only at or above this severity.
+    stdout, stderr, status = Open3.capture3("npm audit --json --audit-level=#{NPM_AUDIT_LEVEL}")
+    parsed = JSON.parse(stdout)
+    puts "Vulnerability counts: #{parsed.dig("metadata", "vulnerabilities")}"
     unless status.success?
-      Rails.logger.error stderr
-      parsed = JSON.parse("[#{stdout}]")
-      Rails.logger.info JSON.pretty_generate(parsed)
+      warn stderr
+      puts JSON.pretty_generate(parsed)
       if /503 Service Unavailable/.match?(stderr)
-        Rails.logger.info "Ignoring unavailable server"
+        puts "Ignoring unavailable server"
       elsif all_issues_ignored?(parsed)
-        Rails.logger.info "Ignoring known and accepted npm audit results"
+        puts "Ignoring known and accepted npm audit results"
       else
-        Rails.logger.error "Failed with exit code #{status.exitstatus}"
+        warn "Failed with exit code #{status.exitstatus}"
         exit status.exitstatus
       end
     end
   end
 end
 
-def all_issues_ignored?(issues)
-  present_advisories_with_frequencies = Hash.new { |hash, key| hash[key] = 0 }
+def all_issues_ignored?(report)
+  # npm exits non-zero only at or above --audit-level, but the report lists every
+  # severity, so only consider the ones that can fail the build.
+  present_advisories = report.fetch("vulnerabilities", {})
+    .select { |_name, data| NPM_AUDIT_BLOCKING.include?(data["severity"]) }
+    .keys.sort
 
-  # Only look at audit advisories, and not audit summaries
-  issues.select { |issue_json| issue_json["type"] == "auditAdvisory" }.each do |issue_json|
-    present_advisories_with_frequencies[issue_json["data"]["advisory"]["id"]] += 1
-  end
+  # Package names to be ignored, and a comment as to why we're ignoring
+  ignored_advisories = [
+    # "some-package", # high - only used at build time
+  ].sort
 
-  # Advisory ID to be ignored with number of times it appears in project dependencies
-  # And, a comment as to why we're ignoring
-  ignored_advisories_with_frequencies = {
-    # 1005154 => 2, # high - inefficient regex in dev server and at build time
-  }
-
-  pp "Present advisories: #{present_advisories_with_frequencies}"
-  pp "Ignored advisories: #{ignored_advisories_with_frequencies}"
-  present_advisories_with_frequencies == ignored_advisories_with_frequencies
+  pp "Present advisories: #{present_advisories}"
+  pp "Ignored advisories: #{ignored_advisories}"
+  (present_advisories - ignored_advisories).empty?
 end
 
 task default: [ "standard", "brakeman", "bundler:audit", "npm:audit" ]
