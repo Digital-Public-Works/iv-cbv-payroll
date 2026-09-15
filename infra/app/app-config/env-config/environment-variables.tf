@@ -115,6 +115,10 @@ locals {
       manage_method     = "manual"
       secret_store_name = "/service/${var.app_name}-${var.environment}/argyle-api-token-sandbox-secret"
     },
+    # CURRENTLY UNUSED: invitation SMS goes out over AWS SNS, which authenticates
+    # with the task role and needs no secrets. These three are kept only so the
+    # Twilio path stays re-enableable; see docs/adr/0003-aws-sns-for-invitation-sms.md
+    # for what deploying SNS would require, including retiring these parameters.
     TWILIO_ACCOUNT_SID = {
       manage_method     = "manual"
       secret_store_name = "/service/${var.app_name}-${var.environment}/twilio-account-sid"

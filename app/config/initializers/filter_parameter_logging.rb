@@ -6,7 +6,7 @@
 Rails.application.config.filter_parameters += [
   :passw, :secret, :token, :_key, :crypt, :salt, :certificate, :otp, :ssn,
   # CBV flow invitation
-  :email_address, :case_number, :first_name, :middle_name, :last_name,
+  :email_address, :phone_number, :case_number, :first_name, :middle_name, :last_name,
   :snap_application_date, :agency_id_number, :client_id_number, :beacon_id,
   # income_changes subfields (used for AZ DES)
   :member_name, :employer_name,

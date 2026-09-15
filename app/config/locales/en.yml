@@ -211,9 +211,14 @@ en:
       subject:
         default: Verify your income for your SNAP application or renewal
   applicant_sms:
+    consent_notice:
+      body:
+        default: 'Digital Public Works: You have opted in to receive your link to verify your income. Msg & data rates may apply. Reply HELP for help or STOP to cancel.'
     invitation:
       body:
-        default: "%{agency_acronym} invites you to verify your income for your SNAP case. Use your secure link before %{deadline}: %{link} This link is unique to you. Please do not share it."
+        default: |-
+          %{agency_acronym} needs proof of your income. Use %{link} to quickly submit your income.
+          Reply STOP to opt out.
   back: Back
   caseworker:
     cbv_flow_invitations:

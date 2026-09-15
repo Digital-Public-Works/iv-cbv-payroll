@@ -198,13 +198,13 @@ RSpec.describe "Admin invitations", type: :request do
     it "marks the response complete once the send has failed" do
       post admin_invitations_path, params: sms_params
       invitation = CbvFlowInvitation.last
-      invitation.invitation_communications.last.update!(status: :failed, last_error: "Twilio error 21211")
+      invitation.invitation_communications.last.update!(status: :failed, last_error: "SNS error InvalidParameter")
 
       patch status_admin_invitation_path(id: invitation.id),
         headers: { "Accept" => "text/vnd.turbo-stream.html" }
 
       expect(response.body).to include("data-polling-complete")
-      expect(response.body).to include("Twilio error 21211")
+      expect(response.body).to include("SNS error InvalidParameter")
     end
   end
 
@@ -213,7 +213,7 @@ RSpec.describe "Admin invitations", type: :request do
       post admin_invitations_path, params: sms_params
       invitation = CbvFlowInvitation.last
       failed = invitation.invitation_communications.last
-      failed.update!(status: :failed, last_error: "Twilio error 20003")
+      failed.update!(status: :failed, last_error: "SNS error AuthorizationError")
 
       expect do
         post resend_admin_invitation_path(id: invitation.id)

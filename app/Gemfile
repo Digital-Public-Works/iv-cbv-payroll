@@ -57,6 +57,9 @@ gem "actioncable-enhanced-postgresql-adapter"
 gem "aws-sdk-rails"
 gem "aws-sdk-s3"
 gem "aws-actionmailer-ses"
+gem "aws-sdk-sns"
+# Currently unused: the Twilio SMS path was replaced by AWS SNS (see
+# TwilioSmsService). Retained, loadable, and under test in case we revisit it.
 gem "twilio-ruby"
 
 # profiling
