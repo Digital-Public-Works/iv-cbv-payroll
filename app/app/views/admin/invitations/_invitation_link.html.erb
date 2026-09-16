@@ -1,0 +1,18 @@
+<div data-controller="copy-link">
+  <label class="usa-label" for="invitation-url"><%= t("admin.invitations.show.link_label") %></label>
+  <input
+    id="invitation-url"
+    class="usa-input maxw-tablet"
+    type="text"
+    readonly
+    autocomplete="off"
+    value="<%= invitation.to_url %>"
+    data-copy-link-target="input"
+  >
+  <button type="button" class="usa-button margin-top-1" data-action="copy-link#copy" data-copy-link-target="copyLinkButton">
+    <%= t("admin.invitations.show.copy_link") %>
+  </button>
+  <button type="button" class="usa-button usa-button--outline margin-top-1 invisible" data-copy-link-target="successButton" tabindex="-1">
+    <%= t("admin.invitations.show.copied") %>
+  </button>
+</div>

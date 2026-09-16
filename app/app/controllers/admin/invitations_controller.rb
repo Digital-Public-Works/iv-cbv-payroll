@@ -64,11 +64,11 @@ class Admin::InvitationsController < Admin::BaseController
     @invitation = admin_invitations.find(params[:id])
     @communication = latest_communication(@invitation)
 
-    render turbo_stream: turbo_stream.replace(
-      :invitation_status,
-      partial: "admin/invitations/status",
-      locals: { invitation: @invitation, communication: @communication }
-    )
+    locals = { invitation: @invitation, communication: @communication }
+    render turbo_stream: [
+      turbo_stream.replace(:invitation_step_sending, partial: "admin/invitations/step_sending", locals: locals),
+      turbo_stream.replace(:invitation_step_result, partial: "admin/invitations/step_result", locals: locals)
+    ]
   end
 
   # Manual retry of a failed send. Each attempt is its own communication row

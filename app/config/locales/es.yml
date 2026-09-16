@@ -81,7 +81,15 @@ es:
         default: 'Digital Public Works: You have opted in to receive your link to verify your income. Msg & data rates may apply. Reply HELP for help or STOP to cancel.'
     invitation:
       body:
-        default: "%{agency_acronym} le invita a verificar sus ingresos para su caso de SNAP. Use su enlace seguro antes del %{deadline}: %{link} Este enlace es solo para usted. Por favor, no lo comparta."
+        default: |-
+          Solicitud de %{agency_acronym}: Necesitamos prueba de sus ingresos.
+
+          Verifique sus ingresos usando %{link}
+          Esta es la manera más rápida de enviar su información directamente a %{agency_acronym}.
+
+          También puede llevar sus talones de pago de los últimos 30 días a su oficina local.
+
+          Responda STOP para cancelar.
   back: Atrás
   caseworker:
     cbv_flow_invitations:

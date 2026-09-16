@@ -104,21 +104,27 @@ en:
         copied: Copied!
         copy_link: Copy link
         create_another: Create another invitation
+        created_body_1: This link is unique to the case number and its household.
+        created_body_2_email: You can copy this link to share it, or wait for the email to be sent here.
+        created_body_2_sms: You can copy this link to share it, or wait for the text message to be sent here.
+        email_preview: They'll receive an email with the subject "%{subject}" containing their secure invitation link and instructions.
         header: Invitation created
+        header_email: Sending email to client
+        header_sms: Sending text message to client
         invitation_id: Invitation %{id}
         link_label: Invitation link
         status_header_email: Email status
         status_header_sms: Text message status
         view_invitations: View invitations
       status:
-        created_body: The invitation link is ready to copy above.
         created_heading: Invitation created
         delivered_body: The applicant's phone confirmed delivery.
         delivered_heading: Text message delivered
         failed_body: The message could not be sent. You can still copy the link above and share it another way.
         failed_heading_email: Failed to send email
         failed_heading_sms: Failed to send text message
-        pending_heading: Waiting to send
+        preview_heading: Message preview
+        preview_intro: Below is a preview of the message being sent to the client.
         retry_email: Send email again
         retry_sms: Send text message again
         sending_done: Done.
@@ -217,7 +223,13 @@ en:
     invitation:
       body:
         default: |-
-          %{agency_acronym} needs proof of your income. Use %{link} to quickly submit your income.
+          %{agency_acronym} request: We need proof of your income.
+
+          Verify your income using %{link}
+          This is the fastest way to submit information directly to %{agency_acronym}.
+
+          You can also bring the last 30 days of paystubs into your local office.
+
           Reply STOP to opt out.
   back: Back
   caseworker:

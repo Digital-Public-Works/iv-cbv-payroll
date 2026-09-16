@@ -1,0 +1,23 @@
+<li class="usa-process-list__item" id="invitation_step_sending">
+  <h3 class="usa-process-list__heading"><%= t("admin.invitations.status.sending_heading_#{communication.channel}") %></h3>
+  <p class="margin-top-05">
+    <% if communication.status_created? %>
+      <%= t("admin.invitations.status.sending_queued") %>
+    <% elsif communication.status_sending? %>
+      <%= t("admin.invitations.status.sending_in_progress") %>
+    <% else %>
+      <%= t("admin.invitations.status.sending_done") %>
+    <% end %>
+  </p>
+  <p><%= t("admin.invitations.status.preview_intro") %></p>
+  <div class="usa-summary-box bg-base-lightest maxw-tablet" role="region" aria-labelledby="message-preview-heading">
+    <div class="usa-summary-box__body">
+      <h4 class="usa-summary-box__heading" id="message-preview-heading">
+        <%= t("admin.invitations.status.preview_heading") %>
+      </h4>
+      <div class="usa-summary-box__text">
+        <%= simple_format(communication_preview(invitation, communication)) %>
+      </div>
+    </div>
+  </div>
+</li>

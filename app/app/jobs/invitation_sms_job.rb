@@ -79,29 +79,14 @@ class InvitationSmsJob < ApplicationJob
     sleep(seconds) if seconds.positive?
   end
 
-  # Not agency-branded: Digital Public Works is the sending party of record for
-  # 10DLC purposes, so this copy is fixed rather than per-partner.
+  # Message content lives in InvitationSmsMessage, shared with the admin
+  # portal's preview so what is shown always matches what is sent.
   def consent_notice_body(invitation)
-    agency = ClientAgencyConfig.instance[invitation.client_agency_id]
-
-    I18n.with_locale(invitation.language) do
-      ApplicationController.helpers.agency_translation_for(agency, "applicant_sms.consent_notice.body")
-    end
+    InvitationSmsMessage.consent_notice_body(invitation)
   end
 
   def message_body(invitation)
-    agency = ClientAgencyConfig.instance[invitation.client_agency_id]
-    helpers = ApplicationController.helpers
-
-    I18n.with_locale(invitation.language) do
-      helpers.agency_translation_for(
-        agency,
-        "applicant_sms.invitation.body",
-        agency_acronym: helpers.agency_acronym_or_full_name_for(agency),
-        deadline: helpers.format_date(invitation.expires_at_local.to_s),
-        link: invitation.to_url
-      )
-    end
+    InvitationSmsMessage.invitation_body(invitation)
   end
 
   def record_failure(communication, error)

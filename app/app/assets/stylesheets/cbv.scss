@@ -103,7 +103,10 @@ html {
     @include u-margin-y(2);
   }
 
-  @include at-media-max($theme-header-min-width) {
+  // Compact brand + logo below desktop: the full-size pair collides with the
+  // inline nav links in the tablet range (the header switches to inline nav at
+  // $theme-header-min-width, "tablet"), and with the menu button below that.
+  @include at-media-max("desktop") {
     .usa-logo {
       @include u-margin-y(1.5);
     }

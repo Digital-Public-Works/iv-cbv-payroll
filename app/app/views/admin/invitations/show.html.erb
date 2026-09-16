@@ -1,5 +1,6 @@
-
-<h1><%= t(".header") %></h1>
+<h1>
+  <%= @communication ? t(".header_#{@communication.channel}") : t(".header") %>
+</h1>
 <p>
   <%= t(".invitation_id", id: @invitation.id) %>
   <% if @communication %>
@@ -7,33 +8,30 @@
   <% end %>
 </p>
 
-<div data-controller="copy-link" class="margin-bottom-4">
-  <label class="usa-label" for="invitation-url"><%= t(".link_label") %></label>
-  <input
-    id="invitation-url"
-    class="usa-input maxw-tablet"
-    type="text"
-    readonly
-    autocomplete="off"
-    value="<%= @invitation.to_url %>"
-    data-copy-link-target="input"
-  >
-  <button type="button" class="usa-button margin-top-1" data-action="copy-link#copy" data-copy-link-target="copyLinkButton">
-    <%= t(".copy_link") %>
-  </button>
-  <button type="button" class="usa-button usa-button--outline margin-top-1 invisible" data-copy-link-target="successButton" tabindex="-1">
-    <%= t(".copied") %>
-  </button>
-</div>
-
 <% if @communication %>
   <h2><%= t(".status_header_#{@communication.channel}") %></h2>
+  <%# Polling replaces only the two dynamic steps, so the copy-link state in
+      step 1 survives each refresh. %>
   <div
     aria-live="polite"
     data-controller="polling"
     data-polling-url-value="<%= status_admin_invitation_path(id: @invitation.id) %>"
   >
-    <%= render "status", invitation: @invitation, communication: @communication %>
+    <ol class="usa-process-list">
+      <li class="usa-process-list__item">
+        <h3 class="usa-process-list__heading"><%= t("admin.invitations.status.created_heading") %></h3>
+        <p class="margin-top-05"><%= t(".created_body_1") %></p>
+        <p><%= t(".created_body_2_#{@communication.channel}") %></p>
+        <%= render "invitation_link", invitation: @invitation %>
+      </li>
+      <%= render "step_sending", invitation: @invitation, communication: @communication %>
+      <%= render "step_result", invitation: @invitation, communication: @communication %>
+    </ol>
+  </div>
+<% else %>
+  <p><%= t(".created_body_1") %></p>
+  <div class="margin-bottom-4">
+    <%= render "invitation_link", invitation: @invitation %>
   </div>
 <% end %>
 

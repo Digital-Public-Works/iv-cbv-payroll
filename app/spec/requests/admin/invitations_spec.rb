@@ -172,6 +172,8 @@ RSpec.describe "Admin invitations", type: :request do
       expect(response.body).to include("Invitation #{invitation.id}")
       expect(response.body).to include("Message #{invitation.invitation_communications.last.id}")
       expect(response.body).to include("data-polling-url-value")
+      expect(response.body).to include("Sending text message to client")
+      expect(response.body).to include("We need proof of your income")
     end
 
     it "does not expose invitations that were not created through the portal" do
@@ -192,7 +194,9 @@ RSpec.describe "Admin invitations", type: :request do
         headers: { "Accept" => "text/vnd.turbo-stream.html" }
 
       expect(response).to be_successful
-      expect(response.body).to include('turbo-stream action="replace" target="invitation_status"')
+      expect(response.body).to include('turbo-stream action="replace" target="invitation_step_sending"')
+      expect(response.body).to include('turbo-stream action="replace" target="invitation_step_result"')
+      expect(response.body).to include("Message preview")
     end
 
     it "marks the response complete once the send has failed" do

@@ -1,0 +1,26 @@
+<%# Stop polling once the send reaches a final state, or once it has rested
+    at "sent" long enough that a delivery receipt is unlikely to change it. %>
+<% polling_complete = communication.terminal? || (communication.status_sent? && communication.updated_at <= 3.minutes.ago) %>
+<li class="usa-process-list__item" id="invitation_step_result" <%= "data-polling-complete" if polling_complete %>>
+  <% if communication.status_failed? %>
+    <h3 class="usa-process-list__heading text-secondary-dark"><%= t("admin.invitations.status.failed_heading_#{communication.channel}") %></h3>
+    <p class="margin-top-05"><%= t("admin.invitations.status.failed_body") %></p>
+    <% if communication.last_error.present? %>
+      <p class="margin-top-05 text-secondary-dark"><%= communication.last_error %></p>
+    <% end %>
+    <%= button_to t("admin.invitations.status.retry_#{communication.channel}"),
+          resend_admin_invitation_path(id: invitation.id),
+          method: :post,
+          class: "usa-button margin-top-1",
+          form: { data: { turbo: false } } %>
+  <% elsif communication.status_delivered? %>
+    <h3 class="usa-process-list__heading"><%= t("admin.invitations.status.delivered_heading") %></h3>
+    <p class="margin-top-05"><%= t("admin.invitations.status.delivered_body") %></p>
+  <% elsif communication.status_sent? %>
+    <h3 class="usa-process-list__heading"><%= t("admin.invitations.status.sent_heading_#{communication.channel}") %></h3>
+    <p class="margin-top-05"><%= t("admin.invitations.status.sent_body_#{communication.channel}") %></p>
+  <% else %>
+    <%# Pending: the eventual heading, greyed, so the caseworker sees what comes next. %>
+    <h3 class="usa-process-list__heading text-base"><%= t("admin.invitations.status.sent_heading_#{communication.channel}") %></h3>
+  <% end %>
+</li>
