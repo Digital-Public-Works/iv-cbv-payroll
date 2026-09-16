@@ -64,10 +64,12 @@ class Admin::InvitationsController < Admin::BaseController
     @invitation = admin_invitations.find(params[:id])
     @communication = latest_communication(@invitation)
 
+    # method: :morph (idiomorph) leaves unchanged DOM nodes alone, so the
+    # in-flight spinner's CSS animation is not restarted by every poll.
     locals = { invitation: @invitation, communication: @communication }
     render turbo_stream: [
-      turbo_stream.replace(:invitation_step_sending, partial: "admin/invitations/step_sending", locals: locals),
-      turbo_stream.replace(:invitation_step_result, partial: "admin/invitations/step_result", locals: locals)
+      turbo_stream.replace(:invitation_step_sending, partial: "admin/invitations/step_sending", locals: locals, method: :morph),
+      turbo_stream.replace(:invitation_step_result, partial: "admin/invitations/step_result", locals: locals, method: :morph)
     ]
   end
 

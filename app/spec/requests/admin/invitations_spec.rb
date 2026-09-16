@@ -192,8 +192,8 @@ RSpec.describe "Admin invitations", type: :request do
         headers: { "Accept" => "text/vnd.turbo-stream.html" }
 
       expect(response).to be_successful
-      expect(response.body).to include('turbo-stream action="replace" target="invitation_step_sending"')
-      expect(response.body).to include('turbo-stream action="replace" target="invitation_step_result"')
+      expect(response.body).to include('turbo-stream method="morph" action="replace" target="invitation_step_sending"')
+      expect(response.body).to include('turbo-stream method="morph" action="replace" target="invitation_step_result"')
       expect(response.body).to include("Message preview")
     end
 
