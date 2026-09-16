@@ -121,6 +121,8 @@ en:
         failed_body: The message could not be sent. You can still copy the link above and share it another way.
         failed_heading_email: Failed to send email
         failed_heading_sms: Failed to send text message
+        pending_heading_email: Email not sent yet
+        pending_heading_sms: Text message not sent yet
         preview_heading: Message preview
         preview_intro: Below is a preview of the message being sent to the client.
         retry_email: Send email again

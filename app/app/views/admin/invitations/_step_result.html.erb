@@ -30,7 +30,6 @@
     </h3>
     <p class="margin-top-05"><%= t("admin.invitations.status.sent_body_#{communication.channel}") %></p>
   <% else %>
-    <%# Pending: the eventual heading, greyed, so the caseworker sees what comes next. %>
-    <h3 class="usa-process-list__heading text-base"><%= t("admin.invitations.status.sent_heading_#{communication.channel}") %></h3>
+    <h3 class="usa-process-list__heading text-base"><%= t("admin.invitations.status.pending_heading_#{communication.channel}") %></h3>
   <% end %>
 </li>
