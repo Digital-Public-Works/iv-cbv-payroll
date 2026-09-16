@@ -14,10 +14,20 @@
           class: "usa-button margin-top-1",
           form: { data: { turbo: false } } %>
   <% elsif communication.status_delivered? %>
-    <h3 class="usa-process-list__heading"><%= t("admin.invitations.status.delivered_heading") %></h3>
+    <h3 class="usa-process-list__heading text-success-dark display-flex flex-align-center">
+      <svg class="usa-icon margin-right-05" aria-hidden="true" role="img">
+        <use href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#check_circle") %>"></use>
+      </svg>
+      <%= t("admin.invitations.status.delivered_heading") %>
+    </h3>
     <p class="margin-top-05"><%= t("admin.invitations.status.delivered_body") %></p>
   <% elsif communication.status_sent? %>
-    <h3 class="usa-process-list__heading"><%= t("admin.invitations.status.sent_heading_#{communication.channel}") %></h3>
+    <h3 class="usa-process-list__heading text-success-dark display-flex flex-align-center">
+      <svg class="usa-icon margin-right-05" aria-hidden="true" role="img">
+        <use href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#check_circle") %>"></use>
+      </svg>
+      <%= t("admin.invitations.status.sent_heading_#{communication.channel}") %>
+    </h3>
     <p class="margin-top-05"><%= t("admin.invitations.status.sent_body_#{communication.channel}") %></p>
   <% else %>
     <%# Pending: the eventual heading, greyed, so the caseworker sees what comes next. %>

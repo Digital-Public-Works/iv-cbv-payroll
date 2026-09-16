@@ -1,12 +1,6 @@
 <h1>
   <%= @communication ? t(".header_#{@communication.channel}") : t(".header") %>
 </h1>
-<p>
-  <%= t(".invitation_id", id: @invitation.id) %>
-  <% if @communication %>
-    · <%= t(".communication_id", id: @communication.id) %>
-  <% end %>
-</p>
 
 <% if @communication %>
   <h2><%= t(".status_header_#{@communication.channel}") %></h2>

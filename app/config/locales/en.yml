@@ -100,7 +100,6 @@ en:
       resend:
         not_failed: This message is not in a failed state, so it was not re-sent.
       show:
-        communication_id: Message %{id}
         copied: Copied!
         copy_link: Copy link
         create_another: Create another invitation
@@ -111,7 +110,6 @@ en:
         header: Invitation created
         header_email: Sending email to client
         header_sms: Sending text message to client
-        invitation_id: Invitation %{id}
         link_label: Invitation link
         status_header_email: Email status
         status_header_sms: Text message status

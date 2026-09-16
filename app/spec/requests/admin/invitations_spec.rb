@@ -169,8 +169,6 @@ RSpec.describe "Admin invitations", type: :request do
 
       expect(response).to be_successful
       expect(response.body).to include(invitation.to_url)
-      expect(response.body).to include("Invitation #{invitation.id}")
-      expect(response.body).to include("Message #{invitation.invitation_communications.last.id}")
       expect(response.body).to include("data-polling-url-value")
       expect(response.body).to include("Sending text message to client")
       expect(response.body).to include("We need proof of your income")
