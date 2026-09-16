@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { trackUserAction } from "../utilities/api"
+import { rebuildHelpModalFocusTrap } from "../utilities/helpModalFocusTrap"
 
 export default class extends Controller {
   static targets = ["content"]
@@ -14,11 +15,21 @@ export default class extends Controller {
     }
   }
 
+  // The modal's content is swapped via Turbo Frame navigation (topic links,
+  // Go Back) rather than closing/reopening the modal, which leaves USWDS's
+  // focus trap pointing at stale, detached elements. Rebuild it after every
+  // frame swap so Tab/Shift+Tab keep working. See helpModalFocusTrap.js.
+  handleFrameLoad = () => {
+    rebuildHelpModalFocusTrap(this.contentTarget)
+  }
+
   connect() {
     document.addEventListener("click", this.handleClick)
+    this.contentTarget.addEventListener("turbo:frame-load", this.handleFrameLoad)
   }
 
   disconnect() {
     document.removeEventListener("click", this.handleClick)
+    this.contentTarget.removeEventListener("turbo:frame-load", this.handleFrameLoad)
   }
 }
