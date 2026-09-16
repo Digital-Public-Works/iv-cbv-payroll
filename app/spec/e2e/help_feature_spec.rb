@@ -72,6 +72,42 @@ RSpec.describe "Help Features", :js, type: :feature do
       end
     end
 
+    it "keeps focus trapped in the modal after navigating to a topic and going back" do
+      visit cbv_flow_employer_search_path
+      click_link "Help"
+
+      expect(page).to have_selector(".usa-modal__content", visible: true)
+
+      within(".usa-modal__content") do
+        click_link I18n.t("help.index.username")
+        verify_page(page, title: I18n.t("help.show.username.title"))
+
+        # Focus should return to the modal container, not to an arbitrary
+        # interactive element like "Go Back" just because it's first in the
+        # DOM, and not into the swapped content itself (which would anchor a
+        # screen reader's virtual cursor there).
+        expect(page.evaluate_script("document.activeElement.classList.contains('usa-modal')")).to be(true)
+
+        click_link I18n.t("help.show.go_back")
+        verify_page(page, title: I18n.t("help.index.title"))
+
+        expect(page.evaluate_script("document.activeElement.classList.contains('usa-modal')")).to be(true)
+      end
+
+      # Simulate a keyboard user tabbing all the way to the modal's Close button.
+      page.execute_script(<<~JS)
+        document.querySelector('button[aria-label="Close this window"]').focus()
+      JS
+
+      find("body").send_keys(:tab)
+      expect(page.evaluate_script("document.activeElement.textContent.trim()"))
+        .to eq(I18n.t("help.index.username"))
+
+      find("body").send_keys(%i[shift tab])
+      expect(page.evaluate_script("document.activeElement.getAttribute('aria-label')"))
+        .to eq("Close this window")
+    end
+
     it "closes help modal when clicking close button" do
       visit cbv_flow_employer_search_path
       click_link "Help"
