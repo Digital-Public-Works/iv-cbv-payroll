@@ -213,7 +213,7 @@ html {
 // Slower spin for inline status indicators, and none at all for users who
 // have asked the OS to reduce motion (WCAG 2.3.3).
 .rotate-slow {
-  animation: 3s linear infinite rotate-con;
+  animation: 5s linear infinite rotate-con;
 
   @media (prefers-reduced-motion: reduce) {
     animation: none;
