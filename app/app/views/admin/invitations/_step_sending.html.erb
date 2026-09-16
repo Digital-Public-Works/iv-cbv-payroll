@@ -2,7 +2,7 @@
   <% in_progress = communication.status_created? || communication.status_sending? %>
   <h3 class="usa-process-list__heading <%= "display-flex flex-align-center" if in_progress %>">
     <% if in_progress %>
-      <svg class="usa-icon rotate margin-right-05" aria-hidden="true" focusable="false" role="img">
+      <svg class="usa-icon rotate-slow margin-right-05" aria-hidden="true" focusable="false" role="img">
         <use href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#autorenew") %>"></use>
       </svg>
     <% end %>
