@@ -4,6 +4,7 @@
 <p class="usa-hint"><%= t(".required_note_html", abbr: usa_required_abbr) %></p>
 
 <%= uswds_form_with(model: @cbv_flow_invitation, url: admin_invitations_path,
+      html: { class: "usa-form usa-form--large cbv-admin-form" },
       data: {
         controller: "communication-channel",
         action: "input->communication-channel#update change->communication-channel#update"

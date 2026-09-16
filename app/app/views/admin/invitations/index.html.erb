@@ -2,21 +2,25 @@
 <h1><%= t(".header") %></h1>
 <p><%= t(".description", agency: agency_translation_for(selected_agency, "shared.agency_full_name")) %></p>
 
-<% if @invitations.any? %>
-  <table class="usa-table usa-table--striped width-full">
-    <caption class="usa-sr-only"><%= t(".table_caption") %></caption>
-    <thead>
+<table class="usa-table usa-table--striped width-full">
+  <caption class="usa-sr-only"><%= t(".table_caption") %></caption>
+  <thead>
+    <tr>
+      <th scope="col"><%= t(".column_created_at") %></th>
+      <th scope="col"><%= t(".column_identifier") %></th>
+      <th scope="col"><%= t(".column_channel") %></th>
+      <th scope="col"><%= t(".column_destination") %></th>
+      <th scope="col"><%= t(".column_status") %></th>
+      <th scope="col"><span class="usa-sr-only"><%= t(".column_actions") %></span></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% if @invitations.empty? %>
       <tr>
-        <th scope="col"><%= t(".column_created_at") %></th>
-        <th scope="col"><%= t(".column_identifier") %></th>
-        <th scope="col"><%= t(".column_channel") %></th>
-        <th scope="col"><%= t(".column_destination") %></th>
-        <th scope="col"><%= t(".column_status") %></th>
-        <th scope="col"><span class="usa-sr-only"><%= t(".column_actions") %></span></th>
+        <td colspan="6" class="text-center text-base"><%= t(".empty") %></td>
       </tr>
-    </thead>
-    <tbody>
-      <% @invitations.each do |invitation| %>
+    <% end %>
+    <% @invitations.each do |invitation| %>
         <% communication = invitation.invitation_communications.max_by(&:created_at) %>
         <tr>
           <td><%= invitation.created_at.in_time_zone(selected_agency.timezone.presence || "America/New_York").strftime("%b %-d, %-l:%M %p %Z") %></td>
@@ -37,8 +41,5 @@
           <td><%= link_to t(".view"), admin_invitation_path(id: invitation.id), class: "usa-link" %></td>
         </tr>
       <% end %>
-    </tbody>
-  </table>
-<% else %>
-  <p><%= t(".empty") %></p>
-<% end %>
+  </tbody>
+</table>

@@ -1,18 +1,31 @@
 module Admin
   module InvitationsHelper
     # Preview of what the applicant will receive, shown on the invitation
-    # status board. SMS shows the exact message body (via the same renderer
-    # the send job uses); email shows a plain-language summary of what
-    # they'll get rather than rendered HTML.
+    # status board. Both channels render through the same code path as the
+    # real send (InvitationSmsMessage / ApplicantMailer), so the preview is
+    # verbatim and cannot drift from what goes out.
     def communication_preview(invitation, communication)
       if communication.channel_sms?
         InvitationSmsMessage.invitation_body(invitation)
       elsif communication.channel_email?
-        subject = I18n.with_locale(invitation.language) do
-          agency_translation_for(selected_agency, "applicant_mailer.invitation_email.subject")
-        end
-        t("admin.invitations.show.email_preview", subject: subject)
+        email_preview(invitation)
       end
+    end
+
+    private
+
+    def email_preview(invitation)
+      mail = ApplicantMailer.with(cbv_flow_invitation: invitation).invitation_email
+
+      subject_line = t("admin.invitations.show.email_subject_line", subject: mail.subject)
+      body_text = mail.body.to_s
+        .then { |html| strip_tags(html) }
+        .lines
+        .map(&:strip)
+        .reject(&:blank?)
+        .join("\n\n")
+
+      "#{subject_line}\n\n#{body_text}"
     end
   end
 end

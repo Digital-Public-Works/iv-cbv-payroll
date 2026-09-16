@@ -106,7 +106,7 @@ en:
         created_body_1: This link is unique to the case number and its household.
         created_body_2_email: You can copy this link to share it, or wait for the email to be sent here.
         created_body_2_sms: You can copy this link to share it, or wait for the text message to be sent here.
-        email_preview: They'll receive an email with the subject "%{subject}" containing their secure invitation link and instructions.
+        email_subject_line: 'Subject: %{subject}'
         header: Invitation created
         header_email: Sending email to client
         header_sms: Sending text message to client

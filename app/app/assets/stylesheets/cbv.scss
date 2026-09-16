@@ -210,6 +210,15 @@ html {
   animation: 1s linear infinite rotate-con;
 }
 
+// Admin create-invitation form: the field questions (labels and legends) are
+// bold; the answer options (radio tiles, checkbox labels) stay regular weight.
+.cbv-admin-form {
+  .usa-label,
+  .usa-legend {
+    font-weight: bold;
+  }
+}
+
 // Slower spin for inline status indicators, and none at all for users who
 // have asked the OS to reduce motion (WCAG 2.3.3).
 .rotate-slow {
