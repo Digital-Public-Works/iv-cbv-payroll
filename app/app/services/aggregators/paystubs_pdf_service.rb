@@ -65,10 +65,32 @@ module Aggregators
       @cbv_flow.payroll_accounts.pluck(:aggregator_account_id).compact
     end
 
+    # The report's own window when we have a report, otherwise the widest window
+    # the agency configures. Without a report we cannot know whether the account
+    # is w2 or gig, so taking the maximum errs towards including a document
+    # rather than dropping one that belongs on the report.
+    def document_window
+      if @aggregator_report.present?
+        [ @aggregator_report.from_date, @aggregator_report.to_date ]
+      else
+        pay_income_days = ClientAgencyConfig.instance[@cbv_flow.client_agency_id]&.pay_income_days || {}
+        days = pay_income_days.values.compact.max
+        return [ nil, nil ] if days.blank?
+
+        [ days.days.ago.to_date, @cbv_flow.created_at.to_date ]
+      end
+    end
+
     def collect_document_refs
       refs = []
+      from_available_date, to_available_date = document_window
+
       accounts_for_service.each do |account_id|
-        @argyle_service.fetch_payroll_documents_api(account: account_id)["results"]
+        @argyle_service.fetch_payroll_documents_api(
+          account: account_id,
+          from_available_date: from_available_date,
+          to_available_date: to_available_date
+        )["results"]
           .select { |d| d["document_type"] == SUPPORTED_DOCUMENT_TYPE && d["file_url"].present? }
           .each do |doc|
             refs << {
