@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { trackUserAction } from "../utilities/api"
+import { activateWithSpace } from "../utilities/accessibility"
 import {
   rebuildHelpModalFocusTrap,
   detachHelpModalFocusTrap,
@@ -7,6 +8,8 @@ import {
 
 export default class extends Controller {
   static targets = ["content"]
+
+  activateWithSpace = activateWithSpace
 
   handleClick(event) {
     if (event.target.href?.includes("#help-modal")) {
