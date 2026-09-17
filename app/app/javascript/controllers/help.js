@@ -10,8 +10,6 @@ export default class extends Controller {
       trackUserAction("ApplicantOpenedHelpModal", {
         source: event.target.dataset.source,
       })
-      // reset the help modal src on mousedown to ensure the help modal src is reset to "/help"
-      document.querySelector("#help_modal_content").src = event.target.dataset.helpUrl
     }
   }
 
@@ -23,13 +21,40 @@ export default class extends Controller {
     rebuildHelpModalFocusTrap(this.contentTarget)
   }
 
+  // usa-modal never destroys the modal's content when it closes - it just
+  // hides it with CSS classes on the wrapper it builds around the modal - so
+  // the Turbo Frame inside keeps showing whatever topic was last viewed.
+  //
+  // All three ways of closing the modal (close button, overlay click,
+  // Escape) end up toggling "is-visible" off the same wrapper element, so
+  // watching for that class change catches all of them without needing to
+  // hook each one individually.
+  handleModalVisibilityChange = (mutations) => {
+    const wrapper = this.element.closest(".usa-modal-wrapper")
+    if (!wrapper) return
+
+    const modalJustClosed =
+      mutations.some((mutation) => mutation.target === wrapper) &&
+      !wrapper.classList.contains("is-visible")
+    if (modalJustClosed) {
+      document.querySelector("#help_modal_content").src = this.element.dataset.helpUrl
+    }
+  }
+
   connect() {
     document.addEventListener("click", this.handleClick)
     this.contentTarget.addEventListener("turbo:frame-load", this.handleFrameLoad)
+    this.modalVisibilityObserver = new MutationObserver(this.handleModalVisibilityChange)
+    this.modalVisibilityObserver.observe(document.body, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class"],
+    })
   }
 
   disconnect() {
     document.removeEventListener("click", this.handleClick)
     this.contentTarget.removeEventListener("turbo:frame-load", this.handleFrameLoad)
+    this.modalVisibilityObserver.disconnect()
   }
 }

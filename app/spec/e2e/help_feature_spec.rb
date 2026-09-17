@@ -72,6 +72,30 @@ RSpec.describe "Help Features", :js, type: :feature do
       end
     end
 
+    it "resets to the topic list when reopened after viewing a topic" do
+      visit cbv_flow_employer_search_path
+      click_link "Help"
+
+      within(".usa-modal__content") do
+        click_link I18n.t("help.index.username")
+        verify_page(page, title: I18n.t("help.show.username.title"))
+      end
+
+      find("button[aria-label='Close this window']").click
+      expect(page).not_to have_selector(".usa-modal__content", visible: true)
+
+      # The reset should already have happened while the modal is hidden,
+      # not wait for the next open - otherwise the stale topic would
+      # visibly flash before swapping back to the topic list.
+      expect(page).to have_selector("turbo-frame#help_modal_content[src$='/help']", visible: false)
+
+      click_link "Help"
+
+      within(".usa-modal__content") do
+        verify_page(page, title: I18n.t("help.index.title"))
+      end
+    end
+
     it "keeps focus trapped in the modal after navigating to a topic and going back" do
       visit cbv_flow_employer_search_path
       click_link "Help"
