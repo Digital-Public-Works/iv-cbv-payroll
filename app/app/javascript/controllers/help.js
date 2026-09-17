@@ -1,6 +1,9 @@
 import { Controller } from "@hotwired/stimulus"
 import { trackUserAction } from "../utilities/api"
-import { rebuildHelpModalFocusTrap } from "../utilities/helpModalFocusTrap"
+import {
+  rebuildHelpModalFocusTrap,
+  detachHelpModalFocusTrap,
+} from "../utilities/helpModalFocusTrap"
 
 export default class extends Controller {
   static targets = ["content"]
@@ -37,6 +40,7 @@ export default class extends Controller {
       mutations.some((mutation) => mutation.target === wrapper) &&
       !wrapper.classList.contains("is-visible")
     if (modalJustClosed) {
+      detachHelpModalFocusTrap()
       document.querySelector("#help_modal_content").src = this.element.dataset.helpUrl
     }
   }
