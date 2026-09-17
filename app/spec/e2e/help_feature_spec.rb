@@ -132,6 +132,29 @@ RSpec.describe "Help Features", :js, type: :feature do
         .to eq("Close this window")
     end
 
+    it "does not trap Tab/Shift+Tab elsewhere on the page after closing via Escape post-navigation" do
+      visit cbv_flow_employer_search_path
+      click_link "Help"
+
+      within(".usa-modal__content") do
+        click_link I18n.t("help.index.username")
+        verify_page(page, title: I18n.t("help.show.username.title"))
+      end
+
+      find("body").send_keys(:escape)
+      expect(page).not_to have_selector(".usa-modal__content", visible: true)
+
+      # Regression check: a leaked focus-trap keydown listener (from a fix
+      # that mistakenly read/wrote a *different* USWDS module instance's
+      # shared "modal" singleton than the one actually driving the page)
+      # used to keep intercepting Shift+Tab site-wide after this exact
+      # sequence, redirecting focus back into the now-hidden modal.
+      page.execute_script("document.querySelector('a[href=\"#help-modal\"]').focus()")
+      find("body").send_keys(%i[shift tab])
+      expect(page.evaluate_script("document.activeElement.closest('.usa-modal-wrapper') !== null"))
+        .to be(false)
+    end
+
     it "closes help modal when clicking close button" do
       visit cbv_flow_employer_search_path
       click_link "Help"

@@ -1,9 +1,8 @@
 import { describe, it, expect, afterEach } from "vitest"
-import { rebuildHelpModalFocusTrap } from "@js/utilities/helpModalFocusTrap"
-import FocusTrap from "@uswds/uswds/uswds-core/src/js/utils/focus-trap.js"
-import components from "@uswds/uswds/src/js/components"
-
-const modal = components.modal
+import {
+  rebuildHelpModalFocusTrap,
+  detachHelpModalFocusTrap,
+} from "@js/utilities/helpModalFocusTrap"
 
 // Mirrors the DOM usa-modal builds: a .usa-modal container (tabindex="-1",
 // per USWDS's own setup) wrapping the swappable pane content and the close
@@ -54,12 +53,38 @@ function pressTab(activeElement, { shiftKey = false } = {}) {
   return event
 }
 
+// Counts document.body's own "keydown" listener add/remove calls, so tests
+// can assert on the trap's actual attach/detach lifecycle directly - this is
+// exactly the signal that exposed the real bug (a leaked listener after the
+// modal closed, from reading/writing a *different* module instance's shared
+// "modal" singleton than the one actually driving the page). See
+// helpModalFocusTrap.js's module comment for the full story.
+function countBodyKeydownListeners() {
+  let added = 0
+  let removed = 0
+  const target = document.body
+  const originalAdd = target.addEventListener.bind(target)
+  const originalRemove = target.removeEventListener.bind(target)
+  target.addEventListener = (type, ...rest) => {
+    if (type === "keydown") added++
+    return originalAdd(type, ...rest)
+  }
+  target.removeEventListener = (type, ...rest) => {
+    if (type === "keydown") removed++
+    return originalRemove(type, ...rest)
+  }
+  return {
+    counts: () => ({ added, removed, net: added - removed }),
+    restore: () => {
+      target.addEventListener = originalAdd
+      target.removeEventListener = originalRemove
+    },
+  }
+}
+
 describe("rebuildHelpModalFocusTrap", () => {
   afterEach(() => {
-    if (modal.focusTrap) {
-      modal.focusTrap.off()
-      modal.focusTrap = null
-    }
+    detachHelpModalFocusTrap()
     document.body.innerHTML = ""
   })
 
@@ -70,20 +95,20 @@ describe("rebuildHelpModalFocusTrap", () => {
     wrapper.appendChild(content)
     document.body.appendChild(wrapper)
 
+    const listeners = countBodyKeydownListeners()
     const result = rebuildHelpModalFocusTrap(content)
 
     expect(result).toBeNull()
-    expect(modal.focusTrap).toBeFalsy()
+    expect(listeners.counts().added).toBe(0)
+    listeners.restore()
   })
 
   it("rebuilds the trap so Tab/Shift+Tab respect the DOM after a content swap", () => {
     const { content, closeButton, buttons } = buildOpenModal(["Go Back"])
 
-    // Simulate usa-modal's own toggleModal building the initial trap on open,
+    // Simulate the trap this module itself built when the modal first opened,
     // against the pre-swap ("Go Back" detail view) content.
-    const targetModal = content.closest(".usa-modal-wrapper.is-visible")
-    modal.focusTrap = FocusTrap(targetModal, { Escape: () => {} })
-    modal.focusTrap.update(true)
+    rebuildHelpModalFocusTrap(content)
 
     // Simulate the Turbo Frame swap back to the topic list: different elements entirely.
     buttons[0].remove()
@@ -96,7 +121,7 @@ describe("rebuildHelpModalFocusTrap", () => {
 
     // Tabbing forward from Close (the last stop) should now wrap to the *new*
     // first stop (the username link), not no-op on a detached stale node -
-    // this is the exact "stuck on Close" symptom from the bug report.
+    // this is the exact "stuck on Close" symptom from the original bug report.
     pressTab(closeButton)
     expect(document.activeElement).toBe(usernameLink)
 
@@ -108,65 +133,60 @@ describe("rebuildHelpModalFocusTrap", () => {
 
   it("moves focus to the modal container, not into the swapped content", () => {
     const { content, usaModal } = buildOpenModal(["Go Back"])
-    const targetModal = content.closest(".usa-modal-wrapper.is-visible")
-    modal.focusTrap = FocusTrap(targetModal, { Escape: () => {} })
-    modal.focusTrap.update(true)
+    rebuildHelpModalFocusTrap(content)
 
     rebuildHelpModalFocusTrap(content)
 
-    // Regression check: previously this landed on "Go Back" (the first
-    // focusable element, because update(true) ran FocusTrap's init()), then
-    // on the pane heading. Neither is right - parking focus on a piece of
-    // content anchors a screen reader's virtual cursor there. Focus should
-    // land on the modal container itself, matching usa-modal's own open behavior.
+    // Regression check: this previously landed on "Go Back" (the first
+    // focusable element) or the pane heading. Neither is right - parking
+    // focus on a piece of content anchors a screen reader's virtual cursor
+    // there. Focus should land on the modal container itself, matching
+    // usa-modal's own open behavior.
     expect(document.activeElement).toBe(usaModal)
   })
 
   it("detaches the previous trap's listener instead of stacking a second one", () => {
     const { content, closeButton, buttons } = buildOpenModal(["Go Back"])
-    const targetModal = content.closest(".usa-modal-wrapper.is-visible")
-
-    modal.focusTrap = FocusTrap(targetModal, { Escape: () => {} })
-    modal.focusTrap.update(true)
-    const firstTrap = modal.focusTrap
+    const listeners = countBodyKeydownListeners()
 
     rebuildHelpModalFocusTrap(content)
+    rebuildHelpModalFocusTrap(content) // simulates a second content swap with no DOM change
 
-    expect(modal.focusTrap).not.toBe(firstTrap)
+    // Exactly one net keydown listener should be attached - not two stacked ones.
+    expect(listeners.counts().net).toBe(1)
+    listeners.restore()
 
-    // If the old listener leaked, tabAhead's stale preventDefault would still
-    // fire alongside the new one; asserting a single, correct focus target
-    // after tabbing is enough to show only the new trap is active.
     pressTab(closeButton)
     expect(document.activeElement).toBe(buttons[0])
   })
+})
 
-  it("still closes the modal on Escape after being rebuilt", () => {
-    const { content } = buildOpenModal(["Go Back"])
-    const targetModal = content.closest(".usa-modal-wrapper.is-visible")
-    modal.focusTrap = FocusTrap(targetModal, { Escape: () => {} })
-    modal.focusTrap.update(true)
+describe("detachHelpModalFocusTrap", () => {
+  afterEach(() => {
+    detachHelpModalFocusTrap()
+    document.body.innerHTML = ""
+  })
 
+  it("removes the active trap's keydown listener", () => {
+    const { content, closeButton } = buildOpenModal(["Go Back"])
     rebuildHelpModalFocusTrap(content)
 
-    const originalToggleModal = modal.toggleModal
-    let closed = false
-    modal.toggleModal = () => {
-      closed = true
-    }
+    const listeners = countBodyKeydownListeners()
+    detachHelpModalFocusTrap()
+    expect(listeners.counts()).toEqual({ added: 0, removed: 1, net: -1 })
+    listeners.restore()
 
-    try {
-      const escapeEvent = new window.KeyboardEvent("keydown", {
-        key: "Escape",
-        code: "Escape",
-        bubbles: true,
-        cancelable: true,
-      })
-      document.body.dispatchEvent(escapeEvent)
+    // Once detached, Tab/Shift+Tab should no longer be intercepted at all.
+    closeButton.focus()
+    const event = pressTab(closeButton)
+    expect(event.defaultPrevented).toBe(false)
+  })
 
-      expect(closed).toBe(true)
-    } finally {
-      modal.toggleModal = originalToggleModal
-    }
+  it("is a safe no-op when there is no active trap", () => {
+    const listeners = countBodyKeydownListeners()
+
+    expect(() => detachHelpModalFocusTrap()).not.toThrow()
+    expect(listeners.counts()).toEqual({ added: 0, removed: 0, net: 0 })
+    listeners.restore()
   })
 })
