@@ -70,6 +70,11 @@ module IvCbvPayroll
     config.supported_providers = (ENV["SUPPORTED_PROVIDERS"] || "pinwheel")&.split(",")&.map(&:to_sym)
     config.cbv_session_expires_after = 30.minutes
 
+    # The admin portal gets a longer session than the applicant flow: its
+    # operators work in it across a day, and an expired session's CSRF token
+    # fails their next form submit. Applied per-request in Admin::BaseController.
+    config.admin_session_expires_after = 8.hours
+
     config.max_paystubs_per_account = 1000
   end
 

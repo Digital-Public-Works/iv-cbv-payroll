@@ -38,6 +38,12 @@ RSpec.describe "Admin invitations", type: :request do
       expect(response).to have_http_status(:not_found)
     end
 
+    it "extends the session expiry beyond the applicant flow's 30 minutes" do
+      get admin_root_path
+
+      expect(request.session_options[:expire_after]).to eq(8.hours)
+    end
+
     it "renders the invitations list as the portal home" do
       get admin_root_path
 

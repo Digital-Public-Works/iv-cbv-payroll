@@ -5,10 +5,18 @@
 class Admin::BaseController < ApplicationController
   before_action :ensure_portal_enabled
   before_action :require_agency!
+  before_action :extend_session_expiry
 
   helper_method :selected_agency, :selected_agency_id
 
   private
+
+  # The app-wide session cookie expires after 30 minutes (an applicant-flow
+  # security choice). Admin pages override it per request so a caseworker's
+  # session — and its CSRF token — survives a workday of intermittent use.
+  def extend_session_expiry
+    request.session_options[:expire_after] = Rails.application.config.admin_session_expires_after
+  end
 
   def ensure_portal_enabled
     raise ActionController::RoutingError.new("Admin portal is disabled") unless Rails.application.config.admin_portal_enabled
