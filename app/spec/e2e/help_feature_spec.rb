@@ -42,12 +42,12 @@ RSpec.describe "Help Features", :js, type: :feature do
         expect(page).to have_content(I18n.t("help.index.select_prompt"))
 
         # Verify all help topic buttons are present
-        expect(page).to have_link(I18n.t("help.index.username"))
-        expect(page).to have_link(I18n.t("help.index.password"))
-        expect(page).to have_link(I18n.t("help.index.company_id"))
-        expect(page).to have_link(I18n.t("help.index.employer"))
-        expect(page).to have_link(I18n.t("help.index.provider"))
-        expect(page).to have_link(I18n.t("help.index.credentials"))
+        expect(page).to have_button(I18n.t("help.index.username"))
+        expect(page).to have_button(I18n.t("help.index.password"))
+        expect(page).to have_button(I18n.t("help.index.company_id"))
+        expect(page).to have_button(I18n.t("help.index.employer"))
+        expect(page).to have_button(I18n.t("help.index.provider"))
+        expect(page).to have_button(I18n.t("help.index.credentials"))
 
         # Verify feedback link opens in new tab with correct URL
         feedback_link = find_link(I18n.t("help.index.feedback"))
@@ -64,10 +64,10 @@ RSpec.describe "Help Features", :js, type: :feature do
       expect(page).to have_selector(".usa-modal__content", visible: true)
 
       within(".usa-modal__content") do
-        click_link I18n.t("help.index.username")
+        click_button I18n.t("help.index.username")
         verify_page(page, title: I18n.t("help.show.username.title"))
 
-        click_link I18n.t("help.show.go_back")
+        click_button I18n.t("help.show.go_back")
         verify_page(page, title: I18n.t("help.index.title"))
       end
     end
@@ -77,7 +77,7 @@ RSpec.describe "Help Features", :js, type: :feature do
       click_link "Help"
 
       within(".usa-modal__content") do
-        click_link I18n.t("help.index.username")
+        click_button I18n.t("help.index.username")
         verify_page(page, title: I18n.t("help.show.username.title"))
       end
 
@@ -103,7 +103,7 @@ RSpec.describe "Help Features", :js, type: :feature do
       expect(page).to have_selector(".usa-modal__content", visible: true)
 
       within(".usa-modal__content") do
-        click_link I18n.t("help.index.username")
+        click_button I18n.t("help.index.username")
         verify_page(page, title: I18n.t("help.show.username.title"))
 
         # Focus should return to the modal container, not to an arbitrary
@@ -112,7 +112,7 @@ RSpec.describe "Help Features", :js, type: :feature do
         # screen reader's virtual cursor there).
         expect(page.evaluate_script("document.activeElement.classList.contains('usa-modal')")).to be(true)
 
-        click_link I18n.t("help.show.go_back")
+        click_button I18n.t("help.show.go_back")
         verify_page(page, title: I18n.t("help.index.title"))
 
         expect(page.evaluate_script("document.activeElement.classList.contains('usa-modal')")).to be(true)
@@ -132,12 +132,24 @@ RSpec.describe "Help Features", :js, type: :feature do
         .to eq("Close this window")
     end
 
+    it "activates a topic button with the space key" do
+      visit cbv_flow_employer_search_path
+      click_link "Help"
+
+      expect(page).to have_selector(".usa-modal__content", visible: true)
+
+      within(".usa-modal__content") do
+        find_button(I18n.t("help.index.username")).send_keys(:space)
+        verify_page(page, title: I18n.t("help.show.username.title"))
+      end
+    end
+
     it "does not trap Tab/Shift+Tab elsewhere on the page after closing via Escape post-navigation" do
       visit cbv_flow_employer_search_path
       click_link "Help"
 
       within(".usa-modal__content") do
-        click_link I18n.t("help.index.username")
+        click_button I18n.t("help.index.username")
         verify_page(page, title: I18n.t("help.show.username.title"))
       end
 
@@ -179,12 +191,12 @@ RSpec.describe "Help Features", :js, type: :feature do
         expect(page).to have_content(I18n.t("help.index.select_prompt"))
 
         # Verify all help topic buttons are present
-        expect(page).to have_link(I18n.t("help.index.username"))
-        expect(page).to have_link(I18n.t("help.index.password"))
-        expect(page).to have_link(I18n.t("help.index.company_id"))
-        expect(page).to have_link(I18n.t("help.index.employer"))
-        expect(page).to have_link(I18n.t("help.index.provider"))
-        expect(page).to have_link(I18n.t("help.index.credentials"))
+        expect(page).to have_button(I18n.t("help.index.username"))
+        expect(page).to have_button(I18n.t("help.index.password"))
+        expect(page).to have_button(I18n.t("help.index.company_id"))
+        expect(page).to have_button(I18n.t("help.index.employer"))
+        expect(page).to have_button(I18n.t("help.index.provider"))
+        expect(page).to have_button(I18n.t("help.index.credentials"))
 
         # Caseworker should not see the feedback flow
         expect(page).not_to have_link(I18n.t("help.index.feedback"))
