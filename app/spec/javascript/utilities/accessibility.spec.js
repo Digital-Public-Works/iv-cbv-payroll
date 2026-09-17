@@ -1,5 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest"
-import { toggleErrorIds, updateAriaLiveRegion } from "@js/utilities/accessibility"
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
+import {
+  toggleErrorIds,
+  updateAriaLiveRegion,
+  activateWithSpace,
+} from "@js/utilities/accessibility"
 
 describe("toggleErrorIds", () => {
   let target
@@ -34,6 +38,57 @@ describe("toggleErrorIds", () => {
     toggleErrorIds(target, false, "query_error_message")
 
     expect(target.getAttribute("aria-describedby")).toBe("company_examples")
+  })
+})
+
+describe("activateWithSpace", () => {
+  let element
+
+  beforeEach(() => {
+    element = document.createElement("a")
+    element.setAttribute("role", "button")
+    element.addEventListener("keydown", activateWithSpace)
+    document.body.appendChild(element)
+  })
+
+  afterEach(() => {
+    document.body.innerHTML = ""
+  })
+
+  function press(key) {
+    const event = new window.KeyboardEvent("keydown", { key, cancelable: true })
+    element.dispatchEvent(event)
+    return event
+  }
+
+  it("activates the element on a Space keydown", () => {
+    const clickSpy = vi.fn()
+    element.addEventListener("click", clickSpy)
+
+    const event = press(" ")
+
+    expect(clickSpy).toHaveBeenCalled()
+    expect(event.defaultPrevented).toBe(true)
+  })
+
+  it("activates the element on a Spacebar keydown (older browsers)", () => {
+    const clickSpy = vi.fn()
+    element.addEventListener("click", clickSpy)
+
+    const event = press("Spacebar")
+
+    expect(clickSpy).toHaveBeenCalled()
+    expect(event.defaultPrevented).toBe(true)
+  })
+
+  it("does nothing for other keys, leaving native activation (e.g. Enter) to the browser", () => {
+    const clickSpy = vi.fn()
+    element.addEventListener("click", clickSpy)
+
+    const event = press("Enter")
+
+    expect(clickSpy).not.toHaveBeenCalled()
+    expect(event.defaultPrevented).toBe(false)
   })
 })
 
