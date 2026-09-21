@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from "vitest"
+import { describe, it, expect, afterEach, vi } from "vitest"
 import {
   rebuildHelpModalFocusTrap,
   detachHelpModalFocusTrap,
@@ -53,12 +53,9 @@ function pressTab(activeElement, { shiftKey = false } = {}) {
   return event
 }
 
-// Counts document.body's own "keydown" listener add/remove calls, so tests
-// can assert on the trap's actual attach/detach lifecycle directly - this is
-// exactly the signal that exposed the real bug (a leaked listener after the
-// modal closed, from reading/writing a *different* module instance's shared
-// "modal" singleton than the one actually driving the page). See
-// helpModalFocusTrap.js's module comment for the full story.
+// Counts document.body's own "keydown" listener add/remove calls (regardless
+// of capture/bubble phase), so tests can assert on the guard's actual
+// attach/detach lifecycle directly.
 function countBodyKeydownListeners() {
   let added = 0
   let removed = 0
@@ -82,6 +79,26 @@ function countBodyKeydownListeners() {
   }
 }
 
+function installStaleUswdsTrap(staleFirst, staleLast, staleFocusable) {
+  const listener = vi.fn((event) => {
+    if (event.key !== "Tab") return
+    if (event.shiftKey) {
+      if (document.activeElement === staleFirst) {
+        event.preventDefault()
+        staleLast.focus()
+      } else if (!staleFocusable.includes(document.activeElement)) {
+        event.preventDefault()
+        staleFirst.focus() // a detached node in practice; focusing it silently no-ops
+      }
+    } else if (document.activeElement === staleLast) {
+      event.preventDefault()
+      staleFirst.focus()
+    }
+  })
+  document.body.addEventListener("keydown", listener)
+  return listener
+}
+
 describe("rebuildHelpModalFocusTrap", () => {
   afterEach(() => {
     detachHelpModalFocusTrap()
@@ -103,38 +120,32 @@ describe("rebuildHelpModalFocusTrap", () => {
     listeners.restore()
   })
 
-  it("rebuilds the trap so Tab/Shift+Tab respect the DOM after a content swap", () => {
+  it("respects the live DOM after a content swap, with no rebuild call needed", () => {
     const { content, closeButton, buttons } = buildOpenModal(["Go Back"])
-
-    // Simulate the trap this module itself built when the modal first opened,
-    // against the pre-swap ("Go Back" detail view) content.
     rebuildHelpModalFocusTrap(content)
 
-    // Simulate the Turbo Frame swap back to the topic list: different elements entirely.
+    // Simulate the Turbo Frame swap back to the topic list - different
+    // elements entirely, and critically, no second rebuild call: focusable
+    // elements are recomputed fresh from the DOM on every keypress, so
+    // nothing needs to be told about the swap for Tab/Shift+Tab to stay correct.
     buttons[0].remove()
     const usernameLink = document.createElement("a")
     usernameLink.href = "#"
     usernameLink.textContent = "Username"
     content.appendChild(usernameLink)
 
-    rebuildHelpModalFocusTrap(content)
-
-    // Tabbing forward from Close (the last stop) should now wrap to the *new*
-    // first stop (the username link), not no-op on a detached stale node -
-    // this is the exact "stuck on Close" symptom from the original bug report.
+    // Tabbing forward from Close (the last stop) should wrap to the *new*
+    // first stop (the username link)
     pressTab(closeButton)
     expect(document.activeElement).toBe(usernameLink)
 
-    // Shift+Tab from the (new) first stop should wrap back to Close, proving
-    // the trap's boundaries were recomputed against the live DOM in both directions.
+    // Shift+Tab from the (new) first stop should wrap back to Close.
     pressTab(usernameLink, { shiftKey: true })
     expect(document.activeElement).toBe(closeButton)
   })
 
   it("moves focus to the modal container, not into the swapped content", () => {
     const { content, usaModal } = buildOpenModal(["Go Back"])
-    rebuildHelpModalFocusTrap(content)
-
     rebuildHelpModalFocusTrap(content)
 
     // Regression check: this previously landed on "Go Back" (the first
@@ -145,19 +156,68 @@ describe("rebuildHelpModalFocusTrap", () => {
     expect(document.activeElement).toBe(usaModal)
   })
 
-  it("detaches the previous trap's listener instead of stacking a second one", () => {
-    const { content, closeButton, buttons } = buildOpenModal(["Go Back"])
+  it("does not attach a second listener on repeated rebuilds", () => {
+    const { content } = buildOpenModal(["Go Back"])
     const listeners = countBodyKeydownListeners()
 
     rebuildHelpModalFocusTrap(content)
-    rebuildHelpModalFocusTrap(content) // simulates a second content swap with no DOM change
+    rebuildHelpModalFocusTrap(content) // simulates a second content swap
 
-    // Exactly one net keydown listener should be attached - not two stacked ones.
-    expect(listeners.counts().net).toBe(1)
+    expect(listeners.counts()).toEqual({ added: 1, removed: 0, net: 1 })
     listeners.restore()
+  })
 
-    pressTab(closeButton)
-    expect(document.activeElement).toBe(buttons[0])
+  describe("shielding against a stale trap from another module instance", () => {
+    it("still wraps correctly from the true first/last elements, and the stale trap never runs", () => {
+      const { content, closeButton, buttons } = buildOpenModal(["Go Back"])
+      // A stale trap captured against content that no longer exists (a
+      // detached node stand-in for "Go Back", to mimic the real scenario
+      // where USWDS's own trap's boundaries point at removed elements).
+      const staleDetachedFirst = document.createElement("button")
+      const staleTrap = installStaleUswdsTrap(staleDetachedFirst, staleDetachedFirst, [
+        staleDetachedFirst,
+      ])
+
+      buttons[0].remove()
+      const usernameLink = document.createElement("a")
+      usernameLink.href = "#"
+      usernameLink.textContent = "Username"
+      content.appendChild(usernameLink)
+
+      rebuildHelpModalFocusTrap(content)
+
+      pressTab(closeButton) // Tab forward from the true last element
+      expect(document.activeElement).toBe(usernameLink)
+      expect(staleTrap).not.toHaveBeenCalled()
+
+      pressTab(usernameLink, { shiftKey: true }) // Shift+Tab from the true first element
+      expect(document.activeElement).toBe(closeButton)
+      expect(staleTrap).not.toHaveBeenCalled()
+    })
+
+    it("passes Shift+Tab through to native handling from a middle element, without the stale trap swallowing it", () => {
+      const { content, buttons } = buildOpenModal(["Go Back"])
+      const staleDetachedFirst = document.createElement("button")
+      const staleTrap = installStaleUswdsTrap(staleDetachedFirst, staleDetachedFirst, [
+        staleDetachedFirst,
+      ])
+
+      buttons[0].remove()
+      const usernameLink = document.createElement("a")
+      usernameLink.href = "#"
+      usernameLink.textContent = "Username"
+      content.appendChild(usernameLink)
+      const passwordLink = document.createElement("a")
+      passwordLink.href = "#"
+      passwordLink.textContent = "Password"
+      content.appendChild(passwordLink)
+
+      rebuildHelpModalFocusTrap(content)
+
+      const event = pressTab(passwordLink, { shiftKey: true })
+      expect(event.defaultPrevented).toBe(false)
+      expect(staleTrap).not.toHaveBeenCalled()
+    })
   })
 })
 
@@ -167,7 +227,7 @@ describe("detachHelpModalFocusTrap", () => {
     document.body.innerHTML = ""
   })
 
-  it("removes the active trap's keydown listener", () => {
+  it("removes the guard's keydown listener", () => {
     const { content, closeButton } = buildOpenModal(["Go Back"])
     rebuildHelpModalFocusTrap(content)
 
@@ -182,7 +242,7 @@ describe("detachHelpModalFocusTrap", () => {
     expect(event.defaultPrevented).toBe(false)
   })
 
-  it("is a safe no-op when there is no active trap", () => {
+  it("is a safe no-op when there is no active guard", () => {
     const listeners = countBodyKeydownListeners()
 
     expect(() => detachHelpModalFocusTrap()).not.toThrow()

@@ -132,6 +132,30 @@ RSpec.describe "Help Features", :js, type: :feature do
         .to eq("Close this window")
     end
 
+    it "can shift+tab backward after navigating to a topic and going back, modal still open" do
+      visit cbv_flow_employer_search_path
+      click_link "Help"
+
+      within(".usa-modal__content") do
+        click_button I18n.t("help.index.username")
+        verify_page(page, title: I18n.t("help.show.username.title"))
+
+        click_button I18n.t("help.show.go_back")
+        verify_page(page, title: I18n.t("help.index.title"))
+      end
+
+      # Regression check: USWDS's own focus trap from when the modal first
+      # opened (a separate instance our code can't reach or clean up) has a
+      # catch-all in its Shift+Tab handling that used to fire on every
+      # keypress after any content swap and swallow it, leaving the user
+      # stuck unable to tab backward at all - even from the very first item.
+      first_topic = find_button(I18n.t("help.index.username"))
+      first_topic.send_keys(%i[shift tab])
+
+      expect(page.evaluate_script("document.activeElement.getAttribute('aria-label')"))
+        .to eq("Close this window")
+    end
+
     it "activates a topic button with the space key" do
       visit cbv_flow_employer_search_path
       click_link "Help"
