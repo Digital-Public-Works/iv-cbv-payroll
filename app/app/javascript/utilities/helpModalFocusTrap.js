@@ -1,54 +1,64 @@
-import FocusTrap from "@uswds/uswds/uswds-core/src/js/utils/focus-trap.js"
+const FOCUSABLE_SELECTOR =
+  'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]'
 
-// IMPORTANT: this file must not import USWDS's shared `modal` singleton
-// (e.g. via "@uswds/uswds/src/js/components").
+let isListening = false
 
-let activeTrap = null
+function getFocusableElements(wrapper) {
+  return Array.from(wrapper.querySelectorAll(FOCUSABLE_SELECTOR))
+}
 
-// usa-modal builds its own focus trap once, when the modal opens, and never
-// recomputes its firstTabStop/lastTabStop/focusableElements. We swap the
-// modal body via a Turbo Frame instead of closing/reopening the modal, so
-// that closure goes stale. Call this after any Turbo Frame swap inside the
-// modal to rebuild a trap against the live DOM, and to restore focus to the
-// modal container.
+function handleKeydown(event) {
+  if (event.key !== "Tab") return
+
+  const wrapper = document.querySelector(".usa-modal-wrapper.is-visible")
+  if (!wrapper) return
+
+  const focusable = getFocusableElements(wrapper)
+  if (focusable.length === 0) return
+
+  event.stopImmediatePropagation()
+
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  const active = document.activeElement
+
+  if (event.shiftKey && (active === first || !focusable.includes(active))) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && active === last) {
+    event.preventDefault()
+    first.focus()
+  }
+  // Otherwise: let the browser's native Tab movement proceed - we've
+  // already shielded it above, we just don't need to redirect it ourselves.
+}
+
+// Call this after any Turbo Frame swap inside the modal (see help.js) to
+// restore focus to the modal container. Also ensures the keydown guard
+// above is installed (idempotent - safe to call on every swap).
 //
-// This does NOT handle Escape-to-close: whichever trap usa-modal itself
-// created when the modal was opened already does that correctly on its own.
-//
-// Returns the modal wrapper element if the modal was open (and the trap/focus
-// were updated), or null if the modal wasn't open (nothing to do).
+// Returns the modal wrapper element if the modal was open, or null if the
+// modal wasn't open (nothing to do).
 export function rebuildHelpModalFocusTrap(contentEl) {
   const targetModal = contentEl.closest(".usa-modal-wrapper.is-visible")
-  if (!targetModal) return null // modal isn't open; the next real open builds its own trap
+  if (!targetModal) return null // modal isn't open; nothing to do yet
 
-  if (activeTrap) {
-    activeTrap.off() // detach the stale keydown listener; no other side effects
+  if (!isListening) {
+    document.body.addEventListener("keydown", handleKeydown, { capture: true })
+    isListening = true
   }
 
-  activeTrap = FocusTrap(targetModal)
-  // Deliberately call add() instead of update(true)/on(): the latter also
-  // runs FocusTrap's init(), which unconditionally focuses the trap's first
-  // focusable element - e.g. stealing focus onto "Go Back" just because it's
-  // first in the DOM. We handle focus placement ourselves (see below).
-  activeTrap.add(document.body)
-
-  // Move focus back to the modal container itself - the same element
-  // usa-modal's own toggleModal falls back to on open (it already carries
-  // tabindex="-1" from USWDS's own setup).
+  // Move focus back to the modal container itself
   targetModal.querySelector(".usa-modal")?.focus()
 
   return targetModal
 }
 
 // Call this once the modal has closed (see help.js's handleModalVisibilityChange)
-// to detach this trap's own keydown listener. We rely on our own observation
-// of the modal's visibility rather than any close/toggle callback, since a
-// close path invoking a *different* module instance's toggleModal - USWDS's
-// own trap lives in a separate instance from this file's - has no way to know
-// about (or correctly clean up) this trap.
+// to remove the keydown guard.
 export function detachHelpModalFocusTrap() {
-  if (activeTrap) {
-    activeTrap.off()
-    activeTrap = null
+  if (isListening) {
+    document.body.removeEventListener("keydown", handleKeydown, { capture: true })
+    isListening = false
   }
 }
