@@ -75,6 +75,10 @@ jobs:
         run: |
           terraform -chdir="infra/app/static-assets" init -backend=false
           terraform -chdir="infra/app/static-assets" validate
+      - name: Validate security-scan-reports
+        run: |
+          terraform -chdir="infra/app/security-scan-reports" init -backend=false
+          terraform -chdir="infra/app/security-scan-reports" validate
   check-compliance-with-checkov:
     name: Check compliance with checkov
     runs-on: ubuntu-latest

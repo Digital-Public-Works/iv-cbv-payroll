@@ -1,6 +1,52 @@
 {
   "ignored_warnings": [
     {
+      "warning_type": "Path Traversal",
+      "warning_code": 125,
+      "fingerprint": "0838c601d28ad5caa2164f46e616f6b7e84312b6df19d507118cb6c0e90071cf",
+      "check_name": "Pathname",
+      "message": "Absolute paths in `Pathname#join` cause the entire path to be relative to the absolute path, ignoring any prior values",
+      "file": "app/controllers/cbv/preview_controller.rb",
+      "line": 245,
+      "link": "https://brakemanscanner.org/docs/warning_types/path_traversal/",
+      "code": "Rails.root.join(\"spec\", \"support\", \"fixtures\", \"argyle\", (params[:fixture_user] or \"bob\"), \"request_account.json\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Cbv::PreviewController",
+        "method": "argyle_account_id"
+      },
+      "user_input": "params[:fixture_user]",
+      "confidence": "High",
+      "cwe_id": [
+        22
+      ],
+      "note": "PF-808: Not reachable in production. Cbv::PreviewController gates every action with `before_action :ensure_non_production_environment`, which renders 403 unless NonProductionAccessible#is_not_production? is true (development, test, or a *.divt.app demo host). The path is also read-only and resolves under spec/support/fixtures/argyle, which is not deployed to production images."
+    },
+    {
+      "warning_type": "File Access",
+      "warning_code": 16,
+      "fingerprint": "3e0b64b174db6473f433d284c3b25ff079dea0dc5ff9ed9cb9907493f2137bdd",
+      "check_name": "FileAccess",
+      "message": "Parameter value used in file name",
+      "file": "app/controllers/cbv/preview_controller.rb",
+      "line": 248,
+      "link": "https://brakemanscanner.org/docs/warning_types/file_access/",
+      "code": "File.read(Rails.root.join(\"spec\", \"support\", \"fixtures\", \"argyle\", (params[:fixture_user] or \"bob\"), \"request_account.json\"))",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Cbv::PreviewController",
+        "method": "argyle_account_id"
+      },
+      "user_input": "params[:fixture_user]",
+      "confidence": "Weak",
+      "cwe_id": [
+        22
+      ],
+      "note": "PF-808: Not reachable in production. Cbv::PreviewController gates every action with `before_action :ensure_non_production_environment`, which renders 403 unless NonProductionAccessible#is_not_production? is true (development, test, or a *.divt.app demo host). The read is confined to the spec/support/fixtures/argyle tree, which is not shipped in production images, and the parsed result is only used to pick a mock Argyle account id."
+    },
+    {
       "warning_type": "Command Injection",
       "warning_code": 14,
       "fingerprint": "a114e4102237985d8d3c47b932561e60dd9e8a46464aa2f8e28d2a83afd31c8e",
@@ -21,7 +67,53 @@
       "cwe_id": [
         77
       ],
-      "note": ""
+      "note": "PF-808: No shell is involved: Open3.capture3 is called in multi-argument form, so git is exec'd directly and metacharacters are never interpreted. Neither interpolated value is attacker-controlled -- BASE_BRANCH is the literal \"main\", and `path` comes from get_locale_file_path, which returns either EN_LOCALE_PATH or ES_LOCALE_PATH and raises ArgumentError for any other locale. LocaleDiffService is a developer/CI tool with no web-reachable caller."
+    },
+    {
+      "warning_type": "Path Traversal",
+      "warning_code": 125,
+      "fingerprint": "a167baa3cf81c42f101a527f66c86c62ead888fae610001b60717e6245dd042b",
+      "check_name": "Pathname",
+      "message": "Absolute paths in `Pathname#join` cause the entire path to be relative to the absolute path, ignoring any prior values",
+      "file": "app/controllers/api/load_test_sessions_controller.rb",
+      "line": 57,
+      "link": "https://brakemanscanner.org/docs/warning_types/path_traversal/",
+      "code": "Rails.root.join(\"spec\", \"support\", \"fixtures\", \"argyle\", params[:fixture_user], \"request_accounts.json\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Api::LoadTestSessionsController",
+        "method": "argyle_account_ids"
+      },
+      "user_input": "params[:fixture_user]",
+      "confidence": "High",
+      "cwe_id": [
+        22
+      ],
+      "note": "PF-808: Not reachable in production. Api::LoadTestSessionsController gates every action with `before_action :ensure_non_production_environment`, which renders 403 unless NonProductionAccessible#is_not_production? is true (development, test, or a *.divt.app demo host). The path is only used for a read-only File.exist?/File.read of load-test fixtures under spec/support/fixtures/argyle, which is not deployed to production images."
+    },
+    {
+      "warning_type": "Path Traversal",
+      "warning_code": 125,
+      "fingerprint": "b5524ee5ee27e2a33601c4a26024d0ceca2952b18b201a44f3023ff7b3d0ea69",
+      "check_name": "Pathname",
+      "message": "Absolute paths in `Pathname#join` cause the entire path to be relative to the absolute path, ignoring any prior values",
+      "file": "app/controllers/cbv/preview_controller.rb",
+      "line": 261,
+      "link": "https://brakemanscanner.org/docs/warning_types/path_traversal/",
+      "code": "Rails.root.join(\"spec\", \"support\", \"fixtures\", \"argyle\", (params[:fixture_user] or \"bob\"), \"request_accounts.json\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Cbv::PreviewController",
+        "method": "argyle_account_ids"
+      },
+      "user_input": "params[:fixture_user]",
+      "confidence": "High",
+      "cwe_id": [
+        22
+      ],
+      "note": "PF-808: Not reachable in production. Cbv::PreviewController gates every action with `before_action :ensure_non_production_environment`, which renders 403 unless NonProductionAccessible#is_not_production? is true (development, test, or a *.divt.app demo host). The path is only used for a read-only File.exist?/File.read of preview fixtures under spec/support/fixtures/argyle, which is not deployed to production images."
     },
     {
       "warning_type": "Command Injection",
@@ -44,7 +136,7 @@
       "cwe_id": [
         77
       ],
-      "note": ""
+      "note": "PF-808: No shell is involved: Open3.capture3 is called in multi-argument form, so git is exec'd directly and metacharacters are never interpreted. Neither interpolated value is attacker-controlled -- `merge_base_commit` is a SHA from `git merge-base` behind a status.success? guard, and `path` comes from get_locale_file_path, which returns either EN_LOCALE_PATH or ES_LOCALE_PATH and raises ArgumentError for any other locale. LocaleDiffService is a developer/CI tool with no web-reachable caller."
     }
   ],
   "brakeman_version": "7.0.2"
