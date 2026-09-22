@@ -76,23 +76,46 @@ class Webhooks::Argyle::EventsController < ApplicationController
     @cbv_flow = CbvFlow.find_by(argyle_user_id: user_id)
 
     unless @cbv_flow
+      # Acknowledged rather than rejected so Argyle stops retrying a webhook for
+      # a user we have no flow for. Rendering here halts the callback chain, which
+      # #authorize_webhook below depends on: it assumes @cbv_flow is present.
       Rails.logger.info "Unable to find CbvFlow with argyle_user_id: #{user_id}"
       render json: { status: "ok" }
     end
   end
 
   # @see https://docs.argyle.com/api-guide/webhooks
+  #
+  # Every guard here has to stop the method once it renders. They used to just
+  # `render` and fall through, so a request that was both wrongly signed and
+  # carrying an unsubscribed event name rendered twice and raised
+  # AbstractController::DoubleRenderError -- a 500 any unauthenticated caller
+  # could trigger. Only the last guard can get away with a bare `render`; anything
+  # added below it needs an explicit `return`.
+  #
+  # The signature is checked first. Until it verifies, the payload is just an
+  # unauthenticated POST body, so there is nothing to be gained from branching on
+  # the event name it claims to carry -- and an unsigned caller can no longer
+  # learn which events we subscribe to by watching for the "Unhandled webhook"
+  # response.
   def authorize_webhook
-    argyle_service = @cbv_flow.present? ? argyle_for(@cbv_flow) : ArgyleService.new("sandbox")
+    # @cbv_flow is guaranteed present here: #set_cbv_flow renders and halts the
+    # callback chain when it can't resolve one. Its argyle environment selects
+    # which webhook secret to verify against.
+    signature = request.headers["X-Argyle-Signature"]
+
+    # `signature.present?` first because secure_compare raises NoMethodError on a
+    # nil argument -- a request that simply omits the header would otherwise 500
+    # instead of being cleanly rejected.
+    unless signature.present? &&
+        Aggregators::Webhooks::Argyle.verify_signature(signature, request.raw_post, argyle_for(@cbv_flow).webhook_secret)
+      Rails.logger.info "Ignoring webhook with invalid signature: #{params["event"]}"
+      return render json: { error: "Invalid signature" }, status: :unauthorized
+    end
 
     unless Aggregators::Webhooks::Argyle.get_webhook_events(type: :all).include?(params["event"])
       Rails.logger.info "Ignoring unhandled webhook: #{params["event"]}"
       render json: { info: "Unhandled webhook" }, status: :ok
-    end
-
-    unless Aggregators::Webhooks::Argyle.verify_signature(request.headers["X-Argyle-Signature"], request.raw_post, argyle_service.webhook_secret)
-      Rails.logger.info "Ignoring webhook with invalid signature: #{params["event"]}"
-      render json: { error: "Invalid signature" }, status: :unauthorized
     end
   end
 
