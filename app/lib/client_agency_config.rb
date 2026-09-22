@@ -22,6 +22,30 @@ class ClientAgencyConfig
   # #cache_ttl_seconds).
   CACHE_TTL_SECONDS = 10.minutes.to_i
 
+  # How long a *failed* lookup is remembered before the database is consulted for
+  # that id again. Unrouteable ids come straight off the URL, so without this
+  # every vulnerability scan (/.env, /wp-admin, /admin/wp-config.bak, ...) costs
+  # one PartnerConfig query per request. Deliberately far shorter than
+  # CACHE_TTL_SECONDS because it also bounds how long a partner that was just
+  # added or reactivated stays unroutable.
+  #
+  # OPERATIONAL NOTE: `rake partner_config:apply` runs in its own process, so it
+  # cannot clear this cache in the running web app. If a request for a partner id
+  # arrived while that partner did not yet exist (or was inactive), the miss is
+  # cached, and the partner will not route until the entry expires. Worst case is
+  # therefore this many seconds between applying a new partner and its URLs
+  # working. That delay is a deliberate trade for keeping scan traffic off the
+  # database; if you need the partner live immediately, restart the app. Keep
+  # this value and the note in lib/tasks/partner_config.rake in sync.
+  MISS_CACHE_TTL_SECONDS = 60
+
+  # Upper bound on the number of distinct failed lookups held at once. These keys
+  # are attacker-controlled, so an unbounded negative cache would trade a
+  # database amplification vector for a memory one. Entries are evicted
+  # oldest-first, so a scan walking a wordlist churns through the tail of the
+  # cache instead of growing it without limit.
+  MAX_CACHED_MISSES = 1_000
+
   def self.instance
     @instance ||= new(Rails.env.development? || Rails.env.test?)
   end
@@ -47,6 +71,11 @@ class ClientAgencyConfig
     # resolved domain => partner_id lookups.
     @agencies = {}
     @domain_index = {}
+    # Failed lookups, namespaced by kind ("partner:foo" / "domain:foo") so both
+    # entry points share a single bound. Guarded by a mutex because recording a
+    # miss evicts, which is a read-modify-write across Puma threads.
+    @misses = {}
+    @misses_lock = Mutex.new
   end
 
   # Lazily loads and caches a single agency by partner_id, based on the
@@ -57,23 +86,28 @@ class ClientAgencyConfig
   #
   # Returns nil when the partner does not exist, is not active in this
   # environment, or fails hard validation (in which case a warning is logged so a
-  # single broken partner can't crash the request). Misses are not cached.
+  # single broken partner can't crash the request). Misses are cached too, for
+  # the much shorter MISS_CACHE_TTL_SECONDS, so that unrouteable traffic does not
+  # reach the database once per request.
   def [](client_agency_id)
     return nil if client_agency_id.blank?
 
     entry = @agencies[client_agency_id]
     return entry[:agency] if entry && fresh?(entry)
+    return nil if miss_cached?(:partner, client_agency_id)
     return nil unless db_ready?
 
     config = PartnerConfig.find_by(partner_id: client_agency_id)
     unless config && active_in_current_environment?(config)
       @agencies.delete(client_agency_id)
+      record_miss(:partner, client_agency_id)
       return nil
     end
 
     agency = build_agency(config)
     if agency.nil?
       @agencies.delete(client_agency_id)
+      record_miss(:partner, client_agency_id)
       return nil
     end
 
@@ -92,9 +126,12 @@ class ClientAgencyConfig
     if entry && fresh?(entry)
       partner_id = entry[:partner_id]
     else
+      return nil if miss_cached?(:domain, domain)
+
       config = PartnerConfig.find_by(domain: domain)
       unless config && active_in_current_environment?(config)
         @domain_index.delete(domain)
+        record_miss(:domain, domain)
         return nil
       end
 
@@ -124,8 +161,44 @@ class ClientAgencyConfig
 
   # A cache entry is fresh until it is older than the TTL, after which the next
   # lookup reloads it from the database.
-  def fresh?(entry)
-    now - entry[:loaded_at] < cache_ttl_seconds
+  def fresh?(entry, ttl = cache_ttl_seconds)
+    now - entry[:loaded_at] < ttl
+  end
+
+  # True when this id was looked up recently and did not resolve, which lets the
+  # caller answer "no such partner" without touching the database.
+  def miss_cached?(kind, key)
+    return false if miss_cache_ttl_seconds.zero?
+
+    entry = @misses_lock.synchronize { @misses[miss_key(kind, key)] }
+    entry.present? && fresh?(entry, miss_cache_ttl_seconds)
+  end
+
+  def record_miss(kind, key)
+    return if miss_cache_ttl_seconds.zero?
+
+    @misses_lock.synchronize do
+      full_key = miss_key(kind, key)
+      # Re-insert rather than update in place so the entry moves to the back of
+      # the hash and the oldest-first eviction below stays accurate.
+      @misses.delete(full_key)
+      evict_misses
+      @misses[full_key] = { loaded_at: now }
+    end
+  end
+
+  # Makes room for one more entry, but only once the cache is actually full, so
+  # the common path stays O(1). Ruby hashes preserve insertion order, so #shift
+  # removes the oldest entry.
+  def evict_misses
+    return if @misses.size < MAX_CACHED_MISSES
+
+    @misses.delete_if { |_, entry| !fresh?(entry, miss_cache_ttl_seconds) }
+    @misses.shift while @misses.size >= MAX_CACHED_MISSES
+  end
+
+  def miss_key(kind, key)
+    "#{kind}:#{key}"
   end
 
   # Effective cache TTL. In development it is 0 so every lookup reloads from the
@@ -133,6 +206,13 @@ class ClientAgencyConfig
   # CACHE_TTL_SECONDS.
   def cache_ttl_seconds
     Rails.env.development? ? 0 : CACHE_TTL_SECONDS
+  end
+
+  # Effective negative-cache TTL. Zero in development for the same reason as
+  # #cache_ttl_seconds: a partner added locally should be routable on the very
+  # next request rather than a minute later.
+  def miss_cache_ttl_seconds
+    Rails.env.development? ? 0 : MISS_CACHE_TTL_SECONDS
   end
 
   # Monotonic clock (seconds) so cache expiry is unaffected by wall-clock changes.
