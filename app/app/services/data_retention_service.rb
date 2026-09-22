@@ -67,21 +67,211 @@ class DataRetentionService
     redact_backstop_applicants
   end
 
-  # Manually redact all instances of a specific identifier for a partner.
-  # The partner identifier is not unique per partner (could have created
-  # more than one invitation for a single applicant). Used for partner
-  # right-to-erasure requests.
-  def self.manually_redact_by_partner_identifier!(client_agency_id, partner_identifier)
-    applicants = CbvApplicant.where(
+  # The set of internal row ids that one manual erasure touches. Used for dry run + verification.
+  ManualErasureScope = Struct.new(
+    :client_agency_id,
+    :applicant_ids,
+    :cbv_flow_ids,
+    :invitation_ids,
+    :payroll_account_ids,
+    keyword_init: true
+  ) do
+    def empty?
+      applicant_ids.empty?
+    end
+
+    def counts
+      {
+        applicants: applicant_ids.size,
+        cbv_flows: cbv_flow_ids.size,
+        invitations: invitation_ids.size,
+        payroll_accounts: payroll_account_ids.size
+      }
+    end
+  end
+
+  # Non-destructive. Resolves a partner identifier to the row ids a manual
+  # erasure would touch. This will not resolve after redaction, as partner identifier is redacted.
+  def self.resolve_manual_erasure(client_agency_id, partner_identifier)
+    applicant_ids = CbvApplicant
+      .where(client_agency_id: client_agency_id, partner_identifier: partner_identifier)
+      .pluck(:id)
+
+    if applicant_ids.empty?
+      raise ActiveRecord::RecordNotFound,
+        "No CbvApplicant found in client_agency_id=#{client_agency_id.inspect} " \
+        "for the supplied partner_identifier (value omitted from this message)"
+    end
+
+    erasure_scope(client_agency_id, applicant_ids)
+  end
+
+  # Non-destructive. Same shape as .resolve_manual_erasure, built from ids the
+  # caller already holds. Ids are re-scoped to the agency, so an id belonging to
+  # another agency is dropped rather than redacted by mistake.
+  def self.erasure_scope(client_agency_id, applicant_ids)
+    applicant_ids = CbvApplicant
+      .where(client_agency_id: client_agency_id, id: Array(applicant_ids))
+      .pluck(:id)
+      .sort
+
+    cbv_flow_ids = CbvFlow.where(cbv_applicant_id: applicant_ids).pluck(:id).sort
+
+    # Every invitation that must end up redacted: those hanging off the
+    # applicants directly (including ones that were never opened, which have no
+    # flow) plus any reached through a flow.
+    invitation_ids = (
+      CbvFlowInvitation.where(cbv_applicant_id: applicant_ids).pluck(:id) +
+      CbvFlow.where(id: cbv_flow_ids).pluck(:cbv_flow_invitation_id)
+    ).compact.uniq.sort
+
+    payroll_account_ids = PayrollAccount
+      .with_discarded
+      .where(cbv_flow_id: cbv_flow_ids)
+      .pluck(:id)
+      .sort
+
+    ManualErasureScope.new(
       client_agency_id: client_agency_id,
-      partner_identifier: partner_identifier
+      applicant_ids: applicant_ids,
+      cbv_flow_ids: cbv_flow_ids,
+      invitation_ids: invitation_ids,
+      payroll_account_ids: payroll_account_ids
     )
-    raise ActiveRecord::RecordNotFound, "No CbvApplicant found for client_agency_id=#{client_agency_id.inspect} partner_identifier=#{partner_identifier.inspect}" if applicants.empty?
+  end
+
+  # Redact every record belonging to the given CbvApplicant ids. Irreversible.
+  #
+  # Safe to re-run with the same ids: redaction overwrites columns with fixed
+  # replacement values and never rewrites the ids themselves, so a retry after a
+  # partial failure reaches exactly the same rows. This is why the destructive
+  # step takes ids rather than the partner identifier -- redacting by identifier
+  # destroys the only handle on the records it failed to redact.
+  #
+  # Returns { scope:, attempted:, argyle: }. `attempted` counts the records this
+  # run TRIED to redact, not the ones it succeeded on: in production the
+  # underlying redaction reports failures rather than raising. Use
+  # .verify_erasure for the outcome.
+  def self.redact_applicant_ids!(client_agency_id, applicant_ids)
+    scope = erasure_scope(client_agency_id, applicant_ids)
+
+    if scope.empty?
+      raise ActiveRecord::RecordNotFound,
+        "No CbvApplicant in client_agency_id=#{client_agency_id.inspect} " \
+        "matched ids #{Array(applicant_ids).inspect}"
+    end
 
     service = new
-    applicants.find_each do |applicant|
-      applicant.cbv_flows.each { |cbv_flow| service.send(:redact_cbv_flow, cbv_flow) }
+    attempted = { applicants: 0, cbv_flows: 0, invitations_without_flows: 0 }
+    argyle = Hash.new(0)
+
+    CbvApplicant.where(id: scope.applicant_ids).find_each do |applicant|
+      attempted[:applicants] += 1
+
+      applicant.cbv_flows.each do |cbv_flow|
+        attempted[:cbv_flows] += 1
+        argyle[service.redact_cbv_flow(cbv_flow)] += 1
+      end
+
+      # An invitation that was created but never opened has no flow, so the loop
+      # above never reaches it and the erasure request would be silently
+      # unsatisfied.
+      applicant.cbv_flow_invitations.each do |invitation|
+        next if invitation.cbv_flows.any?
+
+        attempted[:invitations_without_flows] += 1
+        service.redact_invitation_and_applicant(invitation)
+      end
     end
+
+    { scope: scope, attempted: attempted, argyle: argyle }
+  end
+
+  # Non-destructive. Re-reads every row in the scope and reports how many carry a
+  # redacted_at stamp, as { key => [ redacted, expected ] }.
+  #
+  # Invitations and payroll accounts are counted in their own right rather than
+  # inferred from the flow count. A never-opened invitation is redacted on a
+  # separate code path, and in production a failure there is reported rather than
+  # raised -- so an applicant that also has a flow would otherwise show as fully
+  # redacted while its unopened invitation still held an email address and auth
+  # token.
+  def self.verify_erasure(scope)
+    {
+      applicants: [
+        CbvApplicant.where(id: scope.applicant_ids).redacted.count,
+        scope.applicant_ids.size
+      ],
+      cbv_flows: [
+        CbvFlow.where(id: scope.cbv_flow_ids).redacted.count,
+        scope.cbv_flow_ids.size
+      ],
+      invitations: [
+        CbvFlowInvitation.where(id: scope.invitation_ids).redacted.count,
+        scope.invitation_ids.size
+      ],
+      payroll_accounts: [
+        PayrollAccount.with_discarded.where(id: scope.payroll_account_ids).where.not(redacted_at: nil).count,
+        scope.payroll_account_ids.size
+      ]
+    }
+  end
+
+  def self.erasure_verified?(verification)
+    verification.values.all? { |redacted, expected| redacted >= expected }
+  end
+
+  # Redact an invitation + its applicant. Used by #redact_invitations (primary),
+  # the invitation-backstop path, and the manual erasure path. Wrapped to share
+  # the prod error-swallow semantics consistently.
+  #
+  # Public rather than private: the manual erasure path is a legitimate caller,
+  # and reaching it through #send would break silently on a rename.
+  def redact_invitation_and_applicant(cbv_flow_invitation)
+    cbv_flow_invitation.redact!
+    cbv_flow_invitation.cbv_applicant&.redact!
+  rescue => ex
+    raise ex unless Rails.env.production?
+
+    report_redaction_failure(ex,
+      cbv_flow_invitation_id: cbv_flow_invitation.id,
+      client_agency_id: cbv_flow_invitation.client_agency_id
+    )
+  end
+
+  # Do all redaction necessary on a cbv_flow. Argyle user deletion runs
+  # first; if it fails for non-404 reasons, prod swallows + reports.
+  # Local cascade: invitation -> applicant -> payroll_accounts -> flow,
+  # with the flow's redacted_at stamped last so a partial failure leaves
+  # the flow eligible to retry on the next daily sweep.
+  #
+  # Returns the Argyle deletion outcome (:deleted, :already_deleted,
+  # :not_applicable or :failed). Argyle is a third party: a failure there leaves
+  # nothing in our own tables for .verify_erasure to find, so the manual path
+  # needs the outcome reported back rather than only logged.
+  def redact_cbv_flow(cbv_flow)
+    argyle_outcome =
+      if cbv_flow.argyle_user_id.present?
+        delete_argyle_user(cbv_flow.client_agency_id, cbv_flow.argyle_user_id)
+      else
+        :not_applicable
+      end
+
+    begin
+      cbv_flow.cbv_flow_invitation.redact! if cbv_flow.cbv_flow_invitation.present?
+      cbv_flow.cbv_applicant&.redact!
+      cbv_flow.payroll_accounts.with_discarded.each(&:redact!) # Do not scope to kept records, all accounts should be redacted
+      cbv_flow.redact!
+    rescue => ex
+      raise ex unless Rails.env.production?
+
+      report_redaction_failure(ex,
+        cbv_flow_id: cbv_flow.id,
+        client_agency_id: cbv_flow.client_agency_id
+      )
+    end
+
+    argyle_outcome
   end
 
   private
@@ -132,44 +322,6 @@ class DataRetentionService
       end
   end
 
-  # Redact an invitation + its applicant. Used by both #redact_invitations
-  # (primary) and the invitation-backstop path. Wrapped to share the prod
-  # error-swallow semantics consistently.
-  def redact_invitation_and_applicant(cbv_flow_invitation)
-    cbv_flow_invitation.redact!
-    cbv_flow_invitation.cbv_applicant&.redact!
-  rescue => ex
-    raise ex unless Rails.env.production?
-
-    report_redaction_failure(ex,
-      cbv_flow_invitation_id: cbv_flow_invitation.id,
-      client_agency_id: cbv_flow_invitation.client_agency_id
-    )
-  end
-
-  # Do all redaction necessary on a cbv_flow. Argyle user deletion runs
-  # first; if it fails for non-404 reasons, prod swallows + reports.
-  # Local cascade: invitation -> applicant -> payroll_accounts -> flow,
-  # with the flow's redacted_at stamped last so a partial failure leaves
-  # the flow eligible to retry on the next daily sweep.
-  def redact_cbv_flow(cbv_flow)
-    delete_argyle_user(cbv_flow.client_agency_id, cbv_flow.argyle_user_id) if cbv_flow.argyle_user_id.present?
-
-    begin
-      cbv_flow.cbv_flow_invitation.redact! if cbv_flow.cbv_flow_invitation.present?
-      cbv_flow.cbv_applicant&.redact!
-      cbv_flow.payroll_accounts.with_discarded.each(&:redact!) # Do not scope to kept records, all accounts should be redacted
-      cbv_flow.redact!
-    rescue => ex
-      raise ex unless Rails.env.production?
-
-      report_redaction_failure(ex,
-        cbv_flow_id: cbv_flow.id,
-        client_agency_id: cbv_flow.client_agency_id
-      )
-    end
-  end
-
   # Backstop warning. Hitting the backstop means a primary rule failed
   # for this record -- emit on all three channels (log + NewRelic + Mixpanel-equivalent)
   # so operators see it across whichever surface they monitor.
@@ -191,16 +343,23 @@ class DataRetentionService
 
   # use Argyle api to delete the user and all associated data.
   # A 404 is expected if the user was already deleted by a previous run.
+  #
+  # Returns :deleted, :already_deleted or :failed so callers can report the
+  # outcome. Argyle holds data outside our database, so a failure here is
+  # invisible to any check that only re-reads our own rows.
   def delete_argyle_user(client_agency_id, argyle_user_id)
     argyle_environment = ClientAgencyConfig.instance[client_agency_id].argyle_environment
     argyle = Aggregators::Sdk::ArgyleService.new(argyle_environment)
     argyle.delete_user(argyle_user_id: argyle_user_id)
+    :deleted
   rescue Faraday::ResourceNotFound
     Rails.logger.info "Argyle User #{argyle_user_id} already deleted"
+    :already_deleted
   rescue => ex
     raise ex unless Rails.env.production?
 
     Rails.logger.error "Unable to delete Argyle User #{argyle_user_id} - #{ex.message}"
     GenericEventTracker.new.track("DataRedactionFailure", nil, { argyle_user_id: argyle_user_id })
+    :failed
   end
 end
