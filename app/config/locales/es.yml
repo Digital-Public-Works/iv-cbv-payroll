@@ -409,6 +409,7 @@ es:
         confirmation_code_html: "<strong>Su código de confirmación</strong>: %{confirmation_code}"
         copied_link: Enlace copiado
         copy_link: Copiar enlace
+        copy_link_accessible_context: para compartirlo con otros miembros de su hogar
         download: Descargar mi informe
         header: Su informe de ingresos se envió correctamente a %{agency_acronym}.
         invitation_link_label: Enlace de invitación
