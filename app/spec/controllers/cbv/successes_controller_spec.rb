@@ -38,6 +38,18 @@ RSpec.describe Cbv::SuccessesController do
         expect(response.body).to include(I18n.t("cbv.successes.show.copy_link_accessible_context"))
       end
 
+      it "shows the invitation link in a labelled read-only field that is not hidden on small screens" do
+        get :show
+        page = Nokogiri::HTML(response.body)
+        input = page.at_css("input#invitation_link")
+
+        expect(input).to be_present
+        expect(input["readonly"]).not_to be_nil
+        expect(input["value"]).to include("?origin=shared")
+        expect(input["class"].split).not_to include("display-none")
+        expect(page.at_css('label[for="invitation_link"]')).to be_present
+      end
+
       it "shows a link to the CBV survey" do
         get :show
         page = Nokogiri::HTML(response.body)
