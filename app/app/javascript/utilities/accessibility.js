@@ -21,3 +21,13 @@ export function updateAriaLiveRegion(text) {
     liveRegion.textContent = text
   }
 }
+
+// Native <a> elements only activate on Enter, not Space, unlike real
+// <button> elements. Use this to give an anchor styled/announced as a
+// button (role="button") the same Space-key activation a real button gets
+// for free. Bind via a Stimulus action, e.g. data-action="keydown->my-controller#activateWithSpace".
+export function activateWithSpace(event) {
+  if (event.key !== " " && event.key !== "Spacebar") return
+  event.preventDefault()
+  event.currentTarget.click()
+}
