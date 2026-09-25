@@ -363,4 +363,30 @@ RSpec.describe ApplicationHelper do
       expect(helper.get_age_range(date_of_birth, now: now)).to eq("90+")
     end
   end
+
+  describe "#field_error_alert_id" do
+    it "returns the slim alert id when the error is for the field" do
+      flash[:slim_alert] = { "type" => "error", "field" => "additional_jobs", "message" => "x" }
+      expect(helper.field_error_alert_id(:additional_jobs)).to eq(ApplicationHelper::SLIM_ALERT_ID)
+    end
+
+    it "accepts symbol keys" do
+      flash[:slim_alert] = { type: "error", field: "additional_jobs" }
+      expect(helper.field_error_alert_id(:additional_jobs)).to eq(ApplicationHelper::SLIM_ALERT_ID)
+    end
+
+    it "returns nil for a different field" do
+      flash[:slim_alert] = { "type" => "error", "field" => "has_other_jobs" }
+      expect(helper.field_error_alert_id(:additional_jobs)).to be_nil
+    end
+
+    it "returns nil for a non-error alert" do
+      flash[:slim_alert] = { "type" => "info", "field" => "additional_jobs" }
+      expect(helper.field_error_alert_id(:additional_jobs)).to be_nil
+    end
+
+    it "returns nil with no alert" do
+      expect(helper.field_error_alert_id(:additional_jobs)).to be_nil
+    end
+  end
 end
