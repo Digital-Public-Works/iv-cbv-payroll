@@ -298,7 +298,7 @@ es:
         header_html: "¿Tiene que verificar de algún trabajo <em>sin usar</em> la herramienta Verificar Mis Ingresos?"
         header_sub_text: 'Cuéntenos sobre cualquier otro trabajo que haya tenido en los últimos 90 días, incluso si ya no está en ese trabajo. Al hacerlo, incluya cualquier trabajo, actual o reciente, que haya tenido en los últimos 90 días que reúna estos requisitos:'
         learn_more_link: Más información en %{agency_portal_name}
-        note_html: 'Importante: Si tuvo otros trabajos en los últimos 90 días que no va a verificar usando la herramienta Verify My Income, debe enviar esa información de ingresos por separado. %{website_link}'
+        note_html: 'Nota: Si tuvo otros trabajos en los últimos 90 días que no reportará usando Verify My Income, deberá entregar esa información de ingresos por separado a la agencia. %{website_link}'
         radio_no: No, no tengo ningún otro trabajo que verificar por separado.
         radio_yes: Sí, tengo otro trabajo que verificar por separado
     payment_details:
