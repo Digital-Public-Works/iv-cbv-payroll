@@ -1,4 +1,4 @@
-<div class="<%= alert_classes %>">
+<div class="<%= alert_classes %>"<% if @options[:id] %> id="<%= @options[:id] %>"<% end %>>
   <div class="usa-alert__body">
     <% if @heading %>
       <h2 class="usa-alert__heading"><%= @heading %></h2>
