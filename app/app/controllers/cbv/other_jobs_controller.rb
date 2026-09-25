@@ -4,7 +4,7 @@ class Cbv::OtherJobsController < Cbv::BaseController
 
   def update
     if other_jobs_params[:has_other_jobs].blank?
-      flash[:slim_alert] = { message: t("shared.next_path.notice_no_answer"), type: "error" }
+      flash[:slim_alert] = { message: t("shared.next_path.notice_no_answer"), type: "error", field: "has_other_jobs" }
       return redirect_to cbv_flow_other_job_path
     end
 
