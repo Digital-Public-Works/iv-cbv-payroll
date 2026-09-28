@@ -47,6 +47,7 @@ RSpec/DescribeClass:
     - 'spec/lib/partner_rake_spec.rb'
     - 'spec/lib/users_rake_spec.rb'
     - 'spec/services/transmitters/multi_transmit_integration_spec.rb'
+    - 'spec/tasks/rake_data_deletion_spec.rb'
     - 'spec/tasks/rake_invitation_spec.rb'
 
 # Offense count: 8
