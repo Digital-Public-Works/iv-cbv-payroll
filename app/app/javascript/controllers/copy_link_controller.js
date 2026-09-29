@@ -20,23 +20,22 @@ export default class extends Controller {
   }
 
   showSuccess() {
-    if (this.hasSuccessButtonTarget) {
-      this.successButtonTarget.classList.remove("invisible")
-    }
-    if (this.hasCopyLinkButtonTarget) {
-      this.copyLinkButtonTarget.classList.add("invisible")
-    }
+    this.swap(this.copyLinkButtonTarget, this.successButtonTarget)
 
     // Clear any existing timeout before setting a new one
     if (this.successTimer) clearTimeout(this.successTimer)
 
     this.successTimer = setTimeout(() => {
-      if (this.hasSuccessButtonTarget) {
-        this.successButtonTarget.classList.add("invisible")
-      }
-      if (this.hasCopyLinkButtonTarget) {
-        this.copyLinkButtonTarget.classList.remove("invisible")
-      }
+      this.swap(this.successButtonTarget, this.copyLinkButtonTarget)
     }, 3000)
+  }
+
+  // Show `to` and hide `from`. A hidden element can't hold focus, so if `from`
+  // is focused, move focus to `to` before hiding it; otherwise focus falls to <body>.
+  swap(from, to) {
+    const hadFocus = document.activeElement === from
+    to.classList.remove("invisible")
+    if (hadFocus) to.focus({ preventScroll: true })
+    from.classList.add("invisible")
   }
 }
