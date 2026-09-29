@@ -88,7 +88,23 @@ RSpec.describe Cbv::SynchronizationsController do
     end
 
     context "when account exists and is fully synced" do
-      it "redirects to the payment details page" do
+      it "first shows every indicator as complete without redirecting" do
+        patch :update, params: { user: { account_id: payroll_account.aggregator_account_id } }
+
+        stream = Nokogiri::HTML(response.body).at_css("turbo-stream")
+        expect(stream["method"]).to eq("morph")
+        expect(response.body).not_to include("turbo-stream action=\"redirect\"")
+        statuses = Nokogiri::HTML(response.body).css(".synchronizations-indicator > span").map { |label| label.text.squish }
+        expect(statuses).to eq([
+          "Personal details, complete",
+          "Income, complete",
+          "Employment, complete",
+          "Paystubs, complete"
+        ])
+      end
+
+      it "redirects to the payment details page on the next poll" do
+        patch :update, params: { user: { account_id: payroll_account.aggregator_account_id } }
         patch :update, params: { user: { account_id: payroll_account.aggregator_account_id } }
 
         expect(response.body).to include("cbv/payment_details")
@@ -126,7 +142,10 @@ RSpec.describe Cbv::SynchronizationsController do
     context "when account exists but paystubs synchronization fails" do
       let(:errored_jobs) { [ "paystubs" ] }
 
-      it "redirects to the payment details page" do
+      it "redirects to the payment details page after showing the final state for one poll" do
+        patch :update, params: { user: { account_id: payroll_account.aggregator_account_id } }
+        expect(response.body).not_to include("turbo-stream action=\"redirect\"")
+
         patch :update, params: { user: { account_id: payroll_account.aggregator_account_id } }
 
         expect(response.body).to include("cbv/payment_details")
