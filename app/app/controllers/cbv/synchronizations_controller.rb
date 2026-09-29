@@ -17,7 +17,9 @@ class Cbv::SynchronizationsController < Cbv::BaseController
         cbv_flow_payment_details_path(user: { account_id: @payroll_account.aggregator_account_id })
       )
     else
-      render turbo_stream: turbo_stream.replace(:synchronization, partial: "status")
+      # Morph rather than replace so the indicator nodes persist between polls;
+      # otherwise every poll re-creates the spinners and restarts their rotation.
+      render turbo_stream: turbo_stream.replace(:synchronization, partial: "status", method: :morph)
     end
   end
 

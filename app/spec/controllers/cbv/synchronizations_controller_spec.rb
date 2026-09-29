@@ -80,6 +80,21 @@ RSpec.describe Cbv::SynchronizationsController do
 
         expect(response.body).to include("turbo-frame id=\"synchronization\"")
       end
+
+      it "morphs the status so spinners keep rotating in sync between polls" do
+        patch :update, params: { user: { account_id: payroll_account.aggregator_account_id } }
+
+        stream = Nokogiri::HTML(response.body).at_css("turbo-stream")
+        expect(stream["action"]).to eq("replace")
+        expect(stream["method"]).to eq("morph")
+      end
+
+      it "gives each indicator a stable id for morphing" do
+        patch :update, params: { user: { account_id: payroll_account.aggregator_account_id } }
+
+        ids = Nokogiri::HTML(response.body).css(".synchronizations-indicator").map { |indicator| indicator["id"] }
+        expect(ids).to eq(%w[identity income employment paystubs].map { |key| "synchronizations-indicator-#{key}" })
+      end
     end
 
     context "when account exists but paystubs synchronization fails" do
