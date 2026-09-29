@@ -563,6 +563,10 @@ en:
         option_3: Submit your income information for this employer by visiting %{website_label}.
         title: We couldn't access your employer information
     synchronizations:
+      indicator:
+        completed: complete
+        failed: unavailable
+        in_progress: loading
       indicators:
         employment: Employment
         identity: Personal details

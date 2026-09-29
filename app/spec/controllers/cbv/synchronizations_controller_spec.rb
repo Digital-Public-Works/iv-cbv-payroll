@@ -46,10 +46,25 @@ RSpec.describe Cbv::SynchronizationsController do
       it "renders the indicators in order: personal details, income, employment, paystubs" do
         get :show, params: { user: { account_id: payroll_account.aggregator_account_id } }
 
-        labels = Nokogiri::HTML(response.body).css(".synchronizations-indicator span").map { |label| label.text.strip }
+        # Visible label text only; the nested usa-sr-only status word is excluded.
+        labels = Nokogiri::HTML(response.body).css(".synchronizations-indicator > span").map { |label| label.xpath("text()").text.strip }
         expect(labels).to eq(%w[identity income employment paystubs].map { |key|
           I18n.t("cbv.synchronizations.indicators.#{key}")
         })
+      end
+
+      it "gives each indicator a screen-reader status after its label" do
+        get :show, params: { user: { account_id: payroll_account.aggregator_account_id } }
+
+        # Pinwheel fully synced factory: the first three jobs succeeded, while paystubs
+        # stays in progress because has_fully_synced? is stubbed false.
+        statuses = Nokogiri::HTML(response.body).css(".synchronizations-indicator > span").map { |label| label.text.squish }
+        expect(statuses).to eq([
+          "Personal details, complete",
+          "Income, complete",
+          "Employment, complete",
+          "Paystubs, loading"
+        ])
       end
     end
   end
