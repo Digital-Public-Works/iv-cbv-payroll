@@ -451,6 +451,10 @@ es:
         option_3: Envíe su información de ingresos a este empleador visitando %{website_label}.
         title: No pudimos acceder a la información de su empleador
     synchronizations:
+      indicator:
+        completed: completado
+        failed: no disponible
+        in_progress: cargando
       indicators:
         employment: Empleo
         identity: Detalles personales
