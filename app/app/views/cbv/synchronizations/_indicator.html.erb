@@ -1,3 +1,5 @@
+<%# Each label is a polite, atomic live region: when a poll morphs its status word
+    (e.g. "loading" -> "complete"), screen readers announce "<label>, <status>". %>
 <div class="synchronizations-indicator" id="synchronizations-indicator-<%= id %>">
   <% case status %>
   <% when :in_progress %>
@@ -6,20 +8,20 @@
         xlink:href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#autorenew") %>"
       ></use>
     </svg>
-    <span class="margin-top-05 text-thin"><%= label %><span class="usa-sr-only">, <%= t(".in_progress") %></span></span>
+    <span class="margin-top-05 text-thin" aria-live="polite" aria-atomic="true"><%= label %><span class="usa-sr-only">, <%= t(".in_progress") %></span></span>
   <% when :succeeded, :completed %>
     <svg class="synchronizations-indicator__spinner usa-icon usa-icon--size-5 text-white bg-primary border-primary" aria-hidden="true" focusable="false">
       <use
         xlink:href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#check") %>"
       ></use>
     </svg>
-    <span class="margin-top-05 text-bold text-primary"><%= label %><span class="usa-sr-only">, <%= t(".completed") %></span></span>
+    <span class="margin-top-05 text-bold text-primary" aria-live="polite" aria-atomic="true"><%= label %><span class="usa-sr-only">, <%= t(".completed") %></span></span>
   <% when :failed %>
     <svg class="synchronizations-indicator__spinner usa-icon usa-icon--size-5 bg-base-darker text-white border-base-darker" aria-hidden="true" focusable="false">
       <use
         xlink:href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#priority_high") %>"
       ></use>
     </svg>
-    <span class="margin-top-05 text-bold"><%= label %><span class="usa-sr-only">, <%= t(".failed") %></span></span>
+    <span class="margin-top-05 text-bold" aria-live="polite" aria-atomic="true"><%= label %><span class="usa-sr-only">, <%= t(".failed") %></span></span>
   <% end %>
 </div>

@@ -66,6 +66,17 @@ RSpec.describe Cbv::SynchronizationsController do
           "Paystubs, loading"
         ])
       end
+
+      it "makes each indicator label a polite, atomic live region" do
+        get :show, params: { user: { account_id: payroll_account.aggregator_account_id } }
+
+        labels = Nokogiri::HTML(response.body).css(".synchronizations-indicator > span")
+        expect(labels.size).to eq(4)
+        labels.each do |label|
+          expect(label["aria-live"]).to eq("polite")
+          expect(label["aria-atomic"]).to eq("true")
+        end
+      end
     end
   end
 
