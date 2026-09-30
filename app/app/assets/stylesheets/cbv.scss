@@ -174,7 +174,14 @@ html {
 }
 
 .rotate {
-  animation: 1s linear infinite rotate-con;
+  animation: 3s linear infinite rotate-con;
+}
+
+// Respect the OS/browser "reduce motion" setting: keep the icon, drop the spin.
+@media (prefers-reduced-motion: reduce) {
+  .rotate {
+    animation: none;
+  }
 }
 
 @keyframes rotate-con {
@@ -258,31 +265,6 @@ html {
   @include u-radius("pill");
   @include at-media('tablet') {
     margin-right: 0;
-  }
-}
-
-/*
-* Copy link button
-*/
-input#invitation_link {
-  border-right: none;
-  height: 3rem;
-
-  // hide on smaller screens
-  display: none;
-
-  @include at-media('tablet') {
-    display: block;
-  }
-}
-
-.copy-link-button {
-  height: 3rem;
-  margin-top: 0 !important;
-
-  @include at-media('tablet') {
-    border-radius: 0 0.25rem 0.25rem 0;
-    border-left: none;
   }
 }
 

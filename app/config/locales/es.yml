@@ -298,7 +298,7 @@ es:
         header_html: "¿Tiene que verificar de algún trabajo <em>sin usar</em> la herramienta Verificar Mis Ingresos?"
         header_sub_text: 'Cuéntenos sobre cualquier otro trabajo que haya tenido en los últimos 90 días, incluso si ya no está en ese trabajo. Al hacerlo, incluya cualquier trabajo, actual o reciente, que haya tenido en los últimos 90 días que reúna estos requisitos:'
         learn_more_link: Más información en %{agency_portal_name}
-        note_html: 'Importante: Si tuvo otros trabajos en los últimos 90 días que no va a verificar usando la herramienta Verify My Income, debe enviar esa información de ingresos por separado. %{website_link}'
+        note_html: 'Nota: Si tuvo otros trabajos en los últimos 90 días que no reportará usando Verify My Income, deberá entregar esa información de ingresos por separado a la agencia. %{website_link}'
         radio_no: No, no tengo ningún otro trabajo que verificar por separado.
         radio_yes: Sí, tengo otro trabajo que verificar por separado
     payment_details:
@@ -451,16 +451,20 @@ es:
         option_3: Envíe su información de ingresos a este empleador visitando %{website_label}.
         title: No pudimos acceder a la información de su empleador
     synchronizations:
+      indicator:
+        completed: completado
+        failed: no disponible
+        in_progress: cargando
       indicators:
         employment: Empleo
         identity: Detalles personales
         income: Ingresos
         paystubs: Talones de pago
       show:
-        header: Estamos recopilando los detalles de pago de su empleador.
+        header: Estamos obteniendo los detalles de sus pagos
       status:
-        fetching_payroll_description: Esto puede tardar algunos minutos. Mantenga abierta esta ventana mientras trabajamos en esto.
-        header: Estamos recopilando los detalles de pago de su empleador.
+        keep_window_open: Mantenga abierta esta ventana mientras trabajamos en esto.
+        typical_duration: La sincronización generalmente toma unos 2 minutos, pero puede tardar más.
     validation_failures:
       other_ways_no_employer:
         go_to_agency_portal: Ir a %{agency_portal_name}

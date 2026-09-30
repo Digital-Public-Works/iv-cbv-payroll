@@ -1,0 +1,12 @@
+<table class="usa-table usa-table--compact" id="sync-playground-statuses">
+  <caption>Job statuses</caption>
+  <thead>
+    <tr><th scope="col">Job</th><th scope="col">Status</th></tr>
+  </thead>
+  <tbody>
+    <% Cbv::SyncPlaygroundController::JOBS.each do |job| %>
+      <tr><td><%= job %></td><td><%= payroll_account.job_status(job) %></td></tr>
+    <% end %>
+    <tr><td>fully synced?</td><td><%= payroll_account.has_fully_synced? %></td></tr>
+  </tbody>
+</table>

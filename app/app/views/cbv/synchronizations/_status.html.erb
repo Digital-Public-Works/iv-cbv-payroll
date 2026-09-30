@@ -1,9 +1,12 @@
 <%= turbo_frame_tag "synchronization" do %>
   <h1>
-    <%= t(".header") %>
+    <%= t("cbv.synchronizations.show.header") %>
   </h1>
   <p>
-    <%= t(".fetching_payroll_description") %>
+    <%= t(".typical_duration") %>
+  </p>
+  <p>
+    <strong><%= t(".keep_window_open") %></strong>
   </p>
     <div class="grid-container">
     <% if @payroll_account.present? %>
