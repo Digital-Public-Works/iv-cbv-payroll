@@ -1,4 +1,4 @@
-<% content_for :title, t("cbv.synchronizations.status.header") %>
+<% content_for :title, t("cbv.synchronizations.show.header") %>
 <% redirect_enabled = params[:redirect] != "0" %>
 <% real_poll_url = cbv_flow_synchronizations_path(user: { account_id: @payroll_account.aggregator_account_id }) %>
 <% playground_poll_url = cbv_flow_preview_sync_playground_poll_path %>

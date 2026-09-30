@@ -38,7 +38,7 @@ RSpec.describe Cbv::SynchronizationsController do
       it "renders the header and guidance copy" do
         get :show, params: { user: { account_id: payroll_account.aggregator_account_id } }
 
-        expect(response.body).to include(I18n.t("cbv.synchronizations.status.header"))
+        expect(response.body).to include(I18n.t("cbv.synchronizations.show.header"))
         expect(response.body).to include(I18n.t("cbv.synchronizations.status.typical_duration"))
         expect(response.body).to include(I18n.t("cbv.synchronizations.status.keep_window_open"))
       end

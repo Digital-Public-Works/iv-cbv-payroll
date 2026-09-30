@@ -575,7 +575,6 @@ en:
       show:
         header: We’re gathering your payment details
       status:
-        header: We’re gathering your payment details
         keep_window_open: Please keep this window open while we work on this.
         typical_duration: Syncing typically takes about 2 minutes, but can take longer.
     validation_failures:
