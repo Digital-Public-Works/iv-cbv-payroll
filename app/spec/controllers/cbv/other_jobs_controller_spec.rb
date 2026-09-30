@@ -21,6 +21,22 @@ RSpec.describe Cbv::OtherJobsController do
       expect(link).to have_css("svg.usa-icon use[href$='#launch']", visible: :all)
       expect(link).to have_css("span.usa-sr-only", text: I18n.t("shared.opens_in_new_tab"), visible: :all)
     end
+    it "labels the radio group with the question and leaves it valid" do
+      get :show
+      expect(response.body).to have_css('fieldset.usa-fieldset[aria-labelledby="other-jobs-question"] input[type="radio"]', count: 2)
+      expect(response.body).to have_css("#other-jobs-question")
+      expect(response.body).not_to have_css('input[aria-invalid]')
+    end
+
+    context "after submitting without an answer" do
+      it "links the radios to the error alert" do
+        get :show, flash: { slim_alert: { "message" => I18n.t("shared.next_path.notice_no_answer"), "type" => "error", "field" => "has_other_jobs" } }
+
+        expect(response.body).to have_css("div.usa-alert#slim-alert", text: I18n.t("shared.next_path.notice_no_answer"))
+        expect(response.body).to have_css('input[type="radio"][aria-invalid="true"][aria-describedby="slim-alert"]', count: 2)
+        expect(response.body).to have_css('fieldset[data-controller="field-error-focus"][data-field-error-focus-alert-id-value="slim-alert"]')
+      end
+    end
   end
 
   describe "#update" do
@@ -36,7 +52,7 @@ RSpec.describe Cbv::OtherJobsController do
 
     it 'redirects with notice when no radio button has been selected' do
       patch :update, params: { cbv_flow: { has_other_jobs: '' } }
-      expect(flash[:slim_alert]).to be_present
+      expect(flash[:slim_alert]).to include(type: "error", field: "has_other_jobs")
       expect(response).to redirect_to(cbv_flow_other_job_path)
     end
 
