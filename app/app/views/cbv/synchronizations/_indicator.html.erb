@@ -3,7 +3,8 @@
 <div class="synchronizations-indicator" id="synchronizations-indicator-<%= id %>">
   <% case status %>
   <% when :in_progress %>
-    <svg class="synchronizations-indicator__spinner rotate usa-icon usa-icon--size-5 border-base-light" aria-hidden="true" focusable="false">
+    <svg class="synchronizations-indicator__spinner rotate usa-icon usa-icon--size-5 border-base-light" aria-hidden="true" focusable="false"
+         data-controller="spinner-sync">
       <use
         xlink:href="<%= asset_path("@uswds/uswds/dist/img/sprite.svg#autorenew") %>"
       ></use>

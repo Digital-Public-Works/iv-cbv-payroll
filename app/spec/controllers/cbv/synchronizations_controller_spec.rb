@@ -77,6 +77,15 @@ RSpec.describe Cbv::SynchronizationsController do
           expect(label["aria-atomic"]).to eq("true")
         end
       end
+
+      it "attaches the spinner-sync controller to spinning indicators only" do
+        get :show, params: { user: { account_id: payroll_account.aggregator_account_id } }
+
+        # Only paystubs is still loading in this context (has_fully_synced? is stubbed false).
+        spinners = Nokogiri::HTML(response.body).css("svg[data-controller='spinner-sync']")
+        expect(spinners.size).to eq(1)
+        expect(spinners.first["class"]).to include("rotate")
+      end
     end
   end
 
