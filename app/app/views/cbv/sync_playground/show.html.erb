@@ -1,0 +1,62 @@
+<% content_for :title, t("cbv.synchronizations.status.header") %>
+<% redirect_enabled = params[:redirect] != "0" %>
+<% real_poll_url = cbv_flow_synchronizations_path(user: { account_id: @payroll_account.aggregator_account_id }) %>
+<% playground_poll_url = cbv_flow_preview_sync_playground_poll_path %>
+
+<div data-controller="sync-playground"
+     data-sync-playground-webhook-url-value="<%= cbv_flow_preview_sync_playground_webhook_path %>"
+     data-sync-playground-real-poll-url-value="<%= real_poll_url %>"
+     data-sync-playground-playground-poll-url-value="<%= playground_poll_url %>">
+  <%# Same wrapper as cbv/synchronizations/show.html.erb, so the page behaves like the real one. %>
+  <div data-controller="polling"
+       data-sync-playground-target="polling"
+       data-polling-url-value="<%= redirect_enabled ? real_poll_url : playground_poll_url %>">
+    <%= render "cbv/synchronizations/status" %>
+  </div>
+
+  <section aria-label="Sync playground controls" class="margin-top-6 border-top-2px border-base-lighter padding-top-2">
+    <h2>Sync playground controls (dev only)</h2>
+    <p class="text-base">
+      Each button inserts the webhook event Argyle would send. The page above picks it up on its next poll
+      (within 2s) exactly like the real sync page. Reload the page to start a new sync.
+    </p>
+
+    <ul class="usa-button-group">
+      <li class="usa-button-group__item">
+        <button type="button" class="usa-button usa-button--outline"
+                data-action="sync-playground#sendWebhook"
+                data-sync-playground-event-param="identities.added">
+          Send identities.added (Personal details + Income complete)
+        </button>
+      </li>
+      <li class="usa-button-group__item">
+        <button type="button" class="usa-button usa-button--outline"
+                data-action="sync-playground#sendWebhook"
+                data-sync-playground-event-param="paystubs.fully_synced">
+          Send paystubs.fully_synced (Employment + Paystubs complete)
+        </button>
+      </li>
+      <li class="usa-button-group__item">
+        <button type="button" class="usa-button usa-button--outline"
+                data-action="sync-playground#sendWebhook"
+                data-sync-playground-event-param="paystubs_failed">
+          Fail paystubs (paystubs.fully_synced error; Paystubs unavailable)
+        </button>
+      </li>
+    </ul>
+
+    <div class="usa-checkbox margin-top-2">
+      <input class="usa-checkbox__input" id="sync-playground-redirect" type="checkbox"
+             <%= "checked" if redirect_enabled %>
+             data-action="change->sync-playground#toggleRedirect">
+      <label class="usa-checkbox__label" for="sync-playground-redirect">
+        Redirect to payment details when complete (uses the real sync endpoint)
+      </label>
+    </div>
+
+    <%# Deliberately not a live region, so it doesn't compete with the indicator announcements. %>
+    <p class="text-base margin-top-2" id="sync-playground-log">No events sent yet.</p>
+
+    <%= render "cbv/sync_playground/statuses", payroll_account: @payroll_account %>
+  </section>
+</div>
