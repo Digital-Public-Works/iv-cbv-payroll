@@ -459,7 +459,6 @@ es:
       show:
         header: Estamos obteniendo los detalles de sus pagos
       status:
-        header: Estamos obteniendo los detalles de sus pagos
         keep_window_open: Mantenga abierta esta ventana mientras trabajamos en esto.
         typical_duration: La sincronización generalmente toma unos 2 minutos, pero puede tardar más.
     validation_failures:
