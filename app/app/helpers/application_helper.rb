@@ -251,6 +251,19 @@ module ApplicationHelper
     payroll_account.job_status("paystubs")
   end
 
+  SLIM_ALERT_ID = "slim-alert"
+
+  # Returns the id of the slim alert when it holds an error for the given field
+  # (set via `flash[:slim_alert] = { type: "error", field: "..." }`), so the
+  # field's controls can reference it with aria-describedby.
+  def field_error_alert_id(attribute)
+    alert = flash[:slim_alert]
+    return unless alert.is_a?(Hash)
+
+    alert = alert.with_indifferent_access
+    SLIM_ALERT_ID if alert[:type].to_s == "error" && alert[:field].to_s == attribute.to_s
+  end
+
   def uswds_form_with(model: false, scope: nil, url: nil, format: nil, **options, &block)
     options[:builder] = UswdsFormBuilder
     options[:data] ||= {}

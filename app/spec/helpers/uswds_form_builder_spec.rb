@@ -224,6 +224,47 @@ RSpec.describe UswdsFormBuilder do
     end
   end
 
+  describe '#radio_group' do
+    let(:error_id) { nil }
+    let(:result) do
+      builder.radio_group(labelledby: 'question', error_id: error_id) do
+        builder.radio_button(:first_name, 'yes', label: 'Yes') + builder.radio_button(:first_name, 'no', label: 'No')
+      end
+    end
+
+    it 'wraps the radios in a fieldset labelled by the question' do
+      expect(result).to have_css('fieldset.usa-fieldset[aria-labelledby="question"] input[type="radio"]', count: 2)
+    end
+
+    it 'does not mark the radios invalid' do
+      expect(result).not_to have_css('[aria-invalid]')
+      expect(result).not_to have_css('[aria-describedby]')
+      expect(result).not_to have_css('[data-controller]')
+    end
+
+    context 'with an error_id' do
+      let(:error_id) { 'slim-alert' }
+
+      it 'marks each radio invalid and described by the error' do
+        expect(result).to have_css('input[type="radio"][aria-invalid="true"][aria-describedby="slim-alert"]', count: 2)
+      end
+
+      it 'does not put the aria attributes on the labels' do
+        expect(result).not_to have_css('label[aria-invalid]')
+        expect(result).not_to have_css('label[aria-describedby]')
+      end
+
+      it 'attaches the field-error-focus controller' do
+        expect(result).to have_css('fieldset[data-controller="field-error-focus"][data-field-error-focus-alert-id-value="slim-alert"]')
+      end
+
+      it 'does not affect radios rendered after the group' do
+        result
+        expect(builder.radio_button(:first_name, 'maybe')).not_to have_css('[aria-invalid]')
+      end
+    end
+  end
+
   describe '#yes_no' do
     let(:result) { builder.yes_no(:first_name, legend: 'Custom legend') }
 

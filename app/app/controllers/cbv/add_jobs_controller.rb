@@ -4,7 +4,7 @@ class Cbv::AddJobsController < Cbv::BaseController
 
   def create
     unless params[:additional_jobs].present? && %w[true false].include?(params[:additional_jobs])
-      flash[:slim_alert] = { message: t("shared.next_path.notice_no_answer"), type: "error" }
+      flash[:slim_alert] = { message: t("shared.next_path.notice_no_answer"), type: "error", field: "additional_jobs" }
       return redirect_to cbv_flow_add_job_path
     end
 
