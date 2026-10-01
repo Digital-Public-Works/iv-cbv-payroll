@@ -396,7 +396,7 @@ en:
         header_html: Do you need to verify any jobs <em>outside</em> Verify My Income?
         header_sub_text: 'Tell us about any other jobs you’ve had in the past 90 days, even if you’re no longer at that job. This includes current or recent jobs you’ve had in the past 90 days that may:'
         learn_more_link: Learn more on %{agency_portal_name}
-        note_html: 'Note: If you’ve had other jobs in the past 90 days that you won’t verify using Verify My Income, you will need to submit that income information separately. %{website_link}'
+        note_html: 'Note: If you’ve had other jobs in the past 90 days that you won’t report using Verify My Income, you will need to submit that income information separately to the agency. %{website_link}'
         radio_no: No, I don’t have another job to verify separately
         radio_yes: Yes, I have another job I’ll verify separately
     payment_details:

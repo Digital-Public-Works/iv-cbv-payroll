@@ -14,6 +14,13 @@ RSpec.describe Cbv::OtherJobsController do
       get :show
       expect(response).to be_successful
     end
+
+    it "indicates the agency website link opens in a new tab" do
+      get :show
+      link = Capybara.string(response.body).find("a[target='_blank']", text: I18n.t("cbv.other_jobs.show.learn_more_link", agency_portal_name: ""))
+      expect(link).to have_css("svg.usa-icon use[href$='#launch']", visible: :all)
+      expect(link).to have_css("span.usa-sr-only", text: I18n.t("shared.opens_in_new_tab"), visible: :all)
+    end
   end
 
   describe "#update" do
