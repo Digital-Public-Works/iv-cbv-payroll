@@ -1,4 +1,4 @@
-<% content_for :title, t("cbv.synchronizations.status.header") %>
+<% content_for :title, t("cbv.synchronizations.show.header") %>
 <% redirect_enabled = params[:redirect] != "0" %>
 <% real_poll_url = cbv_flow_synchronizations_path(user: { account_id: @payroll_account.aggregator_account_id }) %>
 <% playground_poll_url = cbv_flow_preview_sync_playground_poll_path %>
@@ -33,14 +33,14 @@
         <button type="button" class="usa-button usa-button--outline"
                 data-action="sync-playground#sendWebhook"
                 data-sync-playground-event-param="paystubs.fully_synced">
-          Send paystubs.fully_synced (Employment + Paystubs complete)
+          Send paystubs.fully_synced (Employment + Pay Stubs complete)
         </button>
       </li>
       <li class="usa-button-group__item">
         <button type="button" class="usa-button usa-button--outline"
                 data-action="sync-playground#sendWebhook"
                 data-sync-playground-event-param="paystubs_failed">
-          Fail paystubs (paystubs.fully_synced error; Paystubs unavailable)
+          Fail paystubs (paystubs.fully_synced error; Pay Stubs unavailable)
         </button>
       </li>
     </ul>
