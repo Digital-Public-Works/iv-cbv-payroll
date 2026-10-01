@@ -174,7 +174,14 @@ html {
 }
 
 .rotate {
-  animation: 1s linear infinite rotate-con;
+  animation: 3s linear infinite rotate-con;
+}
+
+// Respect the OS/browser "reduce motion" setting: keep the icon, drop the spin.
+@media (prefers-reduced-motion: reduce) {
+  .rotate {
+    animation: none;
+  }
 }
 
 @keyframes rotate-con {

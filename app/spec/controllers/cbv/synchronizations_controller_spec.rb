@@ -29,6 +29,29 @@ RSpec.describe Cbv::SynchronizationsController do
         expect(response).to render_template(:show)
       end
     end
+
+    context "when account exists and is still syncing" do
+      before do
+        allow_any_instance_of(PayrollAccount::Pinwheel).to receive(:has_fully_synced?).and_return(false)
+      end
+
+      it "renders the header and guidance copy" do
+        get :show, params: { user: { account_id: payroll_account.aggregator_account_id } }
+
+        expect(response.body).to include(I18n.t("cbv.synchronizations.show.header"))
+        expect(response.body).to include(I18n.t("cbv.synchronizations.status.typical_duration"))
+        expect(response.body).to include(I18n.t("cbv.synchronizations.status.keep_window_open"))
+      end
+
+      it "renders the indicators in order: personal details, income, employment, paystubs" do
+        get :show, params: { user: { account_id: payroll_account.aggregator_account_id } }
+
+        labels = Nokogiri::HTML(response.body).css(".synchronizations-indicator span").map { |label| label.text.strip }
+        expect(labels).to eq(%w[identity income employment paystubs].map { |key|
+          I18n.t("cbv.synchronizations.indicators.#{key}")
+        })
+      end
+    end
   end
 
   describe "#update" do
