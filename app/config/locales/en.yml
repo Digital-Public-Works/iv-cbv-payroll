@@ -563,16 +563,20 @@ en:
         option_3: Submit your income information for this employer by visiting %{website_label}.
         title: We couldn't access your employer information
     synchronizations:
+      indicator:
+        completed: complete
+        failed: unavailable
+        in_progress: loading
       indicators:
         employment: Employment
         identity: Personal details
         income: Income
-        paystubs: Paystubs
+        paystubs: Pay Stubs
       show:
-        header: We’re gathering your payment details from your employer
+        header: We’re gathering your payment details
       status:
-        fetching_payroll_description: This may take a few minutes. Please keep this window open while we work on this.
-        header: We’re gathering your payment details from your employer
+        keep_window_open: Please keep this window open while we work on this.
+        typical_duration: Syncing typically takes about 2 minutes, but can take longer.
     validation_failures:
       other_ways_no_employer:
         go_to_agency_portal: Go to %{agency_portal_name}

@@ -1,11 +1,14 @@
 <%= turbo_frame_tag "synchronization" do %>
   <h1>
-    <%= t(".header") %>
+    <%= t("cbv.synchronizations.show.header") %>
   </h1>
   <p>
-    <%= t(".fetching_payroll_description") %>
+    <%= t(".typical_duration") %>
   </p>
-    <div class="grid-container">
+  <p>
+    <strong><%= t(".keep_window_open") %></strong>
+  </p>
+    <div class="grid-container padding-x-0 margin-top-4">
     <% if @payroll_account.present? %>
       <%= render partial: "cbv/synchronizations/indicators", locals: { payroll_account: @payroll_account } %>
     <% end %>
