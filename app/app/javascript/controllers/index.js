@@ -20,6 +20,8 @@ import TooltipTrackerController from "./employer_search_tooltip_tracker_controll
 import AccordionController from "./accordion_controller.js"
 import UnemployedTipsController from "./unemployed_tips_controller.js"
 import JsonViewerController from "./json_viewer_controller.js"
+import SyncPlaygroundController from "./preview/sync_playground_controller.js"
+import SpinnerSyncController from "./spinner_sync_controller.js"
 import FieldErrorFocusController from "./field_error_focus_controller.js"
 
 application.register("anchor-scroll", AnchorScrollController)
@@ -42,6 +44,8 @@ application.register("tooltip-tracker", TooltipTrackerController)
 application.register("accordion", AccordionController)
 application.register("unemployed-tips", UnemployedTipsController)
 application.register("json-viewer", JsonViewerController)
+application.register("sync-playground", SyncPlaygroundController)
+application.register("spinner-sync", SpinnerSyncController)
 application.register("field-error-focus", FieldErrorFocusController)
 
 Turbo.StreamActions.redirect = function () {

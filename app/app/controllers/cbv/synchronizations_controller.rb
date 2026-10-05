@@ -11,17 +11,27 @@ class Cbv::SynchronizationsController < Cbv::BaseController
       # argyle throws a "system_error" in the payload of "accounts.updated" webhook.
       # The "accounts" sync status will be set to :failed in that case. The sync status will be :unsupported for pinwheel.
       render turbo_stream: turbo_stream.action(:redirect, cbv_flow_synchronization_failures_path)
-    elsif @payroll_account&.has_fully_synced?
+    elsif @payroll_account&.has_fully_synced? && completed_sync_shown?
       render turbo_stream: turbo_stream.action(
         :redirect,
         cbv_flow_payment_details_path(user: { account_id: @payroll_account.aggregator_account_id })
       )
     else
-      render turbo_stream: turbo_stream.replace(:synchronization, partial: "status")
+      # When the sync first finishes, show every indicator as complete (and let
+      # screen readers announce it) for one poll before redirecting on the next.
+      session[:completed_sync_shown] = @payroll_account.aggregator_account_id if @payroll_account&.has_fully_synced?
+
+      # Morph rather than replace so the indicator nodes persist between polls;
+      # otherwise every poll re-creates the spinners and restarts their rotation.
+      render turbo_stream: turbo_stream.replace(:synchronization, partial: "status", method: :morph)
     end
   end
 
   private
+
+  def completed_sync_shown?
+    session[:completed_sync_shown] == @payroll_account.aggregator_account_id
+  end
 
   def redirect_if_sync_finished
     if @payroll_account&.has_fully_synced?
