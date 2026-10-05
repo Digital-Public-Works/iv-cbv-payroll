@@ -20,7 +20,7 @@ import TooltipTrackerController from "./employer_search_tooltip_tracker_controll
 import AccordionController from "./accordion_controller.js"
 import UnemployedTipsController from "./unemployed_tips_controller.js"
 import JsonViewerController from "./json_viewer_controller.js"
-import SyncPlaygroundController from "./sync_playground_controller.js"
+import SyncPlaygroundController from "./preview/sync_playground_controller.js"
 import SpinnerSyncController from "./spinner_sync_controller.js"
 import FieldErrorFocusController from "./field_error_focus_controller.js"
 

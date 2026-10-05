@@ -40,7 +40,7 @@ RSpec.describe "Sync playground (dev only)", type: :request do
 
     context "outside non-production environments" do
       before do
-        allow_any_instance_of(Cbv::SyncPlaygroundController).to receive(:is_not_production?).and_return(false)
+        allow_any_instance_of(Cbv::Preview::SyncPlaygroundController).to receive(:is_not_production?).and_return(false)
       end
 
       it "is forbidden" do

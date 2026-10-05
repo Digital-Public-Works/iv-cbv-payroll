@@ -110,9 +110,9 @@ Rails.application.routes.draw do
         get "paystubs.pdf", to: "preview#paystubs", defaults: { format: :pdf }
         get "paystubs_pdf_as_html", to: "preview#paystubs_pdf_as_html"
         get "transmitted_json", to: "preview#transmitted_json"
-        get "sync_playground", to: "sync_playground#show"
-        post "sync_playground/webhook", to: "sync_playground#webhook", as: :sync_playground_webhook
-        patch "sync_playground/poll", to: "sync_playground#poll", as: :sync_playground_poll
+        get "sync_playground", to: "preview/sync_playground#show"
+        post "sync_playground/webhook", to: "preview/sync_playground#webhook", as: :sync_playground_webhook
+        patch "sync_playground/poll", to: "preview/sync_playground#poll", as: :sync_playground_poll
       end
     end
 
