@@ -158,4 +158,29 @@ RSpec.describe ClientAgency do
       expect(ClientAgencyConfig::ClientAgency.new(partner_config).include_paystubs).to be(true)
     end
   end
+
+  context "encourage_link_sharing" do
+    let(:partner_config) do
+      pc = PartnerConfig.create!(
+        partner_id: 'foo',
+        name: 'foo',
+        timezone: 'America/Los_Angeles',
+        argyle_environment: 'sandbox',
+        pay_income_days_w2: 90,
+        pay_income_days_gig: 182,
+        partner_identifier_name: 'case_number'
+      )
+      pc.partner_transmission_methods.create!(method_type: :shared_email)
+      pc
+    end
+
+    it "is true by default" do
+      expect(ClientAgencyConfig::ClientAgency.new(partner_config).encourage_link_sharing).to be(true)
+    end
+
+    it "is false when the partner config has it disabled" do
+      partner_config.update!(encourage_link_sharing: false)
+      expect(ClientAgencyConfig::ClientAgency.new(partner_config).encourage_link_sharing).to be(false)
+    end
+  end
 end

@@ -109,6 +109,12 @@ module ApplicationHelper
     "#{full_name} (#{agency_translation("shared.agency_acronym")})"
   end
 
+  # Whether to show household link-sharing prompts. Defaults to true when there
+  # is no current agency (e.g. the partner was deactivated mid-flow).
+  def encourage_link_sharing?
+    current_agency.nil? || current_agency.encourage_link_sharing
+  end
+
   # A visually-hidden span used to add descriptive context to an otherwise
   # generic visible label (e.g. "Edit" -> "Edit Applicant information").
   def sr_only_span(text)

@@ -28,11 +28,13 @@
           </svg>
         </div>
         <div class="usa-icon-list__content">
-          <h3 class="margin-bottom-1"><%= t(".whats_next_1_title") %></h3>
-          <p><%= t(".whats_next_1_li_1", agency_acronym: agency_acronym_or_full_name) %></p>
-          <p><%= t(".whats_next_1_li_2_html", website_link: agency_website_link) %></p>
+          <h3 class="margin-bottom-1"><%= agency_translation(".whats_next_1_title") %></h3>
+          <p><%= agency_translation(".whats_next_1_li_1", agency_acronym: agency_acronym_or_full_name) %></p>
+          <% link_label = agency_translation(".whats_next_1_link_label", agency_portal_name: agency_translation("shared.agency_portal_name")) %>
+          <p><%= agency_translation(".whats_next_1_li_2_html", website_link: agency_website_link(label: link_label)) %></p>
         </div>
       </li>
+      <% if encourage_link_sharing? %>
       <li class="usa-icon-list__item">
         <div class="usa-icon-list__icon display-flex flex-justify-center flex-align-center width-6 minw-6 height-6 bg-primary-lighter radius-top-pill radius-bottom-pill margin-right-1">
           <svg class="usa-icon" aria-hidden="true" role="img">
@@ -74,6 +76,7 @@
           </div>
         </div>
       </li>
+      <% end %>
     </ul>
   </div>
 
