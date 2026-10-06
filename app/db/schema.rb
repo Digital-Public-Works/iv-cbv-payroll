@@ -10,10 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_06_15_120100) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_02_120000) do
   # These are extensions that must be enabled in order to support this database
+  enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
-  enable_extension "plpgsql"
 
   create_table "api_access_tokens", force: :cascade do |t|
     t.string "access_token"
@@ -137,6 +137,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_15_120100) do
     t.boolean "include_paystubs", default: false, null: false
     t.boolean "include_full_ssn", default: false, null: false
     t.boolean "include_direct_deposit_last_4", default: false, null: false
+    t.boolean "encourage_link_sharing", default: true, null: false
     t.index ["partner_id"], name: "index_partner_configs_on_partner_id", unique: true
   end
 

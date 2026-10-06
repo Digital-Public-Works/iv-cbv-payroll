@@ -109,6 +109,12 @@ module ApplicationHelper
     "#{full_name} (#{agency_translation("shared.agency_acronym")})"
   end
 
+  # Whether to show household link-sharing prompts. Defaults to true when there
+  # is no current agency (e.g. the partner was deactivated mid-flow).
+  def encourage_link_sharing?
+    current_agency.nil? || current_agency.encourage_link_sharing
+  end
+
   # A visually-hidden span used to add descriptive context to an otherwise
   # generic visible label (e.g. "Edit" -> "Edit Applicant information").
   def sr_only_span(text)
@@ -249,6 +255,19 @@ module ApplicationHelper
     return :in_progress unless payroll_account.has_fully_synced?
 
     payroll_account.job_status("paystubs")
+  end
+
+  SLIM_ALERT_ID = "slim-alert"
+
+  # Returns the id of the slim alert when it holds an error for the given field
+  # (set via `flash[:slim_alert] = { type: "error", field: "..." }`), so the
+  # field's controls can reference it with aria-describedby.
+  def field_error_alert_id(attribute)
+    alert = flash[:slim_alert]
+    return unless alert.is_a?(Hash)
+
+    alert = alert.with_indifferent_access
+    SLIM_ALERT_ID if alert[:type].to_s == "error" && alert[:field].to_s == attribute.to_s
   end
 
   def uswds_form_with(model: false, scope: nil, url: nil, format: nil, **options, &block)

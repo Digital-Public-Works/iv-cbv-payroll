@@ -275,6 +275,7 @@ class ClientAgencyConfig
       require_applicant_information_on_invitation
       include_invitation_details_on_weekly_report
       include_paystubs
+      encourage_link_sharing
       state_name
       partner_identifier_name
     ])
@@ -331,6 +332,7 @@ class ClientAgencyConfig
       @invitation_links_enabled = partner_config.invitation_links_enabled
       @include_full_ssn = partner_config.include_full_ssn
       @include_direct_deposit_last_4 = partner_config.include_direct_deposit_last_4
+      @encourage_link_sharing = partner_config.encourage_link_sharing
 
 
       @require_applicant_information_on_invitation = partner_config.partner_application_attributes.exists?(required: true)

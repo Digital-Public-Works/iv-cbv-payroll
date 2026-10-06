@@ -310,7 +310,8 @@ en:
         step2_description: After you log in, Verify My Income pulls your recent paychecks into a single report. You can check the details and add comments to the report before you allow it to be sent to %{agency_full_name}.
         step2_note: You can also add more jobs to your report if you need to.
         step3: Submit your income report
-        step3_description: Your pay information gets sent directly to %{agency_acronym}. When you finish, you can save a copy of your report. You can also share a link with other household members to verify their pay, too.
+        step3_description: Your pay information gets sent directly to %{agency_acronym}. When you finish, you can save a copy of your report.
+        step3_description_link_sharing: You can also share a link with other household members to verify their pay, too.
         subheader: Verify My Income helps you prove your income. You can combine your pay into one report so you don't need to upload pay stubs. After you review your report, you can send it directly to %{agency_full_name}.
         time_estimate: Most people can find, connect and review one job in about 5 minutes.
         what_if_i_cant_use_this_body_1: If you need to verify your income and can’t use this tool, then you’ll need to share your income information for this job directly with %{agency_portal_name}.
@@ -529,9 +530,14 @@ en:
         share_invitation_link_title: Share a link if others in your household need to verify their income.
         survey: Take the 5 question survey
         whats_next: What's next?
-        whats_next_1_li_1: If you couldn’t find a job or don’t get paystubs, verify your income to %{agency_acronym} online, in person, or by mail.
-        whats_next_1_li_2_html: Go to %{website_link}
-        whats_next_1_title: Verify other income, if needed.
+        whats_next_1_li_1:
+          default: If you couldn’t find a job or don’t get paystubs, verify your income to %{agency_acronym} online, in person, or by mail.
+        whats_next_1_li_2_html:
+          default: Go to %{website_link}
+        whats_next_1_link_label:
+          default: the %{agency_portal_name} website
+        whats_next_1_title:
+          default: Verify other income, if needed.
         whats_next_2_li_1_html: We’d like to hear more about your experience using this site.
         whats_next_2_title: Help make this experience better.
     summaries:
@@ -563,16 +569,20 @@ en:
         option_3: Submit your income information for this employer by visiting %{website_label}.
         title: We couldn't access your employer information
     synchronizations:
+      indicator:
+        completed: complete
+        failed: unavailable
+        in_progress: loading
       indicators:
         employment: Employment
         identity: Personal details
         income: Income
-        paystubs: Paystubs
+        paystubs: Pay Stubs
       show:
-        header: We’re gathering your payment details from your employer
+        header: We’re gathering your payment details
       status:
-        fetching_payroll_description: This may take a few minutes. Please keep this window open while we work on this.
-        header: We’re gathering your payment details from your employer
+        keep_window_open: Please keep this window open while we work on this.
+        typical_duration: Syncing typically takes about 2 minutes, but can take longer.
     validation_failures:
       other_ways_no_employer:
         go_to_agency_portal: Go to %{agency_portal_name}
