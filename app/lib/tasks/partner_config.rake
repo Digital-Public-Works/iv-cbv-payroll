@@ -22,6 +22,8 @@ namespace :partner_config do
     abort "Source error: #{e.message}"
   end
 
+  # NOTE: updated configs may take up to ClientAgencyConfig::MISS_CACHE_TTL_SECONDS (default 60s)
+  # to be loaded
   desc "Apply a partner's settings + credentials YAML to the database. Usage: rake partner_config:apply[partner_id,settings_source,credentials_source]"
   task :apply, [ :partner_id, :settings_source, :credentials_source ] => :environment do |t, args|
     partner_id, settings_source, credentials_source = fetch_partner_config_args(t, args)
@@ -111,4 +113,13 @@ def print_apply_summary(partner_id, changes, loader)
     c = changes[section]
     puts "  #{section}: #{c[:created]} created, #{c[:updated]} updated, #{c[:deleted]} deleted"
   end
+
+  # See ClientAgencyConfig::MISS_CACHE_TTL_SECONDS. A running app may have a
+  # cached miss for this partner id, so say so rather than letting an operator
+  # conclude the apply silently failed.
+  puts ""
+  puts "  Note: running app instances may take up to " \
+    "#{ClientAgencyConfig::MISS_CACHE_TTL_SECONDS}s to serve this partner, because a " \
+    "failed lookup for its id may be negatively cached. " \
+    "Restart the app to pick it up now."
 end
