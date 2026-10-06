@@ -2,7 +2,7 @@
 # screen reader). It renders the real sync partials and polls
 # the real Cbv::SynchronizationsController#update; buttons on the same page insert
 # the webhook events Argyle would send.
-class Cbv::SyncPlaygroundController < ApplicationController
+class Cbv::Preview::SyncPlaygroundController < ApplicationController
   layout "preview"
 
   JOBS = %w[accounts identity income employment paystubs].freeze
@@ -36,7 +36,7 @@ class Cbv::SyncPlaygroundController < ApplicationController
       ),
       turbo_stream.replace(
         "sync-playground-statuses",
-        partial: "cbv/sync_playground/statuses",
+        partial: "cbv/preview/sync_playground/statuses",
         locals: { payroll_account: @payroll_account.reload }
       )
     ])

@@ -571,7 +571,7 @@ en:
         employment: Employment
         identity: Personal details
         income: Income
-        paystubs: Paystubs
+        paystubs: Pay Stubs
       show:
         header: We’re gathering your payment details
       status:

@@ -13,7 +13,7 @@ RSpec.describe "Sync playground (dev only)", type: :request do
         "Personal details, loading",
         "Income, loading",
         "Employment, loading",
-        "Paystubs, loading"
+        "Pay Stubs, loading"
       ])
       expect(session[:cbv_flow_id]).to eq(playground_account.cbv_flow_id)
     end
@@ -40,7 +40,7 @@ RSpec.describe "Sync playground (dev only)", type: :request do
 
     context "outside non-production environments" do
       before do
-        allow_any_instance_of(Cbv::SyncPlaygroundController).to receive(:is_not_production?).and_return(false)
+        allow_any_instance_of(Cbv::Preview::SyncPlaygroundController).to receive(:is_not_production?).and_return(false)
       end
 
       it "is forbidden" do
@@ -112,7 +112,7 @@ RSpec.describe "Sync playground (dev only)", type: :request do
   end
 
   describe "failed paystubs" do
-    it "shows Paystubs as unavailable once the sync is done" do
+    it "shows Pay Stubs as unavailable once the sync is done" do
       get cbv_flow_preview_sync_playground_path
       %w[identities.added paystubs_failed].each do |event|
         post cbv_flow_preview_sync_playground_webhook_path, params: { event: event }
@@ -120,7 +120,7 @@ RSpec.describe "Sync playground (dev only)", type: :request do
       patch cbv_flow_preview_sync_playground_poll_path
 
       paystubs = Nokogiri::HTML(response.body).at_css("#synchronizations-indicator-paystubs")
-      expect(paystubs.at_css("span").text.squish).to eq("Paystubs, unavailable")
+      expect(paystubs.at_css("span").text.squish).to eq("Pay Stubs, unavailable")
       expect(paystubs.at_css("use")["xlink:href"]).to include("#priority_high")
     end
   end
