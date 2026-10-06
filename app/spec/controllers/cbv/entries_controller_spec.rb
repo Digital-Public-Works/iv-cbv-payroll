@@ -65,6 +65,22 @@ RSpec.describe Cbv::EntriesController do
         expect(response.body).to include("Review pay from your job")
       end
 
+      it "mentions sharing a link with household members" do
+        get :show, params: { token: invitation.auth_token }
+        expect(response.body).to include(I18n.t("cbv.entries.show.step3_description_link_sharing"))
+      end
+
+      context "when the agency does not encourage link sharing" do
+        before do
+          stub_client_agency_config_value("sandbox", "encourage_link_sharing", false)
+        end
+
+        it "does not mention sharing a link with household members" do
+          get :show, params: { token: invitation.auth_token }
+          expect(response.body).not_to include(I18n.t("cbv.entries.show.step3_description_link_sharing"))
+        end
+      end
+
       context "with multiple cbv flows" do
         it "sends multiple related tracking events" do
           expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
