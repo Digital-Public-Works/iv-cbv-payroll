@@ -63,7 +63,7 @@ RSpec.describe Cbv::SynchronizationsController do
           "Personal details, complete",
           "Income, complete",
           "Employment, complete",
-          "Paystubs, loading"
+          "Pay Stubs, loading"
         ])
       end
 
@@ -108,7 +108,7 @@ RSpec.describe Cbv::SynchronizationsController do
           "Personal details, complete",
           "Income, complete",
           "Employment, complete",
-          "Paystubs, complete"
+          "Pay Stubs, complete"
         ])
       end
 

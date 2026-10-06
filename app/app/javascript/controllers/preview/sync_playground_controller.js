@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-import CSRF from "../utilities/csrf"
+import CSRF from "../../utilities/csrf"
 
 // Dev-only controls for /cbv/preview/sync_playground.
 // Webhooks are sent with fetch (not a Turbo form, which disables the submit button

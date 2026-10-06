@@ -1,6 +1,6 @@
 import { vi, describe, beforeEach, afterEach, it, expect } from "vitest"
 import { Application } from "@hotwired/stimulus"
-import SyncPlaygroundController from "@js/controllers/sync_playground_controller"
+import SyncPlaygroundController from "@js/controllers/preview/sync_playground_controller"
 
 const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
 
