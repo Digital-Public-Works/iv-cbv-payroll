@@ -241,7 +241,9 @@ class Cbv::PreviewController < ApplicationController
 
   def argyle_account_id
     # Dynamically get account ID from the selected fixture user's data
-    fixture_user = params[:fixture_user] || "bob"
+    # File.basename strips any directory or absolute-path components so a
+    # crafted fixture_user cannot escape the fixtures directory.
+    fixture_user = File.basename(params[:fixture_user].presence || "bob")
     fixture_path = Rails.root.join("spec", "support", "fixtures", "argyle", fixture_user, "request_account.json")
 
     if File.exist?(fixture_path)
@@ -257,7 +259,7 @@ class Cbv::PreviewController < ApplicationController
   # several under request_accounts.json). Falls back to the single account so
   # existing single-employer fixtures behave exactly as before.
   def argyle_account_ids
-    fixture_user = params[:fixture_user] || "bob"
+    fixture_user = File.basename(params[:fixture_user].presence || "bob")
     accounts_path = Rails.root.join("spec", "support", "fixtures", "argyle", fixture_user, "request_accounts.json")
 
     if File.exist?(accounts_path)
