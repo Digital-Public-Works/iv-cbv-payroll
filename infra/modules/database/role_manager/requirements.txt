@@ -6,7 +6,7 @@
 # Versions were confirmed by hashing the vendored files against each package's
 # RECORD, because vendor/ carries stale dist-info directories from earlier
 # installs. If the zip is rebuilt, re-derive these to match it.
-pg8000==1.31.2
+pg8000==1.31.5
 scramp==1.4.5
 asn1crypto==1.5.1
 python-dateutil==2.9.0.post0
