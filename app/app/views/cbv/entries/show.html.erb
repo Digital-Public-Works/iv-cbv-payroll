@@ -22,7 +22,12 @@
     </li>
     <li class="usa-process-list__item">
       <h3 class="usa-process-list__heading"><%= t(".step3") %></h3>
-      <p><%= t(".step3_description", agency_acronym: agency_acronym_or_full_name) %></p>
+      <p>
+        <%= t(".step3_description", agency_acronym: agency_acronym_or_full_name) %>
+        <% if encourage_link_sharing? %>
+          <%= t(".step3_description_link_sharing") %>
+        <% end %>
+      </p>
     </li>
   </ol>
 

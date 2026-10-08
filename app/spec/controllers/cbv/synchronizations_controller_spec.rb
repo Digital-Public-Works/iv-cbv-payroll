@@ -29,6 +29,64 @@ RSpec.describe Cbv::SynchronizationsController do
         expect(response).to render_template(:show)
       end
     end
+
+    context "when account exists and is still syncing" do
+      before do
+        allow_any_instance_of(PayrollAccount::Pinwheel).to receive(:has_fully_synced?).and_return(false)
+      end
+
+      it "renders the header and guidance copy" do
+        get :show, params: { user: { account_id: payroll_account.aggregator_account_id } }
+
+        expect(response.body).to include(I18n.t("cbv.synchronizations.show.header"))
+        expect(response.body).to include(I18n.t("cbv.synchronizations.status.typical_duration"))
+        expect(response.body).to include(I18n.t("cbv.synchronizations.status.keep_window_open"))
+      end
+
+      it "renders the indicators in order: personal details, income, employment, paystubs" do
+        get :show, params: { user: { account_id: payroll_account.aggregator_account_id } }
+
+        # Visible label text only; the nested usa-sr-only status word is excluded.
+        labels = Nokogiri::HTML(response.body).css(".synchronizations-indicator > span").map { |label| label.xpath("text()").text.strip }
+        expect(labels).to eq(%w[identity income employment paystubs].map { |key|
+          I18n.t("cbv.synchronizations.indicators.#{key}")
+        })
+      end
+
+      it "gives each indicator a screen-reader status after its label" do
+        get :show, params: { user: { account_id: payroll_account.aggregator_account_id } }
+
+        # Pinwheel fully synced factory: the first three jobs succeeded, while paystubs
+        # stays in progress because has_fully_synced? is stubbed false.
+        statuses = Nokogiri::HTML(response.body).css(".synchronizations-indicator > span").map { |label| label.text.squish }
+        expect(statuses).to eq([
+          "Personal details, complete",
+          "Income, complete",
+          "Employment, complete",
+          "Pay Stubs, loading"
+        ])
+      end
+
+      it "makes each indicator label a polite, atomic live region" do
+        get :show, params: { user: { account_id: payroll_account.aggregator_account_id } }
+
+        labels = Nokogiri::HTML(response.body).css(".synchronizations-indicator > span")
+        expect(labels.size).to eq(4)
+        labels.each do |label|
+          expect(label["aria-live"]).to eq("polite")
+          expect(label["aria-atomic"]).to eq("true")
+        end
+      end
+
+      it "attaches the spinner-sync controller to spinning indicators only" do
+        get :show, params: { user: { account_id: payroll_account.aggregator_account_id } }
+
+        # Only paystubs is still loading in this context (has_fully_synced? is stubbed false).
+        spinners = Nokogiri::HTML(response.body).css("svg[data-controller='spinner-sync']")
+        expect(spinners.size).to eq(1)
+        expect(spinners.first["class"]).to include("rotate")
+      end
+    end
   end
 
   describe "#update" do
@@ -39,7 +97,23 @@ RSpec.describe Cbv::SynchronizationsController do
     end
 
     context "when account exists and is fully synced" do
-      it "redirects to the payment details page" do
+      it "first shows every indicator as complete without redirecting" do
+        patch :update, params: { user: { account_id: payroll_account.aggregator_account_id } }
+
+        stream = Nokogiri::HTML(response.body).at_css("turbo-stream")
+        expect(stream["method"]).to eq("morph")
+        expect(response.body).not_to include("turbo-stream action=\"redirect\"")
+        statuses = Nokogiri::HTML(response.body).css(".synchronizations-indicator > span").map { |label| label.text.squish }
+        expect(statuses).to eq([
+          "Personal details, complete",
+          "Income, complete",
+          "Employment, complete",
+          "Pay Stubs, complete"
+        ])
+      end
+
+      it "redirects to the payment details page on the next poll" do
+        patch :update, params: { user: { account_id: payroll_account.aggregator_account_id } }
         patch :update, params: { user: { account_id: payroll_account.aggregator_account_id } }
 
         expect(response.body).to include("cbv/payment_details")
@@ -57,12 +131,30 @@ RSpec.describe Cbv::SynchronizationsController do
 
         expect(response.body).to include("turbo-frame id=\"synchronization\"")
       end
+
+      it "morphs the status so spinners keep rotating in sync between polls" do
+        patch :update, params: { user: { account_id: payroll_account.aggregator_account_id } }
+
+        stream = Nokogiri::HTML(response.body).at_css("turbo-stream")
+        expect(stream["action"]).to eq("replace")
+        expect(stream["method"]).to eq("morph")
+      end
+
+      it "gives each indicator a stable id for morphing" do
+        patch :update, params: { user: { account_id: payroll_account.aggregator_account_id } }
+
+        ids = Nokogiri::HTML(response.body).css(".synchronizations-indicator").map { |indicator| indicator["id"] }
+        expect(ids).to eq(%w[identity income employment paystubs].map { |key| "synchronizations-indicator-#{key}" })
+      end
     end
 
     context "when account exists but paystubs synchronization fails" do
       let(:errored_jobs) { [ "paystubs" ] }
 
-      it "redirects to the payment details page" do
+      it "redirects to the payment details page after showing the final state for one poll" do
+        patch :update, params: { user: { account_id: payroll_account.aggregator_account_id } }
+        expect(response.body).not_to include("turbo-stream action=\"redirect\"")
+
         patch :update, params: { user: { account_id: payroll_account.aggregator_account_id } }
 
         expect(response.body).to include("cbv/payment_details")

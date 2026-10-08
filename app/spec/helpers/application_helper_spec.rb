@@ -208,6 +208,38 @@ RSpec.describe ApplicationHelper do
     end
   end
 
+  describe "#encourage_link_sharing?" do
+    before do
+      without_partial_double_verification do
+        allow(helper).to receive(:current_agency).and_return(current_agency)
+      end
+    end
+
+    context "when the agency encourages link sharing" do
+      let(:current_agency) { instance_double(ClientAgencyConfig::ClientAgency, encourage_link_sharing: true) }
+
+      it "returns true" do
+        expect(helper.encourage_link_sharing?).to be true
+      end
+    end
+
+    context "when the agency does not encourage link sharing" do
+      let(:current_agency) { instance_double(ClientAgencyConfig::ClientAgency, encourage_link_sharing: false) }
+
+      it "returns false" do
+        expect(helper.encourage_link_sharing?).to be false
+      end
+    end
+
+    context "when there is no current agency" do
+      let(:current_agency) { nil }
+
+      it "returns true" do
+        expect(helper.encourage_link_sharing?).to be true
+      end
+    end
+  end
+
   describe "#agency_website_link" do
     let(:url) { "https://compass.example.gov" }
     let(:current_agency) do
@@ -361,6 +393,32 @@ RSpec.describe ApplicationHelper do
     it "returns '90+' for a date of birth 95 years ago" do
       date_of_birth = (now - 95.years)
       expect(helper.get_age_range(date_of_birth, now: now)).to eq("90+")
+    end
+  end
+
+  describe "#field_error_alert_id" do
+    it "returns the slim alert id when the error is for the field" do
+      flash[:slim_alert] = { "type" => "error", "field" => "additional_jobs", "message" => "x" }
+      expect(helper.field_error_alert_id(:additional_jobs)).to eq(ApplicationHelper::SLIM_ALERT_ID)
+    end
+
+    it "accepts symbol keys" do
+      flash[:slim_alert] = { type: "error", field: "additional_jobs" }
+      expect(helper.field_error_alert_id(:additional_jobs)).to eq(ApplicationHelper::SLIM_ALERT_ID)
+    end
+
+    it "returns nil for a different field" do
+      flash[:slim_alert] = { "type" => "error", "field" => "has_other_jobs" }
+      expect(helper.field_error_alert_id(:additional_jobs)).to be_nil
+    end
+
+    it "returns nil for a non-error alert" do
+      flash[:slim_alert] = { "type" => "info", "field" => "additional_jobs" }
+      expect(helper.field_error_alert_id(:additional_jobs)).to be_nil
+    end
+
+    it "returns nil with no alert" do
+      expect(helper.field_error_alert_id(:additional_jobs)).to be_nil
     end
   end
 end

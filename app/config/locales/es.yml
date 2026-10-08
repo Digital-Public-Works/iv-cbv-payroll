@@ -212,7 +212,8 @@ es:
         step2_description: Cuando inicie sesión, Verify My Income reúne sus talones de pago recientes en un solo informe. Puede revisar los detalles y agregar comentarios antes de enviarlo a %{agency_full_name}.
         step2_note: También puede agregar más trabajos a su informe si necesita.
         step3: Envíe su informe de ingresos
-        step3_description: Su información de pago se envía directamente a %{agency_acronym}. Al terminar, puede guardar una copia de su informe. También puede compartir un enlace con otras personas de su hogar para que también verifiquen sus ingresos.
+        step3_description: Su información de pago se envía directamente a %{agency_acronym}. Al terminar, puede guardar una copia de su informe.
+        step3_description_link_sharing: También puede compartir un enlace con otras personas de su hogar para que también verifiquen sus ingresos.
         subheader: Verify My Income le ayuda a comprobar sus ingresos. Puede combinar todos sus pagos en un solo informe, sin tener que subir recibos de pago. Después de revisar su informe, puede enviarlo directamente a %{agency_full_name}.
         time_estimate: La mayoría de las personas pueden encontrar, conectar y revisar un trabajo en unos 5 minutos.
         what_if_i_cant_use_this_body_1: Si necesita verificar sus ingresos y no puede usar esta herramienta, deberá compartir, de manera directa, la información de sus ingresos para este trabajo con %{agency_portal_name}.
@@ -417,9 +418,14 @@ es:
         share_invitation_link_title: Comparta el enlace si otras personas en su hogar necesitan verificar sus ingresos.
         survey: Responda esta encuesta de 5 preguntas
         whats_next: "¿Qué sigue?"
-        whats_next_1_li_1: Si no pudo encontrar empleo o no tiene recibos de sueldo, verifique sus ingresos en %{agency_acronym} en línea, en persona o por correo.
-        whats_next_1_li_2_html: Visite %{website_link}
-        whats_next_1_title: Verificar otros ingresos, si es necesario.
+        whats_next_1_li_1:
+          default: Si no pudo encontrar empleo o no tiene recibos de sueldo, verifique sus ingresos en %{agency_acronym} en línea, en persona o por correo.
+        whats_next_1_li_2_html:
+          default: Visite %{website_link}
+        whats_next_1_link_label:
+          default: el sitio web de %{agency_portal_name}
+        whats_next_1_title:
+          default: Verificar otros ingresos, si es necesario.
         whats_next_2_li_1_html: Nos gustaría saber más sobre su experiencia al usar este sitio.
         whats_next_2_title: Ayude a mejorar esta experiencia.
     summaries:
@@ -451,16 +457,20 @@ es:
         option_3: Envíe su información de ingresos a este empleador visitando %{website_label}.
         title: No pudimos acceder a la información de su empleador
     synchronizations:
+      indicator:
+        completed: completado
+        failed: no disponible
+        in_progress: cargando
       indicators:
         employment: Empleo
         identity: Detalles personales
         income: Ingresos
         paystubs: Talones de pago
       show:
-        header: Estamos recopilando los detalles de pago de su empleador.
+        header: Estamos obteniendo los detalles de sus pagos
       status:
-        fetching_payroll_description: Esto puede tardar algunos minutos. Mantenga abierta esta ventana mientras trabajamos en esto.
-        header: Estamos recopilando los detalles de pago de su empleador.
+        keep_window_open: Mantenga abierta esta ventana mientras trabajamos en esto.
+        typical_duration: La sincronización generalmente toma unos 2 minutos, pero puede tardar más.
     validation_failures:
       other_ways_no_employer:
         go_to_agency_portal: Ir a %{agency_portal_name}
