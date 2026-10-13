@@ -129,6 +129,14 @@ RSpec.describe CbvApplicant, type: :model do
         .to match_array(%w[first_name middle_name])
     end
 
+    it "shows a value the payroll provider supplied, so it can be confirmed" do
+      applicant = build(:cbv_applicant, :sandbox)
+      applicant.record_attribute_provenance([ :first_name ], source: CbvApplicant::PAYROLL_PROVIDER_SOURCE)
+
+      expect(applicant.fields_to_collect_for(PartnerAttributeUsage::APPLICANT_INPUT_PAGE))
+        .to include("first_name")
+    end
+
     it "leaves a value a person supplied hidden" do
       applicant = build(:cbv_applicant, :sandbox)
       applicant.record_attribute_provenance([ :first_name ])

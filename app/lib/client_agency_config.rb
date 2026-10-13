@@ -404,6 +404,13 @@ class ClientAgencyConfig
       applicant_attributes.select { |_name, attr| attr.required_for_submit }.keys
     end
 
+    # attributes that can be prefilled from payroll aggregator response model
+    def prefillable_attributes
+      applicant_attributes.each_with_object({}) do |(name, attr), h|
+        h[name] = attr.source_field if attr.source_field.present?
+      end
+    end
+
     def validation_regex_for(name)
       applicant_attributes[name]&.validation_regex.presence
     end
