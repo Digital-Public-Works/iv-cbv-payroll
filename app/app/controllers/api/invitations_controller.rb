@@ -89,10 +89,12 @@ class Api::InvitationsController < ApplicationController
     )
   end
 
+  # required attributes for an invitation are only those that are configured in the invitation_attributes list
   def missing_required_custom_attributes_keys
     incoming = unsafe_custom_attributes_hash
-    required_attrs = partner_config.applicant_attributes.select { |_name, attr| attr.required }
-    required_attrs.keys.reject { |name| incoming[name].present? }
+
+    partner_config.required_attributes_for(PartnerAttributeUsage::INVITATION)
+                  .reject { |name| incoming[name].present? }
   end
 
   # allow both custom_attributes and agency_partner_metadata to account for legacy partners

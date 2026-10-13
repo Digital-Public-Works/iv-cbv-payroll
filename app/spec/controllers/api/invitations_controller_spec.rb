@@ -25,10 +25,17 @@ RSpec.describe Api::InvitationsController do
 
     before do
       request.headers["Authorization"] = "Bearer #{api_access_token_instance.access_token}"
-      PartnerApplicationAttribute.where.not(name: 'first_name').update_all(required: false)
-      PartnerApplicationAttribute.where(
-        partner_config_id: PartnerConfig.where(partner_id: %w[az_des pa_dhs]).select(:id)
-      ).update_all(required: false)
+
+      # Which attributes an API-created invitation must carry now comes from the
+      # partner's `invitation_attributes` list. Leave only first_name required,
+      # on sandbox alone, so each example controls what it is testing.
+      PartnerAttributeUsage.for_context(PartnerAttributeUsage::INVITATION)
+                           .where.not(name: "first_name")
+                           .update_all(required: false)
+      PartnerAttributeUsage.for_context(PartnerAttributeUsage::INVITATION)
+                           .where(partner_config_id: PartnerConfig.where(partner_id: %w[az_des pa_dhs]).select(:id))
+                           .update_all(required: false)
+      ClientAgencyConfig.reset!
     end
 
 

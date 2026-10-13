@@ -1,17 +1,24 @@
 class Cbv::ApplicantInformationsController < Cbv::BaseController
   include ApplicationHelper
+  include Cbv::ApplicantInputParams
 
   before_action :set_cbv_applicant, only: %i[show update]
-  before_action :redirect_when_in_invitation_flow, :redirect_when_info_present, only: :show
+  before_action :skip_when_nothing_to_collect, only: :show
+
+  helper_method :show_all_applicant_fields?, :applicant_field_names
+
+  CONTEXT = PartnerAttributeUsage::APPLICANT_INPUT_PAGE
 
   def show
     track_applicant_information_access_event
   end
 
   def update
-    @cbv_applicant.assign_attributes(applicant_params[:cbv_applicant])
+    submitted = applicant_params[:cbv_applicant]
+    submitted_names = submitted.present? ? submitted.to_h.keys.map(&:to_s) : []
+    @cbv_applicant.assign_attributes(submitted) if submitted.present?
 
-    if @cbv_applicant.validate_base_and_applicant_attributes? && @cbv_applicant.save
+    if @cbv_applicant.validate_user_input(CONTEXT, submitted_names: submitted_names) && @cbv_applicant.save
       track_applicant_submitted_information_page_event
       return redirect_to next_path
     end
@@ -38,38 +45,26 @@ class Cbv::ApplicantInformationsController < Cbv::BaseController
 
   private
 
-  def applicant_params
-    permitted = @cbv_applicant.applicant_attributes.map { |attr|
-      attr == :date_of_birth ? { date_of_birth: [ :day, :month, :year ] } : attr
-    }
-
-    parsed = params.fetch("cbv_applicant_#{@cbv_flow.client_agency_id}", {})
-                   .permit(cbv_applicant: permitted)
-
-    # HTML forms send "" for empty inputs. CbvApplicant treats only literal
-    # `nil` as missing, so coerce blank scalar values to nil before
-    # mass-assignment to preserve form-validation UX. API callers (which
-    # don't go through this controller) can still send any non-nil value.
-    cbv_attrs = parsed[:cbv_applicant]
-    if cbv_attrs.is_a?(ActionController::Parameters)
-      cbv_attrs.each do |key, val|
-        cbv_attrs[key] = nil if val.is_a?(String) && val.empty?
-      end
+  # renders required user input that has not yet been populated
+  def applicant_field_names
+    if show_all_applicant_fields?
+      current_agency.attribute_names_for(CONTEXT) | current_agency.required_for_submit_attributes
+    else
+      @cbv_applicant.fields_to_collect_for(CONTEXT)
     end
-
-    parsed
   end
 
-  def redirect_when_info_present
-    return if params[:force_show] == "true"
+  # skip this step if all required data is populated.
+  def skip_when_nothing_to_collect
+    return if show_all_applicant_fields?
+    return if applicant_field_names.any?
 
-    return unless params[:skip_edit] == "true"
-
-    redirect_to next_path if @cbv_applicant.missing_required_attributes.empty?
+    redirect_to next_path
   end
 
-  def redirect_when_in_invitation_flow
-    redirect_to next_path if @cbv_flow.cbv_flow_invitation.present?
+  # show all populated data if the applicant says 'edit my data'.
+  def show_all_applicant_fields?
+    params[:force_show] == "true" || action_name == "update"
   end
 
   def set_cbv_applicant

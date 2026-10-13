@@ -9,71 +9,134 @@ RSpec.describe CbvApplicant, type: :model do
     end
   end
 
-  describe "#missing_required_attributes" do
-    before do
-      # Include a subset of attributes for testing, mark first_name as required for test purposes
-      allow_any_instance_of(ClientAgencyConfig::ClientAgency).to receive(:applicant_attributes).and_return(
-        {
-          "case_number" => "required",
-          "first_name" => "required",
-          "middle_name" => "",
-          "last_name" => ""
-        }
-      )
+  # The seeded sandbox partner asks for first_name, middle_name, last_name,
+  # date_of_birth and case_number on `applicant_input_page`; only middle_name is optional.
+  describe "#missing_required_attributes_for" do
+    let(:context) { PartnerAttributeUsage::APPLICANT_INPUT_PAGE }
+
+    it "includes required attributes with no value" do
+      applicant = build(:cbv_applicant, :sandbox, first_name: nil)
+
+      expect(applicant.missing_required_attributes_for(context)).to include("first_name")
     end
 
-    let(:cbv_applicant) { create(:cbv_applicant, first_name: nil) }
+    it "is empty when every required attribute has a value" do
+      applicant = build(:cbv_applicant, :sandbox)
 
-    it "includes the missing required attribute names" do
-      cbv_applicant.set_applicant_attributes
-      expect(cbv_applicant.required_applicant_attributes).to be_present
-      expect(cbv_applicant.missing_required_attributes).to include(:first_name)
+      expect(applicant.missing_required_attributes_for(context)).to be_empty
     end
 
-    it "returns an empty array when all required attributes are present" do
-      cbv_applicant.set_applicant_attributes
-      cbv_applicant.first_name = "Dean Venture"
-      expect(cbv_applicant.missing_required_attributes).to be_empty
+    it "ignores an attribute the partner marks optional in that context" do
+      applicant = build(:cbv_applicant, :sandbox, middle_name: nil)
+
+      expect(applicant.missing_required_attributes_for(context)).to be_empty
     end
   end
 
-  describe "#validate_required_applicant_attributes" do
-    let(:date_of_birth) { build(:cbv_applicant).date_of_birth }
+  describe "#missing_attributes_for" do
+    it "includes optional attributes that are still blank, so a page can ask for them" do
+      applicant = build(:cbv_applicant, :sandbox, middle_name: nil)
 
-    it "returns an array of symbols containing the missing field keys" do
-      cbv_applicant_without_case_number = build(:cbv_applicant, :sandbox, middle_name: nil, case_number: nil)
-      cbv_applicant_without_case_number.set_applicant_attributes
-      expect(cbv_applicant_without_case_number.required_applicant_attributes).to be_present
-      expect(cbv_applicant_without_case_number.case_number).to be_nil
-      expect(cbv_applicant_without_case_number.validate_required_applicant_attributes).to eq([ :case_number ])
+      expect(applicant.missing_attributes_for(PartnerAttributeUsage::APPLICANT_INPUT_PAGE)).to eq([ "middle_name" ])
+    end
+  end
+
+  describe "#validate_user_input" do
+    let(:context) { PartnerAttributeUsage::APPLICANT_INPUT_PAGE }
+
+    it "fails and adds an error for each required attribute with no value" do
+      applicant = build(:cbv_applicant, :sandbox, date_of_birth: nil)
+
+      expect(applicant.validate_user_input(context)).to be false
+      expect(applicant.errors[:date_of_birth]).to include(
+        I18n.t("cbv.applicant_informations.sandbox.fields.date_of_birth.blank")
+      )
     end
 
-    it "is adds errors to the model instance when required field is missing" do
-      cbv_applicant_without_dob = build(:cbv_applicant, :sandbox, date_of_birth: nil)
-      cbv_applicant_without_dob.set_applicant_attributes
-      cbv_applicant_without_dob.validate_required_applicant_attributes
-      expect(cbv_applicant_without_dob.errors[:date_of_birth]).to include(I18n.t("cbv.applicant_informations.sandbox.fields.date_of_birth.blank"))
+    it "passes when every required attribute has a value" do
+      applicant = build(:cbv_applicant, :sandbox, case_number: "123")
+
+      expect(applicant.validate_user_input(context)).to be true
+      expect(applicant.errors).to be_empty
     end
 
-    it "returns an empty array when validation constraints are met" do
-      valid_cbv_applicant = build(:cbv_applicant, :sandbox, date_of_birth: date_of_birth, case_number: '123')
-      valid_cbv_applicant.set_applicant_attributes
-      valid_cbv_applicant.validate_required_applicant_attributes
-      expect(valid_cbv_applicant.errors).to be_empty
-    end
-
-    context "partner where case_number is required (az_des)" do
-      let(:applicant) { build(:cbv_applicant, :az_des, case_number: nil) }
-
-      it "reports case_number as missing" do
-        applicant.set_applicant_attributes
-        missing = applicant.validate_required_applicant_attributes
-
-        expect(missing).to include(:case_number)
-        expect(applicant.errors[:case_number]).to include(
-          I18n.t("cbv.applicant_informations.default.fields.case_number.blank")
-        )
+    context "when the attribute has a validation_regex" do
+      before do
+        allow_any_instance_of(ClientAgencyConfig::ClientAgency)
+          .to receive(:validation_regex_for).and_return(nil)
+        allow_any_instance_of(ClientAgencyConfig::ClientAgency)
+          .to receive(:validation_regex_for).with("case_number").and_return('\A\d{8}\z')
       end
+
+      it "rejects a submitted value that does not match" do
+        applicant = build(:cbv_applicant, :sandbox, case_number: "nope")
+
+        expect(applicant.validate_user_input(context, submitted_names: [ "case_number" ])).to be false
+        expect(applicant.errors[:case_number]).to be_present
+      end
+
+      it "accepts a submitted value that matches" do
+        applicant = build(:cbv_applicant, :sandbox, case_number: "12345678")
+
+        expect(applicant.validate_user_input(context, submitted_names: [ "case_number" ])).to be true
+      end
+
+      it "leaves a value that was not submitted on this page alone" do
+        applicant = build(:cbv_applicant, :sandbox, case_number: "nope")
+
+        expect(applicant.validate_user_input(context, submitted_names: [])).to be true
+      end
+
+      it "does not reject a blank optional value" do
+        applicant = build(:cbv_applicant, :sandbox, middle_name: nil)
+
+        expect(applicant.validate_user_input(context, submitted_names: [ "middle_name" ])).to be true
+      end
+    end
+
+    context "when an attribute is required_for_submit" do
+      before do
+        allow_any_instance_of(ClientAgencyConfig::ClientAgency)
+          .to receive(:required_for_submit_attributes).and_return([ "middle_name" ])
+      end
+
+      it "blocks the applicant_input_page step while it is blank, even though it is optional there" do
+        applicant = build(:cbv_applicant, :sandbox, middle_name: nil)
+
+        expect(applicant.validate_user_input(PartnerAttributeUsage::APPLICANT_INPUT_PAGE)).to be false
+        expect(applicant.errors[:middle_name]).to be_present
+      end
+    end
+  end
+
+  describe "#fields_to_collect_for" do
+    it "asks only for what is still blank" do
+      applicant = build(:cbv_applicant, :sandbox, first_name: nil, middle_name: nil)
+
+      expect(applicant.fields_to_collect_for(PartnerAttributeUsage::APPLICANT_INPUT_PAGE))
+        .to match_array(%w[first_name middle_name])
+    end
+
+    it "leaves a value that arrived on the invitation hidden" do
+      applicant = build(:cbv_applicant, :sandbox)
+
+      expect(applicant.fields_to_collect_for(PartnerAttributeUsage::APPLICANT_INPUT_PAGE))
+        .not_to include("first_name")
+    end
+
+    it "keeps the partner's configured order" do
+      applicant = build(:cbv_applicant, :sandbox, first_name: nil, last_name: nil)
+
+      expect(applicant.fields_to_collect_for(PartnerAttributeUsage::APPLICANT_INPUT_PAGE))
+        .to eq(%w[first_name last_name])
+    end
+
+    it "includes a blank required_for_submit attribute so it is always reachable" do
+      allow_any_instance_of(ClientAgencyConfig::ClientAgency)
+        .to receive(:required_for_submit_attributes).and_return([ "beacon_id" ])
+      applicant = build(:cbv_applicant, :sandbox)
+
+      expect(applicant.fields_to_collect_for(PartnerAttributeUsage::APPLICANT_INPUT_PAGE)).to include("beacon_id")
     end
   end
 
@@ -194,32 +257,14 @@ RSpec.describe CbvApplicant, type: :model do
     end
   end
 
-  describe "#validate_base_and_applicant_attributes?" do
-    let(:valid_applicant) { build(:cbv_applicant, :sandbox, case_number: '123') }
-    let(:invalid_applicant) { build(:cbv_applicant, :sandbox, date_of_birth: nil, case_number: nil) }
-
-    it "returns true when all validation methods pass" do
-      valid_applicant.set_applicant_attributes
-      expect(valid_applicant.validate_base_and_applicant_attributes?).to be true
-    end
-
-    it "returns false when validate_required_applicant_attributes contains entries" do
-      invalid_applicant.set_applicant_attributes
-      expect(invalid_applicant.validate_base_and_applicant_attributes?).to be false
-    end
-  end
-
   describe "#set_applicant_attributes" do
     let(:cbv_applicant) { build(:cbv_applicant, :sandbox) }
 
-    it "sets applicant and required attributes based on agency config" do
+    it "sets the partner's applicant attributes" do
       cbv_applicant.set_applicant_attributes
 
       expect(cbv_applicant.applicant_attributes).to include(:first_name, :middle_name, :date_of_birth)
       expect(cbv_applicant.applicant_attributes).to all(be_a(Symbol))
-
-      expect(cbv_applicant.required_applicant_attributes).to include(:first_name, :date_of_birth)
-      expect(cbv_applicant.required_applicant_attributes).not_to include(:middle_name)
     end
   end
 
