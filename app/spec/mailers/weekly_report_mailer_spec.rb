@@ -34,7 +34,7 @@ RSpec.describe WeeklyReportMailer, type: :mailer do
 
   before do
     travel_to(now)
-    PartnerApplicationAttribute.update_all(required: false)
+    PartnerAttributeUsage.update_all(required: false)
     ClientAgencyConfig.reset!
     stub_client_agency_config_value("sandbox", "weekly_report", {
       "enabled" => true,

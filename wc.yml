@@ -39,43 +39,47 @@ transmission_configs:
 application_attributes:
 - name: first_name
   description: Applicant first name
-  required: false
   data_type: string
   form_field_type: text_field
-  show_on_applicant_form: false
   show_on_caseworker_form: true
   show_on_caseworker_report: false
   redactable: true
   redact_type: string
 - name: middle_name
   description: Applicant middle name
-  required: false
   data_type: string
   form_field_type: text_field
-  show_on_applicant_form: false
   show_on_caseworker_form: true
   show_on_caseworker_report: false
   redactable: true
   redact_type: string
 - name: last_name
   description: Applicant last name
-  required: false
   data_type: string
   form_field_type: text_field
-  show_on_applicant_form: false
   show_on_caseworker_form: true
   show_on_caseworker_report: false
   redactable: true
   redact_type: string
 - name: case_number
   description: Case number
-  required: true
   data_type: string
   form_field_type: text_field
-  show_on_applicant_form: false
   show_on_caseworker_form: true
   show_on_caseworker_report: true
   redactable: false
+invitation_attributes:
+- name: case_number
+  required: true
+- name: first_name
+  required: false
+- name: middle_name
+  required: false
+- name: last_name
+  required: false
+
+applicant_input_page: []
+
 translations:
   en:
     shared.agency_acronym: 'WC'

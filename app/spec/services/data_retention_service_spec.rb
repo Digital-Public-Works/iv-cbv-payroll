@@ -990,7 +990,11 @@ RSpec.describe DataRetentionService do
           .delete_all
         PartnerApplicationAttribute
           .where(partner_config: pa_dhs_config, name: "case_number")
-          .update_all(required: true, redactable: false, redact_type: nil)
+          .update_all(redactable: false, redact_type: nil)
+        PartnerAttributeUsage
+          .where(partner_config: pa_dhs_config)
+          .where.not(name: %w[case_number income_changes])
+          .delete_all
         ClientAgencyConfig.reset!
 
         argyle_environment = ClientAgencyConfig.instance["pa_dhs"].argyle_environment

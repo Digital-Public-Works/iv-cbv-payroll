@@ -32,7 +32,6 @@ RSpec.describe ClientAgencyConfig do
       partner_config: sample_config,
       name: 'first_name',
       description: 'Applicant First Name',
-      required: false,
       data_type: :string
     )
   end
@@ -197,19 +196,71 @@ RSpec.describe ClientAgencyConfig do
   end
 
   describe "#require_applicant_information_on_invitation" do
-    it "defaults to false when not configured" do
+    it "defaults to false when the partner requires nothing on an invitation" do
       config = described_class.new(true)
       agency = config["foo"]
 
       expect(agency.require_applicant_information_on_invitation).to be(false)
     end
 
-    it "is true when configured as true" do
-      sample_attr.update!(required: true)
+    it "is true when an attribute is required in the invitation context" do
+      PartnerAttributeUsage.create!(
+        partner_config: sample_config,
+        context: PartnerAttributeUsage::INVITATION,
+        name: sample_attr.name,
+        required: true
+      )
       config = described_class.new(true)
       agency = config["foo"]
 
       expect(agency.require_applicant_information_on_invitation).to be(true)
+    end
+  end
+
+  describe "attribute usages" do
+    before do
+      PartnerApplicationAttribute.create!(
+        partner_config: sample_config, name: "last_name", description: "Last", data_type: :string
+      )
+      PartnerAttributeUsage.create!(
+        partner_config: sample_config, context: PartnerAttributeUsage::APPLICANT_INPUT_PAGE,
+        name: "last_name", required: true, position: 1
+      )
+      PartnerAttributeUsage.create!(
+        partner_config: sample_config, context: PartnerAttributeUsage::APPLICANT_INPUT_PAGE,
+        name: "first_name", required: false, position: 0
+      )
+    end
+
+    let(:agency) { described_class.new(true)["foo"] }
+
+    it "exposes each context's attributes in configured order" do
+      expect(agency.attribute_names_for(PartnerAttributeUsage::APPLICANT_INPUT_PAGE)).to eq(%w[first_name last_name])
+    end
+
+    it "reports which of them are required there" do
+      expect(agency.required_attributes_for(PartnerAttributeUsage::APPLICANT_INPUT_PAGE)).to eq(%w[last_name])
+      expect(agency.required_for?(PartnerAttributeUsage::APPLICANT_INPUT_PAGE, "first_name")).to be(false)
+    end
+
+    it "is empty for a context the partner has not configured" do
+      expect(agency.attribute_names_for(PartnerAttributeUsage::INVITATION)).to be_empty
+    end
+
+    it "drops a usage naming an attribute the partner does not define" do
+      PartnerAttributeUsage.create!(
+        partner_config: sample_config, context: PartnerAttributeUsage::INVITATION,
+        name: "not_defined", required: true
+      )
+
+      expect(agency.attribute_names_for(PartnerAttributeUsage::INVITATION)).to be_empty
+    end
+
+    it "exposes validation_regex and required_for_submit from the attribute" do
+      sample_attr.update!(validation_regex: '\A\d+\z', required_for_submit: true)
+
+      expect(agency.validation_regex_for("first_name")).to eq('\A\d+\z')
+      expect(agency.required_for_submit_attributes).to eq(%w[first_name])
     end
   end
 

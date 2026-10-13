@@ -94,7 +94,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_120000) do
     t.bigint "partner_config_id", null: false
     t.string "name", null: false
     t.text "description"
-    t.boolean "required", default: true, null: false
     t.integer "data_type", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -102,9 +101,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_120000) do
     t.boolean "redactable", default: false, null: false
     t.string "redact_type"
     t.string "form_field_type", default: "text_field"
-    t.boolean "show_on_applicant_form", default: true, null: false
     t.boolean "show_on_caseworker_form", default: true, null: false
+    t.string "validation_regex"
+    t.boolean "required_for_submit", default: false, null: false
     t.index ["partner_config_id"], name: "index_partner_application_attributes_on_partner_config_id"
+  end
+
+  create_table "partner_attribute_usages", force: :cascade do |t|
+    t.string "context", null: false
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.bigint "partner_config_id", null: false
+    t.integer "position", default: 0, null: false
+    t.boolean "required", default: false, null: false
+    t.datetime "updated_at", null: false
+    t.index ["partner_config_id", "context", "name"], name: "idx_partner_attribute_usages_unique", unique: true
+    t.index ["partner_config_id", "context", "position"], name: "idx_partner_attribute_usages_order"
+    t.index ["partner_config_id"], name: "index_partner_attribute_usages_on_partner_config_id"
   end
 
   create_table "partner_configs", force: :cascade do |t|
@@ -217,6 +230,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_120000) do
   add_foreign_key "cbv_flow_transmissions", "cbv_flows"
   add_foreign_key "cbv_flows", "cbv_flow_invitations"
   add_foreign_key "partner_application_attributes", "partner_configs"
+  add_foreign_key "partner_attribute_usages", "partner_configs"
   add_foreign_key "partner_translations", "partner_configs"
   add_foreign_key "partner_transmission_configs", "partner_transmission_methods"
   add_foreign_key "partner_transmission_methods", "partner_configs"
