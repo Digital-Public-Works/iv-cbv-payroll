@@ -41,8 +41,10 @@ class CbvFlow < ApplicationRecord
     accounts_with_required_data.any?
   end
 
+  # Accounts whose data is known to be usable: the sync produced what we need and
+  # the report passed validation.
   def accounts_with_required_data
-    payroll_accounts.includes(:webhook_events).select(&:sync_succeeded?)
+    payroll_accounts.includes(:webhook_events).select(&:usable?)
   end
 
   def fully_synced_payroll_accounts
