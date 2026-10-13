@@ -24,7 +24,7 @@ class PartnerConfigLoader
   # Column attrs that belong in the SETTINGS document (shared across envs).
   SETTINGS_ATTRS = %w[
     partner_id name state_name timezone domain website logo_path
-    active_demo active_prod pilot_ended
+    active_demo active_prod
     staff_portal_enabled generic_links_enabled invitation_links_enabled
     invitation_valid_days_default
     pay_income_days_w2 pay_income_days_gig

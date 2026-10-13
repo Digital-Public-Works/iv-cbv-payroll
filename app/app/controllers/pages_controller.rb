@@ -27,9 +27,6 @@ class PagesController < ApplicationController
   private
 
   def redirect_to_client_agency_entries
-    # Don't redirect to CBV flow if the pilot has ended - let the home page render the pilot end message
-    return if pilot_ended?
-
     # Don't redirect if we just came from a CBV flow timeout
     return if params[:cbv_flow_timeout].present?
 

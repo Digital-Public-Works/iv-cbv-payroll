@@ -6,10 +6,9 @@ RSpec.describe Cbv::GenericLinksController do
   end
 
   describe '#show' do
-    context 'when the hostname matches a client agency domain and the pilot is active' do
+    context 'when the hostname matches a client agency domain' do
       before do
         stub_client_agency_config_value("sandbox", "generic_links_disabled", false)
-        stub_client_agency_config_value("sandbox", "pilot_ended", false)
       end
 
       context 'when generic links are disabled for the agency' do
@@ -139,17 +138,6 @@ RSpec.describe Cbv::GenericLinksController do
             hash_including(origin: "mail")
           )
         end
-      end
-    end
-
-    context 'when the hostname matches a client agency domain and the pilot is ended' do
-      before do
-        stub_client_agency_config_value("la_ldh", "pilot_ended", true)
-      end
-
-      it "redirects to the root path" do
-        get :show, params: { client_agency_id: "la_ldh" }
-        expect(response).to redirect_to(root_path)
       end
     end
   end

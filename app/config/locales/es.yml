@@ -117,18 +117,6 @@ es:
             blank: Escriba su segundo nombre.
             prompt: Segundo nombre
             super_one_html: Segundo nombre<sup>1</sup>
-      la_ldh:
-        fields:
-          case_number:
-            blank: Escriba su número de caso de Medicaid.
-            help_text: Este número de caso de 13 dígitos se puede encontrar en los avisos del Departamento de Salud de Luisiana
-            prompt: Número de caso de Medicaid (opcional)
-            super_one_html: Número de caso de Medicaid<sup>1</sup>
-          date_of_birth:
-            blank: Escriba su fecha de nacimiento.
-            help_text: 'Por ejemplo: 19 de enero de 2000'
-            prompt: Su fecha de nacimiento
-            super_one_html: Fecha de nacimiento<sup>1</sup>
       sandbox:
         fields:
           case_number:
@@ -219,7 +207,6 @@ es:
         what_if_i_cant_use_this_body_1: Si necesita verificar sus ingresos y no puede usar esta herramienta, deberá compartir, de manera directa, la información de sus ingresos para este trabajo con %{agency_portal_name}.
         what_if_i_cant_use_this_body_2_html:
           default: Para obtener más información sobre cómo enviar documentos, visite %{website_link}.
-          la_ldh: 'Usted puede: <ul><li>Subir documentos a través del Portal de Autoservicio en línea en <a href="https://mymedicaid.la.gov/" target="_blank" rel="noopener noreferrer">https://mymedicaid.la.gov/</a></li><li>Enviar documentos por correo postal: Louisiana Medicaid/LaCHIP, P.O. Box 91283, Baton Rouge, LA 70821-9278</li><li>Enviar documentos por correo electrónico: <a href="mailto:MyMedicaid@la.gov">MyMedicaid@la.gov</a></li><li>Llevar sus documentos a la oficina de Medicaid de su elección.</li></ul>'
         what_if_i_cant_use_this_title: "¿Qué debo hacer si no puedo usar esta herramienta?"
         who_is_this_for_body: Puede usar esta herramienta si ha recibido ingresos en los últimos 90 días (incluso si ya no está trabajando). Además, le recordamos que puede acceder a sus recibos de pago en línea si brinda servicios a través de plataformas digitales, como Uber, Lyft o Amazon Flex.
         who_is_this_for_title: "¿Quién puede usar este herramienta?"
@@ -233,7 +220,6 @@ es:
         body_1_html: Si todavía no termina de verificar sus ingresos, envíe su información de ingresos visitando %{website_link}.
         cta_button_html:
           default: <a href="%{agency_url}" class="usa-button" target="_blank" rel="noopener noreferrer">Visite el sitio web de %{agency_portal_name}</a>
-          la_ldh: <a href="%{agency_url}" class="usa-button" target="_blank" rel="noopener noreferrer">Visite el sitio web del LDH</a>
           sandbox: <a href="https://www.mass.gov/guides/how-to-contact-dta" class="usa-button" target="_blank" rel="noopener noreferrer">Obtenga más información en la Agencia de pruebas CBV</a>
         title: Su invitación para verificar ingresos ha expirado
     missing_results:
@@ -368,7 +354,6 @@ es:
         page_header: Envíe su reporte de ingresos
         pdf:
           agency_header_name:
-            la_ldh: Department of Health
             sandbox: CBV Test Agency
           caseworker:
             doc_id: Doc ID
@@ -437,7 +422,6 @@ es:
         header: Revise su reporte de ingresos
         must_match:
           default: Esto debe coincidir con lo que se muestra en su solicitud de %{agency_acronym}.
-          la_ldh: Esto debe coincidir con lo que se muestra en sus beneficios de Medicaid.
         none_found: No encontramos ningún pago de este empleador en los últimos %{report_data_range}.
         none_found_description: Esto usualmente ocurre cuando usted no ha recibido ingresos por este trabajo en los últimos %{report_data_range}. Si cree que esto es un error, agregue un comentario en la casilla de comentarios adicionales. De lo contrario, continúe en la página siguiente.
         other_jobs: Otros trabajos
@@ -706,15 +690,6 @@ es:
       description_2: Tenga en cuenta que, en este momento, este programa piloto solo está disponible para participantes en ciertos estados.
       description_3: Para obtener más información sobre cómo presentar comprobantes de ingresos para sus beneficios, visite el sitio web de su agencia.
       header: Bienvenido a Verificar Mis Ingresos
-      pilot_ended:
-        la_ldh:
-          body: "<strong>El período piloto para Luisiana ha terminado.</strong> Si aún necesita verificar sus ingresos, puede hacer lo siguiente:"
-          body_bullet_1: Subir los documentos a través del Portal de autoservicio en línea en <a href="http://MyMedicaid.LA.GOV" target="_blank" rel="noopener noreferrer">http://MyMedicaid.LA.GOV</a>
-          body_bullet_2: 'Enviar los documentos por correo postal a: Louisiana Medicaid/LaCHIP, P.O. Box 91283, Baton Rouge, LA 70821-9278'
-          body_bullet_3: 'Enviar los documentos por correo electrónico a: <a href="mailto:%{agency_email}">%{agency_email}</a>'
-          body_bullet_4: Llevar los documentos a la oficina de Medicaid de su elección.
-          browser_title: Verificar Mis Ingresos | Departmento de Salud de Louisiana
-          header: Verificar Mis Ingresos
   session_timeout:
     modal:
       description: Parece no está realizando ninguna acción. Por motivos de seguridad, su sesión se cerrará, salvo que elija extender el tiempo de esta sesión.
@@ -727,13 +702,10 @@ es:
       title: Su sesión ha terminado.
   shared:
     agency_acronym:
-      la_ldh: LDH
       sandbox: CBV
     agency_full_name:
-      la_ldh: Departamento de Salud de Luisiana
       sandbox: Agencia de pruebas CBV
     agency_portal_name:
-      la_ldh: LDH
       sandbox: VMI
     agency_website_link_label: el sitio web de %{agency_portal_name}
     app_name:
@@ -742,7 +714,6 @@ es:
       lock: Candado
       locked_padlock: Un candado cerrado
     benefit:
-      la_ldh: Medicaid
       sandbox: SNAP
     error_unauthorized: La URL a la que estás accediendo está prohibida para el usuario actual. Verifique que está conectado como el usuario correcto e intente acceder de nuevo a la URL.
     footer:
@@ -750,14 +721,12 @@ es:
     header:
       aria_label: Menú principal
       cbv_flow_title:
-        la_ldh: Departamento de Salud
         sandbox: Agencia de pruebas CBV
       close: Cerrar
       help: Ayuda
       log_out: Cerrar sesión
       preheader:
         default: Un sitio web en colaboración con la Agencia de pruebas CBV.
-        la_ldh: Un sitio web en colaboración con el Departamento de Salud de Luisiana
       primary: Menú principal
     languages:
       en: English

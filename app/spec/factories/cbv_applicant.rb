@@ -86,11 +86,5 @@ FactoryBot.define do
         ]
       end
     end
-
-    trait :la_ldh do
-      client_agency_id { "la_ldh" }
-      date_of_birth { Date.new(2000, 1, 1) }
-      doc_id { "%08d" % rand(100_000_000) }
-    end
   end
 end

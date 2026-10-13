@@ -17,7 +17,6 @@ RSpec.describe PartnerConfigLoader do
       "argyle_environment" => "sandbox",
       "active_demo" => true,
       "active_prod" => false,
-      "pilot_ended" => false,
       "staff_portal_enabled" => false,
       "generic_links_enabled" => true,
       "invitation_links_enabled" => true,

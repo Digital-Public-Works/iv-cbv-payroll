@@ -15,7 +15,6 @@ logo_path: des_logo.png
 default_origin: demo
 active_demo: true
 active_prod: true
-pilot_ended: false
 staff_portal_enabled: false
 generic_links_enabled: false
 invitation_links_enabled: true

@@ -14,13 +14,6 @@ en:
               blank: Enter the client's last name.
             snap_application_date:
               invalid_date: Enter today's date or the date you contacted the client.
-        cbv_applicant/la_ldh:
-          attributes:
-            case_number:
-              blank: Enter the client's case number.
-            date_of_birth:
-              future_date: Date of birth must be today or in the past
-              invalid_date: Enter a valid date of birth
         cbv_applicant/sandbox:
           attributes:
             agency_id_number:
@@ -178,7 +171,6 @@ en:
       greeting: Hello,
       subject:
         default: Income Verification Report %{case_number} has been received
-        la_ldh: CBV Report %{confirmation_code}
   cbv:
     add_jobs:
       show:
@@ -215,18 +207,6 @@ en:
             blank: Enter your middle name.
             prompt: Middle name
             super_one_html: Middle name<sup>1</sup>
-      la_ldh:
-        fields:
-          case_number:
-            blank: Enter your Medicaid case number.
-            help_text: This 13-digit case number can be found on notices from Louisiana Department of Health
-            prompt: Medicaid case number (optional)
-            super_one_html: Medicaid case number<sup>1</sup>
-          date_of_birth:
-            blank: Enter your date of birth.
-            help_text: 'For example: January 19 2000'
-            prompt: Your date of birth
-            super_one_html: Date of birth<sup>1</sup>
       sandbox:
         fields:
           case_number:
@@ -317,7 +297,6 @@ en:
         what_if_i_cant_use_this_body_1: If you need to verify your income and can’t use this tool, then you’ll need to share your income information for this job directly with %{agency_portal_name}.
         what_if_i_cant_use_this_body_2_html:
           default: Visit %{website_link} for more information on how to submit documents.
-          la_ldh: 'You can: <ul><li>Upload documents through the Self Service Portal online at <a href="https://mymedicaid.la.gov/" target="_blank" rel="noopener noreferrer">https://mymedicaid.la.gov/</a></li><li>Send documents through US Mail: Louisiana Medicaid/LaCHIP, P.O. Box 91283, Baton Rouge, LA 70821-9278</li><li>Email documents: <a href="mailto:MyMedicaid@la.gov">MyMedicaid@la.gov</a></li><li>Bring your documents to the Medicaid office of choice.</li></ul>'
         what_if_i_cant_use_this_title: What if I can't use this tool?
         who_is_this_for_body: You can use this tool if you have earned income in the last 90 days (even if you’re no longer working), and you can access your paystubs online or work for an app-based company like Uber, Lyft or Amazon Flex.
         who_is_this_for_title: Who is this tool for?
@@ -331,7 +310,6 @@ en:
         body_1_html: If you still need to verify your income, please submit your income information by visiting %{website_link}.
         cta_button_html:
           default: <a href="%{agency_url}" class="usa-button" target="_blank" rel="noopener noreferrer">Visit the %{agency_portal_name} website</a>
-          la_ldh: <a href="%{agency_url}" class="usa-button" target="_blank" rel="noopener noreferrer">Visit LDH's website</a>
           sandbox: <a href="https://www.mass.gov/guides/how-to-contact-dta" class="usa-button" target="_blank" rel="noopener noreferrer">Learn more at CBV Test Agency</a>
         title: Your invitation to verify income has expired
     missing_results:
@@ -466,7 +444,6 @@ en:
         page_header: Submit your income report
         pdf:
           agency_header_name:
-            la_ldh: Department of Health
             sandbox: CBV Test Agency
           caseworker:
             agreement_consent_timestamp: Agreement Consent Timestamp
@@ -549,7 +526,6 @@ en:
         header: Review your income report
         must_match:
           default: This must match what is shown on your %{agency_acronym} application.
-          la_ldh: This must match what is shown on your Medicaid benefits.
         none_found: We didn't find any payments from this employer in the past %{report_data_range}.
         none_found_description: This typically happens when you haven't received income from this job in the past %{report_data_range}. If you believe this is an error, please add a comment in the additional comments box. Otherwise, continue to the next page.
         other_jobs: Other jobs
@@ -774,15 +750,6 @@ en:
       description_2: Please note this pilot is currently available only to participants in select states.
       description_3: Visit your agency's website for more information on how to submit proof of income for your benefits.
       header: Welcome to Verify My Income
-      pilot_ended:
-        la_ldh:
-          body: "<strong>The pilot period for Louisiana has ended.</strong> If you still need to verify your income, you can:"
-          body_bullet_1: Upload documents through the Self Service Portal online at <a href="http://MyMedicaid.LA.GOV" target="_blank" rel="noopener noreferrer">http://MyMedicaid.LA.GOV</a>
-          body_bullet_2: 'Send documents through US Mail:  Louisiana Medicaid/LaCHIP, P.O. Box 91283, Baton Rouge, LA 70821-9278'
-          body_bullet_3: 'Email documents to: <a href="mailto:%{agency_email}">%{agency_email}</a>'
-          body_bullet_4: Bring documents to the Medicaid office of choice.
-          browser_title: Verify My Income | Louisiana Department of Health
-          header: Verify My Income
   session_timeout:
     modal:
       description: It looks like you're inactive. For your security, we will sign you out soon unless you choose to extend your session.
@@ -795,13 +762,10 @@ en:
       title: Your session has timed out
   shared:
     agency_acronym:
-      la_ldh: LDH
       sandbox: CBV
     agency_full_name:
-      la_ldh: Louisiana Department of Health
       sandbox: CBV Test Agency
     agency_portal_name:
-      la_ldh: LDH
       sandbox: VMI
     agency_website_link_label: the %{agency_portal_name} website
     app_name:
@@ -810,7 +774,6 @@ en:
       lock: Lock
       locked_padlock: A locked padlock
     benefit:
-      la_ldh: Medicaid
       sandbox: SNAP
     error_unauthorized: The URL you're accessing is forbidden for the current user. Please verify you are logged in as the correct user and try accessing the URL again.
     footer:
@@ -818,14 +781,12 @@ en:
     header:
       aria_label: Main navigation
       cbv_flow_title:
-        la_ldh: Department of Health
         sandbox: CBV Test Agency
       close: Close
       help: Help
       log_out: Log out
       preheader:
         default: A website in partnership with CBV Test Agency.
-        la_ldh: A website in partnership with the Louisiana Department of Health
       primary: Primary navigation
     languages:
       en: English
