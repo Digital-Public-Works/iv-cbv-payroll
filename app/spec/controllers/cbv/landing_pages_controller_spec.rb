@@ -96,6 +96,12 @@ RSpec.describe Cbv::LandingPagesController do
       expect(response).to redirect_to(cbv_flow_entry_path)
     end
 
+    it "marks the value as applicant-provided" do
+      post :update, params: params
+
+      expect(applicant.reload).to be_applicant_provided(:case_number)
+    end
+
     it "marks the step complete" do
       expect { post :update, params: params }
         .to change { cbv_flow.reload.landing_page_completed_at }.from(nil)

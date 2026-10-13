@@ -32,6 +32,24 @@ class CbvFlow < ApplicationRecord
     update!(landing_page_completed_at: Time.current)
   end
 
+  # this is 'true' if the user has entered data, or there was no data to enter and the user bypassed the page.
+  def applicant_information_completed?
+    applicant_information_completed_at.present?
+  end
+
+  def complete_applicant_information_step!
+    return if applicant_information_completed?
+
+    update!(applicant_information_completed_at: Time.current)
+  end
+
+  # Payroll accounts whose sync is over but still need to run useful report validator after collecting data
+  def payroll_accounts_awaiting_validation
+    payroll_accounts
+      .includes(:webhook_events)
+      .select { |account| account.has_fully_synced? && account.report_unknown? }
+  end
+
   def self.create_from_invitation(cbv_flow_invitation, device_id, generic: false)
     create(
       cbv_flow_invitation: cbv_flow_invitation,
@@ -50,14 +68,20 @@ class CbvFlow < ApplicationRecord
     )
   end
 
-  def has_account_with_required_data?
-    accounts_with_required_data.any?
-  end
-
   # Accounts whose data is known to be usable: the sync produced what we need and
   # the report passed validation.
   def accounts_with_required_data
     payroll_accounts.includes(:webhook_events).select(&:usable?)
+  end
+
+  # all the jobs that we don't know are usable yet, but have finished sync
+  def accounts_presumed_usable
+    payroll_accounts.includes(:webhook_events).select(&:presumed_usable?)
+  end
+
+  # returns true if not *all* items are deemed to be not useful
+  def has_presumed_usable_account?
+    accounts_presumed_usable.any?
   end
 
   def fully_synced_payroll_accounts

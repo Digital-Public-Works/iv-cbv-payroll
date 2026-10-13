@@ -179,11 +179,20 @@ class Webhooks::Pinwheel::EventsController < ApplicationController
     Rails.logger.error "Unable to process webhook event (in #{self.class.name}): #{ex}"
   end
 
-  # a failed sync has no report worth judging; otherwise decide whether it is useful now.
+  # a failed sync has no report worth judging. If we still need to collect user
+  # data (per partner configuration), leave the verdict for after that step;
+  # otherwise decide whether it is useful now.
   def decide_report_status(report)
     return :not_useful unless @payroll_account.necessary_jobs_succeeded?
+    return @payroll_account.report_status if applicant_information_outstanding?
 
     validate_useful_report_requirements(report) ? :useful : :not_useful
+  end
+
+  def applicant_information_outstanding?
+    return false if @cbv_flow.applicant_information_completed?
+
+    @cbv_flow.cbv_applicant.fields_to_collect_for(PartnerAttributeUsage::APPLICANT_INPUT_PAGE).any?
   end
 
   def validate_useful_report_requirements(report)
