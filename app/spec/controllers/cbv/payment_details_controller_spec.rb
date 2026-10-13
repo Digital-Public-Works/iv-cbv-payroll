@@ -16,6 +16,7 @@ RSpec.describe Cbv::PaymentDetailsController do
     let(:cbv_flow) do
       create(:cbv_flow,
         :invited,
+        :applicant_information_completed,
         :with_argyle_account,
         with_errored_jobs: errored_jobs,
         created_at: current_time,
@@ -298,6 +299,7 @@ RSpec.describe Cbv::PaymentDetailsController do
         let(:cbv_flow) do
           create(:cbv_flow,
                  :invited,
+                 :applicant_information_completed,
                  :with_argyle_account,
                  with_errored_jobs: errored_jobs,
                  created_at: current_time,
@@ -362,6 +364,7 @@ RSpec.describe Cbv::PaymentDetailsController do
         let(:cbv_flow) do
           create(:cbv_flow,
                  :invited,
+                 :applicant_information_completed,
                  :with_argyle_account,
                  with_errored_jobs: errored_jobs,
                  created_at: current_time,
@@ -401,6 +404,7 @@ RSpec.describe Cbv::PaymentDetailsController do
         let(:cbv_flow) do
           create(:cbv_flow,
                  :invited,
+                 :applicant_information_completed,
                  :with_argyle_account,
                  with_errored_jobs: errored_jobs,
                  created_at: current_time,

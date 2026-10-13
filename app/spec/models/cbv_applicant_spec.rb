@@ -129,6 +129,14 @@ RSpec.describe CbvApplicant, type: :model do
         .to match_array(%w[first_name middle_name])
     end
 
+    it "leaves a value a person supplied hidden" do
+      applicant = build(:cbv_applicant, :sandbox)
+      applicant.record_attribute_provenance([ :first_name ])
+
+      expect(applicant.fields_to_collect_for(PartnerAttributeUsage::APPLICANT_INPUT_PAGE))
+        .not_to include("first_name")
+    end
+
     it "leaves a value that arrived on the invitation hidden" do
       applicant = build(:cbv_applicant, :sandbox)
 
@@ -358,6 +366,47 @@ RSpec.describe CbvApplicant, type: :model do
           )
         end
       end
+    end
+  end
+
+  describe "attribute provenance" do
+    let(:applicant) { create(:cbv_applicant, :sandbox, :blank) }
+
+    it "records which attributes the applicant supplied themselves" do
+      applicant.first_name = "Daph"
+      applicant.record_attribute_provenance([ :first_name ])
+      applicant.save!
+
+      expect(applicant.reload).to be_applicant_provided(:first_name)
+      expect(applicant.applicant_provided_attributes).to eq([ "first_name" ])
+    end
+
+    it "stamps the source and the time on each recorded attribute" do
+      freeze_time do
+        applicant.record_attribute_provenance([ :first_name, :case_number ])
+
+        expect(applicant.provenance_for(:case_number)).to eq(
+          "source" => "applicant",
+          "at" => Time.current.utc.iso8601
+        )
+      end
+    end
+
+    it "treats attributes that arrived on the invitation as not applicant-provided" do
+      invited = create(:cbv_applicant, :sandbox)
+
+      expect(invited).not_to be_applicant_provided(:first_name)
+      expect(invited.applicant_provided_attributes).to be_empty
+    end
+
+    it "drops provenance for an attribute that gets reset" do
+      applicant.first_name = "Daph"
+      applicant.record_attribute_provenance([ :first_name ])
+      applicant.save!
+
+      applicant.reset_applicant_attributes
+
+      expect(applicant.reload).not_to be_applicant_provided(:first_name)
     end
   end
 end

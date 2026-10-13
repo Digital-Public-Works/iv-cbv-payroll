@@ -76,7 +76,7 @@ class Webhooks::Pinwheel::EventsController < ApplicationController
         synchronization_status: @payroll_account.necessary_jobs_succeeded? ? :succeeded : :failed
       )
 
-      if @payroll_account.sync_succeeded?
+      if @payroll_account.sync_succeeded? && !applicant_information_outstanding?
         @payroll_account.update(report_status: validate_useful_report_requirements(report) ? :useful : :not_useful)
       end
 
@@ -179,6 +179,12 @@ class Webhooks::Pinwheel::EventsController < ApplicationController
 
     NewRelic::Agent.notice_error(ex)
     Rails.logger.error "Unable to process webhook event (in #{self.class.name}): #{ex}"
+  end
+
+  def applicant_information_outstanding?
+    return false if @cbv_flow.applicant_information_completed?
+
+    @cbv_flow.cbv_applicant.fields_to_collect_for(PartnerAttributeUsage::APPLICANT_INPUT_PAGE).any?
   end
 
   def validate_useful_report_requirements(report)

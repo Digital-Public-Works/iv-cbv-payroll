@@ -37,6 +37,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_120000) do
     t.string "doc_id"
     t.jsonb "custom_attributes", default: {}, null: false
     t.string "partner_identifier"
+    t.jsonb "attribute_provenance", default: {}, null: false
     t.index ["partner_identifier"], name: "index_cbv_applicants_on_partner_identifier"
   end
 
@@ -89,6 +90,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_120000) do
     t.string "device_id"
     t.boolean "generic", default: false, null: false
     t.datetime "landing_page_completed_at"
+    t.datetime "applicant_information_completed_at"
     t.index ["cbv_applicant_id"], name: "index_cbv_flows_on_cbv_applicant_id"
     t.index ["cbv_flow_invitation_id"], name: "index_cbv_flows_on_cbv_flow_invitation_id"
   end

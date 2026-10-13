@@ -170,13 +170,23 @@ class Webhooks::Argyle::EventsController < ApplicationController
     end
   end
 
-  # a failed sync has no report to judge; otherwise decide whether it is useful now.
+  # if the sync failed or we still need to collect user data (per partner
+  # configuration), check if it is useful after that step; otherwise now.
   def decide_report_status(payroll_account, report)
+    return if applicant_information_outstanding?
     return if payroll_account.sync_failed?
 
     payroll_account.update(
       report_status: validate_useful_report_requirements(report, payroll_account) ? :useful : :not_useful
     )
+  end
+
+  # Whether the partner still expects something from the applicant on the
+  # applicant-information page.
+  def applicant_information_outstanding?
+    return false if @cbv_flow.applicant_information_completed?
+
+    @cbv_flow.cbv_applicant.fields_to_collect_for(PartnerAttributeUsage::APPLICANT_INPUT_PAGE).any?
   end
 
   # For analytics during testing (and maybe for the pilots as well) we want to
