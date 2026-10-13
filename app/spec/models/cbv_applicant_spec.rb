@@ -31,6 +31,12 @@ RSpec.describe CbvApplicant, type: :model do
 
       expect(applicant.missing_required_attributes_for(context)).to be_empty
     end
+
+    it "is scoped to the context asked about" do
+      applicant = build(:cbv_applicant, :sandbox, first_name: nil)
+
+      expect(applicant.missing_required_attributes_for(PartnerAttributeUsage::LANDING_PAGE)).to be_empty
+    end
   end
 
   describe "#missing_attributes_for" do
@@ -105,6 +111,12 @@ RSpec.describe CbvApplicant, type: :model do
 
         expect(applicant.validate_user_input(PartnerAttributeUsage::APPLICANT_INPUT_PAGE)).to be false
         expect(applicant.errors[:middle_name]).to be_present
+      end
+
+      it "does not block the landing page step" do
+        applicant = build(:cbv_applicant, :sandbox, middle_name: nil)
+
+        expect(applicant.validate_user_input(PartnerAttributeUsage::LANDING_PAGE)).to be true
       end
     end
   end

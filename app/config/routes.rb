@@ -74,6 +74,7 @@ Rails.application.routes.draw do
       resource :payment_details, only: %i[show update]
       resource :expired_invitation, only: %i[show]
       resource :applicant_information, only: %i[show update]
+      resource :landing_page, only: %i[show update]
 
       # Session management
       post "session/refresh", to: "sessions#refresh", as: :session_refresh
@@ -86,6 +87,7 @@ Rails.application.routes.draw do
         get "employer_search", to: "preview#employer_search"
         get "entry", to: "preview#entry"
         get "applicant_information", to: "preview#applicant_information"
+        get "landing_page", to: "preview#landing_page"
         get "add_job", to: "preview#add_job"
         get "other_job", to: "preview#other_job"
         get "expired_invitation", to: "preview#expired_invitation"
