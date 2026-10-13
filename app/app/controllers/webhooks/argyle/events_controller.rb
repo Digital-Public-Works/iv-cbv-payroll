@@ -167,7 +167,23 @@ class Webhooks::Argyle::EventsController < ApplicationController
       payroll_account.update(synchronization_status: payroll_account.necessary_jobs_succeeded? ? :succeeded : :failed)
 
       decide_report_status(payroll_account, report)
+
+      prefill_applicant_attributes(payroll_account, report)
     end
+  end
+
+  # attempt to pre-fill attributes if the payroll provider has a mapped value for it.
+  # if it does not, the user will be prompted. If it does, the user will not be prompted.
+  def prefill_applicant_attributes(payroll_account, report)
+    identities = Aggregators::SyncedIdentities
+      .new(@cbv_flow, already_fetched: { payroll_account.id => report.identities })
+      .call
+    return if identities.empty?
+
+    Aggregators::ApplicantPrefill.new(@cbv_flow, identities).call
+  rescue StandardError => e
+    Rails.logger.error("Applicant prefill failed for cbv_flow #{@cbv_flow.id}: #{e.message}")
+    NewRelic::Agent.notice_error(e)
   end
 
   # if the sync failed or we still need to collect user data (per partner

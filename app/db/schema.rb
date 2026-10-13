@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_11_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_12_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -109,6 +109,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_120000) do
     t.boolean "show_on_caseworker_form", default: true, null: false
     t.string "validation_regex"
     t.boolean "required_for_submit", default: false, null: false
+    t.string "source_field"
     t.index ["partner_config_id"], name: "index_partner_application_attributes_on_partner_config_id"
   end
 

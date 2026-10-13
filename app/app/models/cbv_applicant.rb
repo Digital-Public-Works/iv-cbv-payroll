@@ -40,6 +40,9 @@ class CbvApplicant < ApplicationRecord
   # applicant is providing this data - not sent in as part of a partner-created invitation
   APPLICANT_PROVIDED_SOURCE = "applicant".freeze
 
+  # payroll provider is providing this as part of the sync response
+  PAYROLL_PROVIDER_SOURCE = "payroll_provider".freeze
+
   # Records where each of `names` came from, e.g.
   #   { "date_of_birth" => { "source" => "applicant", "at" => "2026-10-08T12:00:00Z" } }
   # Does not save; callers assign alongside the values themselves.
@@ -154,9 +157,21 @@ class CbvApplicant < ApplicationRecord
 
   # determine which fields are missing data
   def fields_to_collect_for(context)
-    names = missing_attributes_for(context)
+    names = (agency_config&.attribute_names_for(context) || []).select { |name| collect?(name) }
     names |= missing_required_for_submit_attributes if context.to_s == PartnerAttributeUsage::APPLICANT_INPUT_PAGE
     names
+  end
+
+  # Whether to put this attribute in front of the applicant: it has no value, or
+  # the value we hold came from the payroll provider rather than a person, so
+  # they get to confirm or correct it. A value someone typed — on the invitation
+  # or on an earlier page — is left alone.
+  def collect?(name)
+    attribute_missing?(name) || provider_supplied?(name)
+  end
+
+  def provider_supplied?(name)
+    provenance_for(name)&.dig("source") == PAYROLL_PROVIDER_SOURCE
   end
 
   def validate_user_input(context, submitted_names: [])

@@ -80,6 +80,8 @@ class Webhooks::Pinwheel::EventsController < ApplicationController
         @payroll_account.update(report_status: validate_useful_report_requirements(report) ? :useful : :not_useful)
       end
 
+      prefill_applicant_attributes(@payroll_account, report)
+
       paystub_hours = report.paystubs.filter_map(&:hours).map(&:to_f)
       paystub_gross_pay_amounts = report.paystubs.filter_map(&:gross_pay_amount)
 
@@ -179,6 +181,19 @@ class Webhooks::Pinwheel::EventsController < ApplicationController
 
     NewRelic::Agent.notice_error(ex)
     Rails.logger.error "Unable to process webhook event (in #{self.class.name}): #{ex}"
+  end
+
+  # attempt to fill applicant attributes if they are present in the response from payroll provider
+  def prefill_applicant_attributes(payroll_account, report)
+    identities = Aggregators::SyncedIdentities
+      .new(@cbv_flow, already_fetched: { payroll_account.id => report.identities })
+      .call
+    return if identities.empty?
+
+    Aggregators::ApplicantPrefill.new(@cbv_flow, identities).call
+  rescue StandardError => e
+    Rails.logger.error("Applicant prefill failed for cbv_flow #{@cbv_flow.id}: #{e.message}")
+    NewRelic::Agent.notice_error(e)
   end
 
   def applicant_information_outstanding?
