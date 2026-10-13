@@ -17,6 +17,7 @@ module TrackEvent
   ApplicantAttemptedPinwheelLogin = "ApplicantAttemptedPinwheelLogin"
   ApplicantBeganLinkingEmployer = "ApplicantBeganLinkingEmployer"
   ApplicantClickedArgyleLoginHelp = "ApplicantClickedArgyleLoginHelp"
+  ApplicantAutoCreatedInvitation = "ApplicantAutoCreatedInvitation"
   ApplicantClickedCannotFindEmployer = "ApplicantClickedCannotFindEmployer"
   ApplicantClickedBackButton = "ApplicantClickedBackButton"
   ApplicantClickedCBVInvitationLink = "ApplicantClickedCBVInvitationLink"

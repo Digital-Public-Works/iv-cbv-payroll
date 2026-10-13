@@ -4,6 +4,13 @@ FactoryBot.define do
       cbv_flow_invitation
     end
 
+    # Started by clicking a partner's generic link.
+    trait :generic do
+      generic { true }
+      cbv_flow_invitation { create(:cbv_flow_invitation, :auto_created) }
+      cbv_applicant { cbv_flow_invitation.cbv_applicant }
+    end
+
     cbv_applicant
 
     client_agency_id { "sandbox" }

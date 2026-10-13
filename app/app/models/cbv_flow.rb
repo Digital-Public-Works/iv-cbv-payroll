@@ -20,12 +20,13 @@ class CbvFlow < ApplicationRecord
     confirmation_code.present?
   end
 
-  def self.create_from_invitation(cbv_flow_invitation, device_id)
+  def self.create_from_invitation(cbv_flow_invitation, device_id, generic: false)
     create(
       cbv_flow_invitation: cbv_flow_invitation,
       cbv_applicant: cbv_flow_invitation.cbv_applicant,
       client_agency_id: cbv_flow_invitation.client_agency_id,
-      device_id: device_id
+      device_id: device_id,
+      generic: generic
     )
   end
 
@@ -51,22 +52,20 @@ class CbvFlow < ApplicationRecord
     payroll_accounts.includes(:webhook_events).select { |account| account.has_fully_synced? }
   end
 
+  # sharable generic link
   def to_generic_url(origin: nil)
     client_agency = ClientAgencyConfig.instance[client_agency_id]
     raise ArgumentError.new("Client Agency #{client_agency_id} not found") unless client_agency
+    return nil unless AutoInvitationService.available_for?(client_agency_id)
+    return nil if client_agency.agency_domain.blank?
 
     url_params = {
       host: client_agency.agency_domain,
-      protocol: (client_agency.agency_domain.nil? || Rails.env == "development") ? "http" : "https",
+      protocol: Rails.env.development? ? "http" : "https",
       locale: I18n.locale
     }
     url_params[:origin] = origin if origin.present?
 
-    if client_agency.agency_domain.present?
-      Rails.application.routes.url_helpers.root_url(url_params.compact)
-    else
-      url_params[:client_agency_id] = client_agency_id
-      Rails.application.routes.url_helpers.cbv_flow_new_url(url_params.compact)
-    end
+    Rails.application.routes.url_helpers.start_url(url_params)
   end
 end

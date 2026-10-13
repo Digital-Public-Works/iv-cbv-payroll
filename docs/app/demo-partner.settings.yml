@@ -16,7 +16,7 @@ default_origin: demo
 active_demo: true
 active_prod: true
 staff_portal_enabled: false
-generic_links_enabled: false
+generic_links_enabled: true
 invitation_links_enabled: true
 invitation_valid_days_default: 10
 pay_income_days_w2: 90

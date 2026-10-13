@@ -377,4 +377,21 @@ RSpec.describe CbvFlowInvitation, type: :model do
       expect(described_class.unstarted).not_to include(invitation_with_flow)
     end
   end
+
+  describe "auto-created invitations" do
+    it "saves without the partner's required applicant attributes" do
+      invitation = build(:cbv_flow_invitation, :auto_created)
+
+      expect(invitation).to be_valid
+    end
+
+    it "still requires them when a caseworker or the partner API creates it" do
+      invitation = build(:cbv_flow_invitation,
+        client_agency_id: "sandbox",
+        cbv_applicant: create(:cbv_applicant, :sandbox, :blank))
+
+      expect(invitation).not_to be_valid
+      expect(invitation.errors.attribute_names).to include(:"cbv_applicant.case_number")
+    end
+  end
 end

@@ -277,7 +277,8 @@ class ClientAgencyConfig
       weekly_report
       applicant_attributes
       attribute_usages
-      generic_links_disabled
+      generic_links_enabled
+      invitation_links_enabled
       report_customization_show_earnings_list
       require_applicant_information_on_invitation
       include_invitation_details_on_weekly_report
@@ -343,7 +344,7 @@ class ClientAgencyConfig
       end
 
       @report_customization_show_earnings_list = partner_config.report_customization_show_earnings_list
-      @generic_links_disabled = !partner_config.generic_links_enabled
+      @generic_links_enabled = partner_config.generic_links_enabled
       @invitation_links_enabled = partner_config.invitation_links_enabled
       @include_full_ssn = partner_config.include_full_ssn
       @include_direct_deposit_last_4 = partner_config.include_direct_deposit_last_4
@@ -365,6 +366,14 @@ class ClientAgencyConfig
       raise ArgumentError.new("Client Agency #{@id} invalid value for pay_income_days.gig") unless VALID_PAY_INCOME_DAYS.include?(@pay_income_days[:gig])
       raise ArgumentError.new("Client Agency #{@id} missing required attribute `partner_identifier_name`") if @partner_identifier_name.blank?
       raise ArgumentError.new("Client Agency #{@id} must have at least one transmission method configured") if @transmission_methods.empty?
+    end
+
+    def generic_flow_available?
+      !!generic_links_enabled
+    end
+
+    def invitation_flow_available?
+      !!invitation_links_enabled
     end
 
     # The attributes this partner asks for in `context`, in configured order.
