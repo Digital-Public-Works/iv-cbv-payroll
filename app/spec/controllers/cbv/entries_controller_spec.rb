@@ -72,6 +72,45 @@ RSpec.describe Cbv::EntriesController do
           .to change(CbvFlow, :count).by(1)
       end
 
+      context "when the partner collects something at the landing page" do
+        let(:invitation) { create(:cbv_flow_invitation, :auto_created) }
+
+        before do
+          config = PartnerConfig.find_by(partner_id: "sandbox")
+          PartnerAttributeUsage.create!(
+            partner_config: config,
+            context: PartnerAttributeUsage::LANDING_PAGE,
+            name: "case_number",
+            required: true
+          )
+          ClientAgencyConfig.reset!
+        end
+
+        it "sends a generic flow to the landing page before the consent page" do
+          session[:cbv_generic_entry] = true
+
+          get :show, params: { token: invitation.auth_token }
+
+          expect(response).to redirect_to(cbv_flow_landing_page_path)
+        end
+
+        it "takes an invitation flow straight to consent" do
+          get :show, params: { token: invitation.auth_token }
+
+          expect(response).to be_successful
+        end
+
+        it "stops redirecting once the landing page has been passed" do
+          session[:cbv_generic_entry] = true
+          get :show, params: { token: invitation.auth_token }
+          CbvFlow.last.complete_landing_page_step!
+
+          get :show
+
+          expect(response).to be_successful
+        end
+      end
+
       it "does not mark the flow generic" do
         get :show, params: { token: invitation.auth_token }
 

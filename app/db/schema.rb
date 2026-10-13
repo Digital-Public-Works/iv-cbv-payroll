@@ -88,6 +88,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_120000) do
     t.boolean "has_other_jobs"
     t.string "device_id"
     t.boolean "generic", default: false, null: false
+    t.datetime "landing_page_completed_at"
     t.index ["cbv_applicant_id"], name: "index_cbv_flows_on_cbv_applicant_id"
     t.index ["cbv_flow_invitation_id"], name: "index_cbv_flows_on_cbv_flow_invitation_id"
   end

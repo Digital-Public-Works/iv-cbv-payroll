@@ -223,6 +223,15 @@ es:
           default: <a href="%{agency_url}" class="usa-button" target="_blank" rel="noopener noreferrer">Visite el sitio web de %{agency_portal_name}</a>
           sandbox: <a href="https://www.mass.gov/guides/how-to-contact-dta" class="usa-button" target="_blank" rel="noopener noreferrer">Obtenga más información en la Agencia de pruebas CBV</a>
         title: Su invitación para verificar ingresos ha expirado
+    landing_pages:
+      show:
+        continue: Continuar
+        explanation: Necesitamos un poco de información antes de que conecte su cuenta de nómina. %{agency_acronym} la usa para asociar sus ingresos con su caso.
+        header: Cuéntenos sobre usted
+      update:
+        error_header:
+          one: "%{count} error"
+          other: "%{count} errores"
     missing_results:
       show:
         check_search_term_example: 'Por ejemplo: Si buscó primero "DHS", el mejor término de búsqueda sería "Department of Human Services".'

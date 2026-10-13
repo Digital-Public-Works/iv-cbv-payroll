@@ -113,6 +113,8 @@ class Cbv::BaseController < ApplicationController
     case params[:controller]
     when "cbv/generic_links"
       cbv_flow_entry_path
+    when "cbv/landing_pages"
+      cbv_flow_entry_path
     when "cbv/entries"
       cbv_flow_employer_search_path
     when "cbv/employer_searches"

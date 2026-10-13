@@ -104,6 +104,11 @@ class Cbv::PreviewController < ApplicationController
     render_as("applicant_informations")
   end
 
+  def landing_page
+    params[:context] = PartnerAttributeUsage::LANDING_PAGE
+    render_as("landing_pages")
+  end
+
   def add_job
     render_as("add_jobs")
   end
@@ -435,6 +440,7 @@ class Cbv::PreviewController < ApplicationController
   end
 
   def applicant_field_names
-    current_agency.attribute_names_for(PartnerAttributeUsage::APPLICANT_INPUT_PAGE)
+    context = params[:context].presence || PartnerAttributeUsage::APPLICANT_INPUT_PAGE
+    current_agency.attribute_names_for(context)
   end
 end
