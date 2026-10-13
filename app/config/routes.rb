@@ -53,8 +53,8 @@ Rails.application.routes.draw do
     # Feedback CTA
     get "/feedback", to: "feedbacks#show", as: :feedbacks
 
-    # RFI (mail) origin tracking route for LA
-    get "/start", to: "pages#home", defaults: { origin: "mail" }
+    # generic link. gets partner via subdomain, creates invitation or finds invitation via device_id.
+    get "/start", to: "cbv/generic_links#show"
 
     # Tokenized links
     get "/start/:token", to: "cbv/entries#show", as: :start_flow, token: /[^\/]+/
@@ -74,13 +74,6 @@ Rails.application.routes.draw do
       resource :payment_details, only: %i[show update]
       resource :expired_invitation, only: %i[show]
       resource :applicant_information, only: %i[show update]
-
-      # Generic link. The client_agency_id segment is validated dynamically per
-      # request against the database (see ClientAgencyIdConstraint), so partners
-      # are not enumerated into the route table at boot.
-      scope "links/:client_agency_id", constraints: ClientAgencyIdConstraint.new do
-        root to: "generic_links#show", as: :new
-      end
 
       # Session management
       post "session/refresh", to: "sessions#refresh", as: :session_refresh

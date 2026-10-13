@@ -517,6 +517,7 @@ class PartnerConfigLoader
     end
 
     # invitations created by partner via API must have the required attributes.
+    # invitations auto created by generic does not require these - they will be collected later.
     usage = Array(@yaml_data[:invitation_attributes]).find { |u| u[:name].to_s == name.to_s }
     if usage && !usage[:required]
       @errors << "partner_identifier_name '#{name}' must be required in invitation_attributes"
