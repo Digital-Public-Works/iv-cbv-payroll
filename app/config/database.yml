@@ -16,7 +16,8 @@
 #
 default: &default
   adapter: postgresql
-  aws_rds_iam_auth_token_generator: <%= ENV["DISABLE_RDS_IAM"] ? nil : "default" %>
+  # ensure no aws sso login is required for local migrations
+  aws_rds_iam_auth_token_generator: <%= "default" unless ENV["DISABLE_RDS_IAM"] || Rails.env.local? %>
   encoding: unicode
   # For details on connection pooling, see Rails configuration guide
   # https://guides.rubyonrails.org/configuring.html#database-pooling
