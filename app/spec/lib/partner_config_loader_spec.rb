@@ -57,6 +57,9 @@ RSpec.describe PartnerConfigLoader do
         { "name" => "case_number", "required" => true },
         { "name" => "first_name", "required" => false }
       ],
+      "landing_page_attributes" => [
+        { "name" => "case_number", "required" => true }
+      ],
       "applicant_input_page" => [
         { "name" => "first_name", "required" => true }
       ],
@@ -457,6 +460,7 @@ RSpec.describe PartnerConfigLoader do
 
       expect(pc.partner_attribute_usages.for_context("invitation").ordered.map { |u| [ u.name, u.required ] })
         .to eq([ [ "case_number", true ], [ "first_name", false ] ])
+      expect(pc.partner_attribute_usages.for_context("landing_page").map(&:name)).to eq([ "case_number" ])
       expect(pc.partner_attribute_usages.for_context("applicant_input_page").map(&:name)).to eq([ "first_name" ])
     end
 
@@ -466,14 +470,14 @@ RSpec.describe PartnerConfigLoader do
       loader.validate!
       loader.apply!
 
-      valid_yaml["applicant_input_page"] = []
+      valid_yaml["landing_page_attributes"] = []
       loader2 = loader_for(valid_yaml)
       loader2.load!
       loader2.validate!
       loader2.apply!
 
       pc = PartnerConfig.find_by(partner_id: "test_partner")
-      expect(pc.partner_attribute_usages.for_context("applicant_input_page")).to be_empty
+      expect(pc.partner_attribute_usages.for_context("landing_page")).to be_empty
     end
 
     it "rejects a usage naming an attribute the partner does not define" do

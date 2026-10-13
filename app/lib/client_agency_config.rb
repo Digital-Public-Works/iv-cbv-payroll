@@ -395,7 +395,8 @@ class ClientAgencyConfig
 
     # the things that are client-provided info. attributes that are from 'invitation' are not applicant provided
     def applicant_supplied_attribute_names
-      attribute_names_for(PartnerAttributeUsage::APPLICANT_INPUT_PAGE)
+      attribute_names_for(PartnerAttributeUsage::LANDING_PAGE) |
+        attribute_names_for(PartnerAttributeUsage::APPLICANT_INPUT_PAGE)
     end
 
     # goes into useful report validator - these are the itmes that need values before it can submit

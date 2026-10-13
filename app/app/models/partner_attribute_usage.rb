@@ -2,9 +2,11 @@
 class PartnerAttributeUsage < ApplicationRecord
   # attributes for when an invitation is created
   INVITATION = "invitation".freeze
+  # attributes to ask for on the /start landing page for generic flow
+  LANDING_PAGE = "landing_page".freeze
   # attributes to ask for on the user input page post-payroll data sync
   APPLICANT_INPUT_PAGE = "applicant_input_page".freeze
-  CONTEXTS = [ INVITATION, APPLICANT_INPUT_PAGE ].freeze
+  CONTEXTS = [ INVITATION, LANDING_PAGE, APPLICANT_INPUT_PAGE ].freeze
 
   belongs_to :partner_config
 

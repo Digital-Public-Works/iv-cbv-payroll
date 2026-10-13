@@ -20,6 +20,18 @@ class CbvFlow < ApplicationRecord
     confirmation_code.present?
   end
 
+  # has the landing page for generic been passed, either because there was nothing
+  # configured there or because the user entered the required values
+  def landing_page_completed?
+    landing_page_completed_at.present?
+  end
+
+  def complete_landing_page_step!
+    return if landing_page_completed?
+
+    update!(landing_page_completed_at: Time.current)
+  end
+
   def self.create_from_invitation(cbv_flow_invitation, device_id, generic: false)
     create(
       cbv_flow_invitation: cbv_flow_invitation,
