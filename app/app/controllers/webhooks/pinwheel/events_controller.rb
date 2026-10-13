@@ -71,10 +71,13 @@ class Webhooks::Pinwheel::EventsController < ApplicationController
       )
       report.fetch
 
-      if @payroll_account.necessary_jobs_succeeded? && validate_useful_report_requirements(report)
-        @payroll_account.update(synchronization_status: :succeeded)
-      else
-        @payroll_account.update(synchronization_status: :failed)
+      # sync is over, determine if it succeeded or failed
+      @payroll_account.update(
+        synchronization_status: @payroll_account.necessary_jobs_succeeded? ? :succeeded : :failed
+      )
+
+      if @payroll_account.sync_succeeded?
+        @payroll_account.update(report_status: validate_useful_report_requirements(report) ? :useful : :not_useful)
       end
 
       paystub_hours = report.paystubs.filter_map(&:hours).map(&:to_f)
