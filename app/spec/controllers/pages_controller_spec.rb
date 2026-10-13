@@ -10,6 +10,13 @@ RSpec.describe PagesController do
       expect(response.body).to include("Welcome")
     end
 
+    # Guards the skip_before_action on the error actions: it must not leak out to
+    # ordinary pages, which do need a device_id.
+    it "issues a device_id cookie" do
+      get :home
+      expect(response.cookies).to have_key("device_id")
+    end
+
     context "when on an agency subdomain with an active pilot" do
       before do
         stub_client_agency_config_value("la_ldh", "agency_domain", "la.verifymyincome.org")
@@ -100,6 +107,31 @@ RSpec.describe PagesController do
       end
     end
 
+    describe "when the session points at a CBV flow that no longer exists" do
+      it "still renders the 404 page rather than raising" do
+        expect {
+          get :error_404, session: { cbv_flow_id: 999_999_999 }
+        }.not_to raise_error
+
+        expect(response.status).to eq(404)
+        expect(response.body).to include("Return to welcome")
+      end
+    end
+
+    it "does not issue a device_id cookie to unmatched requests" do
+      get :error_404
+
+      expect(response.status).to eq(404)
+      expect(response.cookies).not_to have_key("device_id")
+    end
+
+    it "does not query for a CBV flow when there is no session" do
+      expect(CbvFlow).not_to receive(:find_by)
+
+      get :error_404
+      expect(response.status).to eq(404)
+    end
+
     describe "when on an agency subdomain" do
       let(:cbv_flow) { create(:cbv_flow, :invited) }
 
@@ -117,6 +149,13 @@ RSpec.describe PagesController do
       get :error_500
       expect(response.status).to eq(500)
       expect(response.body).to include("It looks like something went wrong")
+    end
+
+    it "does not issue a device_id cookie" do
+      get :error_500
+
+      expect(response.status).to eq(500)
+      expect(response.cookies).not_to have_key("device_id")
     end
 
     describe "when on an agency subdomain" do

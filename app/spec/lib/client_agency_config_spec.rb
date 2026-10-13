@@ -122,13 +122,77 @@ RSpec.describe ClientAgencyConfig do
       2.times { expect(config["foo"].agency_name).to eq("Foo Agency Name") }
     end
 
-    it "returns nil for an unknown agency and does not cache the miss" do
+    it "returns nil for an unknown agency and caches the miss" do
+      config = described_class.new(true)
+
+      expect(PartnerConfig).to receive(:find_by).with(partner_id: "ghost").once.and_call_original
+
+      5.times { expect(config["ghost"]).to be_nil }
+    end
+
+    it "re-queries an unknown agency once the miss TTL expires" do
+      config = described_class.new(true)
+      fake_time = 0.0
+      allow(config).to receive(:now) { fake_time }
+
+      expect(PartnerConfig).to receive(:find_by).with(partner_id: "ghost").twice.and_call_original
+
+      config["ghost"]
+
+      # Still within the miss TTL: answered from the negative cache.
+      fake_time = ClientAgencyConfig::MISS_CACHE_TTL_SECONDS - 1
+      config["ghost"]
+
+      # Past the miss TTL: the database is consulted again.
+      fake_time = ClientAgencyConfig::MISS_CACHE_TTL_SECONDS + 1
+      config["ghost"]
+    end
+
+    it "picks up a partner added after a cached miss, once the miss TTL expires" do
+      config = described_class.new(true)
+      fake_time = 0.0
+      allow(config).to receive(:now) { fake_time }
+
+      expect(config["late_arrival"]).to be_nil
+
+      pc = PartnerConfig.create!(
+        partner_id: "late_arrival",
+        name: "Late Arrival Agency",
+        timezone: "America/Los_Angeles",
+        argyle_environment: "sandbox",
+        pay_income_days_w2: 90,
+        pay_income_days_gig: 182,
+        partner_identifier_name: "first_name"
+      )
+      pc.partner_transmission_methods.create!(method_type: :shared_email)
+
+      fake_time = ClientAgencyConfig::MISS_CACHE_TTL_SECONDS - 1
+      expect(config["late_arrival"]).to be_nil
+
+      fake_time = ClientAgencyConfig::MISS_CACHE_TTL_SECONDS + 1
+      expect(config["late_arrival"]&.agency_name).to eq("Late Arrival Agency")
+    end
+
+    it "bounds the negative cache so scan traffic cannot grow it without limit" do
+      stub_const("ClientAgencyConfig::MAX_CACHED_MISSES", 3)
+      config = described_class.new(true)
+
+      4.times { |i| expect(config["ghost_#{i}"]).to be_nil }
+
+      misses = config.instance_variable_get(:@misses)
+      expect(misses.size).to be <= 3
+      expect(misses).not_to have_key("partner:ghost_0")
+      expect(misses).to have_key("partner:ghost_3")
+    end
+
+    it "does not cache misses in development so a new partner is routable immediately" do
+      allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("development"))
       config = described_class.new(true)
 
       expect(PartnerConfig).to receive(:find_by).with(partner_id: "ghost").twice.and_call_original
 
-      expect(config["ghost"]).to be_nil
-      expect(config["ghost"]).to be_nil
+      config["ghost"]
+      config["ghost"]
     end
 
     it "returns nil for a blank id without touching the database" do
@@ -193,6 +257,14 @@ RSpec.describe ClientAgencyConfig do
     it "returns nil for an unrecognized domain" do
       config = described_class.new(true)
       expect(config.find_by_domain("not-a-domain")).to be_nil
+    end
+
+    it "caches an unrecognized domain so repeated lookups don't hit the database" do
+      config = described_class.new(true)
+
+      expect(PartnerConfig).to receive(:find_by).with(domain: "not-a-domain").once.and_call_original
+
+      3.times { expect(config.find_by_domain("not-a-domain")).to be_nil }
     end
   end
 

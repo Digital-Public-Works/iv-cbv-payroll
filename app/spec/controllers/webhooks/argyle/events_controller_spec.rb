@@ -647,4 +647,84 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
       process_webhook("accounts.removed", expected_last_event_type: "accounts.connected", verify_webhook_event: false)
     end
   end
+
+  # The outer `before` in this file stubs #authorize_webhook wholesale, so the
+  # guard itself is otherwise untested. These exercise it for real.
+  describe '#authorize_webhook' do
+    let!(:cbv_flow) { create(:cbv_flow, argyle_user_id: "webhook-auth-user") }
+    let(:subscribed_event) { "accounts.connected" }
+    let(:unsubscribed_event) { "not.an.event.we.subscribe.to" }
+
+    before do
+      allow(controller).to receive(:authorize_webhook).and_call_original
+      # Isolate the guard's control flow from partner/environment secret lookup.
+      allow(controller).to receive(:argyle_for)
+        .and_return(instance_double(Aggregators::Sdk::ArgyleService, webhook_secret: "test_webhook_secret"))
+    end
+
+    def post_webhook(event, signature: nil, user: cbv_flow.argyle_user_id)
+      request.headers["X-Argyle-Signature"] = signature if signature
+      post :create, params: {
+        "event" => event,
+        "data" => { "user" => user, "account" => SecureRandom.uuid }
+      }
+    end
+
+    it "rejects a request that omits the signature header rather than raising" do
+      # secure_compare raises NoMethodError on nil, which surfaced as a 500.
+      expect { post_webhook(subscribed_event) }.not_to raise_error
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it "rejects a request whose signature does not match" do
+      post_webhook(subscribed_event, signature: "not-the-right-digest")
+
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it "sends exactly one response when a request is both wrongly signed and unsubscribed" do
+      # Regression: both guards rendered without returning, so an unsubscribed
+      # event with a bad signature rendered twice and raised
+      # AbstractController::DoubleRenderError -- a 500 any unauthenticated caller
+      # could trigger. The signature must be present but wrong to reach the
+      # second guard.
+      expect {
+        post_webhook(unsubscribed_event, signature: "not-the-right-digest")
+      }.not_to raise_error
+
+      expect(response).to have_http_status(:unauthorized)
+      expect(JSON.parse(response.body)).to eq("error" => "Invalid signature")
+    end
+
+    context "with a valid signature" do
+      before do
+        allow(Aggregators::Webhooks::Argyle).to receive(:verify_signature).and_return(true)
+      end
+
+      it "acknowledges but ignores an event we do not subscribe to" do
+        post_webhook(unsubscribed_event, signature: "a-valid-digest")
+
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)).to eq("info" => "Unhandled webhook")
+      end
+
+      it "lets a subscribed event through to the action" do
+        post_webhook(subscribed_event, signature: "a-valid-digest")
+
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)).to eq("status" => "ok")
+      end
+    end
+
+    context "when no CbvFlow matches the argyle user id" do
+      it "acknowledges the webhook without reaching signature verification" do
+        expect(Aggregators::Webhooks::Argyle).not_to receive(:verify_signature)
+
+        post_webhook(subscribed_event, signature: "a-valid-digest", user: "no-such-argyle-user")
+
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)).to eq("status" => "ok")
+      end
+    end
+  end
 end
