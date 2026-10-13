@@ -11,6 +11,12 @@ FactoryBot.define do
       cbv_applicant { cbv_flow_invitation.cbv_applicant }
     end
 
+    # The applicant-information step has been passed, which is what releases the
+    # deferred UsefulReportValidator run.
+    trait :applicant_information_completed do
+      applicant_information_completed_at { Time.current }
+    end
+
     cbv_applicant
 
     client_agency_id { "sandbox" }

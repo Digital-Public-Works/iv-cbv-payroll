@@ -6,7 +6,7 @@ class Cbv::PreviewController < ApplicationController
 
   before_action :ensure_non_production_environment
   before_action :setup_preview_flow
-  before_action :override_has_account_with_required_data
+  before_action :override_has_presumed_usable_account
   before_action :set_aggregator_report, only: %i[payment_details summary submit submit_pdf_as_html paystubs paystubs_pdf_as_html validation_failures transmitted_json]
   before_action :relax_csp_for_html_preview
 
@@ -212,11 +212,14 @@ class Cbv::PreviewController < ApplicationController
     request.content_security_policy.style_src :self, :unsafe_inline
   end
 
-  def override_has_account_with_required_data
+  def override_has_presumed_usable_account
     valid_count = count_of_valid_accounts
 
-    @cbv_flow.define_singleton_method(:has_account_with_required_data?) do
+    @cbv_flow.define_singleton_method(:has_presumed_usable_account?) do
       valid_count > 0
+    end
+    @cbv_flow.define_singleton_method(:accounts_presumed_usable) do
+      payroll_accounts.first(valid_count)
     end
   end
 

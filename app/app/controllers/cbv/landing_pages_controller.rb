@@ -16,9 +16,7 @@ class Cbv::LandingPagesController < Cbv::BaseController
   end
 
   def update
-    submitted = applicant_params[:cbv_applicant]
-    submitted_names = submitted.present? ? submitted.to_h.keys.map(&:to_s) : []
-    @cbv_applicant.assign_attributes(submitted) if submitted.present?
+    submitted_names = @cbv_applicant.assign_applicant_input(applicant_params[:cbv_applicant])
 
     if @cbv_applicant.validate_user_input(CONTEXT, submitted_names: submitted_names) && @cbv_applicant.save
       track_submitted_event

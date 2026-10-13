@@ -14,13 +14,11 @@ class Cbv::ApplicantInformationsController < Cbv::BaseController
   end
 
   def update
-    submitted = applicant_params[:cbv_applicant]
-    submitted_names = submitted.present? ? submitted.to_h.keys.map(&:to_s) : []
-    @cbv_applicant.assign_attributes(submitted) if submitted.present?
+    submitted_names = @cbv_applicant.assign_applicant_input(applicant_params[:cbv_applicant])
 
     if @cbv_applicant.validate_user_input(CONTEXT, submitted_names: submitted_names) && @cbv_applicant.save
       track_applicant_submitted_information_page_event
-      return redirect_to next_path
+      return complete_step_and_advance
     end
 
     error_header = t(".error_header", count: @cbv_applicant.errors.count)
@@ -45,6 +43,7 @@ class Cbv::ApplicantInformationsController < Cbv::BaseController
 
   private
 
+
   # renders required user input that has not yet been populated
   def applicant_field_names
     if show_all_applicant_fields?
@@ -59,12 +58,29 @@ class Cbv::ApplicantInformationsController < Cbv::BaseController
     return if show_all_applicant_fields?
     return if applicant_field_names.any?
 
-    redirect_to next_path
+    complete_step_and_advance
   end
 
-  # show all populated data if the applicant says 'edit my data'.
+  # show all populated data if the applicant says 'edit my data'. Anything they change will be marked as
+  # applicant-supplied
   def show_all_applicant_fields?
     params[:force_show] == "true" || action_name == "update"
+  end
+
+  # run the useful report validator now that data has been collected if needed.
+  def complete_step_and_advance
+    @cbv_flow.complete_applicant_information_step!
+
+    result = DeferredReportValidator.new(@cbv_flow, event_logger: event_logger, request: request).run
+    @cbv_flow.payroll_accounts.reload
+
+    if result.first_invalid_account.present? && @cbv_flow.accounts_with_required_data.empty?
+      return redirect_to cbv_flow_validation_failures_path(
+        user: { account_id: result.first_invalid_account.aggregator_account_id }
+      )
+    end
+
+    redirect_to next_path
   end
 
   def set_cbv_applicant

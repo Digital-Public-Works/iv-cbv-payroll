@@ -30,6 +30,11 @@ class PayrollAccount < ApplicationRecord
     not_useful: "not_useful"         # defines the method: report_not_useful?
   }, prefix: "report"
 
+  # sync finished and we don't know for sure it is not useful
+  def presumed_usable?
+    sync_succeeded? && !report_not_useful?
+  end
+
   # The sync finished and the report is known to be usable.
   def usable?
     sync_succeeded? && report_useful?
