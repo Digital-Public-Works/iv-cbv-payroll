@@ -437,7 +437,7 @@ If Iv Cbv Payroll is for another agency, update the agency line in `app/views/la
 # Documentation
 
 ## Repository Structure
-See [CODEOWNERS.md](./CODEOWNERS.md) for some information on repo structure.
+See [CODEOWNERS](./.github/CODEOWNERS) for some information on repo structure.
 
 # Contributing
 See [CONTRIBUTING.md](./CONTRIBUTING.md).
