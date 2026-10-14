@@ -10,7 +10,7 @@ module ApplicationHelper
   #
   # foo:
   #   az_des: Some String
-  #   la_ldh: Other String
+  #   pa_dhs: Other String
   #   default: Default String
   #
   # Then call this method with, `agency_translation("foo")` and it will attempt

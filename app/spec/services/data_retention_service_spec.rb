@@ -1167,7 +1167,7 @@ RSpec.describe DataRetentionService do
     # az_des and pa_dhs applicant factory traits null out first_name/last_name,
     # which the test harness marks required, so supply them here.
     # Uniform-7-day rule keys off cbv_flow.created_at; age the flow there.
-    %i[sandbox az_des la_ldh pa_dhs].each do |agency|
+    %i[sandbox az_des pa_dhs].each do |agency|
       it "redacts a transmitted #{agency} flow without raising" do
         invitation = create(:cbv_flow_invitation, agency,
           cbv_applicant_attributes: { first_name: "Test", last_name: "Person" })

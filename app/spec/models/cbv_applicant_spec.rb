@@ -75,18 +75,6 @@ RSpec.describe CbvApplicant, type: :model do
         )
       end
     end
-
-    context "partner where case_number is optional (la_ldh)" do
-      let(:applicant) { build(:cbv_applicant, :la_ldh, case_number: nil) }
-
-      it "does not report case_number as missing" do
-        applicant.set_applicant_attributes
-        missing = applicant.validate_required_applicant_attributes
-
-        expect(missing).not_to include(:case_number)
-        expect(applicant).to be_valid
-      end
-    end
   end
 
   describe "#redact!" do
@@ -112,7 +100,7 @@ RSpec.describe CbvApplicant, type: :model do
     end
 
     context "partner with date-redactable fields" do
-      let(:applicant) { create(:cbv_applicant, :la_ldh) }
+      let(:applicant) { create(:cbv_applicant, :sandbox) }
 
       it "redacts date_of_birth" do
         applicant.redact!
@@ -193,7 +181,7 @@ RSpec.describe CbvApplicant, type: :model do
     end
 
     it "returns empty array when income_changes is blank" do
-      applicant = create(:cbv_applicant, :la_ldh)
+      applicant = create(:cbv_applicant, :sandbox)
 
       expect(applicant.agency_expected_names).to eq([])
     end

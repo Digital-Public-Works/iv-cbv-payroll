@@ -1,11 +1,11 @@
 namespace :invitation do
-  desc "create invitation link to start flow, ex: rake invitation:create[la_ldh], (default: la_ldh)"
+  desc "create invitation link to start flow, ex: rake invitation:create[pa_dhs], (default: sandbox)"
   task :create, [ :client_agency_id ] => :environment do |_, args|
     log = ActiveSupport::Logger.new($stdout)
     begin
       raise "❌ Can't run this in prod! ❌" if Rails.env.production?
 
-      client_agency_id = args[:client_agency_id] || "la_ldh"
+      client_agency_id = args[:client_agency_id] || "sandbox"
       user = User.find_or_create_by(
         email: "ffs-eng+#{client_agency_id}@navapbc.com",
         client_agency_id: client_agency_id

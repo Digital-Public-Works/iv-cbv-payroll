@@ -263,7 +263,6 @@ class ClientAgencyConfig
       pay_income_days
       pinwheel_api_token
       pinwheel_environment
-      pilot_ended
       argyle_environment
       staff_portal_enabled
       sso
@@ -293,7 +292,6 @@ class ClientAgencyConfig
       @invitation_valid_days = partner_config.invitation_valid_days_default
       @logo_path = partner_config.logo_path
       @pay_income_days = { w2: partner_config.pay_income_days_w2, gig: partner_config.pay_income_days_gig }
-      @pilot_ended = partner_config.pilot_ended
       @argyle_environment = partner_config.argyle_environment || "sandbox"
 
       @transmission_methods = partner_config.partner_transmission_methods.map do |ptm|

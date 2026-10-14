@@ -99,7 +99,7 @@ RSpec.configure do |config|
   config.use_transactional_fixtures = true
 
   config.before(:suite) do
-    partners = [ nil, :az_des, :la_ldh, :pa_dhs ]
+    partners = [ nil, :az_des, :pa_dhs ]
 
     PartnerApplicationAttribute.delete_all
     PartnerTransmissionConfig.delete_all
@@ -120,7 +120,6 @@ RSpec.configure do |config|
     partners.each do |partner|
       p_id = case partner
              when :az_des then 'az_des'
-             when :la_ldh then 'la_ldh'
              when :pa_dhs then 'pa_dhs'
              else 'sandbox'
              end
@@ -138,21 +137,6 @@ RSpec.configure do |config|
         end
       end
     end
-
-    # LA LDH needs to set case_number to optional and needs a doc_id PAA
-    la_ldh_config = PartnerConfig.find_by(partner_id: 'la_ldh')
-    PartnerApplicationAttribute.where(partner_config: la_ldh_config, name: 'case_number')
-      .update_all(required: false)
-
-    # LA LDH needs doc_id
-    FactoryBot.create(:partner_application_attribute,
-      partner_config: la_ldh_config,
-      name: 'doc_id',
-      description: 'Document ID',
-      required: false,
-      data_type: 'string',
-      redactable: false
-    )
 
     # AZ DES and PA DHS need income_changes
     az_des_config = PartnerConfig.find_by(partner_id: 'az_des')

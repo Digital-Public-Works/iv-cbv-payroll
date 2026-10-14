@@ -102,18 +102,6 @@ html {
   }
 }
 
-.cbv-header__agency-logo--la_ldh {
-  height: 45px;
-  width: 320px;
-
-  @include at-media-max($theme-header-min-width) {
-    height: 30px;
-    width: 200px;
-    min-width: 125px;
-    margin-top: 0.25rem;
-  }
-}
-
 .cbv-header__agency-logo--az_des {
   height: 45px;
 
