@@ -136,6 +136,61 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
         expect(account).to be_sync_succeeded
         expect(account).to be_report_useful
       end
+
+      it "marks the report not useful when the necessary jobs did not succeed" do
+        allow_any_instance_of(PayrollAccount::Argyle).to receive(:necessary_jobs_succeeded?).and_return(false)
+
+        process_webhook("accounts.connected")
+        process_webhook("identities.added")
+        process_webhook("users.fully_synced")
+        process_webhook("paystubs.fully_synced")
+        process_webhook("gigs.fully_synced")
+        account = PayrollAccount.last.reload
+
+        expect(account).to be_sync_failed
+        expect(account).to be_report_not_useful
+      end
+
+      it "saves neither status when deciding the verdict raises, so a later webhook retries" do
+        process_webhook("accounts.connected")
+        process_webhook("identities.added")
+        process_webhook("users.fully_synced")
+        process_webhook("paystubs.fully_synced")
+
+        allow_any_instance_of(Aggregators::AccountReportService).to receive(:validate).and_raise("boom")
+        expect { process_webhook("gigs.fully_synced") }.to raise_error("boom")
+
+        account = PayrollAccount.last.reload
+        expect(account).to be_sync_in_progress
+        expect(account).to be_report_unknown
+
+        allow_any_instance_of(Aggregators::AccountReportService).to receive(:validate).and_call_original
+        process_webhook("gigs.fully_synced")
+
+        account.reload
+        expect(account).to be_sync_succeeded
+        expect(account).to be_report_useful
+      end
+
+      # Argyle can report a system_error on accounts.updated during an ongoing
+      # refresh, after the sync already succeeded with a useful report.
+      it "marks a useful report not useful when a later system_error fails the sync" do
+        process_webhook("accounts.connected")
+        process_webhook("identities.added")
+        process_webhook("users.fully_synced")
+        process_webhook("paystubs.fully_synced")
+        process_webhook("gigs.fully_synced")
+        account = PayrollAccount.last
+        expect(account.reload).to be_usable
+
+        process_webhook("accounts.updated", variant: :system_error)
+
+        account.reload
+        expect(account).to be_sync_failed
+        expect(account).to be_report_not_useful
+        expect(account).not_to be_usable
+        expect(cbv_flow.accounts_with_required_data).to be_empty
+      end
     end
 
     it "results in a fully synced payroll account" do

@@ -30,6 +30,8 @@ class PayrollAccount < ApplicationRecord
     not_useful: "not_useful"         # defines the method: report_not_useful?
   }, prefix: "report"
 
+  before_save :mark_report_not_useful_when_sync_failed
+
   # The sync finished and the report is known to be usable.
   def usable?
     sync_succeeded? && report_useful?
@@ -73,6 +75,11 @@ class PayrollAccount < ApplicationRecord
   end
 
   private
+
+  # failed sync is not a userful report
+  def mark_report_not_useful_when_sync_failed
+    self.report_status = :not_useful if sync_failed?
+  end
 
   def find_webhook_event(event_name, event_outcome = nil)
     webhook_events.find do |webhook_event|

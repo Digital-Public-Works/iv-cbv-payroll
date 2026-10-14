@@ -164,19 +164,20 @@ class Webhooks::Argyle::EventsController < ApplicationController
 
       log_sync_finish(payroll_account, report)
 
-      payroll_account.update(synchronization_status: payroll_account.necessary_jobs_succeeded? ? :succeeded : :failed)
-
-      decide_report_status(payroll_account, report)
+      # account for followup retries, make the save atomic. If there is an error during sync status
+      # we may get another arylg eevent later.
+      payroll_account.update(
+        synchronization_status: payroll_account.necessary_jobs_succeeded? ? :succeeded : :failed,
+        report_status: decide_report_status(payroll_account, report)
+      )
     end
   end
 
-  # a failed sync has no report to judge; otherwise decide whether it is useful now.
+  # a failed sync has no report worth judging; otherwise decide whether it is useful now.
   def decide_report_status(payroll_account, report)
-    return if payroll_account.sync_failed?
+    return :not_useful unless payroll_account.necessary_jobs_succeeded?
 
-    payroll_account.update(
-      report_status: validate_useful_report_requirements(report, payroll_account) ? :useful : :not_useful
-    )
+    validate_useful_report_requirements(report, payroll_account) ? :useful : :not_useful
   end
 
   # For analytics during testing (and maybe for the pilots as well) we want to
