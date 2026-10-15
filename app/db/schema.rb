@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_08_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_11_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -179,6 +179,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_140000) do
     t.string "synchronization_status", default: "unknown"
     t.datetime "redacted_at"
     t.datetime "discarded_at"
+    t.string "report_status", default: "unknown", null: false
     t.index ["cbv_flow_id"], name: "index_payroll_accounts_on_cbv_flow_id"
     t.index ["discarded_at"], name: "index_payroll_accounts_on_discarded_at"
   end

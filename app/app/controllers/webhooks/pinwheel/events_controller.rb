@@ -71,11 +71,12 @@ class Webhooks::Pinwheel::EventsController < ApplicationController
       )
       report.fetch
 
-      if @payroll_account.necessary_jobs_succeeded? && validate_useful_report_requirements(report)
-        @payroll_account.update(synchronization_status: :succeeded)
-      else
-        @payroll_account.update(synchronization_status: :failed)
-      end
+      # sync is over: save whether it succeeded and whether the report is useful
+      # in one update, deciding the verdict first so an error leaves neither saved.
+      @payroll_account.update(
+        synchronization_status: @payroll_account.necessary_jobs_succeeded? ? :succeeded : :failed,
+        report_status: decide_report_status(report)
+      )
 
       paystub_hours = report.paystubs.filter_map(&:hours).map(&:to_f)
       paystub_gross_pay_amounts = report.paystubs.filter_map(&:gross_pay_amount)
@@ -176,6 +177,13 @@ class Webhooks::Pinwheel::EventsController < ApplicationController
 
     NewRelic::Agent.notice_error(ex)
     Rails.logger.error "Unable to process webhook event (in #{self.class.name}): #{ex}"
+  end
+
+  # a failed sync has no report worth judging; otherwise decide whether it is useful now.
+  def decide_report_status(report)
+    return :not_useful unless @payroll_account.necessary_jobs_succeeded?
+
+    validate_useful_report_requirements(report) ? :useful : :not_useful
   end
 
   def validate_useful_report_requirements(report)

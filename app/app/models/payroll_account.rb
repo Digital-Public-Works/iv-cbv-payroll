@@ -15,12 +15,27 @@ class PayrollAccount < ApplicationRecord
   belongs_to :cbv_flow
   has_many :webhook_events
 
+  # sync status, does not impact data quality
   enum :synchronization_status, {
     unknown: "unknown",              # defines the method: sync_unknown?
     in_progress: "in_progress",      # defines the method: sync_in_progress?
     succeeded: "succeeded",          # defines the method: sync_succeeded?
     failed: "failed"                 # defines the method: sync_failed?
   }, prefix: "sync"
+
+  # status of the report itself, determined by UsefulReportValidator
+  enum :report_status, {
+    unknown: "unknown",              # defines the method: report_unknown?
+    useful: "useful",                # defines the method: report_useful?
+    not_useful: "not_useful"         # defines the method: report_not_useful?
+  }, prefix: "report"
+
+  before_save :mark_report_not_useful_when_sync_failed
+
+  # The sync finished and the report is known to be usable.
+  def usable?
+    sync_succeeded? && report_useful?
+  end
 
   # Returns whether we have received all expected webhooks for the sync
   # process, regardless of whether any of them are errors.
@@ -60,6 +75,11 @@ class PayrollAccount < ApplicationRecord
   end
 
   private
+
+  # failed sync is not a userful report
+  def mark_report_not_useful_when_sync_failed
+    self.report_status = :not_useful if sync_failed?
+  end
 
   def find_webhook_event(event_name, event_outcome = nil)
     webhook_events.find do |webhook_event|
