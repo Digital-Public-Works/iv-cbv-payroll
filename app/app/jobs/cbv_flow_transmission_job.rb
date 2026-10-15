@@ -53,6 +53,8 @@ class CbvFlowTransmissionJob < ApplicationJob
       first_success = first_transmission_success?(cbv_flow, now)
     end
 
+    enqueue_transmission_complete_webhook_job(cbv_flow, transmission)
+
     # for each successful transmission, send an analytics event
     track_transmitted_event(cbv_flow, transmission, aggregator_report&.paystubs&.count || 0)
 
@@ -72,6 +74,16 @@ class CbvFlowTransmissionJob < ApplicationJob
       cbv_flow.update!(transmitted_at: now)
     end
     true
+  end
+
+  def enqueue_transmission_complete_webhook_job(cbv_flow, transmission)
+    return if transmission.webhook?
+
+    webhook_transmission = cbv_flow.cbv_flow_transmissions.webhook.first
+    return unless webhook_transmission
+    return unless Transmitters::WebhookClient.new(webhook_transmission.configuration).events_contract?
+
+    TransmissionCompleteWebhookJob.perform_later(transmission.id)
   end
 
   def enqueue_agency_name_matching_job(cbv_flow)
