@@ -27,6 +27,7 @@ RSpec.describe CbvFlowTransmissionJob, type: :job do
     allow_any_instance_of(described_class).to receive(:event_logger).and_return(fake_event_logger)
     allow(Transmitters::SharedEmailTransmitter).to receive(:new).and_return(transmitter)
     allow(MatchAgencyNamesJob).to receive(:perform_later)
+    allow(TransmissionCompleteWebhookJob).to receive(:perform_later)
   end
 
   it "marks the transmission succeeded and sets cbv_flow.transmitted_at on first success" do
@@ -92,5 +93,53 @@ RSpec.describe CbvFlowTransmissionJob, type: :job do
     described_class.new.perform(transmission.id)
 
     expect(transmitter).not_to have_received(:deliver) if transmitter.respond_to?(:deliver)
+  end
+
+  describe "TransmissionComplete webhook event" do
+    it "enqueues a TransmissionCompleteWebhookJob when the flow has a webhook on contract_version 2" do
+      create(:cbv_flow_transmission, cbv_flow: cbv_flow, method_type: :webhook, configuration: { "contract_version" => "2" })
+
+      described_class.new.perform(transmission.id)
+
+      expect(TransmissionCompleteWebhookJob).to have_received(:perform_later).with(transmission.id)
+    end
+
+    it "does not enqueue when the flow's webhook is on the legacy contract" do
+      create(:cbv_flow_transmission, cbv_flow: cbv_flow, method_type: :webhook, configuration: { "webhook_url" => "http://example.com" })
+
+      described_class.new.perform(transmission.id)
+
+      expect(TransmissionCompleteWebhookJob).not_to have_received(:perform_later)
+    end
+
+    it "does not enqueue when the flow has no webhook transmission" do
+      described_class.new.perform(transmission.id)
+
+      expect(TransmissionCompleteWebhookJob).not_to have_received(:perform_later)
+    end
+
+    it "does not enqueue for the webhook transmission itself" do
+      webhook_transmission = create(:cbv_flow_transmission,
+        cbv_flow: cbv_flow,
+        method_type: :webhook,
+        configuration: { "webhook_url" => "http://example.com", "api_key" => "key", "contract_version" => "2" }
+      )
+      allow(Transmitters::WebhookTransmitter).to receive(:new)
+        .and_return(instance_double(Transmitters::WebhookTransmitter, deliver: "ok"))
+
+      described_class.new.perform(webhook_transmission.id)
+
+      expect(webhook_transmission.reload.succeeded?).to be(true)
+      expect(TransmissionCompleteWebhookJob).not_to have_received(:perform_later)
+    end
+
+    it "does not enqueue when delivery fails" do
+      create(:cbv_flow_transmission, cbv_flow: cbv_flow, method_type: :webhook, configuration: { "contract_version" => "2" })
+      allow(transmitter).to receive(:deliver).and_raise("wrong password")
+
+      expect { described_class.new.perform(transmission.id) }.to raise_error("wrong password")
+
+      expect(TransmissionCompleteWebhookJob).not_to have_received(:perform_later)
+    end
   end
 end
