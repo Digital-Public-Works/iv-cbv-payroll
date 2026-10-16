@@ -7,7 +7,7 @@
 # RECORD, because vendor/ carries stale dist-info directories from earlier
 # installs. If the zip is rebuilt, re-derive these to match it.
 pg8000==1.31.2
-scramp==1.4.5
+scramp==1.4.17
 asn1crypto==1.5.1
 python-dateutil==2.9.0.post0
 six==1.16.0
