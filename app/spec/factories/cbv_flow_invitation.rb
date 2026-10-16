@@ -7,6 +7,16 @@ FactoryBot.define do
 
     cbv_applicant
 
+    # An invitation the applicant generated themselves at a generic link: owned
+    # by the partner's system account, with no required attributes filled in.
+    trait :auto_created do
+      auto_created { true }
+
+      user { User.system_account_for("sandbox") }
+      email_address { User.system_account_email_for("sandbox") }
+      cbv_applicant { create(:cbv_applicant, :blank) }
+    end
+
     trait :sandbox do
       client_agency_id { "sandbox" }
 

@@ -15,6 +15,12 @@ class Api::InvitationsController < ApplicationController
   before_action :authenticate
 
   def create
+    unless partner_config&.invitation_flow_available?
+      return render json: {
+        errors: [ { field: "base", message: "This partner is not configured to create invitations." } ]
+      }, status: :forbidden
+    end
+
     missing = missing_required_custom_attributes_keys
     if missing.any?
       return render json: missing_required_errors(missing), status: :bad_request

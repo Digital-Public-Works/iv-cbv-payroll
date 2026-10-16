@@ -24,12 +24,12 @@ RSpec.describe CbvFlow, type: :model do
         end
 
         it "returns simplified URL with production domain" do
-          expected_url = "https://sandbox.verifymyincome.org/en"
+          expected_url = "https://sandbox.verifymyincome.org/en/start"
           expect(cbv_flow.to_generic_url).to eq(expected_url)
         end
 
         it "includes origin parameter when provided" do
-          expected_url = "https://sandbox.verifymyincome.org/en?origin=shared"
+          expected_url = "https://sandbox.verifymyincome.org/en/start?origin=shared"
           expect(cbv_flow.to_generic_url(origin: "shared")).to eq(expected_url)
         end
       end
@@ -40,7 +40,7 @@ RSpec.describe CbvFlow, type: :model do
         end
 
         it "returns simplified URL with demo domain" do
-          expected_url = "https://demo.divt.app/en"
+          expected_url = "https://demo.divt.app/en/start"
           expect(cbv_flow.to_generic_url).to eq(expected_url)
         end
       end
@@ -56,19 +56,25 @@ RSpec.describe CbvFlow, type: :model do
       end
     end
 
+    context "when the partner does not offer the generic flow" do
+      before do
+        stub_client_agency_config_value("sandbox", "agency_domain", "sandbox.verifymyincome.org")
+        stub_client_agency_config_value("sandbox", "generic_links_enabled", false)
+      end
+
+      it "returns nil rather than advertising a link that would not work" do
+        expect(cbv_flow.to_generic_url).to be_nil
+      end
+    end
+
     context "with missing host configuration" do
       before do
         stub_client_agency_config_value("sandbox", "agency_domain", nil)
       end
 
-      it "returns uses the Rails runtime host" do
-        expected_url = "http://localhost/en/cbv/links/sandbox"
-        expect(cbv_flow.to_generic_url).to eq(expected_url)
-      end
-
-      it "includes origin parameter in path-based URL when provided" do
-        expected_url = "http://localhost/en/cbv/links/sandbox?origin=shared"
-        expect(cbv_flow.to_generic_url(origin: "shared")).to eq(expected_url)
+      it "returns nil, since the partner is identified by its subdomain" do
+        expect(cbv_flow.to_generic_url).to be_nil
+        expect(cbv_flow.to_generic_url(origin: "shared")).to be_nil
       end
     end
   end

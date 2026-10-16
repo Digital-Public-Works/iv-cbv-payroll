@@ -10,41 +10,48 @@ RSpec.describe PagesController do
       expect(response.body).to include("Welcome")
     end
 
-    context "when on an agency subdomain" do
+    context "when on the subdomain of a partner that offers the generic flow" do
       before do
         stub_client_agency_config_value("sandbox", "agency_domain", "sandbox.verifymyincome.org")
-        stub_client_agency_config_value("sandbox", "default_origin", "sms")
+        request.host = "sandbox.verifymyincome.org"
       end
 
-      it "redirects to the client agency entries page when the hostname matches a client agency domain" do
-        request.host = "sandbox.verifymyincome.org"
+      it "sends the applicant into the generic flow at /start" do
         get :home
-        expect(response).to redirect_to(cbv_flow_new_path(client_agency_id: "sandbox"))
+        expect(response).to redirect_to(start_path)
       end
 
-      it "defaults to the agency's default origin when no origin provided" do
-        request.host = "sandbox.verifymyincome.org"
-        get :home
-        expect(session[:cbv_origin]).to eq("sms")
-      end
-
-      it "uses provided origin parameter when given" do
-        request.host = "sandbox.verifymyincome.org"
+      it "passes a provided origin parameter along to /start" do
         get :home, params: { origin: "mail" }
-        expect(session[:cbv_origin]).to eq("mail")
+        expect(response).to redirect_to(start_path(origin: "mail"))
+      end
+    end
+
+    context "when a partner has been wound down (both flows off)" do
+      before do
+        stub_client_agency_config_value("sandbox", "agency_domain", "sandbox.verifymyincome.org")
+        stub_client_agency_config_value("sandbox", "generic_links_enabled", false)
+        stub_client_agency_config_value("sandbox", "invitation_links_enabled", false)
+      end
+
+      it "stays on the landing page instead of starting a flow" do
+        request.host = "sandbox.verifymyincome.org"
+        get :home
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Welcome")
       end
     end
 
     context "when agency has generic links disabled" do
       before do
         stub_client_agency_config_value("sandbox", "agency_domain", "sandbox.verifymyincome.org")
-        stub_client_agency_config_value("sandbox", "generic_links_disabled", true)
+        stub_client_agency_config_value("sandbox", "generic_links_enabled", false)
       end
 
-      it "does not redirect to generic links" do
+      it "does not redirect into the generic flow" do
         request.host = "sandbox.verifymyincome.org"
         get :home
-        expect(response).not_to redirect_to(cbv_flow_new_path(client_agency_id: "sandbox"))
+        expect(response).not_to redirect_to(start_path)
         expect(response).to have_http_status(:ok)
       end
     end
@@ -56,8 +63,8 @@ RSpec.describe PagesController do
         get :home, params: { cbv_flow_timeout: true }
       end
 
-      it "does not redirect to new flow path" do
-        expect(response).not_to redirect_to(cbv_flow_new_path(client_agency_id: "sandbox"))
+      it "does not redirect into the generic flow" do
+        expect(response).not_to redirect_to(start_path)
         expect(response).to have_http_status(:ok)
       end
 

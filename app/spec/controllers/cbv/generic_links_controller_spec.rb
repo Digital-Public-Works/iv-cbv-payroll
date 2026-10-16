@@ -8,40 +8,54 @@ RSpec.describe Cbv::GenericLinksController do
   describe '#show' do
     context 'when the hostname matches a client agency domain' do
       before do
-        stub_client_agency_config_value("sandbox", "generic_links_disabled", false)
+        stub_client_agency_config_value("sandbox", "generic_links_enabled", true)
+        request.host = "sandbox.verifymyincome.org"
       end
 
       context 'when generic links are disabled for the agency' do
         before do
-          stub_client_agency_config_value("sandbox", "generic_links_disabled", true)
+          stub_client_agency_config_value("sandbox", "generic_links_enabled", false)
         end
 
         it 'redirects to the root path' do
-          get :show, params: { client_agency_id: "sandbox" }
+          get :show
           expect(response).to redirect_to(root_path)
+        end
+
+        it 'does not create an invitation' do
+          expect { get :show }
+            .not_to change(CbvFlowInvitation, :count)
         end
       end
 
-      context 'when no existing CBV applicant cookie exists' do
+      context 'when this device has no invitation yet' do
         let(:headers) { {} }
 
         before do
           request.headers.merge!(headers)
-          get :show, params: { client_agency_id: "sandbox" }
+          get :show
         end
 
-        it "starts a CBV flow with new applicant" do
-          expect(response).to redirect_to(cbv_flow_entry_path)
-          expect(assigns(:cbv_flow).client_agency_id).to eq("sandbox")
+        it "auto-creates an invitation and redirects to its tokenized link" do
+          invitation = CbvFlowInvitation.last
+
+          expect(invitation.client_agency_id).to eq("sandbox")
+          expect(invitation).to be_auto_created
+          expect(response).to redirect_to(start_flow_path(token: invitation.auth_token, locale: I18n.locale))
         end
 
-        it "sets an encrypted permanent cookie with cbv_applicant_id" do
-          cbv_flow = assigns(:cbv_flow)
+        it "owns the invitation with the partner's system account rather than a caseworker" do
+          invitation = CbvFlowInvitation.last
 
-          expect(cookies.encrypted[:cbv_applicant_id]).to eq(cbv_flow.cbv_applicant_id)
+          expect(invitation.user).to eq(User.system_account_for("sandbox"))
+          expect(invitation.user).to be_system_account
+        end
 
-          cookie_jar = response.cookies["cbv_applicant_id"]
-          expect(cookie_jar).to be_present
+        it "saves the invitation even though no required applicant attribute has a value" do
+          invitation = CbvFlowInvitation.last
+
+          expect(invitation).to be_persisted
+          expect(invitation.cbv_applicant.missing_required_attributes_for(PartnerAttributeUsage::INVITATION)).not_to be_empty
         end
 
         it "tracks ApplicantClickedGenericLink event with is_new_session: true" do
@@ -49,11 +63,19 @@ RSpec.describe Cbv::GenericLinksController do
             "ApplicantClickedGenericLink",
             anything,
             hash_including(
-              cbv_applicant_id: assigns(:cbv_flow).cbv_applicant_id,
-              cbv_flow_id: assigns(:cbv_flow).id,
+              invitation_id: CbvFlowInvitation.last.id,
+              cbv_applicant_id: CbvFlowInvitation.last.cbv_applicant_id,
               client_agency_id: "sandbox",
               is_new_session: true
             )
+          )
+        end
+
+        it "tracks ApplicantAutoCreatedInvitation" do
+          expect(MixpanelEventTrackingJob).to have_received(:perform_later).with(
+            "ApplicantAutoCreatedInvitation",
+            anything,
+            hash_including(invitation_id: CbvFlowInvitation.last.id)
           )
         end
 
@@ -76,59 +98,52 @@ RSpec.describe Cbv::GenericLinksController do
         end
       end
 
-      context 'when existing CBV applicant cookie exists' do
-        let!(:existing_applicant) { create(:cbv_applicant, :sandbox, case_number: "12345", first_name: "John") }
+      # A matching device cookie says a browser came back, not that the same
+      # person did, so nothing from a previous visit is ever handed back.
+      context 'when this device already started a flow on an earlier invitation' do
+        let(:device_id) { SecureRandom.uuid }
+        let!(:invitation) { create(:cbv_flow_invitation, :auto_created) }
 
         before do
-          cookies.encrypted[:cbv_applicant_id] = existing_applicant.id
-          get :show, params: { client_agency_id: "sandbox" }
+          create(:cbv_flow,
+            :generic,
+            cbv_flow_invitation: invitation,
+            client_agency_id: "sandbox",
+            device_id: device_id)
+
+          cookies.signed[:device_id] = device_id
         end
 
-        it "reuses existing applicant" do
-          expect(assigns(:cbv_flow).cbv_applicant_id).to eq(existing_applicant.id)
-        end
+        it "generates a new invitation rather than handing back the earlier one" do
+          expect { get :show }.to change(CbvFlowInvitation, :count).by(1)
 
-        it "clears applicant information fields" do
-          existing_applicant.reload
-          expect(existing_applicant.case_number).to be_nil
-          expect(existing_applicant.first_name).to be_nil
-        end
-
-        it "tracks ApplicantClickedGenericLink event with is_new_session: false" do
-          expect(MixpanelEventTrackingJob).to have_received(:perform_later).with(
-            "ApplicantClickedGenericLink",
-            anything,
-            hash_including(
-              cbv_applicant_id: existing_applicant.id,
-              is_new_session: false
-            )
+          expect(CbvFlowInvitation.last).not_to eq(invitation)
+          expect(response).to redirect_to(
+            start_flow_path(token: CbvFlowInvitation.last.auth_token, locale: I18n.locale)
           )
         end
-      end
 
-      context 'when existing CBV applicant cookie exists but applicant not found' do
-        before do
-          cookies.encrypted[:cbv_applicant_id] = 99999
-          get :show, params: { client_agency_id: "sandbox" }
+        it "gives it a fresh applicant record, carrying nothing over" do
+          invitation.cbv_applicant.update!(first_name: "John")
+
+          get :show
+
+          expect(CbvFlowInvitation.last.cbv_applicant_id).not_to eq(invitation.cbv_applicant_id)
+          expect(CbvFlowInvitation.last.cbv_applicant.first_name).to be_nil
         end
 
-        it "creates new applicant instead of reusing" do
-          expect(assigns(:cbv_flow).cbv_applicant_id).not_to eq(99999)
-          expect(assigns(:cbv_flow).client_agency_id).to eq("sandbox")
-        end
+        it "leaves the earlier invitation's data alone" do
+          invitation.cbv_applicant.update!(first_name: "John")
 
-        it "tracks event with is_new_session: true" do
-          expect(MixpanelEventTrackingJob).to have_received(:perform_later).with(
-            "ApplicantClickedGenericLink",
-            anything,
-            hash_including(is_new_session: true)
-          )
+          get :show
+
+          expect(invitation.cbv_applicant.reload.first_name).to eq("John")
         end
       end
 
       context 'when origin parameter is provided' do
         before do
-          get :show, params: { client_agency_id: "sandbox", origin: "mail" }
+          get :show, params: { origin: "mail" }
         end
 
         it "includes origin in tracking event" do
@@ -138,6 +153,21 @@ RSpec.describe Cbv::GenericLinksController do
             hash_including(origin: "mail")
           )
         end
+
+        it "carries the origin through to the tokenized link" do
+          expect(response).to redirect_to(
+            start_flow_path(token: CbvFlowInvitation.last.auth_token, locale: I18n.locale, origin: "mail")
+          )
+        end
+      end
+    end
+
+    context 'when the hostname resolves to no partner' do
+      it "redirects to the landing page without creating an invitation" do
+        request.host = "www.verifymyincome.org"
+
+        expect { get :show }.not_to change(CbvFlowInvitation, :count)
+        expect(response).to redirect_to(root_url)
       end
     end
   end
