@@ -13,7 +13,8 @@ class Cbv::PreviewController < ApplicationController
   helper_method :current_agency, :employer_name, :gross_pay, :employment_start_date,
     :employment_end_date, :employment_status, :pay_frequency, :compensation_unit,
     :compensation_amount, :account_comment, :has_income_data?, :has_consent,
-    :agency_url, :next_path, :get_comment_by_account_id, :count_of_valid_accounts
+    :agency_url, :next_path, :get_comment_by_account_id, :count_of_valid_accounts,
+    :show_all_applicant_fields?, :applicant_field_names
 
   def employer_search
     @query = params[:query] || ""
@@ -426,5 +427,14 @@ class Cbv::PreviewController < ApplicationController
 
   def count_of_valid_accounts
     (params[:count_of_valid_accounts] || 1).to_i
+  end
+
+  # preview - show it all
+  def show_all_applicant_fields?
+    true
+  end
+
+  def applicant_field_names
+    current_agency.attribute_names_for(PartnerAttributeUsage::APPLICANT_INPUT_PAGE)
   end
 end

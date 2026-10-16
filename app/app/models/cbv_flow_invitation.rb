@@ -86,9 +86,7 @@ class CbvFlowInvitation < ApplicationRecord
   def applicant_information
     return unless cbv_applicant.present?
 
-    cbv_applicant.required_applicant_attributes.each do |attr|
-      next if cbv_applicant.send(attr).present?
-
+    cbv_applicant.missing_required_attributes_for(PartnerAttributeUsage::INVITATION).each do |attr|
       errors.add(
         :"cbv_applicant.#{attr}",
         I18n.t(

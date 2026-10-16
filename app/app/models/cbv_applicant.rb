@@ -3,7 +3,7 @@ class CbvApplicant < ApplicationRecord
 
   after_initialize :set_snap_application_date, if: :new_record?
   after_initialize :set_applicant_attributes
-  attr_reader :applicant_attributes, :required_applicant_attributes
+  attr_reader :applicant_attributes
 
   def self.valid_attributes_for_agency(client_agency_id)
     agency = ClientAgencyConfig.instance[client_agency_id]
@@ -25,13 +25,13 @@ class CbvApplicant < ApplicationRecord
   validates :date_of_birth, comparison: {
     less_than_or_equal_to: Date.current,
      message: :future_date
-  }, if: -> { is_applicant_attribute_required?(:date_of_birth) && date_of_birth.present? }
+  }, if: -> { applicant_attributes.include?(:date_of_birth) && date_of_birth.present? }
 
   # validate that the date_of_birth is not more than 110 years ago
   validates :date_of_birth, comparison: {
     greater_than_or_equal_to: 110.years.ago.to_date,
     message: :invalid_date
-  }, if: -> { is_applicant_attribute_required?(:date_of_birth) && date_of_birth.present? }
+  }, if: -> { applicant_attributes.include?(:date_of_birth) && date_of_birth.present? }
 
   validates :snap_application_date, presence: {
     message: :invalid_date
@@ -77,26 +77,55 @@ class CbvApplicant < ApplicationRecord
     self[:snap_application_date] = parse_date(value)
   end
 
-  # retrurns the names of any attributes that are nil. false, [], {} are valid values for an attribute
-  def missing_required_attributes
-    @required_applicant_attributes.select do |attr|
-      self.send(attr).nil?
-    end
+  # blank and false are valid values, nil is not
+  def attribute_missing?(name)
+    send(name).nil?
   end
 
-  def validate_base_and_applicant_attributes?
-    valid? && validate_required_applicant_attributes.empty?
+  # what needs a value for the current context (inviation, landing, applicant info)
+  def missing_attributes_for(context)
+    (agency_config&.attribute_names_for(context) || []).select { |name| attribute_missing?(name) }
   end
 
-  def validate_required_applicant_attributes
-    missing_attrs = missing_required_attributes
+  # The subset of the above that the partner marked required in that context.
+  def missing_required_attributes_for(context)
+    (agency_config&.required_attributes_for(context) || []).select { |name| attribute_missing?(name) }
+  end
 
-    missing_attrs.each do |attr|
-      errors.add(attr, I18n.t("cbv.applicant_informations.#{client_agency_id}.fields.#{attr}.blank",
-        default: I18n.t("cbv.applicant_informations.default.fields.#{attr}.blank", default: "is required")))
-    end
+  # missing data, will prevent submission
+  def missing_required_for_submit_attributes
+    (agency_config&.required_for_submit_attributes || []).select { |name| attribute_missing?(name) }
+  end
 
-    missing_attrs
+  # determine which fields are missing data
+  def fields_to_collect_for(context)
+    names = missing_attributes_for(context)
+    names |= missing_required_for_submit_attributes if context.to_s == PartnerAttributeUsage::APPLICANT_INPUT_PAGE
+    names
+  end
+
+  def validate_user_input(context, submitted_names: [])
+    base_valid = valid?
+
+    missing = missing_required_attributes_for(context)
+    missing |= missing_required_for_submit_attributes if context.to_s == PartnerAttributeUsage::APPLICANT_INPUT_PAGE
+    missing.each { |attr| errors.add(attr, blank_message_for(attr)) }
+
+    malformed = invalid_format_attributes(submitted_names)
+    malformed.each { |attr| errors.add(attr, invalid_format_message_for(attr)) }
+
+    base_valid && missing.empty? && malformed.empty?
+  end
+
+  # regex validation check
+  def invalid_format_attributes(names)
+    Array(names).map(&:to_s).uniq.reject { |name| valid_format_for?(name, send(name)) }
+  end
+
+  def valid_format_for?(name, value)
+    pattern = compiled_validation_regex(name)
+
+    pattern.nil? || value.nil? || pattern.match?(value.to_s)
   end
 
   def set_snap_application_date
@@ -105,8 +134,6 @@ class CbvApplicant < ApplicationRecord
 
   def set_applicant_attributes
     @applicant_attributes = agency_config&.applicant_attributes&.compact&.keys&.map(&:to_sym) || []
-
-    @required_applicant_attributes = get_required_applicant_attributes
   end
 
   # reset applicant custom attribute to nil
@@ -124,11 +151,6 @@ class CbvApplicant < ApplicationRecord
         end
       end
     save!
-  end
-
-  def is_applicant_attribute_required?(attribute)
-    get_required_applicant_attributes
-    .include?(attribute)
   end
 
   # logic to ensure that the jsonb column partner custom attributes can be accessed via reflection
@@ -250,11 +272,29 @@ class CbvApplicant < ApplicationRecord
     end
   end
 
-  def get_required_applicant_attributes
-    agency_config&.applicant_attributes&.select { |key, attributes| attributes["required"] }&.keys&.map(&:to_sym) || []
-  end
-
   def agency_config
     ClientAgencyConfig.instance[client_agency_id]
+  end
+
+  def compiled_validation_regex(name)
+    source = agency_config&.validation_regex_for(name)
+    return nil if source.blank?
+
+    Regexp.new(source)
+  rescue RegexpError => e
+    # A partner config that cannot compile should not block an applicant.
+    Rails.logger.error("Invalid validation_regex for #{client_agency_id}.#{name}: #{e.message}")
+    nil
+  end
+
+  def blank_message_for(attr)
+    I18n.t("cbv.applicant_informations.#{client_agency_id}.fields.#{attr}.blank",
+      default: I18n.t("cbv.applicant_informations.default.fields.#{attr}.blank", default: "is required"))
+  end
+
+  def invalid_format_message_for(attr)
+    I18n.t("cbv.applicant_informations.#{client_agency_id}.fields.#{attr}.invalid_format",
+      default: I18n.t("cbv.applicant_informations.default.fields.#{attr}.invalid_format",
+        default: "is not in the expected format"))
   end
 end
