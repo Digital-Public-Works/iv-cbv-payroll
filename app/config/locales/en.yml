@@ -116,7 +116,7 @@ en:
         invite_failed: 'Error sending invitation to %{email_address}: %{error_message}.'
         invite_success: Successfully delivered invitation to %{email_address}.
       incorrect_client_agency_id: Unable to send invitation due to missing client agency configuration.
-      invitations_disabled: This agency is not set up to send invitations.
+      invitations_disabled: XX - This agency is not set up to send invitations.
       new:
         description_html:
           default: "<p>Provide some details about the client so we can send them a link to verify their pay information. We'll request the past %{pay_income_days} days of income, based on the client's application/recertification date.</p><p>If multiple members of the household earn income, send an invite link to each household member.</p>"
