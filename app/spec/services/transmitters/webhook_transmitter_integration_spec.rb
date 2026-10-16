@@ -223,10 +223,10 @@ RSpec.describe Transmitters::WebhookTransmitter, :integration do
     end
   end
 
-  describe "server rejects wrong API key" do
+  describe "server rejects a request signed with the wrong API key" do
     let(:confirmation_code) { "WEBHOOK_BAD_APIKEY" }
 
-    it "returns 401 for an incorrect API key" do
+    it "returns 401" do
       uri = URI(webhook_url)
       payload = CbvFlowToJson.new(cbv_flow, mock_client_agency, aggregator_report).to_h
       body = payload.to_json

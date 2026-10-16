@@ -95,6 +95,75 @@ RSpec.describe Transmitters::WebhookTransmitter do
       end
     end
 
+    context "on the legacy webhook contract (no contract_version)" do
+      it "sends exactly the bare CbvFlowToJson report, with no event_type" do
+        captured = nil
+        stub_request(:post, webhook_url)
+          .with { |req| captured = req; true }
+          .to_return(status: 200, body: '{"status": "ok"}')
+
+        subject.deliver
+        expected_body = CbvFlowToJson.new(cbv_flow, mock_client_agency, aggregator_report).to_h.to_json
+        expect(captured.body).to eq(expected_body)
+        expect(JSON.parse(captured.body)).not_to have_key("event_type")
+      end
+
+      it "treats contract_version 1 the same as no contract_version" do
+        transmission_method_configuration["contract_version"] = "1"
+        stub = stub_request(:post, webhook_url)
+          .with(headers: { "X-VMI-API-Key" => api_key })
+          .with { |req| !JSON.parse(req.body).key?("event_type") }
+          .to_return(status: 200, body: '{"status": "ok"}')
+
+        subject.deliver
+        expect(stub).to have_been_requested
+      end
+    end
+
+    context "on webhook contract_version 2" do
+      let(:transmission_method_configuration) do
+        {
+          "webhook_url" => webhook_url,
+          "api_key" => api_key,
+          "contract_version" => "2"
+        }
+      end
+      let(:captured) { {} }
+
+      before do
+        stub_request(:post, webhook_url)
+          .with { |req| captured[:request] = req; true }
+          .to_return(status: 200, body: '{"status": "ok"}')
+      end
+
+      it "sends event_type ReportSubmission as the first key, followed by the report" do
+        subject.deliver
+        body = JSON.parse(captured[:request].body)
+        expect(body.keys.first).to eq("event_type")
+        expect(body["event_type"]).to eq("ReportSubmission")
+        expect(body.except("event_type").keys).to eq(%w[report_metadata client_information employment_records paystub_images_included])
+      end
+
+      it "does not send the API key in any header" do
+        subject.deliver
+        headers = captured[:request].headers
+        expect(headers.keys.map(&:downcase)).not_to include("x-vmi-api-key")
+        expect(headers.values).not_to include(api_key)
+        expect(headers["X-Vmi-Confirmation-Code"]).to eq("WEBHOOK123")
+      end
+
+      it "sends an X-VMI-Signature the receiver can verify with the shared API key" do
+        subject.deliver
+        request = captured[:request]
+        expect(JsonApiSignature.verify(
+          request.body,
+          request.headers["X-Vmi-Timestamp"],
+          request.headers["X-Vmi-Signature"],
+          api_key
+        )).to be(true)
+      end
+    end
+
     context "when agency responds with 500" do
       before do
         stub_request(:post, webhook_url).to_return(status: 500, body: "Internal Server Error")

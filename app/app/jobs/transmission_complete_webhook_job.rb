@@ -40,6 +40,8 @@ class TransmissionCompleteWebhookJob < ApplicationJob
 
   private
 
+  # Must match ReportSubmission's report_metadata.filenames[method]; keep in
+  # step with CbvFlowToJson#build_filenames.
   def asset_uri(transmission, cbv_flow, current_agency)
     method_type = transmission.method_type.to_sym
     return nil unless TransmissionFilename::EXTENSIONS.key?(method_type)
