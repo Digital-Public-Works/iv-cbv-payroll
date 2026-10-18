@@ -316,8 +316,8 @@ en:
     landing_pages:
       show:
         continue: Continue
-        explanation: We need a little information from you before you connect your payroll account. %{agency_acronym} uses it to match your income to your case.
-        header: Tell us about yourself
+        explanation: XX - We need a little information from you before you connect your payroll account. %{agency_acronym} uses it to match your income to your case.
+        header: XX - Tell us about yourself
       update:
         error_header:
           one: "%{count} error"

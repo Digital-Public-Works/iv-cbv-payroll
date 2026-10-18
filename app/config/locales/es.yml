@@ -226,8 +226,8 @@ es:
     landing_pages:
       show:
         continue: Continuar
-        explanation: Necesitamos un poco de información antes de que conecte su cuenta de nómina. %{agency_acronym} la usa para asociar sus ingresos con su caso.
-        header: Cuéntenos sobre usted
+        explanation: XX - Necesitamos un poco de información antes de que conecte su cuenta de nómina. %{agency_acronym} la usa para asociar sus ingresos con su caso.
+        header: XX - Cuéntenos sobre usted
       update:
         error_header:
           one: "%{count} error"
