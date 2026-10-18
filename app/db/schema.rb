@@ -51,6 +51,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_120000) do
     t.string "language"
     t.bigint "cbv_applicant_id"
     t.datetime "expires_at", precision: nil
+    t.boolean "auto_created", default: false, null: false
     t.index ["auth_token"], name: "index_cbv_flow_invitations_on_auth_token", unique: true, where: "(redacted_at IS NULL)"
     t.index ["cbv_applicant_id"], name: "index_cbv_flow_invitations_on_cbv_applicant_id"
     t.index ["user_id"], name: "index_cbv_flow_invitations_on_user_id"
@@ -86,6 +87,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_120000) do
     t.string "argyle_user_id"
     t.boolean "has_other_jobs"
     t.string "device_id"
+    t.boolean "generic", default: false, null: false
     t.index ["cbv_applicant_id"], name: "index_cbv_flows_on_cbv_applicant_id"
     t.index ["cbv_flow_invitation_id"], name: "index_cbv_flows_on_cbv_flow_invitation_id"
   end

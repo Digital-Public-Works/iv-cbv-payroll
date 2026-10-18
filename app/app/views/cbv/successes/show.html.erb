@@ -34,7 +34,7 @@
           <p><%= agency_translation(".whats_next_1_li_2_html", website_link: agency_website_link(label: link_label)) %></p>
         </div>
       </li>
-      <% if encourage_link_sharing? %>
+      <% if encourage_link_sharing? && @invitation_link.present? %>
       <li class="usa-icon-list__item">
         <div class="usa-icon-list__icon display-flex flex-justify-center flex-align-center width-6 minw-6 height-6 bg-primary-lighter radius-top-pill radius-bottom-pill margin-right-1">
           <svg class="usa-icon" aria-hidden="true" role="img">

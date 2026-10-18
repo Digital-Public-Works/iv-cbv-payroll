@@ -26,19 +26,19 @@ class PagesController < ApplicationController
 
   private
 
+  # A partner's bare domain is the address applicants are given, so send it into
+  # the generic flow at /start. The partner is identified there by the same
+  # subdomain, so nothing needs to be passed along but the origin.
   def redirect_to_client_agency_entries
     # Don't redirect if we just came from a CBV flow timeout
     return if params[:cbv_flow_timeout].present?
 
     client_agency_id = detect_client_agency_from_domain
-    if client_agency_id.present?
-      agency = agency_config[client_agency_id]
+    return if client_agency_id.blank?
 
-      # Don't redirect agencies that have disabled generic links
-      return if agency&.generic_links_disabled
+    # Only agencies that offer the generic flow get sent into it
+    return unless agency_config[client_agency_id]&.generic_links_enabled
 
-      session[:cbv_origin] = params[:origin] || agency&.default_origin
-      redirect_to cbv_flow_new_path(client_agency_id: client_agency_id)
-    end
+    redirect_to start_path(origin: params[:origin].presence)
   end
 end

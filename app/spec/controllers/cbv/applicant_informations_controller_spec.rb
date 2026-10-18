@@ -153,6 +153,28 @@ RSpec.describe Cbv::ApplicantInformationsController, type: :controller do
         expect(response).to redirect_to(cbv_flow_summary_path)
       end
     end
+
+    context "when the flow began at a generic link" do
+      let(:cbv_flow) { create(:cbv_flow, :generic) }
+
+      render_views
+
+      it "shows the page, since an auto-created invitation carries no applicant data" do
+        get :show
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("case_number")
+      end
+
+      it "asks only for what is still blank" do
+        cbv_flow.cbv_applicant.update!(first_name: "Daph")
+
+        get :show
+
+        expect(response.body).not_to include("first_name")
+        expect(response.body).to include("last_name")
+      end
+    end
   end
 
   describe "the scope the rendered form posts under" do
