@@ -31,7 +31,7 @@ class CbvFlowTransmissionJob < ApplicationJob
       raise
     end
 
-    record_success!(transmission, cbv_flow, aggregator_report)
+    record_success!(transmission, cbv_flow, current_agency, aggregator_report)
   end
 
   def agency_config
@@ -43,7 +43,7 @@ class CbvFlowTransmissionJob < ApplicationJob
   # record_success! includes the business logic on how to handle the first and subsequent
   # successful transmission to a partner. (e.g. a report may get sent over shared email
   # before it transmits over sftp)
-  def record_success!(transmission, cbv_flow, aggregator_report)
+  def record_success!(transmission, cbv_flow, current_agency, aggregator_report)
     now = Time.current
     first_success = false
 
@@ -53,7 +53,7 @@ class CbvFlowTransmissionJob < ApplicationJob
       first_success = first_transmission_success?(cbv_flow, now)
     end
 
-    enqueue_transmission_complete_webhook_job(cbv_flow, transmission)
+    enqueue_transmission_complete_webhook_job(current_agency, transmission)
 
     # for each successful transmission, send an analytics event
     track_transmitted_event(cbv_flow, transmission, aggregator_report&.paystubs&.count || 0)
@@ -76,12 +76,12 @@ class CbvFlowTransmissionJob < ApplicationJob
     true
   end
 
-  def enqueue_transmission_complete_webhook_job(cbv_flow, transmission)
+  def enqueue_transmission_complete_webhook_job(current_agency, transmission)
+    # The webhook transmission is the ReportSubmission itself; it transfers no
+    # report files, so there is nothing to send a completion notice for.
     return if transmission.webhook?
 
-    webhook_transmission = cbv_flow.cbv_flow_transmissions.webhook.first
-    return unless webhook_transmission
-    return unless Transmitters::WebhookClient.new(webhook_transmission.configuration).events_contract?
+    return unless Transmitters::WebhookTransmitter.events_contract_config(current_agency)
 
     TransmissionCompleteWebhookJob.perform_later(transmission.id)
   end

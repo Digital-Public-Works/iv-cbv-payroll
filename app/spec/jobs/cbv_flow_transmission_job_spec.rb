@@ -16,7 +16,7 @@ RSpec.describe CbvFlowTransmissionJob, type: :job do
       configuration: { "email" => "caseworker@example.com" }
     )
   end
-  let(:agency) { instance_double(ClientAgencyConfig::ClientAgency, id: "sandbox") }
+  let(:agency) { instance_double(ClientAgencyConfig::ClientAgency, id: "sandbox", transmission_methods: []) }
   let(:aggregator_report) { instance_double(Aggregators::AggregatorReports::AggregatorReport, paystubs: []) }
   let(:transmitter) { instance_double(Transmitters::SharedEmailTransmitter, deliver: "ok") }
   let(:fake_event_logger) { instance_double(GenericEventTracker, track: nil) }
@@ -96,29 +96,45 @@ RSpec.describe CbvFlowTransmissionJob, type: :job do
   end
 
   describe "TransmissionComplete webhook event" do
-    it "enqueues a TransmissionCompleteWebhookJob when the flow has a webhook on contract_version 2" do
-      create(:cbv_flow_transmission, cbv_flow: cbv_flow, method_type: :webhook, configuration: { "contract_version" => "2" })
+    def configure_webhook(configuration)
+      allow(agency).to receive(:transmission_methods).and_return([
+        ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(method: "shared_email", configuration: {}),
+        ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(method: "webhook", configuration: configuration)
+      ])
+    end
+
+    it "enqueues a TransmissionCompleteWebhookJob when the partner has a webhook method on contract_version 2" do
+      configure_webhook({ "contract_version" => "2" })
 
       described_class.new.perform(transmission.id)
 
       expect(TransmissionCompleteWebhookJob).to have_received(:perform_later).with(transmission.id)
     end
 
-    it "does not enqueue when the flow's webhook is on the legacy contract" do
-      create(:cbv_flow_transmission, cbv_flow: cbv_flow, method_type: :webhook, configuration: { "webhook_url" => "http://example.com" })
+    it "does not enqueue when the partner's webhook method is on the legacy contract" do
+      configure_webhook({ "webhook_url" => "http://example.com" })
 
       described_class.new.perform(transmission.id)
 
       expect(TransmissionCompleteWebhookJob).not_to have_received(:perform_later)
     end
 
-    it "does not enqueue when the flow has no webhook transmission" do
+    it "does not enqueue when the partner has no webhook method configured" do
+      described_class.new.perform(transmission.id)
+
+      expect(TransmissionCompleteWebhookJob).not_to have_received(:perform_later)
+    end
+
+    it "decides from partner config, not from the flow's webhook transmission record" do
+      create(:cbv_flow_transmission, cbv_flow: cbv_flow, method_type: :webhook, configuration: { "contract_version" => "2" })
+
       described_class.new.perform(transmission.id)
 
       expect(TransmissionCompleteWebhookJob).not_to have_received(:perform_later)
     end
 
     it "does not enqueue for the webhook transmission itself" do
+      configure_webhook({ "webhook_url" => "http://example.com", "api_key" => "key", "contract_version" => "2" })
       webhook_transmission = create(:cbv_flow_transmission,
         cbv_flow: cbv_flow,
         method_type: :webhook,
@@ -134,7 +150,7 @@ RSpec.describe CbvFlowTransmissionJob, type: :job do
     end
 
     it "does not enqueue when delivery fails" do
-      create(:cbv_flow_transmission, cbv_flow: cbv_flow, method_type: :webhook, configuration: { "contract_version" => "2" })
+      configure_webhook({ "contract_version" => "2" })
       allow(transmitter).to receive(:deliver).and_raise("wrong password")
 
       expect { described_class.new.perform(transmission.id) }.to raise_error("wrong password")

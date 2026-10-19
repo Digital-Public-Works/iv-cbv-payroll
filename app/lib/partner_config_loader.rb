@@ -399,7 +399,7 @@ class PartnerConfigLoader
   end
 
   def validate_webhook_contract_version
-    valid_versions = Transmitters::WebhookClient::CONTRACT_VERSIONS
+    valid_versions = Transmitters::WebhookTransmitter::CONTRACT_VERSIONS
     Array(@yaml_data[:transmission_methods]).each_with_index do |tm, i|
       next unless tm[:method_type].to_s == "webhook"
 

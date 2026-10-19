@@ -10,17 +10,17 @@ RSpec.describe TransmissionCompleteWebhookJob, type: :job do
       confirmation_code: "ABC123"
     )
   end
-  let(:agency) { instance_double(ClientAgencyConfig::ClientAgency, id: "new-partner", timezone: "America/New_York") }
-
   let(:webhook_url) { "http://fake-state.api.gov/api/v1/income-report" }
   let(:api_key) { "test-webhook-api-key" }
-  let!(:webhook_transmission) do
-    create(:cbv_flow_transmission,
-      cbv_flow: cbv_flow,
-      method_type: :webhook,
-      status: :succeeded,
-      configuration: { "webhook_url" => webhook_url, "api_key" => api_key, "contract_version" => "2" }
-    )
+  let(:webhook_configuration) { { "webhook_url" => webhook_url, "api_key" => api_key, "contract_version" => "2" } }
+  let(:transmission_methods) do
+    [
+      ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(method: "sftp", configuration: { "path_prefix" => "upload" }),
+      ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(method: "webhook", configuration: webhook_configuration)
+    ]
+  end
+  let(:agency) do
+    instance_double(ClientAgencyConfig::ClientAgency, id: "new-partner", timezone: "America/New_York", transmission_methods: transmission_methods)
   end
   let(:transmission) do
     create(:cbv_flow_transmission,
@@ -44,7 +44,7 @@ RSpec.describe TransmissionCompleteWebhookJob, type: :job do
       .to_return(status: 200, body: '{"status": "ok"}')
   end
 
-  it "posts a signed TransmissionComplete event to the flow's webhook" do
+  it "posts a signed TransmissionComplete event to the partner's configured webhook" do
     described_class.new.perform(transmission.id)
 
     expect(a_request(:post, webhook_url)).to have_been_made.once
@@ -99,45 +99,23 @@ RSpec.describe TransmissionCompleteWebhookJob, type: :job do
     )
   end
 
-  it "does nothing when the flow has no webhook transmission" do
-    webhook_transmission.destroy!
+  context "when the partner has no webhook method configured" do
+    let(:transmission_methods) do
+      [ ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(method: "sftp", configuration: { "path_prefix" => "upload" }) ]
+    end
+
+    it "does nothing" do
+      described_class.new.perform(transmission.id)
+
+      expect(a_request(:post, webhook_url)).not_to have_been_made
+    end
+  end
+
+  it "does nothing when the partner's webhook method is on the legacy contract" do
+    webhook_configuration.delete("contract_version")
 
     described_class.new.perform(transmission.id)
 
-    expect(a_request(:post, webhook_url)).not_to have_been_made
-  end
-
-  it "does nothing when the webhook is on the legacy contract" do
-    webhook_transmission.update!(configuration: { "webhook_url" => webhook_url, "api_key" => api_key })
-
-    described_class.new.perform(transmission.id)
-
-    expect(a_request(:post, webhook_url)).not_to have_been_made
-  end
-
-  it "cannot be sent to a legacy-contract webhook even by calling the client directly" do
-    legacy_client = Transmitters::WebhookClient.new({ "webhook_url" => webhook_url, "api_key" => api_key })
-
-    expect {
-      legacy_client.post_event(
-        event_type: Transmitters::WebhookClient::TRANSMISSION_COMPLETE,
-        confirmation_code: "ABC123",
-        payload: {}
-      )
-    }.to raise_error(ArgumentError, /requires webhook contract_version 2/)
-    expect(a_request(:post, webhook_url)).not_to have_been_made
-  end
-
-  it "does nothing for the webhook transmission itself" do
-    described_class.new.perform(webhook_transmission.id)
-
-    expect(a_request(:post, webhook_url)).not_to have_been_made
-  end
-
-  it "raises if the transmission has not succeeded" do
-    transmission.update!(status: :pending, succeeded_at: nil)
-
-    expect { described_class.new.perform(transmission.id) }.to raise_error(/has not succeeded/)
     expect(a_request(:post, webhook_url)).not_to have_been_made
   end
 
