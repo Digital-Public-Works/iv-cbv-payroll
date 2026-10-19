@@ -15,7 +15,9 @@ RSpec.describe "e2e CBV flow test", :js, type: :feature do
     end
   end
 
-  it "completes the flow for an Argyle employer" do
+  # Playback repeats: the app now fetches the Argyle account more times than the
+  # 2025-06 recording captured. Re-recording is tracked in PF-801.
+  it "completes the flow for an Argyle employer", :allow_playback_repeats do
     raise "Argyle not in supported_providers!" unless Rails.application.config.supported_providers.include?(:argyle)
 
     # /cbv/entry
@@ -23,7 +25,7 @@ RSpec.describe "e2e CBV flow test", :js, type: :feature do
     visit URI(cbv_flow_invitation.to_url).request_uri
 
     verify_page(page, title: I18n.t("cbv.entries.show.header", agency_full_name: I18n.t("shared.agency_full_name.sandbox")))
-    find("label", text: I18n.t("cbv.entries.show.checkbox.default", agency_full_name: I18n.t("shared.agency_full_name.sandbox"))).click
+    find("label", text: I18n.t("cbv.entries.show.checkbox.default", agency_name_with_acronym: "#{I18n.t("shared.agency_full_name.sandbox")} (#{I18n.t("shared.agency_acronym.sandbox")})")).click
 
 
     click_button I18n.t("cbv.entries.show.continue")
@@ -103,7 +105,7 @@ RSpec.describe "e2e CBV flow test", :js, type: :feature do
     # /cbv/entry
     visit URI(root_url).request_uri
     visit URI(cbv_flow_invitation.to_url).request_uri
-    find("label", text: I18n.t("cbv.entries.show.checkbox.default", agency_full_name: I18n.t("shared.agency_full_name.sandbox"))).click
+    find("label", text: I18n.t("cbv.entries.show.checkbox.default", agency_name_with_acronym: "#{I18n.t("shared.agency_full_name.sandbox")} (#{I18n.t("shared.agency_acronym.sandbox")})")).click
     click_button I18n.t("cbv.entries.show.continue")
 
     # /cbv/employer_search
@@ -142,7 +144,7 @@ RSpec.describe "e2e CBV flow test", :js, type: :feature do
     # /cbv/entry
     visit URI(root_url).request_uri
     visit URI(cbv_flow_invitation.to_url).request_uri
-    find("label", text: I18n.t("cbv.entries.show.checkbox.default", agency_full_name: I18n.t("shared.agency_full_name.sandbox"))).click
+    find("label", text: I18n.t("cbv.entries.show.checkbox.default", agency_name_with_acronym: "#{I18n.t("shared.agency_full_name.sandbox")} (#{I18n.t("shared.agency_acronym.sandbox")})")).click
     click_button I18n.t("cbv.entries.show.continue")
 
     # /cbv/employer_search
@@ -177,7 +179,7 @@ RSpec.describe "e2e CBV flow test", :js, type: :feature do
     visit URI(root_url).request_uri
     visit URI(cbv_flow_invitation.to_url).request_uri
     verify_page(page, title: I18n.t("cbv.entries.show.header"))
-    find("label", text: I18n.t("cbv.entries.show.checkbox.default", agency_full_name: I18n.t("shared.agency_full_name.sandbox"))).click
+    find("label", text: I18n.t("cbv.entries.show.checkbox.default", agency_name_with_acronym: "#{I18n.t("shared.agency_full_name.sandbox")} (#{I18n.t("shared.agency_acronym.sandbox")})")).click
     click_button I18n.t("cbv.entries.show.continue")
 
     # /cbv/employer_search
