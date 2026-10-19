@@ -244,16 +244,16 @@ RSpec.describe ClientAgencyConfig do
     end
 
     it "is empty for a context the partner has not configured" do
-      expect(agency.attribute_names_for(PartnerAttributeUsage::INVITATION)).to be_empty
+      expect(agency.attribute_names_for(PartnerAttributeUsage::LANDING_PAGE)).to be_empty
     end
 
     it "drops a usage naming an attribute the partner does not define" do
       PartnerAttributeUsage.create!(
-        partner_config: sample_config, context: PartnerAttributeUsage::INVITATION,
+        partner_config: sample_config, context: PartnerAttributeUsage::LANDING_PAGE,
         name: "not_defined", required: true
       )
 
-      expect(agency.attribute_names_for(PartnerAttributeUsage::INVITATION)).to be_empty
+      expect(agency.attribute_names_for(PartnerAttributeUsage::LANDING_PAGE)).to be_empty
     end
 
     it "exposes validation_regex and required_for_submit from the attribute" do

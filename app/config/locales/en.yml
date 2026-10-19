@@ -313,6 +313,15 @@ en:
           default: <a href="%{agency_url}" class="usa-button" target="_blank" rel="noopener noreferrer">Visit the %{agency_portal_name} website</a>
           sandbox: <a href="https://www.mass.gov/guides/how-to-contact-dta" class="usa-button" target="_blank" rel="noopener noreferrer">Learn more at CBV Test Agency</a>
         title: Your invitation to verify income has expired
+    landing_pages:
+      show:
+        continue: Continue
+        explanation: XX - We need a little information from you before you connect your payroll account. %{agency_acronym} uses it to match your income to your case.
+        header: XX - Tell us about yourself
+      update:
+        error_header:
+          one: "%{count} error"
+          other: "%{count} errors"
     missing_results:
       show:
         check_search_term_example: 'For example: If you initially searched "DHS" the best search term would be "Department of Human Services".'

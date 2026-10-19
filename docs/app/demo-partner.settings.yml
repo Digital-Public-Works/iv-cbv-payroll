@@ -81,6 +81,12 @@ invitation_attributes:
 - name: income_changes
   required: false
 
+# for generic flow, any attributes listed here will be asked for on the initial landing page.
+# if required: true, the applicant cannot progress beyond this page without filling it out
+landing_page_attributes:
+- name: case_number
+  required: true
+
 # attributes that are asked for on the user input page. If there are none, that page will be skipped.
 # If all values here are already populated before that step is reached, the page will be skipped.
 applicant_input_page:

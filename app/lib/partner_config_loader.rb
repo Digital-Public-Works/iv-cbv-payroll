@@ -50,6 +50,7 @@ class PartnerConfigLoader
   # whether each is required there. Each entry is { name:, required: }.
   ATTRIBUTE_USAGE_SECTIONS = {
     "invitation_attributes" => PartnerAttributeUsage::INVITATION,
+    "landing_page_attributes" => PartnerAttributeUsage::LANDING_PAGE,
     "applicant_input_page" => PartnerAttributeUsage::APPLICANT_INPUT_PAGE
   }.freeze
   ATTRIBUTE_USAGE_KEYS = %w[name required].freeze
@@ -470,7 +471,7 @@ class PartnerConfigLoader
     end
   end
 
-  # Every entry in invitation_attributes/applicant_input_page must name an
+  # Every entry in invitation_/landing_page_/applicant_input_page must name an
   # attribute the partner actually defines, and must not repeat within its list.
   def validate_attribute_usages
     defined_names = Array(@yaml_data[:application_attributes]).map { |a| a[:name].to_s }
