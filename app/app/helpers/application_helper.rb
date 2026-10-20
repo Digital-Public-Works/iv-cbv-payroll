@@ -10,7 +10,7 @@ module ApplicationHelper
   #
   # foo:
   #   az_des: Some String
-  #   la_ldh: Other String
+  #   pa_dhs: Other String
   #   default: Default String
   #
   # Then call this method with, `agency_translation("foo")` and it will attempt
@@ -22,7 +22,8 @@ module ApplicationHelper
     agency_translation_for(current_agency, i18n_base_key, **options)
   end
 
-  def agency_translation_for(agency, i18n_base_key, **options)
+  # TODO: prototype allows 'optional' to demonstrate, should ensure all translations are present if this goes to prod
+  def agency_translation_for(agency, i18n_base_key, optional: false, **options)
     # Relative (leading-dot) keys are scoped to the current template's path.
     # Expand them up front so the database lookup — which stores full keys like
     # "cbv.entries.show.checkbox" — can match. Without this, DB overrides
@@ -64,7 +65,7 @@ module ApplicationHelper
                      t(default_key, **options)
                    end
 
-    if translated.blank? && Rails.env.development? &&
+    if translated.blank? && Rails.env.development? && !optional &&
         !ClientAgencyConfig::OPTIONAL_TRANSLATION_KEYS.include?(i18n_base_key)
       raise "Missing agency translation: #{i18n_key} (base: #{i18n_base_key}, default: #{default_key})"
     end

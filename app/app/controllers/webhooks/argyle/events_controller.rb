@@ -151,7 +151,8 @@ class Webhooks::Argyle::EventsController < ApplicationController
 
     payroll_account = webhook_event.payroll_account
     if payroll_account.has_fully_synced?
-      return if payroll_account.sync_succeeded? || payroll_account.sync_failed?
+      # if we already have a sync status, short circuit this (numerous callbacks can all this).
+      return unless payroll_account.sync_unknown? || payroll_account.sync_in_progress?
 
       report = Aggregators::AggregatorReports::ArgyleReport.new(
         payroll_accounts: [ payroll_account ],
@@ -163,12 +164,31 @@ class Webhooks::Argyle::EventsController < ApplicationController
 
       log_sync_finish(payroll_account, report)
 
-      if payroll_account.necessary_jobs_succeeded? && validate_useful_report_requirements(report, payroll_account)
-        payroll_account.update(synchronization_status: :succeeded)
-      else
-        payroll_account.update(synchronization_status: :failed)
-      end
+      # account for followup retries, make the save atomic. If there is an error during sync status
+      # we may get another arylg eevent later.
+      payroll_account.update(
+        synchronization_status: payroll_account.necessary_jobs_succeeded? ? :succeeded : :failed,
+        report_status: decide_report_status(payroll_account, report)
+      )
     end
+  end
+
+  # a failed sync has no report worth judging. If we still need to collect user
+  # data (per partner configuration), leave the verdict for after that step;
+  # otherwise decide whether it is useful now.
+  def decide_report_status(payroll_account, report)
+    return :not_useful unless payroll_account.necessary_jobs_succeeded?
+    return payroll_account.report_status if applicant_information_outstanding?
+
+    validate_useful_report_requirements(report, payroll_account) ? :useful : :not_useful
+  end
+
+  # Whether the partner still expects something from the applicant on the
+  # applicant-information page.
+  def applicant_information_outstanding?
+    return false if @cbv_flow.applicant_information_completed?
+
+    @cbv_flow.cbv_applicant.fields_to_collect_for(PartnerAttributeUsage::APPLICANT_INPUT_PAGE).any?
   end
 
   # For analytics during testing (and maybe for the pilots as well) we want to

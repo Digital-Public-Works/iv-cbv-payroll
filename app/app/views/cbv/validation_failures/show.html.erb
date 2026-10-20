@@ -10,7 +10,7 @@
 
 <h3><%= t(".other_ways") %></h3>
 
-<% if @cbv_flow.has_account_with_required_data? %>
+<% if @cbv_flow.has_presumed_usable_account? %>
   <%= render("other_ways_with_employer") %>
 <% else %>
   <%= render("other_ways_no_employer") %>

@@ -1,4 +1,6 @@
 class Cbv::EntriesController < Cbv::BaseController
+  before_action :redirect_to_landing_page_if_needed
+
   def show
     event_logger.track(TrackEvent::ApplicantViewedAgreement, request, {
       time: Time.now.to_i,
@@ -26,5 +28,16 @@ class Cbv::EntriesController < Cbv::BaseController
     else
       redirect_to(cbv_flow_entry_path, flash: { alert: t(".error") })
     end
+  end
+
+  private
+
+  # check if a landing page redirect is needed because the partner is configured to collect
+  # a user-provided value on the landing page (IE case number)
+  def redirect_to_landing_page_if_needed
+    return unless @cbv_flow.generic?
+    return if @cbv_flow.landing_page_completed?
+
+    redirect_to cbv_flow_landing_page_path
   end
 end

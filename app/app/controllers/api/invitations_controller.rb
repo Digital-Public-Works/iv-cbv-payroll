@@ -15,6 +15,12 @@ class Api::InvitationsController < ApplicationController
   before_action :authenticate
 
   def create
+    unless partner_config&.invitation_flow_available?
+      return render json: {
+        errors: [ { field: "base", message: "This partner is not configured to create invitations." } ]
+      }, status: :forbidden
+    end
+
     missing = missing_required_custom_attributes_keys
     if missing.any?
       return render json: missing_required_errors(missing), status: :bad_request
@@ -89,10 +95,12 @@ class Api::InvitationsController < ApplicationController
     )
   end
 
+  # required attributes for an invitation are only those that are configured in the invitation_attributes list
   def missing_required_custom_attributes_keys
     incoming = unsafe_custom_attributes_hash
-    required_attrs = partner_config.applicant_attributes.select { |_name, attr| attr.required }
-    required_attrs.keys.reject { |name| incoming[name].present? }
+
+    partner_config.required_attributes_for(PartnerAttributeUsage::INVITATION)
+                  .reject { |name| incoming[name].present? }
   end
 
   # allow both custom_attributes and agency_partner_metadata to account for legacy partners

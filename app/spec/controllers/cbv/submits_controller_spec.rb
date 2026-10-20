@@ -169,40 +169,6 @@ RSpec.describe Cbv::SubmitsController do
     #         end
     #       end
     #     end
-
-    #     context "with la_ldh client agency" do
-    #       before do
-    #         cbv_flow.update!(client_agency_id: "la_ldh")
-    #       end
-    #       context "when rendering for a caseworker" do
-    #         it "shows the right client information fields" do
-    #           get :show, format: :pdf, params: {
-    #             is_caseworker: "true"
-    #           }
-
-    #           pdf_text = extract_pdf_text(response)
-
-    #           expect(pdf_text).to include("Client-provided information")
-    #           expect(pdf_text).to include("Medicaid case number")
-    #           expect(pdf_text).to include("Date of birth")
-    #           expect(pdf_text).to include("SSN")
-    #           expect(pdf_text).not_to include(I18n.t("cbv.submits.show.application_or_recertification_date"))
-    #         end
-    #       end
-
-    #       context "when rendering for a client" do
-    #         it "does not show the client information fields" do
-    #           get :show, format: :pdf
-
-    #           pdf_text = extract_pdf_text(response)
-
-    #           expect(pdf_text).to include("Client-provided information")
-    #           expect(pdf_text).to include("Medicaid case number")
-    #           expect(pdf_text).to include("Date of birth")
-    #           expect(pdf_text).not_to include("SSN")
-    #         end
-    #       end
-    #     end
     #   end
 
     #   context "when legal agreement checked" do

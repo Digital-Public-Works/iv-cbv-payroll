@@ -247,6 +247,13 @@ class ClientAgencyConfig
   class ClientAgency
     TransmissionMethodEntry = Struct.new(:method, :configuration, keyword_init: true)
 
+    # One applicant attribute as it is asked for in a particular context.
+    AttributeUsage = Struct.new(:name, :required, keyword_init: true) do
+      def required?
+        !!required
+      end
+    end
+
     attr_reader(*%i[
       id
       agency_name
@@ -263,14 +270,15 @@ class ClientAgencyConfig
       pay_income_days
       pinwheel_api_token
       pinwheel_environment
-      pilot_ended
       argyle_environment
       staff_portal_enabled
       sso
       transmission_methods
       weekly_report
       applicant_attributes
-      generic_links_disabled
+      attribute_usages
+      generic_links_enabled
+      invitation_links_enabled
       report_customization_show_earnings_list
       require_applicant_information_on_invitation
       include_invitation_details_on_weekly_report
@@ -293,7 +301,6 @@ class ClientAgencyConfig
       @invitation_valid_days = partner_config.invitation_valid_days_default
       @logo_path = partner_config.logo_path
       @pay_income_days = { w2: partner_config.pay_income_days_w2, gig: partner_config.pay_income_days_gig }
-      @pilot_ended = partner_config.pilot_ended
       @argyle_environment = partner_config.argyle_environment || "sandbox"
 
       @transmission_methods = partner_config.partner_transmission_methods.map do |ptm|
@@ -327,15 +334,24 @@ class ClientAgencyConfig
         h[attr.name] = attr
       end.with_indifferent_access
 
+      # get back the partner attributes necessary for the context, in order as defined.
+      @attribute_usages = PartnerAttributeUsage::CONTEXTS.index_with { [] }
+      partner_config.partner_attribute_usages.ordered.each do |usage|
+        next unless @applicant_attributes.key?(usage.name)
+        next unless @attribute_usages.key?(usage.context)
+
+        @attribute_usages[usage.context] << AttributeUsage.new(name: usage.name, required: usage.required)
+      end
+
       @report_customization_show_earnings_list = partner_config.report_customization_show_earnings_list
-      @generic_links_disabled = !partner_config.generic_links_enabled
+      @generic_links_enabled = partner_config.generic_links_enabled
       @invitation_links_enabled = partner_config.invitation_links_enabled
       @include_full_ssn = partner_config.include_full_ssn
       @include_direct_deposit_last_4 = partner_config.include_direct_deposit_last_4
       @encourage_link_sharing = partner_config.encourage_link_sharing
 
 
-      @require_applicant_information_on_invitation = partner_config.partner_application_attributes.exists?(required: true)
+      @require_applicant_information_on_invitation = @attribute_usages[PartnerAttributeUsage::INVITATION].any?(&:required?)
       @include_invitation_details_on_weekly_report = partner_config.respond_to?(:include_invitation_details_on_weekly_report) &&
         partner_config.include_invitation_details_on_weekly_report
       @include_paystubs = partner_config.respond_to?(:include_paystubs) &&
@@ -350,6 +366,46 @@ class ClientAgencyConfig
       raise ArgumentError.new("Client Agency #{@id} invalid value for pay_income_days.gig") unless VALID_PAY_INCOME_DAYS.include?(@pay_income_days[:gig])
       raise ArgumentError.new("Client Agency #{@id} missing required attribute `partner_identifier_name`") if @partner_identifier_name.blank?
       raise ArgumentError.new("Client Agency #{@id} must have at least one transmission method configured") if @transmission_methods.empty?
+    end
+
+    def generic_flow_available?
+      !!generic_links_enabled
+    end
+
+    def invitation_flow_available?
+      !!invitation_links_enabled
+    end
+
+    # The attributes this partner asks for in `context`, in configured order.
+    def attributes_for(context)
+      attribute_usages.fetch(context.to_s, [])
+    end
+
+    def attribute_names_for(context)
+      attributes_for(context).map(&:name)
+    end
+
+    def required_attributes_for(context)
+      attributes_for(context).select(&:required?).map(&:name)
+    end
+
+    def required_for?(context, name)
+      required_attributes_for(context).include?(name.to_s)
+    end
+
+    # the things that are client-provided info. attributes that are from 'invitation' are not applicant provided
+    def applicant_supplied_attribute_names
+      attribute_names_for(PartnerAttributeUsage::LANDING_PAGE) |
+        attribute_names_for(PartnerAttributeUsage::APPLICANT_INPUT_PAGE)
+    end
+
+    # goes into useful report validator - these are the itmes that need values before it can submit
+    def required_for_submit_attributes
+      applicant_attributes.select { |_name, attr| attr.required_for_submit }.keys
+    end
+
+    def validation_regex_for(name)
+      applicant_attributes[name]&.validation_regex.presence
     end
 
     # Returns true if this agency has the given transmission method configured.

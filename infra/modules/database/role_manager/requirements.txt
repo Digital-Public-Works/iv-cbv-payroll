@@ -1,1 +1,13 @@
-pg8000
+# These pins mirror the dependencies already vendored inside role_manager.zip,
+# which Terraform uploads verbatim (see role-manager.tf). Nothing installs from
+# this file at deploy time — it exists so the repository dependency graph, and
+# therefore Dependabot security alerts, can see what the Lambda actually ships.
+#
+# Versions were confirmed by hashing the vendored files against each package's
+# RECORD, because vendor/ carries stale dist-info directories from earlier
+# installs. If the zip is rebuilt, re-derive these to match it.
+pg8000==1.31.2
+scramp==1.4.5
+asn1crypto==1.5.1
+python-dateutil==2.9.0.post0
+six==1.16.0
