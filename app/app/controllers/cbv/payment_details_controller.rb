@@ -31,7 +31,7 @@ class Cbv::PaymentDetailsController < Cbv::BaseController
     end
 
     if @payroll_account.report_unknown? && @cbv_flow.applicant_information_completed?
-      # we needed more info after the sync and dont knwo if the report is useful, but we have the info now to make a determination
+      # we needed more info after the sync and dont know if the report is useful, but we have the info now to make a determination
       result = Aggregators::AccountReportService.new(@aggregator_report, @payroll_account).validate
       @payroll_account.update(report_status: result.valid? ? :useful : :not_useful)
 
