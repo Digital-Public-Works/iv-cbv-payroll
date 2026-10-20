@@ -37,6 +37,61 @@ class CbvApplicant < ApplicationRecord
     message: :invalid_date
   }
 
+  # applicant is providing this data - not sent in as part of a partner-created invitation
+  APPLICANT_PROVIDED_SOURCE = "applicant".freeze
+
+  # Records where each of `names` came from, e.g.
+  #   { "date_of_birth" => { "source" => "applicant", "at" => "2026-10-08T12:00:00Z" } }
+  # Does not save; callers assign alongside the values themselves.
+  def record_attribute_provenance(names, source: APPLICANT_PROVIDED_SOURCE, at: Time.current)
+    recorded_at = at.utc.iso8601
+
+    self.attribute_provenance = (attribute_provenance || {}).merge(
+      Array(names).each_with_object({}) do |name, h|
+        h[name.to_s] = { "source" => source.to_s, "at" => recorded_at }
+      end
+    )
+  end
+
+  # validate, and determine which items are provided by the applicant
+  def assign_applicant_input(submitted)
+    return [] if submitted.blank?
+
+    names = submitted.to_h.keys.map(&:to_s)
+    before = names.index_with { |name| send(name) }
+
+    assign_attributes(submitted)
+
+    changed = names.select { |name| send(name) != before[name] }
+    supplied, cleared = changed.partition { |name| !send(name).nil? }
+
+    record_attribute_provenance(supplied)
+    clear_attribute_provenance(cleared)
+
+    names
+  end
+
+  def clear_attribute_provenance(names)
+    return if Array(names).empty?
+
+    self.attribute_provenance = (attribute_provenance || {}).except(*Array(names).map(&:to_s))
+  end
+
+  def provenance_for(name)
+    (attribute_provenance || {})[name.to_s]
+  end
+
+  def applicant_provided?(name)
+    provenance_for(name)&.dig("source") == APPLICANT_PROVIDED_SOURCE
+  end
+
+  # Names of the attributes the applicant supplied themselves.
+  def applicant_provided_attributes
+    (attribute_provenance || {})
+      .select { |_name, entry| entry.is_a?(Hash) && entry["source"] == APPLICANT_PROVIDED_SOURCE }
+      .keys
+  end
+
   def agency_expected_names
     return [] if redacted_at?
     return [] unless income_changes.present?
@@ -149,6 +204,8 @@ class CbvApplicant < ApplicationRecord
         else
           write_applicant_attribute(key, nil)
         end
+
+        self.attribute_provenance = (attribute_provenance || {}).except(key.to_s)
       end
     save!
   end

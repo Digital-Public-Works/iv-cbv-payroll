@@ -32,6 +32,11 @@ class PayrollAccount < ApplicationRecord
 
   before_save :mark_report_not_useful_when_sync_failed
 
+  # sync finished and we don't know for sure it is not useful
+  def presumed_usable?
+    sync_succeeded? && !report_not_useful?
+  end
+
   # The sync finished and the report is known to be usable.
   def usable?
     sync_succeeded? && report_useful?

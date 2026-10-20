@@ -9,7 +9,7 @@
   <li><%= t(".option_1") %></li>
   <li><%= t(".option_2") %></li>
   <li><%= t(".option_3", website_label: agency_website_link_label) %></li>
-  <% if @cbv_flow.has_account_with_required_data? %>
+  <% if @cbv_flow.has_presumed_usable_account? %>
     <li><%= t("cbv.missing_results.show.continue_to_review", agency_acronym: agency_acronym_or_full_name) %></li>
   <% end %>
 </ol>
@@ -19,7 +19,7 @@
     <%= link_to t(".back_to_search"), cbv_flow_employer_search_path, class: "usa-button usa-button--outline" %>
   </li>
   <li class="usa-button-group__item">
-    <% if @cbv_flow.has_account_with_required_data? %>
+    <% if @cbv_flow.has_presumed_usable_account? %>
       <%= link_to t(".continue_to_report"), cbv_flow_applicant_information_path, class: "usa-button" %>
     <% else %>
       <%= agency_translation("cbv.expired_invitations.show.cta_button_html", agency_url: agency_url, agency_portal_name: agency_translation("shared.agency_portal_name")) %>

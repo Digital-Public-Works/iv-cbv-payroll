@@ -97,6 +97,7 @@ RSpec.describe "Partner flow configurations", type: :request do
       get "/cbv/applicant_information"
 
       expect(response).to redirect_to("/cbv/summary")
+      expect(CbvFlow.last.reload.applicant_information_completed_at).to be_present
     end
 
     it "offers no generic entry point" do
