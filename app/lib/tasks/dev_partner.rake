@@ -109,13 +109,18 @@ namespace :dev do
           { name: "case_number", required: true, show_on_caseworker_report: true },
           { name: "first_name", required: false },
           { name: "last_name", required: false }
-        ].each do |attrs|
+        ].each_with_index do |attrs, position|
           config.partner_application_attributes.create!(
             name: attrs[:name],
             description: attrs[:name].humanize,
             data_type: :string,
-            required: attrs.fetch(:required, false),
             show_on_caseworker_report: attrs.fetch(:show_on_caseworker_report, false)
+          )
+          config.partner_attribute_usages.create!(
+            context: PartnerAttributeUsage::INVITATION,
+            name: attrs[:name],
+            required: attrs.fetch(:required, false),
+            position: position
           )
         end
 

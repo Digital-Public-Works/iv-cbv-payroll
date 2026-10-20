@@ -24,7 +24,7 @@ class PartnerConfigLoader
   # Column attrs that belong in the SETTINGS document (shared across envs).
   SETTINGS_ATTRS = %w[
     partner_id name state_name timezone domain website logo_path
-    active_demo active_prod pilot_ended
+    active_demo active_prod
     staff_portal_enabled generic_links_enabled invitation_links_enabled
     invitation_valid_days_default
     pay_income_days_w2 pay_income_days_gig
@@ -46,7 +46,16 @@ class PartnerConfigLoader
   ].freeze
 
   # Structural (non-column) top-level keys, partitioned the same way.
-  SETTINGS_STRUCTURAL = %w[application_attributes translations].freeze
+  # Per-context lists of which application_attributes the partner asks for, and
+  # whether each is required there. Each entry is { name:, required: }.
+  ATTRIBUTE_USAGE_SECTIONS = {
+    "invitation_attributes" => PartnerAttributeUsage::INVITATION,
+    "landing_page_attributes" => PartnerAttributeUsage::LANDING_PAGE,
+    "applicant_input_page" => PartnerAttributeUsage::APPLICANT_INPUT_PAGE
+  }.freeze
+  ATTRIBUTE_USAGE_KEYS = %w[name required].freeze
+
+  SETTINGS_STRUCTURAL = (%w[application_attributes translations] + ATTRIBUTE_USAGE_SECTIONS.keys).freeze
   CREDENTIAL_STRUCTURAL = %w[transmission_methods].freeze
 
   SETTINGS_TOP_LEVEL = (SETTINGS_ATTRS + SETTINGS_STRUCTURAL).freeze
@@ -85,9 +94,10 @@ class PartnerConfigLoader
   TRANSMISSION_METHOD_KEYS = %w[method_type configs].freeze
   TRANSMISSION_CONFIG_KEYS = %w[key value encrypted].freeze
   APPLICATION_ATTRIBUTE_KEYS = %w[
-    name description required data_type form_field_type
-    show_on_applicant_form show_on_caseworker_form show_on_caseworker_report
+    name description data_type form_field_type
+    show_on_caseworker_form show_on_caseworker_report
     redactable redact_type
+    validation_regex required_for_submit
   ].freeze
 
   # Subdomain prefixes reserved for non-partner infrastructure. A partner
@@ -154,6 +164,8 @@ class PartnerConfigLoader
     validate_pay_income_days
     validate_domain
     validate_application_attributes
+    validate_attribute_usages
+    validate_validation_regexes
     validate_partner_identifier_name
     validate_translations
 
@@ -175,6 +187,7 @@ class PartnerConfigLoader
     partner_id = @yaml_data[:partner_id]
     changes = { config: nil, transmission_methods: { created: 0, updated: 0, deleted: 0 },
                 application_attributes: { created: 0, updated: 0, deleted: 0 },
+                attribute_usages: { created: 0, updated: 0, deleted: 0 },
                 translations: { created: 0, updated: 0, deleted: 0 } }
 
     ActiveRecord::Base.transaction do
@@ -188,6 +201,7 @@ class PartnerConfigLoader
 
       changes[:transmission_methods] = reconcile_transmission_methods(pc)
       changes[:application_attributes] = reconcile_application_attributes(pc)
+      changes[:attribute_usages] = reconcile_attribute_usages(pc)
       changes[:translations] = reconcile_translations(pc)
     end
 
@@ -214,15 +228,21 @@ class PartnerConfigLoader
       {
         "name" => attr.name,
         "description" => attr.description,
-        "required" => attr.required,
         "data_type" => attr.data_type,
         "form_field_type" => attr.form_field_type,
-        "show_on_applicant_form" => attr.show_on_applicant_form,
         "show_on_caseworker_form" => attr.show_on_caseworker_form,
         "show_on_caseworker_report" => attr.show_on_caseworker_report,
         "redactable" => attr.redactable,
-        "redact_type" => attr.redact_type
+        "redact_type" => attr.redact_type,
+        "validation_regex" => attr.validation_regex,
+        "required_for_submit" => attr.required_for_submit
       }.compact
+    end
+
+    ATTRIBUTE_USAGE_SECTIONS.each do |section, context|
+      settings[section] = pc.partner_attribute_usages.for_context(context).ordered.map do |usage|
+        { "name" => usage.name, "required" => usage.required }
+      end
     end
 
     settings["translations"] = {}
@@ -332,6 +352,15 @@ class PartnerConfigLoader
       next unless attr.respond_to?(:keys)
       (attr.keys.map(&:to_s) - APPLICATION_ATTRIBUTE_KEYS).sort.each do |key|
         @errors << "application_attributes[#{i}]: unknown key '#{key}'"
+      end
+    end
+
+    ATTRIBUTE_USAGE_SECTIONS.each_key do |section|
+      Array(@yaml_data[section.to_sym]).each_with_index do |entry, i|
+        next unless entry.respond_to?(:keys)
+        (entry.keys.map(&:to_s) - ATTRIBUTE_USAGE_KEYS).sort.each do |key|
+          @errors << "#{section}[#{i}]: unknown key '#{key}'"
+        end
       end
     end
   end
@@ -457,6 +486,42 @@ class PartnerConfigLoader
     end
   end
 
+  # Every entry in invitation_/landing_page_/applicant_input_page must name an
+  # attribute the partner actually defines, and must not repeat within its list.
+  def validate_attribute_usages
+    defined_names = Array(@yaml_data[:application_attributes]).map { |a| a[:name].to_s }
+
+    ATTRIBUTE_USAGE_SECTIONS.each_key do |section|
+      seen = []
+      Array(@yaml_data[section.to_sym]).each_with_index do |entry, i|
+        name = entry[:name].to_s
+        if name.blank?
+          @errors << "#{section}[#{i}]: missing 'name'"
+          next
+        end
+        unless defined_names.include?(name)
+          @errors << "#{section}[#{i}]: '#{name}' is not defined in application_attributes"
+        end
+        @errors << "#{section}[#{i}]: duplicate name '#{name}'" if seen.include?(name)
+        seen << name
+      end
+    end
+  end
+
+  # Applied to a value the applicant types in, so it has to compile.
+  def validate_validation_regexes
+    Array(@yaml_data[:application_attributes]).each_with_index do |attr, i|
+      source = attr[:validation_regex]
+      next if source.blank?
+
+      begin
+        Regexp.new(source.to_s)
+      rescue RegexpError => e
+        @errors << "application_attributes[#{i}] (#{attr[:name]}): invalid validation_regex: #{e.message}"
+      end
+    end
+  end
+
   def validate_partner_identifier_name
     name = @yaml_data[:partner_identifier_name]
     return if name.blank?
@@ -464,8 +529,14 @@ class PartnerConfigLoader
     matching = attrs.find { |a| a[:name].to_s == name.to_s }
     if matching.nil?
       @errors << "partner_identifier_name '#{name}' must be defined as an entry in application_attributes"
-    elsif !matching[:required]
-      @errors << "partner_identifier_name '#{name}' must reference an application_attribute with required: true"
+      return
+    end
+
+    # invitations created by partner via API must have the required attributes.
+    # invitations auto created by generic does not require these - they will be collected later.
+    usage = Array(@yaml_data[:invitation_attributes]).find { |u| u[:name].to_s == name.to_s }
+    if usage && !usage[:required]
+      @errors << "partner_identifier_name '#{name}' must be required in invitation_attributes"
     end
   end
 
@@ -534,14 +605,14 @@ class PartnerConfigLoader
       existing = pc.partner_application_attributes.find_by(name: attr_data[:name])
       attrs = {
         description: attr_data[:description],
-        required: attr_data.fetch(:required, true),
         data_type: attr_data.fetch(:data_type, "string"),
         form_field_type: attr_data.fetch(:form_field_type, "text_field"),
-        show_on_applicant_form: attr_data.fetch(:show_on_applicant_form, true),
         show_on_caseworker_form: attr_data.fetch(:show_on_caseworker_form, true),
         show_on_caseworker_report: attr_data.fetch(:show_on_caseworker_report, false),
         redactable: attr_data.fetch(:redactable, false),
-        redact_type: attr_data[:redact_type]
+        redact_type: attr_data[:redact_type],
+        validation_regex: attr_data[:validation_regex],
+        required_for_submit: attr_data.fetch(:required_for_submit, false)
       }
 
       if existing
@@ -550,6 +621,36 @@ class PartnerConfigLoader
       else
         pc.partner_application_attributes.create!(attrs.merge(name: attr_data[:name]))
         counts[:created] += 1
+      end
+    end
+
+    counts
+  end
+
+  def reconcile_attribute_usages(pc)
+    counts = { created: 0, updated: 0, deleted: 0 }
+
+    ATTRIBUTE_USAGE_SECTIONS.each do |section, context|
+      entries = Array(@yaml_data[section.to_sym])
+      names = entries.map { |e| e[:name].to_s }
+
+      pc.partner_attribute_usages
+        .for_context(context)
+        .where.not(name: names)
+        .destroy_all
+        .tap { |d| counts[:deleted] += d.size }
+
+      entries.each_with_index do |entry, position|
+        attrs = { required: !!entry[:required], position: position }
+        existing = pc.partner_attribute_usages.for_context(context).find_by(name: entry[:name].to_s)
+
+        if existing
+          existing.update!(attrs)
+          counts[:updated] += 1
+        else
+          pc.partner_attribute_usages.create!(attrs.merge(context: context, name: entry[:name].to_s))
+          counts[:created] += 1
+        end
       end
     end
 

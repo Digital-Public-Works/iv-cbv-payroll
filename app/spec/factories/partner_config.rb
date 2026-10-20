@@ -12,7 +12,6 @@ FactoryBot.define do
     logo_path { "" }
     generic_links_enabled { true }
     invitation_links_enabled { true }
-    pilot_ended { false }
     pay_income_days_w2 { 90 }
     pay_income_days_gig { 90 }
     staff_portal_enabled { true }
@@ -37,19 +36,6 @@ FactoryBot.define do
       domain { "az" }
       logo_path { "des_logo.png" }
       state_name { "Arizona" }
-    end
-
-    trait :la_ldh do
-      partner_id { "la_ldh" }
-      name { "Department of Health" }
-      website { "https://ldh.la.gov/renew-medicaid" }
-      timezone { "America/Chicago" }
-      domain { "la" }
-      logo_path { "ldh_logo.svg" }
-      generic_links_enabled { true }
-      staff_portal_enabled { false }
-      weekly_report_variant { "flows" }
-      default_origin { "sms" }
     end
 
     trait :pa_dhs do

@@ -30,7 +30,7 @@
     <h3 class="margin-0"><%= t(".pdf.shared.client_information") %></h3>
   <% end %>
   <% agency = ClientAgencyConfig.instance[@cbv_flow.client_agency_id] %>
-  <% agency.applicant_attributes.select { |_, attr| attr.show_on_applicant_form }.each_key do |item| %>
+  <% agency.applicant_supplied_attribute_names.each do |item| %>
     <% item = item.to_sym %>
     <% if @cbv_flow.cbv_applicant[item].present? %>
       <% if item == :date_of_birth %>

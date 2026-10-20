@@ -17,7 +17,6 @@ RSpec.describe PartnerConfigLoader do
       "argyle_environment" => "sandbox",
       "active_demo" => true,
       "active_prod" => false,
-      "pilot_ended" => false,
       "staff_portal_enabled" => false,
       "generic_links_enabled" => true,
       "invitation_links_enabled" => true,
@@ -38,22 +37,31 @@ RSpec.describe PartnerConfigLoader do
       "application_attributes" => [
         {
           "name" => "case_number",
-          "required" => true,
           "data_type" => "string",
           "form_field_type" => "text_field",
-          "show_on_applicant_form" => false,
           "show_on_caseworker_form" => true,
           "show_on_caseworker_report" => true,
-          "redactable" => false
+          "redactable" => false,
+          "validation_regex" => "\\A\\d{8}\\z",
+          "required_for_submit" => true
         },
         {
           "name" => "first_name",
-          "required" => true,
           "data_type" => "string",
           "form_field_type" => "text_field",
           "redactable" => true,
           "redact_type" => "string"
         }
+      ],
+      "invitation_attributes" => [
+        { "name" => "case_number", "required" => true },
+        { "name" => "first_name", "required" => false }
+      ],
+      "landing_page_attributes" => [
+        { "name" => "case_number", "required" => true }
+      ],
+      "applicant_input_page" => [
+        { "name" => "first_name", "required" => true }
       ],
       "translations" => {
         "en" => {
@@ -475,8 +483,59 @@ RSpec.describe PartnerConfigLoader do
       pc = PartnerConfig.find_by(partner_id: "test_partner")
       expect(pc.partner_application_attributes.count).to eq(2)
       case_attr = pc.partner_application_attributes.find_by(name: "case_number")
-      expect(case_attr.required).to be true
       expect(case_attr.show_on_caseworker_report).to be true
+      expect(case_attr.validation_regex).to eq("\\A\\d{8}\\z")
+      expect(case_attr.required_for_submit).to be true
+    end
+
+    it "creates the per-context attribute usages" do
+      loader = loader_for(valid_yaml)
+      loader.load!
+      loader.validate!
+      loader.apply!
+
+      pc = PartnerConfig.find_by(partner_id: "test_partner")
+
+      expect(pc.partner_attribute_usages.for_context("invitation").ordered.map { |u| [ u.name, u.required ] })
+        .to eq([ [ "case_number", true ], [ "first_name", false ] ])
+      expect(pc.partner_attribute_usages.for_context("landing_page").map(&:name)).to eq([ "case_number" ])
+      expect(pc.partner_attribute_usages.for_context("applicant_input_page").map(&:name)).to eq([ "first_name" ])
+    end
+
+    it "removes attribute usages dropped from the config" do
+      loader = loader_for(valid_yaml)
+      loader.load!
+      loader.validate!
+      loader.apply!
+
+      valid_yaml["landing_page_attributes"] = []
+      loader2 = loader_for(valid_yaml)
+      loader2.load!
+      loader2.validate!
+      loader2.apply!
+
+      pc = PartnerConfig.find_by(partner_id: "test_partner")
+      expect(pc.partner_attribute_usages.for_context("landing_page")).to be_empty
+    end
+
+    it "rejects a usage naming an attribute the partner does not define" do
+      valid_yaml["applicant_input_page"] = [ { "name" => "not_a_real_attribute", "required" => true } ]
+      loader = loader_for(valid_yaml)
+      loader.load!
+      loader.validate!
+
+      expect(loader.errors).to include(
+        "applicant_input_page[0]: 'not_a_real_attribute' is not defined in application_attributes"
+      )
+    end
+
+    it "rejects a validation_regex that does not compile" do
+      valid_yaml["application_attributes"][0]["validation_regex"] = "([unclosed"
+      loader = loader_for(valid_yaml)
+      loader.load!
+      loader.validate!
+
+      expect(loader.errors.join).to include("invalid validation_regex")
     end
 
     it "creates translations" do
@@ -516,6 +575,8 @@ RSpec.describe PartnerConfigLoader do
       expect(pc.partner_application_attributes.count).to eq(2)
 
       valid_yaml["application_attributes"] = [ valid_yaml["application_attributes"][0] ]
+      valid_yaml["invitation_attributes"] = [ { "name" => "case_number", "required" => true } ]
+      valid_yaml["applicant_input_page"] = []
       loader2 = loader_for(valid_yaml)
       loader2.load!
       loader2.validate!

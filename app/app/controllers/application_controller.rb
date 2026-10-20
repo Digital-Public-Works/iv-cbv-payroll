@@ -2,12 +2,11 @@ class ApplicationController < ActionController::Base
   include NonProductionAccessible
 
   helper :view
-  helper_method :current_agency, :show_menu?, :pilot_ended?
+  helper_method :current_agency, :show_menu?
   around_action :switch_locale
   before_action :add_newrelic_metadata
   before_action :redirect_if_maintenance_mode
   before_action :enable_mini_profiler_in_demo
-  before_action :check_if_pilot_ended
   before_action :set_device_id_cookie
 
   rescue_from ActionController::InvalidAuthenticityToken do
@@ -47,11 +46,6 @@ class ApplicationController < ActionController::Base
     user_signed_in? && !home_page?
   end
 
-  def check_if_pilot_ended
-    @pilot_ended = current_agency&.pilot_ended
-    redirect_to root_path if @pilot_ended && !home_page?
-  end
-
   def home_page?
     request.path == root_path
   end
@@ -88,10 +82,6 @@ class ApplicationController < ActionController::Base
 
     agency = agency_config.find_by_domain(subdomain) || agency_config.find_by_domain(host)
     agency&.id
-  end
-
-  def pilot_ended?
-    @pilot_ended.nil? ? current_agency&.pilot_ended : @pilot_ended
   end
 
   protected

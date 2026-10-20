@@ -92,7 +92,8 @@ class Api::LoadTestSessionsController < ApplicationController
         cbv_flow: cbv_flow,
         aggregator_account_id: account_id,
         supported_jobs: %w[accounts income paystubs employment identity],
-        synchronization_status: :succeeded
+        synchronization_status: :succeeded,
+        report_status: :useful
       )
 
       # Create successful webhook events matching Argyle's actual event names
@@ -152,7 +153,8 @@ class Api::LoadTestSessionsController < ApplicationController
       cbv_flow: cbv_flow,
       aggregator_account_id: argyle_account_id,
       supported_jobs: %w[accounts income paystubs employment identity],
-      synchronization_status: :failed
+      synchronization_status: :failed,
+      report_status: :not_useful
     )
 
     # Create failed webhook events - paystubs job failed

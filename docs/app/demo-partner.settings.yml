@@ -15,9 +15,8 @@ logo_path: des_logo.png
 default_origin: demo
 active_demo: true
 active_prod: true
-pilot_ended: false
 staff_portal_enabled: false
-generic_links_enabled: false
+generic_links_enabled: true
 invitation_links_enabled: true
 invitation_valid_days_default: 10
 pay_income_days_w2: 90
@@ -30,52 +29,74 @@ partner_identifier_name: case_number
 application_attributes:
 - name: first_name
   description: Applicant first name
-  required: false
   data_type: string
   form_field_type: text_field
-  show_on_applicant_form: false
   show_on_caseworker_form: true
   show_on_caseworker_report: false
   redactable: true
   redact_type: string
 - name: middle_name
   description: Applicant middle name
-  required: false
   data_type: string
   form_field_type: text_field
-  show_on_applicant_form: false
   show_on_caseworker_form: true
   show_on_caseworker_report: false
   redactable: true
   redact_type: string
 - name: last_name
   description: Applicant last name
-  required: false
   data_type: string
   form_field_type: text_field
-  show_on_applicant_form: false
   show_on_caseworker_form: true
   show_on_caseworker_report: false
   redactable: true
   redact_type: string
 - name: case_number
   description: Case number
-  required: true
   data_type: string
   form_field_type: text_field
-  show_on_applicant_form: false
   show_on_caseworker_form: true
   show_on_caseworker_report: true
   redactable: false
+  validation_regex: '\A\d{8}\z'
+  required_for_submit: true
 - name: income_changes
   description: Income changes
-  required: false
   data_type: string
   form_field_type: text_field
-  show_on_applicant_form: false
   show_on_caseworker_form: false
   show_on_caseworker_report: false
   redactable: false
+
+# which attributes are part of an invitation when created via invitation flow, and are they required?
+invitation_attributes:
+- name: case_number
+  required: true
+- name: first_name
+  required: false
+- name: middle_name
+  required: false
+- name: last_name
+  required: false
+- name: income_changes
+  required: false
+
+# for generic flow, any attributes listed here will be asked for on the initial landing page.
+# if required: true, the applicant cannot progress beyond this page without filling it out
+landing_page_attributes:
+- name: case_number
+  required: true
+
+# attributes that are asked for on the user input page. If there are none, that page will be skipped.
+# If all values here are already populated before that step is reached, the page will be skipped.
+applicant_input_page:
+- name: first_name
+  required: true
+- name: middle_name
+  required: false
+- name: last_name
+  required: true
+
 translations:
   en:
     shared.agency_acronym: 'DEMO'

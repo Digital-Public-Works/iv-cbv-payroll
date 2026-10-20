@@ -130,16 +130,32 @@ RSpec.describe Cbv::SuccessesController do
           end
         end
 
-        context "when the cbv_flow originates from a generic link" do
+        context "when the cbv_flow began at a generic link" do
+          let(:generic_cbv_flow) { create(:cbv_flow, :generic, confirmation_code: "ABC12345") }
+
+          before do
+            session[:cbv_flow_id] = generic_cbv_flow.id
+            stub_client_agency_config_value("sandbox", "agency_domain", "demo.divt.app")
+          end
+
+          it "shares the partner's generic /start link rather than this applicant's invitation" do
+            get :show
+
+            expect(response.body).to include("https://demo.divt.app/en/start?origin=shared")
+            expect(response.body).not_to include(generic_cbv_flow.cbv_flow_invitation.auth_token)
+          end
+        end
+
+        context "when the cbv_flow has no invitation at all" do
           before do
             session[:cbv_flow_id] = cbv_flow_without_invitation.id
             stub_client_agency_config_value("sandbox", "agency_domain", "demo.divt.app")
           end
 
-          it "generates a simplified generic link with shared origin" do
+          it "generates a generic link with shared origin" do
             get :show
 
-            expected_url = "https://demo.divt.app/en?origin=shared"
+            expected_url = "https://demo.divt.app/en/start?origin=shared"
             expect(response.body).to include(expected_url)
           end
 
@@ -149,11 +165,10 @@ RSpec.describe Cbv::SuccessesController do
               stub_client_agency_config_value("sandbox", "agency_domain", nil)
             end
 
-            it "generates a generic link with shared origin" do
+            it "offers no link to share, since the partner has no subdomain to send people to" do
               get :show
 
-              expected_url = "http://localhost/en/cbv/links/sandbox"
-              expect(response.body).to include(expected_url)
+              expect(response.body).not_to have_selector("input#invitation_link")
             end
           end
         end

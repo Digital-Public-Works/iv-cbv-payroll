@@ -107,7 +107,7 @@ def print_apply_summary(partner_id, changes, loader)
   # the key set changes over time (another thing to keep in sync).
   puts "  argyle_environment (verify this is correct!): #{loader.yaml_data[:argyle_environment]}"
 
-  [ :transmission_methods, :application_attributes, :translations ].each do |section|
+  [ :transmission_methods, :application_attributes, :attribute_usages, :translations ].each do |section|
     c = changes[section]
     puts "  #{section}: #{c[:created]} created, #{c[:updated]} updated, #{c[:deleted]} deleted"
   end
