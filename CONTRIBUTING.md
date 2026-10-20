@@ -4,6 +4,56 @@ This project is being developed by Digital Public Works in partnership with vari
 tools to track our work (bugs and feature enhancements), and as such this repo is not architected to receive
 public contributions.
 
+## Testing Conventions
+
+Tests live in `app/spec`, mirroring the structure of `app/app`. See the [README](./README.md) for running the full
+test suite.
+
+### Automated accessibility checks
+
+The end-to-end (E2E) specs in `app/spec/e2e` are also where the automated accessibility checks live. Every call to
+`verify_page` (`app/spec/support/e2e/test_helpers.rb`) runs [axe-core](https://github.com/dequelabs/axe-core) against the
+current page using its default ruleset (WCAG 2.1 A/AA), so any page you visit through `verify_page` is checked. When
+you add a new page or a new state of a page to an E2E spec, check it with `verify_page`.
+
+These specs run automatically on every pull request that changes `app/`. To run them locally, from the `app`
+directory:
+
+```sh
+E2E_RUN_TESTS=1 bin/rspec spec/e2e
+```
+
+Add `E2E_SHOW_BROWSER=1` to watch the browser instead of running headless. See
+[docs/e2e/e2e-checks.md](./docs/e2e/e2e-checks.md) for record/replay mode and writing new E2E specs.
+
+**Automated checks catch only part of what matters.** Contextual issues like correct labels, keyboard behavior, focus management, and screen
+reader announcements among others still need a person to review them.
+
+### Skipping an accessibility rule
+
+Skipping an axe rule should be a deliberate, documented decision, not a way to get a build green. A skip is acceptable
+only when:
+
+- the violation is a known issue with a ticket tracking the fix, or
+- the violation is a confirmed false positive (for example, axe misreading markup we don't control).
+
+#### Rules for every skip:
+
+- Skip per page, on the specific `verify_page` call, using `skip_axe_rules:`. Never disable a rule globally.
+- Skip only the specific rule ID that fails, not a broader set.
+- Put an inline comment directly above the call that names the rule, explains why it fails, and links the tracking
+  ticket (or says "false positive" and why).
+- Remove the skip when the underlying issue is fixed.
+
+##### Example:
+```ruby
+# axe-skip color-contrast: the third-party banner renders gray-on-white text we
+# can't restyle yet. Tracked in PF-1234.
+verify_page(page, title: I18n.t("cbv.example.show.header"), skip_axe_rules: %w[color-contrast])
+```
+
+Reviewers should ask for changes on any skip that doesn't follow this pattern.
+
 <details>
 <summary>Sections we will fill out once we open to external contributions</summary>
 ## Getting Started
@@ -34,10 +84,6 @@ We follow the [GitHub Flow Workflow](https://guides.github.com/introduction/flow
 7.  Wait for your change to be pulled into `{{ cookiecutter.project_org }}/{{ cookiecutter.project_repo_name }}/main`
 8.  Delete your feature branch
 -->
-
-### Testing Conventions
-
-<!--- TODO: Discuss where tests can be found, how they are run, and what kind of tests/coverage strategy and goals the project has. -->
 
 ### Coding Style and Linters
 

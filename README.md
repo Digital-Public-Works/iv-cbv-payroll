@@ -271,9 +271,11 @@ If you're new to CBV, here's a summary of how to get started navigating the app.
 ## Automated E2E Testing
 We achieve End-to-End (E2E) testing by using `capybara` (which in turn uses `selenium`) to simulate a real user completing the CBV flow.
 
+These E2E specs are also where the automated accessibility checks live. Every `verify_page` call runs axe-coree against the current page. See [Testing Conventions in CONTRIBUTING.md](./CONTRIBUTING.md#testing-conventions) for the policy on skipping an axe rule.
+
 How to run E2E tests:
 * **Run in *replay* mode:** `E2E_RUN_TESTS=1 bin/rspec spec/e2e`
-  * Note: Soon, we will enable these to run by default, so the environment variable prefix won't be necessary.
+  * These specs run automatically in CI on every pull request that changes `app/`. Locally, they are skipped unless `E2E_RUN_TESTS` is set.
 * **Run in *record* mode:** `E2E_RECORD_MODE=1 bin/rspec [spec/e2e/your_spec.rb:123]`
   * You will need environment variables set for Argyle and Pinwheel. Add these to `.env.local` or `.env.test.local`.
 
