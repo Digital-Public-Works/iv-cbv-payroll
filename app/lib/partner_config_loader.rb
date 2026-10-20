@@ -159,6 +159,7 @@ class PartnerConfigLoader
     validate_required_credential_attrs
     validate_transmission_methods
     validate_required_credential_keys
+    validate_webhook_contract_version
     validate_no_masked_placeholders
     validate_pay_income_days
     validate_domain
@@ -422,6 +423,20 @@ class PartnerConfigLoader
         elsif BLANK_ALLOWED_KEYS.exclude?(key) && values[key].to_s.strip.empty?
           @errors << "transmission_methods[#{i}] (#{method_type}): credential '#{key}' must not be blank"
         end
+      end
+    end
+  end
+
+  def validate_webhook_contract_version
+    valid_versions = Transmitters::WebhookTransmitter::CONTRACT_VERSIONS
+    Array(@yaml_data[:transmission_methods]).each_with_index do |tm, i|
+      next unless tm[:method_type].to_s == "webhook"
+
+      Array(tm[:configs]).each do |tc|
+        next unless tc[:key].to_s == "contract_version"
+        next if valid_versions.include?(tc[:value].to_s)
+
+        @errors << "transmission_methods[#{i}] (webhook): invalid contract_version '#{tc[:value]}' (must be one of #{valid_versions.join(', ')})"
       end
     end
   end
