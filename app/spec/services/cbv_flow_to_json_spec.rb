@@ -106,6 +106,29 @@ RSpec.describe CbvFlowToJson do
             basename = TransmissionFilename.basename_for(cbv_flow: cbv_flow, agency: mock_client_agency, method_type: :sftp)
             expect(filenames[:sftp]).to eq("inbox/#{basename}")
           end
+
+          context "when the flow's sftp transmission was set up with a different path_prefix" do
+            before do
+              create(:cbv_flow_transmission, cbv_flow: cbv_flow, method_type: :sftp,
+                configuration: { "path_prefix" => "old/inbox" })
+            end
+
+            it "uses the transmission's directory, where the file is delivered" do
+              basename = TransmissionFilename.basename_for(cbv_flow: cbv_flow, agency: mock_client_agency, method_type: :sftp)
+              expect(filenames[:sftp]).to eq("old/inbox/#{basename}")
+            end
+          end
+
+          context "when the flow's sftp transmission has a blank configuration" do
+            before do
+              create(:cbv_flow_transmission, cbv_flow: cbv_flow, method_type: :sftp, configuration: {})
+            end
+
+            it "uses the partner's configured directory" do
+              basename = TransmissionFilename.basename_for(cbv_flow: cbv_flow, agency: mock_client_agency, method_type: :sftp)
+              expect(filenames[:sftp]).to eq("inbox/#{basename}")
+            end
+          end
         end
 
         context "when the agency configures encrypted_s3 alongside webhook" do
