@@ -6,14 +6,15 @@ class Cbv::PreviewController < ApplicationController
 
   before_action :ensure_non_production_environment
   before_action :setup_preview_flow
-  before_action :override_has_account_with_required_data
+  before_action :override_has_presumed_usable_account
   before_action :set_aggregator_report, only: %i[payment_details summary submit submit_pdf_as_html paystubs paystubs_pdf_as_html validation_failures transmitted_json]
   before_action :relax_csp_for_html_preview
 
   helper_method :current_agency, :employer_name, :gross_pay, :employment_start_date,
     :employment_end_date, :employment_status, :pay_frequency, :compensation_unit,
     :compensation_amount, :account_comment, :has_income_data?, :has_consent,
-    :agency_url, :next_path, :get_comment_by_account_id, :count_of_valid_accounts
+    :agency_url, :next_path, :get_comment_by_account_id, :count_of_valid_accounts,
+    :show_all_applicant_fields?, :applicant_field_names
 
   def employer_search
     @query = params[:query] || ""
@@ -101,6 +102,11 @@ class Cbv::PreviewController < ApplicationController
 
   def applicant_information
     render_as("applicant_informations")
+  end
+
+  def landing_page
+    params[:context] = PartnerAttributeUsage::LANDING_PAGE
+    render_as("landing_pages")
   end
 
   def add_job
@@ -206,11 +212,14 @@ class Cbv::PreviewController < ApplicationController
     request.content_security_policy.style_src :self, :unsafe_inline
   end
 
-  def override_has_account_with_required_data
+  def override_has_presumed_usable_account
     valid_count = count_of_valid_accounts
 
-    @cbv_flow.define_singleton_method(:has_account_with_required_data?) do
+    @cbv_flow.define_singleton_method(:has_presumed_usable_account?) do
       valid_count > 0
+    end
+    @cbv_flow.define_singleton_method(:accounts_presumed_usable) do
+      payroll_accounts.first(valid_count)
     end
   end
 
@@ -241,7 +250,9 @@ class Cbv::PreviewController < ApplicationController
 
   def argyle_account_id
     # Dynamically get account ID from the selected fixture user's data
-    fixture_user = params[:fixture_user] || "bob"
+    # File.basename strips any directory or absolute-path components so a
+    # crafted fixture_user cannot escape the fixtures directory.
+    fixture_user = File.basename(params[:fixture_user].presence || "bob")
     fixture_path = Rails.root.join("spec", "support", "fixtures", "argyle", fixture_user, "request_account.json")
 
     if File.exist?(fixture_path)
@@ -257,7 +268,7 @@ class Cbv::PreviewController < ApplicationController
   # several under request_accounts.json). Falls back to the single account so
   # existing single-employer fixtures behave exactly as before.
   def argyle_account_ids
-    fixture_user = params[:fixture_user] || "bob"
+    fixture_user = File.basename(params[:fixture_user].presence || "bob")
     accounts_path = Rails.root.join("spec", "support", "fixtures", "argyle", fixture_user, "request_accounts.json")
 
     if File.exist?(accounts_path)
@@ -290,7 +301,8 @@ class Cbv::PreviewController < ApplicationController
         cbv_flow: cbv_flow,
         aggregator_account_id: account_id,
         supported_jobs: %w[accounts income paystubs employment identity],
-        synchronization_status: :succeeded
+        synchronization_status: :succeeded,
+        report_status: :useful
       )
 
       # Create successful webhook events
@@ -423,5 +435,15 @@ class Cbv::PreviewController < ApplicationController
 
   def count_of_valid_accounts
     (params[:count_of_valid_accounts] || 1).to_i
+  end
+
+  # preview - show it all
+  def show_all_applicant_fields?
+    true
+  end
+
+  def applicant_field_names
+    context = params[:context].presence || PartnerAttributeUsage::APPLICANT_INPUT_PAGE
+    current_agency.attribute_names_for(context)
   end
 end

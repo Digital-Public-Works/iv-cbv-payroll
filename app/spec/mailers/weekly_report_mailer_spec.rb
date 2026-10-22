@@ -7,7 +7,7 @@ RSpec.describe WeeklyReportMailer, type: :mailer do
   let(:now) { DateTime.new(2024, 9, 9, 9, 0, 0, "-04:00") }
   let(:report_range) { now.prev_week.all_week }
   let(:invitation_sent_at) { now - 5.days }
-  let(:client_agency_id) { "la_ldh" }
+  let(:client_agency_id) { "sandbox" }
   let(:cbv_flow_invitation) { nil }
   let(:cbv_flow) do
     create(
@@ -34,8 +34,13 @@ RSpec.describe WeeklyReportMailer, type: :mailer do
 
   before do
     travel_to(now)
-    PartnerApplicationAttribute.update_all(required: false)
+    PartnerAttributeUsage.update_all(required: false)
     ClientAgencyConfig.reset!
+    stub_client_agency_config_value("sandbox", "weekly_report", {
+      "enabled" => true,
+      "recipient" => "test@digitalpublicworks.org",
+      "report_variant" => "flows"
+    })
   end
 
   after do
@@ -100,8 +105,8 @@ RSpec.describe WeeklyReportMailer, type: :mailer do
       expect(parsed_csv.length).to eq(1)
     end
 
-    context "LA LDH" do
-      it "renders the CSV data with LA-specific columns" do
+    context "the flows report variant" do
+      it "renders the CSV data" do
         expect(mail.attachments.first.filename).to eq("weekly_report_20240902-20240908.csv")
         expect(mail.attachments.first.content_type).to start_with('text/csv')
 

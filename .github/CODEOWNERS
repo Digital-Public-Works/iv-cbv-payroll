@@ -1,0 +1,18 @@
+# Code owners for iv-cbv-payroll.
+#
+# GitHub looks for CODEOWNERS in only three locations -- ./CODEOWNERS,
+# .github/CODEOWNERS, or docs/CODEOWNERS. This is the single source of truth;
+# MAINTAINERS.md and README.md link here rather than duplicating the list.
+#
+# Syntax note: when several lines match the same path, only the LAST matching line
+# applies. All owners for a pattern must therefore appear on a SINGLE line; listing
+# them on separate `*` lines would leave only the final entry as owner.
+#
+# Owners must have write access to the repository, or GitHub ignores them.
+#
+# Requiring these reviews is a branch protection setting ("Require review from Code
+# Owners" on main), not a property of this file. Adding the file alone changes
+# nothing beyond auto-requesting review.
+
+# Patricia Perozo, Clé Diggins, Jeff Catania
+*       @pperozo @cdigg @jeffcatania

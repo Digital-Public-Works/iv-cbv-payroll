@@ -99,9 +99,10 @@ RSpec.configure do |config|
   config.use_transactional_fixtures = true
 
   config.before(:suite) do
-    partners = [ nil, :az_des, :la_ldh, :pa_dhs ]
+    partners = [ nil, :az_des, :pa_dhs ]
 
     PartnerApplicationAttribute.delete_all
+    PartnerAttributeUsage.delete_all
     PartnerTransmissionConfig.delete_all
     PartnerTransmissionMethod.delete_all
     PartnerTranslation.delete_all
@@ -109,18 +110,36 @@ RSpec.configure do |config|
 
     @sandbox = PartnerConfig.find_by(partner_id: 'sandbox') || FactoryBot.create(:partner_config)
 
+    # `required` and `show_on_applicant_form` are no longer columns on the
+    # attribute: an attribute is required *in a context*, recorded in
+    # partner_attribute_usages. `asked_on` lists the contexts each attribute is
+    # offered in, and `required` whether it is mandatory there.
     attributes = [
-      { name: 'first_name', trait: nil },
-      { name: 'middle_name', trait: :middle_name },
-      { name: 'last_name', trait: :last_name },
-      { name: 'date_of_birth', trait: :date_of_birth },
-      { name: 'case_number', trait: :case_number }
+      { name: 'first_name', trait: nil, required: true, asked_on: %w[invitation applicant_input_page] },
+      { name: 'middle_name', trait: :middle_name, required: false, asked_on: %w[invitation applicant_input_page] },
+      { name: 'last_name', trait: :last_name, required: true, asked_on: %w[invitation applicant_input_page] },
+      { name: 'date_of_birth', trait: :date_of_birth, required: true, asked_on: %w[invitation applicant_input_page] },
+      { name: 'case_number', trait: :case_number, required: true, asked_on: %w[invitation applicant_input_page] }
     ]
+
+    add_usages = lambda do |config, a_data|
+      Array(a_data[:asked_on]).each do |context|
+        next if PartnerAttributeUsage.exists?(partner_config: config, context: context, name: a_data[:name])
+
+        position = PartnerAttributeUsage.where(partner_config: config, context: context).count
+        PartnerAttributeUsage.create!(
+          partner_config: config,
+          context: context,
+          name: a_data[:name],
+          required: a_data.fetch(:required, false),
+          position: position
+        )
+      end
+    end
 
     partners.each do |partner|
       p_id = case partner
              when :az_des then 'az_des'
-             when :la_ldh then 'la_ldh'
              when :pa_dhs then 'pa_dhs'
              else 'sandbox'
              end
@@ -136,39 +155,26 @@ RSpec.configure do |config|
             FactoryBot.create(:partner_application_attribute, partner_config: config)
           end
         end
+
+        add_usages.call(config, a_data)
       end
     end
-
-    # LA LDH needs to set case_number to optional and needs a doc_id PAA
-    la_ldh_config = PartnerConfig.find_by(partner_id: 'la_ldh')
-    PartnerApplicationAttribute.where(partner_config: la_ldh_config, name: 'case_number')
-      .update_all(required: false)
-
-    # LA LDH needs doc_id
-    FactoryBot.create(:partner_application_attribute,
-      partner_config: la_ldh_config,
-      name: 'doc_id',
-      description: 'Document ID',
-      required: false,
-      data_type: 'string',
-      redactable: false
-    )
 
     # AZ DES and PA DHS need income_changes
     az_des_config = PartnerConfig.find_by(partner_id: 'az_des')
     pa_dhs_config = PartnerConfig.find_by(partner_id: 'pa_dhs')
     PartnerApplicationAttribute.where(partner_config: az_des_config, name: 'case_number')
-      .update_all(required: true, show_on_caseworker_report: true)
+      .update_all(show_on_caseworker_report: true)
 
     [ az_des_config, pa_dhs_config ].each do |config|
       FactoryBot.create(:partner_application_attribute,
         partner_config: config,
         name: 'income_changes',
         description: 'income changes',
-        required: false,
         data_type: 'string',
         redactable: false
       )
+      add_usages.call(config, { name: 'income_changes', required: false, asked_on: %w[invitation applicant_input_page] })
     end
 
     # Sandbox caseworker-only fields
@@ -183,13 +189,13 @@ RSpec.configure do |config|
         partner_config: sandbox_config,
         name: attrs[:name],
         description: attrs[:description],
-        required: false,
         data_type: attrs[:data_type] || 'string',
         form_field_type: attrs[:form_field_type],
         redactable: false,
-        show_on_applicant_form: false,
         show_on_caseworker_form: true
       )
+      # Caseworker-only: offered on an invitation, never asked of the applicant.
+      add_usages.call(sandbox_config, { name: attrs[:name], required: false, asked_on: %w[invitation] })
     end
 
     # Mirror production for AZ DES / PA DHS partner translations, which live in the

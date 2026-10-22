@@ -32,6 +32,109 @@ RSpec.describe Cbv::EntriesController do
         expect(response).to be_successful
       end
 
+      context "when the invitation was auto-created by a generic link" do
+        let(:invitation) { create(:cbv_flow_invitation, :auto_created) }
+
+        it "starts a flow while the partner still offers the generic flow" do
+          expect { get :show, params: { token: invitation.auth_token } }
+            .to change(CbvFlow, :count).by(1)
+        end
+
+        it "stops working once the partner turns generic links off" do
+          stub_client_agency_config_value("sandbox", "generic_links_enabled", false)
+
+          expect { get :show, params: { token: invitation.auth_token } }
+            .not_to change(CbvFlow, :count)
+          expect(response).to redirect_to(root_url)
+        end
+      end
+
+      it "leaves a caseworker invitation working regardless of the generic-link setting" do
+        stub_client_agency_config_value("sandbox", "generic_links_enabled", false)
+
+        expect { get :show, params: { token: invitation.auth_token } }
+          .to change(CbvFlow, :count).by(1)
+      end
+
+      it "stops a caseworker invitation once the partner turns the invitation flow off" do
+        stub_client_agency_config_value("sandbox", "invitation_links_enabled", false)
+
+        expect { get :show, params: { token: invitation.auth_token } }
+          .not_to change(CbvFlow, :count)
+        expect(response).to redirect_to(root_url)
+      end
+
+      it "leaves an auto-created invitation working regardless of the invitation-link setting" do
+        stub_client_agency_config_value("sandbox", "invitation_links_enabled", false)
+        auto = create(:cbv_flow_invitation, :auto_created)
+
+        expect { get :show, params: { token: auto.auth_token } }
+          .to change(CbvFlow, :count).by(1)
+      end
+
+      context "when the partner collects something at the landing page" do
+        let(:invitation) { create(:cbv_flow_invitation, :auto_created) }
+
+        before do
+          config = PartnerConfig.find_by(partner_id: "sandbox")
+          PartnerAttributeUsage.create!(
+            partner_config: config,
+            context: PartnerAttributeUsage::LANDING_PAGE,
+            name: "case_number",
+            required: true
+          )
+          ClientAgencyConfig.reset!
+        end
+
+        it "sends a generic flow to the landing page before the consent page" do
+          session[:cbv_generic_entry] = true
+
+          get :show, params: { token: invitation.auth_token }
+
+          expect(response).to redirect_to(cbv_flow_landing_page_path)
+        end
+
+        it "takes an invitation flow straight to consent" do
+          get :show, params: { token: invitation.auth_token }
+
+          expect(response).to be_successful
+        end
+
+        it "stops redirecting once the landing page has been passed" do
+          session[:cbv_generic_entry] = true
+          get :show, params: { token: invitation.auth_token }
+          CbvFlow.last.complete_landing_page_step!
+
+          get :show
+
+          expect(response).to be_successful
+        end
+      end
+
+      it "does not mark the flow generic" do
+        get :show, params: { token: invitation.auth_token }
+
+        expect(invitation.cbv_flows.first).not_to be_generic
+      end
+
+      context "when the generic link sent the applicant here" do
+        it "marks the flow generic" do
+          session[:cbv_generic_entry] = true
+
+          get :show, params: { token: invitation.auth_token }
+
+          expect(invitation.cbv_flows.first).to be_generic
+        end
+
+        it "clears the marker so a later invitation link is not also marked generic" do
+          session[:cbv_generic_entry] = true
+
+          get :show, params: { token: invitation.auth_token }
+
+          expect(session[:cbv_generic_entry]).to be_nil
+        end
+      end
+
       it "sets a CbvFlow object based on the invitation" do
         expect { get :show, params: { token: invitation.auth_token } }
           .to change { session[:cbv_flow_id] }

@@ -1,6 +1,7 @@
 class Caseworker::CbvFlowInvitationsController < Caseworker::BaseController
   protect_from_forgery prepend: true
   before_action :ensure_valid_params!
+  before_action :ensure_invitation_flow_available!
   before_action :authenticate_user!
   helper_method :language_options
 
@@ -54,6 +55,14 @@ class Caseworker::CbvFlowInvitationsController < Caseworker::BaseController
     CbvFlowInvitation::VALID_LOCALES.each_with_object({}) do |lang, options|
       options[lang] = I18n.t(".shared.languages.#{lang}", default: lang.to_s.titleize)
     end
+  end
+
+  # check for invitation flow being enabled for a partner
+  def ensure_invitation_flow_available!
+    return if agency_config[client_agency_id]&.invitation_flow_available?
+
+    flash[:alert] = t("caseworker.cbv_flow_invitations.invitations_disabled")
+    redirect_to root_url
   end
 
   def ensure_valid_params!

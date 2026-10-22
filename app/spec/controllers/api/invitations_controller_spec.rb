@@ -25,10 +25,17 @@ RSpec.describe Api::InvitationsController do
 
     before do
       request.headers["Authorization"] = "Bearer #{api_access_token_instance.access_token}"
-      PartnerApplicationAttribute.where.not(name: 'first_name').update_all(required: false)
-      PartnerApplicationAttribute.where(
-        partner_config_id: PartnerConfig.where(partner_id: %w[la_ldh az_des pa_dhs]).select(:id)
-      ).update_all(required: false)
+
+      # Which attributes an API-created invitation must carry now comes from the
+      # partner's `invitation_attributes` list. Leave only first_name required,
+      # on sandbox alone, so each example controls what it is testing.
+      PartnerAttributeUsage.for_context(PartnerAttributeUsage::INVITATION)
+                           .where.not(name: "first_name")
+                           .update_all(required: false)
+      PartnerAttributeUsage.for_context(PartnerAttributeUsage::INVITATION)
+                           .where(partner_config_id: PartnerConfig.where(partner_id: %w[az_des pa_dhs]).select(:id))
+                           .update_all(required: false)
+      ClientAgencyConfig.reset!
     end
 
 
@@ -77,41 +84,6 @@ RSpec.describe Api::InvitationsController do
         expect(applicant.income_changes.length).to eq(2)
         expect(applicant.income_changes[0]["member_name"]).to eq("Mark Scout")
       end
-    end
-
-    context "when inviting a user in LA LDH" do
-      let(:client_agency_id) { "la_ldh".to_sym }
-      let(:valid_params) do
-        attributes_for(:cbv_flow_invitation, client_agency_id).tap do |params|
-          params[:custom_attributes] = {
-            doc_id: "ABC1234"
-          }
-        end
-      end
-
-      it "creates an invitation" do
-        expect { subject }
-          .to change(CbvFlowInvitation, :count).by(1)
-          .and change(CbvApplicant, :count).by(1)
-
-        invitation = CbvFlowInvitation.last
-        expect(invitation.client_agency_id).to eq(client_agency_id.to_s)
-
-        applicant = invitation.cbv_applicant
-        expect(applicant.client_agency_id).to eq("la_ldh")
-        expect(applicant.doc_id).to eq("ABC1234")
-      end
-
-      # TODO: See invitations_controller note on if we are including the echo-back metadata
-      # it "returns the expected custom_attributes" do
-      #   subject
-      #   parsed_response = JSON.parse(response.body)
-      #   expect(parsed_response["custom_attributes"]).to eq(
-      #     "doc_id" => valid_params[:custom_attributes][:doc_id],
-      #     "case_number" => valid_params[:custom_attributes][:case_number],
-      #     "date_of_birth" => valid_params[:custom_attributes][:date_of_birth],
-      #   )
-      # end
     end
 
     context "when inviting a user in PA DHS" do

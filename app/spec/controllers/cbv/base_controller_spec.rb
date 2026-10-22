@@ -101,8 +101,8 @@ RSpec.describe Cbv::BaseController, type: :controller do
 
     context "when handling origin parameters" do
       before do
-        stub_client_agency_config_value("la_ldh", "agency_domain", "la.verifymyincome.org")
-        request.host = "la.verifymyincome.org"
+        stub_client_agency_config_value("sandbox", "agency_domain", "sandbox.verifymyincome.org")
+        request.host = "sandbox.verifymyincome.org"
       end
 
       it "sets the origin in the clicked invitation event" do
@@ -152,7 +152,7 @@ RSpec.describe Cbv::BaseController, type: :controller do
       end
 
       it "does set an origin if no parameter is supplied but agency default exists" do
-        stub_client_agency_config_value("la_ldh", "default_origin", "sms")
+        stub_client_agency_config_value("sandbox", "default_origin", "sms")
         expect(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
         expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantClickedCBVInvitationLink", anything, hash_including(
           origin: "sms"

@@ -24,14 +24,15 @@ RSpec.describe "partner_config.rake" do
       "application_attributes" => [
         {
           "name" => "case_number",
-          "required" => true,
           "data_type" => "string",
           "form_field_type" => "text_field",
-          "show_on_applicant_form" => false,
           "show_on_caseworker_form" => true,
           "show_on_caseworker_report" => true,
           "redactable" => false
         }
+      ],
+      "invitation_attributes" => [
+        { "name" => "case_number", "required" => true }
       ],
       "translations" => {
         "en" => {

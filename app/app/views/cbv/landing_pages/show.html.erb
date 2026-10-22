@@ -1,0 +1,10 @@
+<% content_for :title, t(".header") %>
+
+<h1><%= t(".header") %></h1>
+<p><%= t(".explanation", agency_acronym: agency_acronym_or_full_name) %></p>
+
+<%= uswds_form_with(model: @cbv_applicant, url: cbv_flow_landing_page_path, method: "patch") do |f| %>
+  <%= render partial: "cbv/applicant_informations/fields", locals: { f: f } %>
+
+  <%= f.submit t(".continue") %>
+<% end %>

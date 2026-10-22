@@ -16,6 +16,7 @@ RSpec.describe Cbv::PaymentDetailsController do
     let(:cbv_flow) do
       create(:cbv_flow,
         :invited,
+        :applicant_information_completed,
         :with_argyle_account,
         with_errored_jobs: errored_jobs,
         created_at: current_time,
@@ -290,6 +291,9 @@ RSpec.describe Cbv::PaymentDetailsController do
     end
 
     context "when using argyle" do
+      # Argyle only counts a sync as succeeded once the accounts job has run.
+      let(:supported_jobs) { Aggregators::Webhooks::Argyle.get_supported_jobs }
+
       context "for Bob (a gig worker)" do
         subject { response.body }
 
@@ -298,6 +302,7 @@ RSpec.describe Cbv::PaymentDetailsController do
         let(:cbv_flow) do
           create(:cbv_flow,
                  :invited,
+                 :applicant_information_completed,
                  :with_argyle_account,
                  with_errored_jobs: errored_jobs,
                  created_at: current_time,
@@ -362,6 +367,7 @@ RSpec.describe Cbv::PaymentDetailsController do
         let(:cbv_flow) do
           create(:cbv_flow,
                  :invited,
+                 :applicant_information_completed,
                  :with_argyle_account,
                  with_errored_jobs: errored_jobs,
                  created_at: current_time,
@@ -386,6 +392,8 @@ RSpec.describe Cbv::PaymentDetailsController do
           argyle_stub_request_paystubs_response("empty")
           argyle_stub_request_gigs_response("empty")
           argyle_stub_request_account_response("empty")
+          # the sync succeeded but no verdict yet, so the controller validates the report
+          payroll_account.update!(report_status: :unknown)
         end
 
         it "redirects to validation failures when no identity records are returned" do
@@ -401,6 +409,7 @@ RSpec.describe Cbv::PaymentDetailsController do
         let(:cbv_flow) do
           create(:cbv_flow,
                  :invited,
+                 :applicant_information_completed,
                  :with_argyle_account,
                  with_errored_jobs: errored_jobs,
                  created_at: current_time,
@@ -477,7 +486,7 @@ RSpec.describe Cbv::PaymentDetailsController do
         end
 
         context "for an account that doesn't support income data" do
-          let(:supported_jobs) { %w[paystubs employment] }
+          let(:supported_jobs) { Aggregators::Webhooks::Argyle.get_supported_jobs - %w[income] }
 
           it "renders properly without the income data" do
             get :show, params: { user: { account_id: account_id } }
