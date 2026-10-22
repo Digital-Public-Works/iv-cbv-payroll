@@ -271,7 +271,7 @@ If you're new to CBV, here's a summary of how to get started navigating the app.
 ## Automated E2E Testing
 We achieve End-to-End (E2E) testing by using `capybara` (which in turn uses `selenium`) to simulate a real user completing the CBV flow.
 
-These E2E specs are also where the automated accessibility checks live. Every `verify_page` call runs axe-coree against the current page. See [Testing Conventions in CONTRIBUTING.md](./CONTRIBUTING.md#testing-conventions) for the policy on skipping an axe rule.
+These E2E specs are also where the automated accessibility checks live. Every `verify_page` call runs axe-core against the current page. See [Testing Conventions in CONTRIBUTING.md](./CONTRIBUTING.md#testing-conventions) for the policy on skipping an axe rule.
 
 How to run E2E tests:
 * **Run in *replay* mode:** `E2E_RUN_TESTS=1 bin/rspec spec/e2e`
