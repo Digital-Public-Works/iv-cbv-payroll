@@ -44,4 +44,11 @@ RSpec.describe "Public pages accessibility", :js, type: :feature do
     expect(page).to have_link(I18n.t("pages.error_500.refresh"))
     verify_page(page, title: I18n.t("pages.error_500.header"))
   end
+
+  it "checks the expired invitation page" do
+    visit cbv_flow_expired_invitation_path(client_agency_id: "sandbox")
+    # Without a valid partner this redirects to the home page
+    expect(page).to have_current_path(cbv_flow_expired_invitation_path(client_agency_id: "sandbox"))
+    verify_page(page, title: I18n.t("cbv.expired_invitations.show.title"))
+  end
 end
