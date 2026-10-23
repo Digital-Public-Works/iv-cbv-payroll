@@ -24,4 +24,10 @@ RSpec.describe "Public pages accessibility", :js, type: :feature do
     expect(page).to have_current_path(cbv_flow_session_timeout_path(client_agency_id: "sandbox"))
     verify_page(page, title: I18n.t("session_timeout.page.title"))
   end
+
+  it "checks the maintenance page" do
+    visit maintenance_path
+    expect(page).to have_current_path(maintenance_path)
+    verify_page(page, title: I18n.t("maintenance.header"))
+  end
 end
