@@ -37,4 +37,11 @@ RSpec.describe "Public pages accessibility", :js, type: :feature do
     expect(page).to have_link(I18n.t("pages.error_404.return_to_welcome"))
     verify_page(page, title: I18n.t("pages.error_404.header"))
   end
+
+  it "checks the 500 page" do
+    # Visited directly for the same reason as the 404 page
+    visit "/500"
+    expect(page).to have_link(I18n.t("pages.error_500.refresh"))
+    verify_page(page, title: I18n.t("pages.error_500.header"))
+  end
 end
