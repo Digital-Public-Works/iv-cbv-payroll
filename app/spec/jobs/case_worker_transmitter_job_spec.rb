@@ -79,4 +79,32 @@ RSpec.describe CaseWorkerTransmitterJob, type: :job do
 
     expect(CbvFlowTransmissionJob).to have_been_enqueued.exactly(:once)
   end
+
+  it "keeps the configuration a succeeded transmission was delivered with" do
+    delivered_with = { "url" => "sftp.example.test", "user" => "test", "password" => "secret", "path_prefix" => "old/inbox" }
+    succeeded = create(:cbv_flow_transmission,
+      cbv_flow: cbv_flow,
+      method_type: :sftp,
+      status: :succeeded,
+      succeeded_at: 1.hour.ago,
+      configuration: delivered_with
+    )
+
+    described_class.new.perform(cbv_flow.id)
+
+    expect(succeeded.reload.configuration).to eq(delivered_with)
+  end
+
+  it "refreshes the configuration of a transmission that hasn't succeeded" do
+    failed = create(:cbv_flow_transmission,
+      cbv_flow: cbv_flow,
+      method_type: :sftp,
+      status: :failed,
+      configuration: { "path_prefix" => "old/inbox" }
+    )
+
+    described_class.new.perform(cbv_flow.id)
+
+    expect(failed.reload.configuration).to eq(transmission_methods.last.configuration.to_h)
+  end
 end

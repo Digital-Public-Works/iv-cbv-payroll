@@ -87,6 +87,19 @@ RSpec.describe CbvFlowTransmissionJob, type: :job do
     expect(cbv_flow.reload.transmitted_at).to be_nil
   end
 
+  it "marks the transmission failed without re-raising when the partner rejects it as non-retryable" do
+    error = Transmitters::WebhookTransmitter::NonRetryableResponseError.new("Unexpected response from agency: 400 Bad Request")
+    allow(transmitter).to receive(:deliver).and_raise(error)
+    allow(NewRelic::Agent).to receive(:record_custom_event)
+
+    expect { described_class.perform_now(transmission.id) }.not_to raise_error
+
+    expect(transmission.reload.failed?).to be(true)
+    expect(transmission.last_error).to eq(error.message)
+    expect(NewRelic::Agent).to have_received(:record_custom_event)
+      .with("QueueJobFailed", hash_including(retryable: false))
+  end
+
   it "is a no-op if the transmission already succeeded" do
     transmission.update!(status: :succeeded, succeeded_at: 1.hour.ago)
 

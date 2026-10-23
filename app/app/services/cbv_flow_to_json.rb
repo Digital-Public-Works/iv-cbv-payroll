@@ -80,11 +80,15 @@ class CbvFlowToJson
   # partner's file transmitters (SFTP and/or S3).
   # Non-file transmitters (webhook, shared_email, json) are ignored.
   def build_filenames
+    transmission_configs = @cbv_flow.cbv_flow_transmissions.to_h { |t| [ t.method_type.to_sym, t.configuration ] }
+
     @current_agency.transmission_methods.each_with_object({}) do |entry, hash|
       method = entry.method.to_sym
       next unless TransmissionFilename::EXTENSIONS.key?(method)
 
-      remote_directory = TransmissionFilename.remote_directory_from_config(method_type: method, configuration: entry.configuration)
+      # A blank stored configuration (the column default) records nothing, so use the partner's
+      configuration = transmission_configs[method].presence || entry.configuration
+      remote_directory = TransmissionFilename.remote_directory_from_config(method_type: method, configuration: configuration)
       hash[method] = TransmissionFilename.full_path(
         cbv_flow: @cbv_flow,
         agency: @current_agency,
