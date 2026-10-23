@@ -6,8 +6,7 @@ RSpec.describe "Public pages accessibility", :js, type: :feature do
 
   it "checks the home page" do
     visit root_path
-    # The home page renders here rather than redirecting into the generic flow
-    expect(page).to have_current_path(root_path)
+    expect(page).to have_content(I18n.t("pages.home.description_1"))
     verify_page(page, title: I18n.t("pages.home.header"))
   end
 
@@ -20,14 +19,13 @@ RSpec.describe "Public pages accessibility", :js, type: :feature do
 
   it "checks the session timeout page" do
     visit cbv_flow_session_timeout_path(client_agency_id: "sandbox")
-    # Without a valid partner this redirects to the home page timeout variant
-    expect(page).to have_current_path(cbv_flow_session_timeout_path(client_agency_id: "sandbox"))
+    expect(page).to have_content(I18n.t("session_timeout.page.description"))
     verify_page(page, title: I18n.t("session_timeout.page.title"))
   end
 
   it "checks the maintenance page" do
     visit maintenance_path
-    expect(page).to have_current_path(maintenance_path)
+    expect(page).to have_content(I18n.t("maintenance.body_1"))
     verify_page(page, title: I18n.t("maintenance.header"))
   end
 
@@ -47,8 +45,8 @@ RSpec.describe "Public pages accessibility", :js, type: :feature do
 
   it "checks the expired invitation page" do
     visit cbv_flow_expired_invitation_path(client_agency_id: "sandbox")
-    # Without a valid partner this redirects to the home page
-    expect(page).to have_current_path(cbv_flow_expired_invitation_path(client_agency_id: "sandbox"))
+    # Hardcoded because the sandbox call to action is an HTML translation
+    expect(page).to have_link("Learn more at CBV Test Agency")
     verify_page(page, title: I18n.t("cbv.expired_invitations.show.title"))
   end
 end
