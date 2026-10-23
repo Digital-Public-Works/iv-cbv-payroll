@@ -30,4 +30,11 @@ RSpec.describe "Public pages accessibility", :js, type: :feature do
     expect(page).to have_current_path(maintenance_path)
     verify_page(page, title: I18n.t("maintenance.header"))
   end
+
+  it "checks the 404 page" do
+    # Visited directly: the test env raises errors instead of rendering this page
+    visit "/404"
+    expect(page).to have_link(I18n.t("pages.error_404.return_to_welcome"))
+    verify_page(page, title: I18n.t("pages.error_404.header"))
+  end
 end
