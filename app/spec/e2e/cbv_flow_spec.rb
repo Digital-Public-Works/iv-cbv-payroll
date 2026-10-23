@@ -77,11 +77,19 @@ RSpec.describe "e2e CBV flow test", :js, type: :feature do
 
     # /cbv/add_job
     verify_page(page, title: I18n.t("cbv.add_jobs.show.header"))
+    # Submit with no answer to check the error state
+    click_on(I18n.t("continue"))
+    expect(page).to have_selector("#slim-alert", text: I18n.t("shared.next_path.notice_no_answer"))
+    verify_page(page, title: I18n.t("cbv.add_jobs.show.header"))
     find("label", text: I18n.t("cbv.add_jobs.show.radio_no")).click
     click_on(I18n.t("continue"))
 
     # /cbv/other_jobs
     verify_page(page, title: I18n.t("cbv.other_jobs.show.header"), wait: 10)
+    # Submit with no answer to check the error state
+    click_on(I18n.t("continue"))
+    expect(page).to have_selector("#slim-alert", text: I18n.t("shared.next_path.notice_no_answer"))
+    verify_page(page, title: I18n.t("cbv.other_jobs.show.header"))
     find("label", text: I18n.t("cbv.other_jobs.show.radio_yes")).click
     click_on "Continue"
 
