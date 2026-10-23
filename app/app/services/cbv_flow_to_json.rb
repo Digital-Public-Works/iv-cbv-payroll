@@ -1,4 +1,6 @@
 class CbvFlowToJson
+  include ReportViewHelper
+
   PAY_FREQUENCY_MAP = {
     "biweekly" => "BIWEEKLY",
     "semimonthly" => "SEMIMONTHLY",
@@ -210,7 +212,7 @@ class CbvFlowToJson
         mileage_expenses: [
           {
             miles: month_data[:total_mileage],
-            rate: nil
+            rate: mileage_rate_dollars(month_date, month_data)
           }
         ]
       }
@@ -276,6 +278,12 @@ class CbvFlowToJson
         type: DEDUCTION_TYPE_MAP[deduction.try(:tax)] || "UNKNOWN"
       }
     end
+  end
+
+  def mileage_rate_dollars(month_date, month_data)
+    return nil if month_data[:gigs].blank?
+
+    (federal_cents_per_mile(month_date.year, month_date.month).to_f / 100).round(3)
   end
 
   def cents_to_dollars(amount)

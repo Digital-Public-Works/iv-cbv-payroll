@@ -289,6 +289,27 @@ RSpec.describe CbvFlowToJson do
           end
         end
       end
+
+      describe "gig monthly summary mileage rate" do
+        let(:gig) { instance_double(Aggregators::ResponseObjects::Gig) }
+
+        def mileage_expense(month_string, gigs)
+          summaries = { month_string => { total_gig_hours: 1, accrued_gross_earnings: 100, total_mileage: 10.0, gigs: gigs } }
+          subject.send(:build_gig_monthly_summaries, summaries).first[:mileage_expenses].first
+        end
+
+        it "sends the federal rate for the month, in dollars" do
+          expect(mileage_expense("2025-03", [ gig ])).to eq(miles: 10.0, rate: 0.70)
+        end
+
+        it "keeps a half-cent rate to 3 decimals" do
+          expect(mileage_expense("2026-02", [ gig ])[:rate]).to eq(0.725)
+        end
+
+        it "sends a null rate for a month with no gigs" do
+          expect(mileage_expense("2025-03", [])[:rate]).to be_nil
+        end
+      end
     end
 
     describe "attachments block (include_paystubs)" do
