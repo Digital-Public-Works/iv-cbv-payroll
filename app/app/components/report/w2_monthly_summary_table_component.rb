@@ -53,7 +53,6 @@ class Report::W2MonthlySummaryTableComponent < ViewComponent::Base
   end
 
   def format_paychecks_count(month_summary)
-    return I18n.t("shared.not_applicable") if month_summary[:paystubs].empty?
     month_summary[:paystubs].count
   end
 

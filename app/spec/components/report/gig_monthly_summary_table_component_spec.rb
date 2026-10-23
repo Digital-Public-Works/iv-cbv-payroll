@@ -257,11 +257,12 @@ RSpec.describe Report::GigMonthlySummaryTableComponent, type: :component do
         expect(subject.css("tbody tr:nth-child(3) th:nth-child(1)").to_html).to include "January 2025"
       end
 
-      it "renders N/A for the accrued gross earnings, verified mileage expenses, and total hours worked in the February row" do
+      it "renders N/A for the accrued gross earnings, verified mileage expenses, and total hours worked, and 0 miles, in the February row" do
         february_row = subject.css("tbody tr:nth-child(2)")
 
         expect(february_row.css("td:nth-child(2)").to_html).to include "N/A"
         expect(february_row.css("td:nth-child(3)").to_html).to include "N/A"
+        expect(february_row.css("td:nth-child(3)").text.squish).to include "x 0 miles"
         expect(february_row.css("td:nth-child(4)").to_html).to include "N/A"
         expect(february_row.css(".partial-month-description")).to be_empty
       end
