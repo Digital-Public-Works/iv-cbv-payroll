@@ -14,7 +14,7 @@ class Report::W2MonthlySummaryTableComponent < ViewComponent::Base
     account_report = report.find_account_report(@account_id)
     @paystubs = account_report&.paystubs
     @employer_name = account_report&.dig(:employment, :employer_name)
-    @monthly_summary_data = report.summarize_by_month[@account_id]
+    @monthly_summary_data = report.summarize_by_month(include_empty_months: true)[@account_id]
     @is_responsive = is_responsive
     @is_caseworker = is_caseworker
   end
@@ -40,7 +40,7 @@ class Report::W2MonthlySummaryTableComponent < ViewComponent::Base
   end
 
   def table_colspan
-    3
+    4
   end
 
   def show_footnote?
@@ -53,6 +53,7 @@ class Report::W2MonthlySummaryTableComponent < ViewComponent::Base
   end
 
   def format_paychecks_count(month_summary)
+    return I18n.t("shared.not_applicable") if month_summary[:paystubs].empty?
     month_summary[:paystubs].count
   end
 

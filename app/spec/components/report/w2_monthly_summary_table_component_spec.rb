@@ -178,6 +178,50 @@ RSpec.describe Report::W2MonthlySummaryTableComponent, type: :component do
       end
     end
 
+    context "with sarah, a w2-worker with no paystubs in February" do
+      subject { render_inline(described_class.new(argyle_report, payroll_account)) }
+
+      let(:argyle_report) { Aggregators::AggregatorReports::ArgyleReport.new(payroll_accounts: [ payroll_account ], argyle_service: argyle_service, days_to_fetch_for_w2: 90, days_to_fetch_for_gig: 182) }
+
+      before do
+        argyle_stub_request_identities_response("sarah")
+        argyle_stub_request_paystubs_response("sarah", drop_results_if: ->(paystub) { paystub["paystub_date"].start_with?("2025-02") })
+        argyle_stub_request_gigs_response("sarah")
+        argyle_stub_request_account_response("sarah")
+        argyle_report.fetch
+      end
+
+      around do |ex|
+        Timecop.freeze(Time.local(2025, 04, 1, 0, 0), &ex)
+      end
+
+      it "renders a row for February between the months that have paystubs" do
+        expect(subject.css("tbody tr").length).to eq(5)
+        expect(subject.css("tbody tr:nth-child(1) th:nth-child(1)").to_html).to include "March 2025"
+        expect(subject.css("tbody tr:nth-child(2) th:nth-child(1)").to_html).to include "February 2025"
+        expect(subject.css("tbody tr:nth-child(3) th:nth-child(1)").to_html).to include "January 2025"
+        expect(subject.css("tbody tr:nth-child(4) th:nth-child(1)").to_html).to include "December 2024"
+        expect(subject.css("tbody tr:nth-child(5) th:nth-child(1)").to_html).to include "November 2024"
+      end
+
+      it "renders N/A for the gross income, number of paychecks, and total hours worked in the February row" do
+        february_row = subject.css("tbody tr:nth-child(2)")
+
+        expect(february_row.css("td:nth-child(2)").to_html).to include "N/A"
+        expect(february_row.css("td:nth-child(3)").to_html).to include "N/A"
+        expect(february_row.css("td:nth-child(4)").to_html).to include "N/A"
+        expect(february_row.css(".partial-month-description")).to be_empty
+      end
+
+      it "renders the months that have paystubs as before" do
+        expect(subject.css("tbody tr:nth-child(1) td:nth-child(2)").to_html).to include "$1,518.97"
+        expect(subject.css("tbody tr:nth-child(1) td:nth-child(3)").to_html).to include "1"
+        expect(subject.css("tbody tr:nth-child(3) td:nth-child(2)").to_html).to include "$3,679.88"
+        expect(subject.css("tbody tr:nth-child(3) td:nth-child(3)").to_html).to include "2"
+        expect(subject.css("tbody tr:nth-child(3) td:nth-child(4)").to_html).to include "158.89"
+      end
+    end
+
     context "with sarah, a w2-worker without paystubs" do
       subject { render_inline(described_class.new(argyle_report, payroll_account)) }
 
@@ -207,6 +251,11 @@ RSpec.describe Report::W2MonthlySummaryTableComponent, type: :component do
 
       it "renders the error message with no paystubs" do
         expect(subject.css("tbody").to_html).to include "We didn't find any payments from this employer"
+      end
+
+      it "spans the error message across all four columns" do
+        expect(subject.css("tbody td").length).to eq(1)
+        expect(subject.css("tbody td").first["colspan"]).to eq("4")
       end
     end
   end

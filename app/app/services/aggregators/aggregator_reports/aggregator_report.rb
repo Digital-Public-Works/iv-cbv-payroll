@@ -181,7 +181,9 @@ module Aggregators::AggregatorReports
       end
     end
 
-    def summarize_by_month(from_date: nil, to_date: nil)
+    # Set include_empty_months to also return a summary for each month with no paystubs or gigs
+    # that falls between months that do have them, so that a report table doesn't silently skip a month.
+    def summarize_by_month(from_date: nil, to_date: nil, include_empty_months: false)
       from_date = parse_date_safely(self.from_date) if from_date.nil?
       to_date = parse_date_safely(self.to_date) if to_date.nil?
 
@@ -192,7 +194,7 @@ module Aggregators::AggregatorReports
           paystubs = account_report.paystubs
           gigs = account_report.gigs
           extracted_dates = extract_dates(paystubs, gigs)
-          months = unique_months(extracted_dates)
+          months = include_empty_months ? contiguous_months(extracted_dates) : unique_months(extracted_dates)
 
           # Group paystubs and gigs by month
           hash[account_id] ||= months.each_with_object({}) do |month, result|

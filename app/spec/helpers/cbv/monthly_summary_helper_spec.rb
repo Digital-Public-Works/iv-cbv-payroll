@@ -250,4 +250,97 @@ RSpec.describe Cbv::MonthlySummaryHelper, type: :helper do
       expect(unique_months).to eq([])
     end
   end
+
+  describe ".contiguous_months" do
+    it "returns the same months as unique_months when there are no missing months" do
+      dates = [
+        Date.new(2025, 3, 15),
+        Date.new(2025, 2, 25),
+        Date.new(2025, 1, 1)
+      ]
+
+      expect(subject.contiguous_months(dates)).to eq(subject.unique_months(dates))
+    end
+
+    it "includes a missing month between the earliest and latest months" do
+      dates = [
+        Date.new(2026, 10, 1),
+        Date.new(2026, 8, 15)
+      ]
+
+      expect(subject.contiguous_months(dates)).to eq([
+                                                       Date.new(2026, 10, 1),
+                                                       Date.new(2026, 9, 1),
+                                                       Date.new(2026, 8, 1)
+                                                     ])
+    end
+
+    it "includes each of several consecutive missing months" do
+      dates = [
+        Date.new(2025, 6, 2),
+        Date.new(2025, 2, 27)
+      ]
+
+      expect(subject.contiguous_months(dates)).to eq([
+                                                       Date.new(2025, 6, 1),
+                                                       Date.new(2025, 5, 1),
+                                                       Date.new(2025, 4, 1),
+                                                       Date.new(2025, 3, 1),
+                                                       Date.new(2025, 2, 1)
+                                                     ])
+    end
+
+    it "includes missing months across a year boundary" do
+      dates = [
+        Date.new(2026, 2, 3),
+        Date.new(2025, 11, 20)
+      ]
+
+      expect(subject.contiguous_months(dates)).to eq([
+                                                       Date.new(2026, 2, 1),
+                                                       Date.new(2026, 1, 1),
+                                                       Date.new(2025, 12, 1),
+                                                       Date.new(2025, 11, 1)
+                                                     ])
+    end
+
+    it "does not add months before the earliest date or after the latest date" do
+      dates = [
+        Date.new(2026, 9, 30),
+        Date.new(2026, 8, 1)
+      ]
+
+      expect(subject.contiguous_months(dates)).to eq([
+                                                       Date.new(2026, 9, 1),
+                                                       Date.new(2026, 8, 1)
+                                                     ])
+    end
+
+    it "returns a single month when all dates are in the same month" do
+      dates = [
+        Date.new(2025, 3, 15),
+        Date.new(2025, 3, 5)
+      ]
+
+      expect(subject.contiguous_months(dates)).to eq([ Date.new(2025, 3, 1) ])
+    end
+
+    it "returns an empty array when given an empty list" do
+      expect(subject.contiguous_months([])).to eq([])
+    end
+
+    it "handles nil values gracefully" do
+      dates = [
+        Date.new(2025, 3, 15),
+        nil,
+        Date.new(2025, 1, 5)
+      ]
+
+      expect(subject.contiguous_months(dates)).to eq([
+                                                       Date.new(2025, 3, 1),
+                                                       Date.new(2025, 2, 1),
+                                                       Date.new(2025, 1, 1)
+                                                     ])
+    end
+  end
 end
