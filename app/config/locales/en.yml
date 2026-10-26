@@ -256,6 +256,7 @@ en:
         header: Find your employer or payroll company
         payroll_providers: Payroll providers
         popular_providers: Or choose from popular payroll providers or apps
+        provider_position: "%{position} of"
         results: Results found (%{result_count})
         results_header: Search results
         search: Search

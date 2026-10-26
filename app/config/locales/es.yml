@@ -166,6 +166,7 @@ es:
         header: Busque su empleador o empresa de nómina
         payroll_providers: Proveedores de nómina
         popular_providers: O elija entre los proveedores o aplicaciones de nómina más populares
+        provider_position: "%{position} de"
         results: Se encontraron (%{result_count}) resultado(s)
         results_header: Resultados de búsqueda
         search: Buscar
