@@ -97,7 +97,7 @@ class PartnerConfigLoader
     name description data_type form_field_type
     show_on_caseworker_form show_on_caseworker_report
     redactable redact_type
-    validation_regex required_for_submit
+    validation_regex required_for_submit source_field
   ].freeze
 
   # Subdomain prefixes reserved for non-partner infrastructure. A partner
@@ -166,6 +166,7 @@ class PartnerConfigLoader
     validate_application_attributes
     validate_attribute_usages
     validate_validation_regexes
+    validate_source_fields
     validate_partner_identifier_name
     validate_translations
 
@@ -235,7 +236,8 @@ class PartnerConfigLoader
         "redactable" => attr.redactable,
         "redact_type" => attr.redact_type,
         "validation_regex" => attr.validation_regex,
-        "required_for_submit" => attr.required_for_submit
+        "required_for_submit" => attr.required_for_submit,
+        "source_field" => attr.source_field
       }.compact
     end
 
@@ -522,6 +524,17 @@ class PartnerConfigLoader
     end
   end
 
+  def validate_source_fields
+    Array(@yaml_data[:application_attributes]).each_with_index do |attr, i|
+      source = attr[:source_field]
+      next if source.blank?
+      next if Aggregators::ApplicantPrefill.source_field?(source)
+
+      @errors << "application_attributes[#{i}] (#{attr[:name]}): unknown source_field " \
+        "'#{source}'. Valid: #{Aggregators::ApplicantPrefill.source_fields.join(', ')}"
+    end
+  end
+
   def validate_partner_identifier_name
     name = @yaml_data[:partner_identifier_name]
     return if name.blank?
@@ -612,7 +625,8 @@ class PartnerConfigLoader
         redactable: attr_data.fetch(:redactable, false),
         redact_type: attr_data[:redact_type],
         validation_regex: attr_data[:validation_regex],
-        required_for_submit: attr_data.fetch(:required_for_submit, false)
+        required_for_submit: attr_data.fetch(:required_for_submit, false),
+        source_field: attr_data[:source_field]
       }
 
       if existing
