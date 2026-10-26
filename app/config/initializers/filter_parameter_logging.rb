@@ -11,5 +11,11 @@ Rails.application.config.filter_parameters += [
   # income_changes subfields (used for AZ DES)
   :member_name, :employer_name,
   # CBV flow
-  :additional_information
+  :additional_information,
+  # Partner config: weekly report recipients are partner staff email addresses
+  :recipients,
+  # Partner-config admin API: transmission config values ({ key:, value: }, so
+  # the key name gives no hint) and exported/imported documents, which can hold
+  # secrets. Exact names only: a bare :value would also match unrelated params.
+  /\A(value|settings_yaml|credentials_yaml)\z/
 ]
