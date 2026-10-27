@@ -50,14 +50,9 @@ class Cbv::PaymentDetailsController < Cbv::BaseController
   end
 
   def update
-    account_id = params[:user][:account_id]
-    comment = params[:cbv_flow][:additional_information]
-    additional_information = @cbv_flow.additional_information
-    additional_information[account_id] = {
-      comment: sanitize_comment(comment),
-      updated_at: Time.current
-    }
-    @cbv_flow.update(additional_information: additional_information)
+    # Partners that don't allow comments still submit this form to continue, but
+    # nothing the applicant sends is stored.
+    save_account_comment if helpers.allow_user_comment?
 
     redirect_to next_path
   end
@@ -68,6 +63,17 @@ class Cbv::PaymentDetailsController < Cbv::BaseController
   end
 
   private
+
+  def save_account_comment
+    account_id = params[:user][:account_id]
+    comment = params[:cbv_flow][:additional_information]
+    additional_information = @cbv_flow.additional_information
+    additional_information[account_id] = {
+      comment: sanitize_comment(comment),
+      updated_at: Time.current
+    }
+    @cbv_flow.update(additional_information: additional_information)
+  end
 
   def has_income_data?
     @payroll_account.job_succeeded?("income")

@@ -261,11 +261,15 @@ RSpec.describe Aggregators::PaystubsPdfService do
 
     let(:current_agency) do
       instance_double(ClientAgencyConfig::ClientAgency,
-        id:        "sandbox",
-        logo_path: "https://example.test/logo.png" # URL logo => no asset-pipeline lookup
+        id:                 "sandbox",
+        logo_path:          "https://example.test/logo.png", # URL logo => no asset-pipeline lookup
+        allow_user_comment: allow_user_comment,
+        allow_outside_jobs: allow_outside_jobs
       ).tap { |a| allow(a).to receive(:present?).and_return(true) }
     end
 
+    let(:allow_user_comment) { true }
+    let(:allow_outside_jobs) { true }
     let(:employers_with_images)    { %w[Aramark Target] }
     let(:employers_without_images) { %w[Walmart] }
     let(:aggregator_report) do
@@ -325,7 +329,7 @@ RSpec.describe Aggregators::PaystubsPdfService do
 
     context "when the agency has no logo configured" do
       let(:current_agency) do
-        instance_double(ClientAgencyConfig::ClientAgency, id: "sandbox", logo_path: "")
+        instance_double(ClientAgencyConfig::ClientAgency, id: "sandbox", logo_path: "", allow_user_comment: true, allow_outside_jobs: true)
           .tap { |a| allow(a).to receive(:present?).and_return(true) }
       end
 
@@ -369,6 +373,37 @@ RSpec.describe Aggregators::PaystubsPdfService do
     end
 
     # Graceful degradation: a configured partner whose flow has no pay stub
+    it "mentions client comments and asks about other jobs by default" do
+      service_with_cover.generate
+
+      expect(@cover_html).to include(I18n.t("transmitters.paystubs_caseworker_cover.supplement_body"))
+      expect(@cover_html).to include(I18n.t("transmitters.paystubs_caseworker_cover.client_information"))
+      expect(@cover_html).to include(I18n.t("transmitters.paystubs_caseworker_cover.additional_jobs"))
+    end
+
+    context "when the partner does not allow user comments" do
+      let(:allow_user_comment) { false }
+
+      it "does not mention client comments" do
+        service_with_cover.generate
+
+        expect(@cover_html).to include(I18n.t("transmitters.paystubs_caseworker_cover.supplement_body_no_comments"))
+        expect(@cover_html).not_to include(I18n.t("transmitters.paystubs_caseworker_cover.supplement_body"))
+      end
+    end
+
+    context "when the partner does not ask about outside jobs" do
+      let(:allow_outside_jobs) { false }
+
+      it "leaves out the other-jobs row and the then-empty client information table" do
+        service_with_cover.generate
+
+        expect(@cover_html).not_to include(I18n.t("transmitters.paystubs_caseworker_cover.additional_jobs"))
+        expect(@cover_html).not_to include(I18n.t("transmitters.paystubs_caseworker_cover.client_information"))
+        expect(@cover_html).to include(I18n.t("transmitters.paystubs_caseworker_cover.report_details"))
+      end
+    end
+
     # images still gets a (cover-only) file so the absence is explicit.
     context "when there are no pay stub images (caseworker mode)" do
       let(:employers_with_images)    { [] }

@@ -284,6 +284,8 @@ class ClientAgencyConfig
       include_invitation_details_on_weekly_report
       include_paystubs
       encourage_link_sharing
+      allow_user_comment
+      allow_outside_jobs
       state_name
       partner_identifier_name
     ])
@@ -349,6 +351,8 @@ class ClientAgencyConfig
       @include_full_ssn = partner_config.include_full_ssn
       @include_direct_deposit_last_4 = partner_config.include_direct_deposit_last_4
       @encourage_link_sharing = partner_config.encourage_link_sharing
+      @allow_user_comment = partner_config.allow_user_comment
+      @allow_outside_jobs = partner_config.allow_outside_jobs
 
 
       @require_applicant_information_on_invitation = @attribute_usages[PartnerAttributeUsage::INVITATION].any?(&:required?)
@@ -397,6 +401,13 @@ class ClientAgencyConfig
     def applicant_supplied_attribute_names
       attribute_names_for(PartnerAttributeUsage::LANDING_PAGE) |
         attribute_names_for(PartnerAttributeUsage::APPLICANT_INPUT_PAGE)
+    end
+
+    # Whether this partner can collect any client-provided information: comments,
+    # the other-jobs answer, or attributes the applicant enters themselves. Drives
+    # the "client-provided information" footnote on the income report.
+    def collects_client_provided_information?
+      allow_user_comment || allow_outside_jobs || applicant_supplied_attribute_names.any?
     end
 
     # goes into useful report validator - these are the itmes that need values before it can submit

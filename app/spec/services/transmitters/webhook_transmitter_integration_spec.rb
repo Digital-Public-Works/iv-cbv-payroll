@@ -276,4 +276,98 @@ RSpec.describe Transmitters::WebhookTransmitter, :integration do
       expect(cbv_flow.reload.transmitted_at).to be_nil
     end
   end
+
+  describe "events contract (contract_version 2)" do
+    let(:transmission_method_configuration) do
+      { "webhook_url" => webhook_url, "api_key" => api_key, "contract_version" => "2" }
+    end
+    let(:file_method_configurations) do
+      {
+        sftp: { "path_prefix" => "upload/inbox" },
+        encrypted_s3: { "path_prefix" => "vmi/reports" },
+        shared_email: { "email" => "caseworker@example.gov" }
+      }
+    end
+    let(:configured_methods) do
+      file_method_configurations.map do |method, configuration|
+        ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(method: method.to_s, configuration: configuration)
+      end + [
+        ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(method: "webhook", configuration: transmission_method_configuration)
+      ]
+    end
+    let(:cbv_applicant) { create(:cbv_applicant, case_number: "ABC1234", partner_identifier: "12345") }
+
+    # Every request the examples send, in order, as sent on the wire.
+    let(:sent_requests) { [] }
+
+    before do
+      allow_any_instance_of(TransmissionCompleteWebhookJob).to receive(:agency_config)
+        .and_return({ cbv_flow.client_agency_id => mock_client_agency })
+
+      allow(Net::HTTP).to receive(:start).and_wrap_original do |original, *args, **kwargs, &block|
+        original.call(*args, **kwargs) do |http|
+          allow(http).to receive(:request).and_wrap_original do |orig_request, req|
+            sent_requests << req
+            orig_request.call(req)
+          end
+          block.call(http)
+        end
+      end
+    end
+
+    describe "ReportSubmission" do
+      let(:confirmation_code) { "WEBHOOK_V2_REPORT" }
+
+      it "is delivered with an event_type and without the API key" do
+        expect(subject.deliver).to eq("ok")
+
+        request = sent_requests.last
+        expect(JSON.parse(request.body)["event_type"]).to eq("ReportSubmission")
+        expect(request["X-VMI-API-Key"]).to be_nil
+      end
+    end
+
+    describe "TransmissionComplete" do
+      let(:confirmation_code) { "WEBHOOK_V2_COMPLETE" }
+
+      it "is delivered for each non-webhook method, with a uri matching the ReportSubmission's filenames" do
+        transmissions = file_method_configurations.map do |method, configuration|
+          create(:cbv_flow_transmission, cbv_flow: cbv_flow, method_type: method,
+            status: :succeeded, succeeded_at: Time.current, configuration: configuration)
+        end
+
+        expect(subject.deliver).to eq("ok")
+        filenames = JSON.parse(sent_requests.last.body).dig("report_metadata", "filenames")
+        expect(filenames.keys).to contain_exactly("sftp", "encrypted_s3")
+
+        transmissions.each do |transmission|
+          expect(TransmissionCompleteWebhookJob.new.perform(transmission.id)).to eq("ok")
+
+          request = sent_requests.last
+          event = JSON.parse(request.body)
+          expect(event).to include(
+            "event_type" => "TransmissionComplete",
+            "confirmation_code" => confirmation_code,
+            "transmission_method" => transmission.method_type
+          )
+          # nil for shared_email, which produces no file and has no filenames entry
+          expect(event["uri"]).to eq(filenames[transmission.method_type])
+          expect(request["X-VMI-API-Key"]).to be_nil
+        end
+      end
+    end
+
+    describe "a TransmissionComplete the server rejects as invalid" do
+      let(:confirmation_code) { "WEBHOOK_V2_INVALID" }
+
+      it "raises a non-retryable error, so the job isn't retried" do
+        expect {
+          described_class.post_event(transmission_method_configuration,
+            event_type: described_class::TRANSMISSION_COMPLETE,
+            confirmation_code: confirmation_code,
+            payload: { confirmation_code: confirmation_code, transmission_method: "sftp", completed_at: Time.current.utc.iso8601 })
+        }.to raise_error(described_class::NonRetryableResponseError, /Unexpected response from agency: 400/)
+      end
+    end
+  end
 end

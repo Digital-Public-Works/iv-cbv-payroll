@@ -106,6 +106,29 @@ RSpec.describe CbvFlowToJson do
             basename = TransmissionFilename.basename_for(cbv_flow: cbv_flow, agency: mock_client_agency, method_type: :sftp)
             expect(filenames[:sftp]).to eq("inbox/#{basename}")
           end
+
+          context "when the flow's sftp transmission was set up with a different path_prefix" do
+            before do
+              create(:cbv_flow_transmission, cbv_flow: cbv_flow, method_type: :sftp,
+                configuration: { "path_prefix" => "old/inbox" })
+            end
+
+            it "uses the transmission's directory, where the file is delivered" do
+              basename = TransmissionFilename.basename_for(cbv_flow: cbv_flow, agency: mock_client_agency, method_type: :sftp)
+              expect(filenames[:sftp]).to eq("old/inbox/#{basename}")
+            end
+          end
+
+          context "when the flow's sftp transmission has a blank configuration" do
+            before do
+              create(:cbv_flow_transmission, cbv_flow: cbv_flow, method_type: :sftp, configuration: {})
+            end
+
+            it "uses the partner's configured directory" do
+              basename = TransmissionFilename.basename_for(cbv_flow: cbv_flow, agency: mock_client_agency, method_type: :sftp)
+              expect(filenames[:sftp]).to eq("inbox/#{basename}")
+            end
+          end
         end
 
         context "when the agency configures encrypted_s3 alongside webhook" do
@@ -264,6 +287,27 @@ RSpec.describe CbvFlowToJson do
           gig_record[:gig_monthly_summaries]&.each do |summary|
             expect(summary[:mileage_expenses]).to be_an(Array)
           end
+        end
+      end
+
+      describe "gig monthly summary mileage rate" do
+        let(:gig) { instance_double(Aggregators::ResponseObjects::Gig) }
+
+        def mileage_expense(month_string, gigs)
+          summaries = { month_string => { total_gig_hours: 1, accrued_gross_earnings: 100, total_mileage: 10.0, gigs: gigs } }
+          subject.send(:build_gig_monthly_summaries, summaries).first[:mileage_expenses].first
+        end
+
+        it "sends the federal rate for the month, in dollars" do
+          expect(mileage_expense("2025-03", [ gig ])).to eq(miles: 10.0, rate: 0.70)
+        end
+
+        it "keeps a half-cent rate to 3 decimals" do
+          expect(mileage_expense("2026-02", [ gig ])[:rate]).to eq(0.725)
+        end
+
+        it "sends a null rate for a month with no gigs" do
+          expect(mileage_expense("2025-03", [])[:rate]).to be_nil
         end
       end
     end

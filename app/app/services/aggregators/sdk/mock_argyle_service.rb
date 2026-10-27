@@ -76,7 +76,7 @@ module Aggregators::Sdk
     #   - request_payroll_document.json (singular): a single document returned as-is
     #     (legacy behavior, not filtered by account).
     # A fixture with neither file returns no documents (the no-images case).
-    def fetch_payroll_documents_api(account: nil, user: nil, employment: nil, limit: 200)
+    def fetch_payroll_documents_api(account: nil, user: nil, employment: nil, from_available_date: nil, to_available_date: nil, limit: 200)
       plural_path = @fixture_path.join("request_payroll_documents.json")
 
       if File.exist?(plural_path)

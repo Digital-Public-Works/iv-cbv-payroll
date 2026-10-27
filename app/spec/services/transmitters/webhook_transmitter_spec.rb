@@ -175,6 +175,32 @@ RSpec.describe Transmitters::WebhookTransmitter do
       end
     end
 
+    %w[400 413 422].each do |status|
+      context "when agency responds with #{status}" do
+        before do
+          stub_request(:post, webhook_url).to_return(status: status.to_i, body: "rejected")
+        end
+
+        it "raises a non-retryable error" do
+          expect { subject.deliver }.to raise_error(described_class::NonRetryableResponseError, /Unexpected response from agency: #{status}/)
+        end
+      end
+    end
+
+    %w[401 429 503].each do |status|
+      context "when agency responds with #{status}" do
+        before do
+          stub_request(:post, webhook_url).to_return(status: status.to_i, body: "try again")
+        end
+
+        it "raises a retryable error" do
+          expect { subject.deliver }.to raise_error(/Unexpected response from agency: #{status}/) { |error|
+            expect(error).not_to be_a(ApplicationJob::NonRetryableError)
+          }
+        end
+      end
+    end
+
     context "when agency responds with 418" do
       before do
         stub_request(:post, webhook_url).to_return(status: 418, body: "I'm a teapot")

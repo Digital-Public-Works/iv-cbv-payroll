@@ -36,7 +36,9 @@ services:
 
   # Webhook API reference implementation
   # https://github.com/Digital-Public-Works/dicit-webhook-api-ref-impl
-  # Validates payload schema, API key auth, and HMAC signatures.
+  # Validates payload schema for ReportSubmission and TransmissionComplete
+  # events, and authenticates every request by its HMAC signature and timestamp
+  # (it ignores X-VMI-API-Key). Accepts both webhook contract versions.
   webhook-api:
     build: https://github.com/Digital-Public-Works/dicit-webhook-api-ref-impl.git#main
     ports:
