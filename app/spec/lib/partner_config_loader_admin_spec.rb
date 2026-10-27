@@ -1,6 +1,6 @@
 require "rails_helper"
 
-# The loader features the admin API relies on (MVP.md §3.7).
+# The loader features the admin API relies on.
 RSpec.describe PartnerConfigLoader, type: :admin_api do
   let(:settings) { admin_settings_document }
   let(:credentials) { admin_credentials_document }

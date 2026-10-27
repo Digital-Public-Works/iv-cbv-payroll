@@ -1,7 +1,11 @@
 require "net/http"
 
-# No-op connectivity check - verifies that the s3 settings for the configuration are valid and work
-# Nothing is uploaded, just is a guard against mistyped credentials.
+# No-op connectivity check for one transmission method, using its stored
+# credentials: SFTP login plus a stat of path_prefix, S3 HeadBucket (and a GPG
+# key parse for encrypted_s3), or an OPTIONS/HEAD request for webhook and json.
+# shared_email can't be checked without sending mail. Nothing is uploaded,
+# posted or sent; it's a guard against mistyped credentials and unreachable
+# endpoints, not proof that delivery will succeed.
 module AdminApi
   class ConnectivityCheck
     TIMEOUT = 10
