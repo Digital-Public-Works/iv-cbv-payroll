@@ -17,7 +17,13 @@
     </li>
     <li class="usa-process-list__item">
       <h3 class="usa-process-list__heading"><%= t(".step2") %></h3>
-      <p><%= t(".step2_description", agency_full_name: agency_translation("shared.agency_full_name")) %></p>
+      <p>
+        <% if allow_user_comment? %>
+          <%= t(".step2_description", agency_full_name: agency_translation("shared.agency_full_name")) %>
+        <% else %>
+          <%= t(".step2_description_no_comments", agency_full_name: agency_translation("shared.agency_full_name")) %>
+        <% end %>
+      </p>
       <p><em><%= t(".step2_note") %></em></p>
     </li>
     <li class="usa-process-list__item">
