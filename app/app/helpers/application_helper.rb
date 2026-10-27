@@ -116,6 +116,18 @@ module ApplicationHelper
     current_agency.nil? || current_agency.encourage_link_sharing
   end
 
+  # Whether the applicant can add comments about each job. Defaults to true when
+  # there is no current agency.
+  def allow_user_comment?
+    current_agency.nil? || current_agency.allow_user_comment
+  end
+
+  # Whether to ask about jobs the applicant will verify outside Verify My Income.
+  # Defaults to true when there is no current agency.
+  def allow_outside_jobs?
+    current_agency.nil? || current_agency.allow_outside_jobs
+  end
+
   # A visually-hidden span used to add descriptive context to an otherwise
   # generic visible label (e.g. "Edit" -> "Edit Applicant information").
   def sr_only_span(text)

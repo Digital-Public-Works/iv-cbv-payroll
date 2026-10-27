@@ -200,6 +200,7 @@ es:
         step1_note: Verify My Income no guarda ni comparte su usuario ni contraseña.
         step2: Revise sus pagos
         step2_description: Cuando inicie sesión, Verify My Income reúne sus talones de pago recientes en un solo informe. Puede revisar los detalles y agregar comentarios antes de enviarlo a %{agency_full_name}.
+        step2_description_no_comments: Cuando inicie sesión, Verify My Income reúne sus talones de pago recientes en un solo informe. Puede revisar los detalles antes de enviarlo a %{agency_full_name}.
         step2_note: También puede agregar más trabajos a su informe si necesita.
         step3: Envíe su informe de ingresos
         step3_description: Su información de pago se envía directamente a %{agency_acronym}. Al terminar, puede guardar una copia de su informe.
@@ -339,6 +340,7 @@ es:
         hours_paid: "%{category}: Horas pagadas"
         none_found: No encontramos ningún pago de este empleador en los últimos %{report_data_range}.
         none_found_description: Esto usualmente ocurre cuando usted no ha recibido ingresos por este trabajo en los últimos %{report_data_range}. Si cree que esto es un error, agregue un comentario en la casilla de comentarios adicionales. De lo contrario, continúe en la página siguiente.
+        none_found_description_no_comments: Esto suele ocurrir cuando no ha recibido ingresos de este trabajo en los últimos %{report_data_range}. Continúe a la siguiente página.
         number_of_hours_worked: Número de horas trabajadas
         pay_date_prompt: Fecha de pago
         pay_frequency: Frecuencia de pago
@@ -351,6 +353,7 @@ es:
         payments_and_deductions_table_header: Pagos y deducciones
         ssn_disclaimer: Su número de Seguro Social se enviará de forma segura a %{agency_acronym} para confirmar su identidad. Verify My Income no guardará ni almacenará esta información.
         subheader_html: Hemos recopilado sus registros de pago del último %{report_data_range}, desde el %{start_date} hasta el %{end_date}.<br>Por favor, revise su información. Si falta información o si es incorrecta, deja un comentario para %{agency_acronym}. Su comentario se incluirá en su reporte de ingresos.
+        subheader_no_comments_html: Hemos recopilado sus registros de pago del último %{report_data_range}, desde el %{start_date} hasta el %{end_date}.<br>Por favor, revise su información.
         unknown: Desconocido
     submits:
       show:
@@ -388,7 +391,6 @@ es:
             with_intro: 'Hay imágenes de talones de pago para los siguientes trabajos:'
             without_intro: 'Verify My Income no encontró imágenes de talones de pago para los siguientes trabajos:'
           shared:
-            additional_jobs_to_report: "¿El cliente tiene trabajos adicionales que verificará por separado?"
             additional_jobs_to_report_html: "¿El cliente tiene trabajos adicionales que verificará por separado? <sup>1</sup>"
             client_information: Información del cliente
             confirmation_code: Código de confirmación
@@ -435,6 +437,7 @@ es:
           default: Esto debe coincidir con lo que se muestra en su solicitud de %{agency_acronym}.
         none_found: No encontramos ningún pago de este empleador en los últimos %{report_data_range}.
         none_found_description: Esto usualmente ocurre cuando usted no ha recibido ingresos por este trabajo en los últimos %{report_data_range}. Si cree que esto es un error, agregue un comentario en la casilla de comentarios adicionales. De lo contrario, continúe en la página siguiente.
+        none_found_description_no_comments: Esto suele ocurrir cuando no ha recibido ingresos de este trabajo en los últimos %{report_data_range}. Continúe a la siguiente página.
         other_jobs: Otros trabajos
         phone_number: Teléfono del empleador
         question: Pregunta
