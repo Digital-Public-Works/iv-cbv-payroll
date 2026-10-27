@@ -703,6 +703,14 @@ RSpec.describe Cbv::SubmitsController do
         expect(flash[:alert]).to be_present
         expect(flash[:alert]).to eq("Please check the legal agreement box to share your report.")
       end
+
+      it "does not clear the cbv_applicant_id cookie" do
+        cookies.encrypted[:cbv_applicant_id] = cbv_flow.cbv_applicant_id
+
+        patch :update
+
+        expect(cookies.encrypted[:cbv_applicant_id]).to eq(cbv_flow.cbv_applicant_id)
+      end
     end
 
     context "with consent" do
@@ -710,6 +718,17 @@ RSpec.describe Cbv::SubmitsController do
         expect(CaseWorkerTransmitterJob).to receive(:perform_later).with(cbv_flow.id)
         patch :update, params: { cbv_flow: { consent_to_authorized_use: "1" } }
         expect(response).to redirect_to({ controller: :successes, action: :show })
+      end
+
+      it "clears the cbv_applicant_id cookie but keeps the session" do
+        cookies.encrypted[:cbv_applicant_id] = cbv_flow.cbv_applicant_id
+
+        patch :update, params: { cbv_flow: { consent_to_authorized_use: "1" } }
+
+        expect(cookies[:cbv_applicant_id]).to be_nil
+        expect(response.cookies).to have_key("cbv_applicant_id")
+        expect(response.cookies["cbv_applicant_id"]).to be_nil
+        expect(session[:cbv_flow_id]).to eq(cbv_flow.id)
       end
     end
 
