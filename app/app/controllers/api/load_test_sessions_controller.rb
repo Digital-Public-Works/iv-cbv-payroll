@@ -51,7 +51,9 @@ class Api::LoadTestSessionsController < ApplicationController
   # mock service then returns each account's data. Falls back to Bob's single
   # hard-coded id so existing single-account load tests are unchanged.
   def argyle_account_ids
-    fixture_user = params[:fixture_user].presence
+    # File.basename strips any directory or absolute-path components so a
+    # crafted fixture_user cannot escape the fixtures directory.
+    fixture_user = params[:fixture_user].presence&.then { |u| File.basename(u) }
     return [ argyle_account_id ] unless fixture_user
 
     accounts_path = Rails.root.join("spec", "support", "fixtures", "argyle", fixture_user, "request_accounts.json")
@@ -90,7 +92,8 @@ class Api::LoadTestSessionsController < ApplicationController
         cbv_flow: cbv_flow,
         aggregator_account_id: account_id,
         supported_jobs: %w[accounts income paystubs employment identity],
-        synchronization_status: :succeeded
+        synchronization_status: :succeeded,
+        report_status: :useful
       )
 
       # Create successful webhook events matching Argyle's actual event names
@@ -150,7 +153,8 @@ class Api::LoadTestSessionsController < ApplicationController
       cbv_flow: cbv_flow,
       aggregator_account_id: argyle_account_id,
       supported_jobs: %w[accounts income paystubs employment identity],
-      synchronization_status: :failed
+      synchronization_status: :failed,
+      report_status: :not_useful
     )
 
     # Create failed webhook events - paystubs job failed

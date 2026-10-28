@@ -15,6 +15,6 @@ class Cbv::ValidationFailuresController < Cbv::BaseController
   end
 
   def count_of_valid_accounts
-    @cbv_flow.accounts_with_required_data&.size || 0
+    @cbv_flow.accounts_presumed_usable&.size || 0
   end
 end

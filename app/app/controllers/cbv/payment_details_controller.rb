@@ -26,25 +26,33 @@ class Cbv::PaymentDetailsController < Cbv::BaseController
 
     set_aggregator_report_for_account(@payroll_account)
 
-    result = Aggregators::AccountReportService.new(@aggregator_report, @payroll_account).validate
-    unless result.valid?
+    if @payroll_account.report_not_useful?
       return redirect_to cbv_flow_validation_failures_path(user: { account_id: @payroll_account.aggregator_account_id })
     end
-    @payroll_account_report = result.account_report
 
-    @is_w2_worker = @payroll_account_report.employment.employment_type == :w2
+    if @payroll_account.report_unknown? && @cbv_flow.applicant_information_completed?
+      # we needed more info after the sync and dont know if the report is useful, but we have the info now to make a determination
+      result = Aggregators::AccountReportService.new(@aggregator_report, @payroll_account).validate
+      @payroll_account.update(report_status: result.valid? ? :useful : :not_useful)
+
+      unless result.valid?
+        return redirect_to cbv_flow_validation_failures_path(user: { account_id: @payroll_account.aggregator_account_id })
+      end
+    end
+
+    # report validation has not run yet - still need to collect applicant information
+    @payroll_account_report = @aggregator_report.find_account_report(@payroll_account.aggregator_account_id)
+
+    # Employment is guaranteed present once the report has been validated, but
+    # not before it.
+    @is_w2_worker = @payroll_account_report.employment&.employment_type != :gig
     @account_comment = account_comment
   end
 
   def update
-    account_id = params[:user][:account_id]
-    comment = params[:cbv_flow][:additional_information]
-    additional_information = @cbv_flow.additional_information
-    additional_information[account_id] = {
-      comment: sanitize_comment(comment),
-      updated_at: Time.current
-    }
-    @cbv_flow.update(additional_information: additional_information)
+    # Partners that don't allow comments still submit this form to continue, but
+    # nothing the applicant sends is stored.
+    save_account_comment if helpers.allow_user_comment?
 
     redirect_to next_path
   end
@@ -55,6 +63,17 @@ class Cbv::PaymentDetailsController < Cbv::BaseController
   end
 
   private
+
+  def save_account_comment
+    account_id = params[:user][:account_id]
+    comment = params[:cbv_flow][:additional_information]
+    additional_information = @cbv_flow.additional_information
+    additional_information[account_id] = {
+      comment: sanitize_comment(comment),
+      updated_at: Time.current
+    }
+    @cbv_flow.update(additional_information: additional_information)
+  end
 
   def has_income_data?
     @payroll_account.job_succeeded?("income")

@@ -12,6 +12,7 @@ RSpec.describe Cbv::SummariesController do
   let(:cbv_flow) do
     create(:cbv_flow,
       :invited,
+      :applicant_information_completed,
       :with_argyle_account,
       with_errored_jobs: errored_jobs,
       created_at: current_time,
@@ -151,6 +152,59 @@ end
           expect(response).to be_successful
         end
 
+        it "shows additional comments" do
+          get :show
+
+          expect(response.body).to include(I18n.t("cbv.summaries.show.additional_comments"))
+        end
+
+        it "shows the other jobs answer" do
+          get :show
+
+          expect(Nokogiri::HTML(response.body)).to have_css('[data-testid="other-jobs-table"]', count: 1)
+        end
+
+        context "when the partner does not ask about outside jobs" do
+          before { stub_client_agency_config_value("sandbox", "allow_outside_jobs", false) }
+
+          it "hides the other jobs section" do
+            get :show
+            doc = Nokogiri::HTML(response.body)
+
+            expect(doc).not_to have_css('[data-testid="other-jobs-table"]')
+            expect(doc.css("h3").map(&:text)).not_to include(I18n.t("cbv.summaries.show.other_jobs"))
+          end
+        end
+
+        context "for a flow without an invitation" do
+          let(:cbv_flow) do
+            create(:cbv_flow,
+              :applicant_information_completed,
+              :with_argyle_account,
+              with_errored_jobs: errored_jobs,
+              created_at: current_time,
+              supported_jobs: supported_jobs,
+              cbv_applicant: cbv_applicant
+            )
+          end
+
+          it "shows the other jobs answer once" do
+            get :show
+
+            expect(Nokogiri::HTML(response.body)).to have_css('[data-testid="other-jobs-table"]', count: 1)
+          end
+        end
+
+        context "when the partner does not allow user comments" do
+          before { stub_client_agency_config_value("sandbox", "allow_user_comment", false) }
+
+          it "hides the additional comments section" do
+            get :show
+
+            expect(response.body).not_to include(I18n.t("cbv.summaries.show.additional_comments"))
+          end
+        end
+
         context "with 1 paystub" do
           it "renders properly with 1 paystub" do
             get :show
@@ -158,8 +212,8 @@ end
 
             expect(doc.css("title").text).to include("Review your income report")
             expect(doc.at_xpath("//*[@data-testid=\"paystub-table-caption\"]").content).to include("Employer 1: Lyft Driver")
-            expect(doc).to have_css("table.usa-table.usa-table--borderless.width-full.usa-table--stacked", count: 1)
-            within("table.usa-table.usa-table--borderless.width-full.usa-table--stacked") do
+            expect(doc).to have_css('table.usa-table.usa-table--borderless.width-full.usa-table--stacked:not([data-testid="other-jobs-table"])', count: 1)
+            within('table.usa-table.usa-table--borderless.width-full.usa-table--stacked:not([data-testid="other-jobs-table"])') do
               expect(page).to have_css("tr", count: 2)
             end
             expect(response).to be_successful
@@ -185,11 +239,40 @@ end
             expect(response).to be_successful
             expect(doc.css("title").text).to include("Review your income report")
             expect(doc.at_xpath("//*[@data-testid=\"paystub-table-caption\"]").content).to include("Employer 1: Lyft Driver")
-            expect(doc).to have_css("table.usa-table.usa-table--borderless.width-full.usa-table--stacked", count: 1)
-            within("table.usa-table.usa-table--borderless.width-full.usa-table--stacked") do
+            expect(doc).to have_css('table.usa-table.usa-table--borderless.width-full.usa-table--stacked:not([data-testid="other-jobs-table"])', count: 1)
+            within('table.usa-table.usa-table--borderless.width-full.usa-table--stacked:not([data-testid="other-jobs-table"])') do
               expect(page).to have_css("tr", count: 3)
             end
           end
+        end
+      end
+    end
+
+    context "with a w2 job that has no payments" do
+      render_views
+
+      before do
+        cbv_flow.payroll_accounts.first.update(aggregator_account_id: "01956d5f-cb8d-af2f-9232-38bce8531f58")
+        argyle_stub_request_identities_response("sarah")
+        argyle_stub_request_paystubs_response("sarah", drop_results_if: ->(_paystub) { true })
+        argyle_stub_request_gigs_response("sarah")
+        argyle_stub_request_account_response("sarah")
+      end
+
+      it "suggests adding a comment" do
+        get :show
+
+        expect(response.body).to include("please add a comment in the additional comments box")
+      end
+
+      context "when the partner does not allow user comments" do
+        before { stub_client_agency_config_value("sandbox", "allow_user_comment", false) }
+
+        it "does not mention comments" do
+          get :show
+
+          expect(response.body).to include("Continue to the next page.")
+          expect(response.body).not_to include("add a comment")
         end
       end
     end

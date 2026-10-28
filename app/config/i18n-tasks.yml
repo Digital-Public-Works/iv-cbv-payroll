@@ -136,8 +136,6 @@ ignore_missing:
     - "cbv.submits.show.pdf.caseworker.*"
     # Caseworker pay stub cover sheet (transmitted file) is only supported in English:
     - "transmitters.paystubs_caseworker_cover.*"
-    # LA wind down content
-    - "pages.home.pilot_ended.la_ldh.*"
 
     # Currently awaiting translation:
     # - "example.strings.*"   # Tag with ticket number that created or modified the string
@@ -145,7 +143,7 @@ ignore_missing:
 ## Consider these keys used:
 ignore_unused:
   all:
-    - "*.{sandbox,az_des,la_ldh,pa_dhs,default}"       # site-specific translations
+    - "*.{sandbox,az_des,pa_dhs,default}"       # site-specific translations
     - "activerecord.errors.*"                   # model errors are not always explicitly used
     - "date.*"                                  # date formats are not always explicitly used
     - "time.*"                                  # time formats are not always explicitly used
@@ -156,9 +154,7 @@ ignore_unused:
     - "cbv.applicant_informations.*.fields.*" # dynamically resolved per-agency applicant form translations
     - "cbv.submits.show.pdf.caseworker.*" #dynamically looked up translations
     - "cbv.submits.show.pdf.client.agency_id_number" #dynamically looked up translations
-    - "cbv.submits.show.pdf.shared.additional_jobs_to_report" #dynamically used when applicant does not supply additional jobs
-    - "cbv.submits.show.pdf.shared.additional_jobs_to_report_html" #dynamically used when applicant supplies additional jobs
-    - "pages.home.pilot_ended.la_ldh.body_bullet_3" # template usage is commented out pending la_ldh partial removal
+    - "cbv.submits.show.pdf.shared.additional_jobs_to_report_html" #dynamically used by ClientAgency::ReportFields
 
 csv:
   # see: https://github.com/glebm/i18n-tasks/wiki/Custom-CSV-import-and-export-tasks

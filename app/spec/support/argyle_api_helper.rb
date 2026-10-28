@@ -8,11 +8,12 @@ module ArgyleApiHelper
       )
   end
 
-  def argyle_stub_request_paystubs_response(user_folder)
+  # Pass drop_results_if: to remove matching paystubs from the fixture, e.g. to simulate a month with no paystubs.
+  def argyle_stub_request_paystubs_response(user_folder, drop_results_if: nil)
     stub_request(:get, %r{#{Aggregators::Sdk::ArgyleService::PAYSTUBS_ENDPOINT}(?!\?cursor=)})
       .to_return(
         status: 200,
-        body: argyle_load_relative_json_file(user_folder, 'request_paystubs.json').to_json,
+        body: argyle_load_relative_json_file(user_folder, 'request_paystubs.json', drop_results_if: drop_results_if).to_json,
         headers: { 'Content-Type': 'application/json;charset=UTF-8' }
       )
 
@@ -21,17 +22,18 @@ module ArgyleApiHelper
       stub_request(:get, %r{#{Aggregators::Sdk::ArgyleService::PAYSTUBS_ENDPOINT}\?cursor=})
         .to_return(
           status: 200,
-          body: argyle_load_relative_json_file(user_folder, 'request_paystubs_page_2.json').to_json,
+          body: argyle_load_relative_json_file(user_folder, 'request_paystubs_page_2.json', drop_results_if: drop_results_if).to_json,
           headers: { 'Content-Type': 'application/json;charset=UTF-8' }
         )
     end
   end
 
-  def argyle_stub_request_gigs_response(user_folder)
+  # Pass drop_results_if: to remove matching gigs from the fixture, e.g. to simulate a month with no gigs.
+  def argyle_stub_request_gigs_response(user_folder, drop_results_if: nil)
     stub_request(:get, %r{#{Aggregators::Sdk::ArgyleService::GIGS_ENDPOINT}(?!\?cursor=)})
       .to_return(
         status: 200,
-        body: argyle_load_relative_json_file(user_folder, 'request_gigs.json').to_json,
+        body: argyle_load_relative_json_file(user_folder, 'request_gigs.json', drop_results_if: drop_results_if).to_json,
         headers: { 'Content-Type': 'application/json;charset=UTF-8' }
       )
 
@@ -40,7 +42,7 @@ module ArgyleApiHelper
       stub_request(:get, %r{#{Aggregators::Sdk::ArgyleService::GIGS_ENDPOINT}\?cursor=})
         .to_return(
           status: 200,
-          body: argyle_load_relative_json_file(user_folder, 'request_gigs_page_2.json').to_json,
+          body: argyle_load_relative_json_file(user_folder, 'request_gigs_page_2.json', drop_results_if: drop_results_if).to_json,
           headers: { 'Content-Type': 'application/json;charset=UTF-8' }
         )
     end
@@ -162,8 +164,11 @@ module ArgyleApiHelper
     File.join(File.dirname(__FILE__), "fixtures/argyle/#{user_folder}/#{filename}")
   end
 
-  def argyle_load_relative_json_file(user_folder, filename)
-    JSON.parse(File.read(argyle_fixture_path(user_folder, filename)))
+  # Pass drop_results_if: (a lambda) to remove the matching entries from the fixture's "results" list.
+  def argyle_load_relative_json_file(user_folder, filename, drop_results_if: nil)
+    data = JSON.parse(File.read(argyle_fixture_path(user_folder, filename)))
+    data["results"] = data["results"].reject(&drop_results_if) if drop_results_if
+    data
   end
 
   def argyle_user_property_for(user_folder, fixture_type, property = nil)

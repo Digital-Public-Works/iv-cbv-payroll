@@ -81,6 +81,7 @@ es:
         invite_failed: 'Error al enviar la invitació a %{email_address}: %{error_message}'
         invite_success: La invitación ha sido enviada con éxito a %{email_address}.
       incorrect_client_agency_id: No se ha podido enviar la invitación porque falta la configuración del sitio.
+      invitations_disabled: XX - Esta agencia no está configurada para enviar invitaciones.
   cbv:
     add_jobs:
       show:
@@ -117,18 +118,6 @@ es:
             blank: Escriba su segundo nombre.
             prompt: Segundo nombre
             super_one_html: Segundo nombre<sup>1</sup>
-      la_ldh:
-        fields:
-          case_number:
-            blank: Escriba su número de caso de Medicaid.
-            help_text: Este número de caso de 13 dígitos se puede encontrar en los avisos del Departamento de Salud de Luisiana
-            prompt: Número de caso de Medicaid (opcional)
-            super_one_html: Número de caso de Medicaid<sup>1</sup>
-          date_of_birth:
-            blank: Escriba su fecha de nacimiento.
-            help_text: 'Por ejemplo: 19 de enero de 2000'
-            prompt: Su fecha de nacimiento
-            super_one_html: Fecha de nacimiento<sup>1</sup>
       sandbox:
         fields:
           case_number:
@@ -177,6 +166,7 @@ es:
         header: Busque su empleador o empresa de nómina
         payroll_providers: Proveedores de nómina
         popular_providers: O elija entre los proveedores o aplicaciones de nómina más populares
+        provider_position: "%{position} de"
         results: Se encontraron (%{result_count}) resultado(s)
         results_header: Resultados de búsqueda
         search: Buscar
@@ -210,15 +200,16 @@ es:
         step1_note: Verify My Income no guarda ni comparte su usuario ni contraseña.
         step2: Revise sus pagos
         step2_description: Cuando inicie sesión, Verify My Income reúne sus talones de pago recientes en un solo informe. Puede revisar los detalles y agregar comentarios antes de enviarlo a %{agency_full_name}.
+        step2_description_no_comments: Cuando inicie sesión, Verify My Income reúne sus talones de pago recientes en un solo informe. Puede revisar los detalles antes de enviarlo a %{agency_full_name}.
         step2_note: También puede agregar más trabajos a su informe si necesita.
         step3: Envíe su informe de ingresos
-        step3_description: Su información de pago se envía directamente a %{agency_acronym}. Al terminar, puede guardar una copia de su informe. También puede compartir un enlace con otras personas de su hogar para que también verifiquen sus ingresos.
+        step3_description: Su información de pago se envía directamente a %{agency_acronym}. Al terminar, puede guardar una copia de su informe.
+        step3_description_link_sharing: También puede compartir un enlace con otras personas de su hogar para que también verifiquen sus ingresos.
         subheader: Verify My Income le ayuda a comprobar sus ingresos. Puede combinar todos sus pagos en un solo informe, sin tener que subir recibos de pago. Después de revisar su informe, puede enviarlo directamente a %{agency_full_name}.
         time_estimate: La mayoría de las personas pueden encontrar, conectar y revisar un trabajo en unos 5 minutos.
         what_if_i_cant_use_this_body_1: Si necesita verificar sus ingresos y no puede usar esta herramienta, deberá compartir, de manera directa, la información de sus ingresos para este trabajo con %{agency_portal_name}.
         what_if_i_cant_use_this_body_2_html:
           default: Para obtener más información sobre cómo enviar documentos, visite %{website_link}.
-          la_ldh: 'Usted puede: <ul><li>Subir documentos a través del Portal de Autoservicio en línea en <a href="https://mymedicaid.la.gov/" target="_blank" rel="noopener noreferrer">https://mymedicaid.la.gov/</a></li><li>Enviar documentos por correo postal: Louisiana Medicaid/LaCHIP, P.O. Box 91283, Baton Rouge, LA 70821-9278</li><li>Enviar documentos por correo electrónico: <a href="mailto:MyMedicaid@la.gov">MyMedicaid@la.gov</a></li><li>Llevar sus documentos a la oficina de Medicaid de su elección.</li></ul>'
         what_if_i_cant_use_this_title: "¿Qué debo hacer si no puedo usar esta herramienta?"
         who_is_this_for_body: Puede usar esta herramienta si ha recibido ingresos en los últimos 90 días (incluso si ya no está trabajando). Además, le recordamos que puede acceder a sus recibos de pago en línea si brinda servicios a través de plataformas digitales, como Uber, Lyft o Amazon Flex.
         who_is_this_for_title: "¿Quién puede usar este herramienta?"
@@ -232,9 +223,17 @@ es:
         body_1_html: Si todavía no termina de verificar sus ingresos, envíe su información de ingresos visitando %{website_link}.
         cta_button_html:
           default: <a href="%{agency_url}" class="usa-button" target="_blank" rel="noopener noreferrer">Visite el sitio web de %{agency_portal_name}</a>
-          la_ldh: <a href="%{agency_url}" class="usa-button" target="_blank" rel="noopener noreferrer">Visite el sitio web del LDH</a>
           sandbox: <a href="https://www.mass.gov/guides/how-to-contact-dta" class="usa-button" target="_blank" rel="noopener noreferrer">Obtenga más información en la Agencia de pruebas CBV</a>
         title: Su invitación para verificar ingresos ha expirado
+    landing_pages:
+      show:
+        continue: Continuar
+        explanation: XX - Necesitamos un poco de información antes de que conecte su cuenta de nómina. %{agency_acronym} la usa para asociar sus ingresos con su caso.
+        header: XX - Cuéntenos sobre usted
+      update:
+        error_header:
+          one: "%{count} error"
+          other: "%{count} errores"
     missing_results:
       show:
         check_search_term_example: 'Por ejemplo: Si buscó primero "DHS", el mejor término de búsqueda sería "Department of Human Services".'
@@ -341,6 +340,7 @@ es:
         hours_paid: "%{category}: Horas pagadas"
         none_found: No encontramos ningún pago de este empleador en los últimos %{report_data_range}.
         none_found_description: Esto usualmente ocurre cuando usted no ha recibido ingresos por este trabajo en los últimos %{report_data_range}. Si cree que esto es un error, agregue un comentario en la casilla de comentarios adicionales. De lo contrario, continúe en la página siguiente.
+        none_found_description_no_comments: Esto suele ocurrir cuando no ha recibido ingresos de este trabajo en los últimos %{report_data_range}. Continúe a la siguiente página.
         number_of_hours_worked: Número de horas trabajadas
         pay_date_prompt: Fecha de pago
         pay_frequency: Frecuencia de pago
@@ -353,6 +353,7 @@ es:
         payments_and_deductions_table_header: Pagos y deducciones
         ssn_disclaimer: Su número de Seguro Social se enviará de forma segura a %{agency_acronym} para confirmar su identidad. Verify My Income no guardará ni almacenará esta información.
         subheader_html: Hemos recopilado sus registros de pago del último %{report_data_range}, desde el %{start_date} hasta el %{end_date}.<br>Por favor, revise su información. Si falta información o si es incorrecta, deja un comentario para %{agency_acronym}. Su comentario se incluirá en su reporte de ingresos.
+        subheader_no_comments_html: Hemos recopilado sus registros de pago del último %{report_data_range}, desde el %{start_date} hasta el %{end_date}.<br>Por favor, revise su información.
         unknown: Desconocido
     submits:
       show:
@@ -367,7 +368,6 @@ es:
         page_header: Envíe su reporte de ingresos
         pdf:
           agency_header_name:
-            la_ldh: Department of Health
             sandbox: CBV Test Agency
           caseworker:
             doc_id: Doc ID
@@ -391,7 +391,6 @@ es:
             with_intro: 'Hay imágenes de talones de pago para los siguientes trabajos:'
             without_intro: 'Verify My Income no encontró imágenes de talones de pago para los siguientes trabajos:'
           shared:
-            additional_jobs_to_report: "¿El cliente tiene trabajos adicionales que verificará por separado?"
             additional_jobs_to_report_html: "¿El cliente tiene trabajos adicionales que verificará por separado? <sup>1</sup>"
             client_information: Información del cliente
             confirmation_code: Código de confirmación
@@ -417,9 +416,14 @@ es:
         share_invitation_link_title: Comparta el enlace si otras personas en su hogar necesitan verificar sus ingresos.
         survey: Responda esta encuesta de 5 preguntas
         whats_next: "¿Qué sigue?"
-        whats_next_1_li_1: Si no pudo encontrar empleo o no tiene recibos de sueldo, verifique sus ingresos en %{agency_acronym} en línea, en persona o por correo.
-        whats_next_1_li_2_html: Visite %{website_link}
-        whats_next_1_title: Verificar otros ingresos, si es necesario.
+        whats_next_1_li_1:
+          default: Si no pudo encontrar empleo o no tiene recibos de sueldo, verifique sus ingresos en %{agency_acronym} en línea, en persona o por correo.
+        whats_next_1_li_2_html:
+          default: Visite %{website_link}
+        whats_next_1_link_label:
+          default: el sitio web de %{agency_portal_name}
+        whats_next_1_title:
+          default: Verificar otros ingresos, si es necesario.
         whats_next_2_li_1_html: Nos gustaría saber más sobre su experiencia al usar este sitio.
         whats_next_2_title: Ayude a mejorar esta experiencia.
     summaries:
@@ -431,9 +435,9 @@ es:
         header: Revise su reporte de ingresos
         must_match:
           default: Esto debe coincidir con lo que se muestra en su solicitud de %{agency_acronym}.
-          la_ldh: Esto debe coincidir con lo que se muestra en sus beneficios de Medicaid.
         none_found: No encontramos ningún pago de este empleador en los últimos %{report_data_range}.
         none_found_description: Esto usualmente ocurre cuando usted no ha recibido ingresos por este trabajo en los últimos %{report_data_range}. Si cree que esto es un error, agregue un comentario en la casilla de comentarios adicionales. De lo contrario, continúe en la página siguiente.
+        none_found_description_no_comments: Esto suele ocurrir cuando no ha recibido ingresos de este trabajo en los últimos %{report_data_range}. Continúe a la siguiente página.
         other_jobs: Otros trabajos
         phone_number: Teléfono del empleador
         question: Pregunta
@@ -700,15 +704,6 @@ es:
       description_2: Tenga en cuenta que, en este momento, este programa piloto solo está disponible para participantes en ciertos estados.
       description_3: Para obtener más información sobre cómo presentar comprobantes de ingresos para sus beneficios, visite el sitio web de su agencia.
       header: Bienvenido a Verificar Mis Ingresos
-      pilot_ended:
-        la_ldh:
-          body: "<strong>El período piloto para Luisiana ha terminado.</strong> Si aún necesita verificar sus ingresos, puede hacer lo siguiente:"
-          body_bullet_1: Subir los documentos a través del Portal de autoservicio en línea en <a href="http://MyMedicaid.LA.GOV" target="_blank" rel="noopener noreferrer">http://MyMedicaid.LA.GOV</a>
-          body_bullet_2: 'Enviar los documentos por correo postal a: Louisiana Medicaid/LaCHIP, P.O. Box 91283, Baton Rouge, LA 70821-9278'
-          body_bullet_3: 'Enviar los documentos por correo electrónico a: <a href="mailto:%{agency_email}">%{agency_email}</a>'
-          body_bullet_4: Llevar los documentos a la oficina de Medicaid de su elección.
-          browser_title: Verificar Mis Ingresos | Departmento de Salud de Louisiana
-          header: Verificar Mis Ingresos
   session_timeout:
     modal:
       description: Parece no está realizando ninguna acción. Por motivos de seguridad, su sesión se cerrará, salvo que elija extender el tiempo de esta sesión.
@@ -721,13 +716,10 @@ es:
       title: Su sesión ha terminado.
   shared:
     agency_acronym:
-      la_ldh: LDH
       sandbox: CBV
     agency_full_name:
-      la_ldh: Departamento de Salud de Luisiana
       sandbox: Agencia de pruebas CBV
     agency_portal_name:
-      la_ldh: LDH
       sandbox: VMI
     agency_website_link_label: el sitio web de %{agency_portal_name}
     app_name:
@@ -736,7 +728,6 @@ es:
       lock: Candado
       locked_padlock: Un candado cerrado
     benefit:
-      la_ldh: Medicaid
       sandbox: SNAP
     error_unauthorized: La URL a la que estás accediendo está prohibida para el usuario actual. Verifique que está conectado como el usuario correcto e intente acceder de nuevo a la URL.
     footer:
@@ -744,14 +735,12 @@ es:
     header:
       aria_label: Menú principal
       cbv_flow_title:
-        la_ldh: Departamento de Salud
         sandbox: Agencia de pruebas CBV
       close: Cerrar
       help: Ayuda
       log_out: Cerrar sesión
       preheader:
         default: Un sitio web en colaboración con la Agencia de pruebas CBV.
-        la_ldh: Un sitio web en colaboración con el Departamento de Salud de Luisiana
       primary: Menú principal
     languages:
       en: English

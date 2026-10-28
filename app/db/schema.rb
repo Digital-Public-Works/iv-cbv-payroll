@@ -10,10 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_06_15_120100) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_26_120000) do
   # These are extensions that must be enabled in order to support this database
+  enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
-  enable_extension "plpgsql"
 
   create_table "api_access_tokens", force: :cascade do |t|
     t.string "access_token"
@@ -37,6 +37,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_15_120100) do
     t.string "doc_id"
     t.jsonb "custom_attributes", default: {}, null: false
     t.string "partner_identifier"
+    t.jsonb "attribute_provenance", default: {}, null: false
     t.index ["partner_identifier"], name: "index_cbv_applicants_on_partner_identifier"
   end
 
@@ -51,6 +52,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_15_120100) do
     t.string "language"
     t.bigint "cbv_applicant_id"
     t.datetime "expires_at", precision: nil
+    t.boolean "auto_created", default: false, null: false
     t.index ["auth_token"], name: "index_cbv_flow_invitations_on_auth_token", unique: true, where: "(redacted_at IS NULL)"
     t.index ["cbv_applicant_id"], name: "index_cbv_flow_invitations_on_cbv_applicant_id"
     t.index ["user_id"], name: "index_cbv_flow_invitations_on_user_id"
@@ -86,6 +88,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_15_120100) do
     t.string "argyle_user_id"
     t.boolean "has_other_jobs"
     t.string "device_id"
+    t.boolean "generic", default: false, null: false
+    t.datetime "landing_page_completed_at"
+    t.datetime "applicant_information_completed_at"
     t.index ["cbv_applicant_id"], name: "index_cbv_flows_on_cbv_applicant_id"
     t.index ["cbv_flow_invitation_id"], name: "index_cbv_flows_on_cbv_flow_invitation_id"
   end
@@ -94,7 +99,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_15_120100) do
     t.bigint "partner_config_id", null: false
     t.string "name", null: false
     t.text "description"
-    t.boolean "required", default: true, null: false
     t.integer "data_type", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -102,9 +106,23 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_15_120100) do
     t.boolean "redactable", default: false, null: false
     t.string "redact_type"
     t.string "form_field_type", default: "text_field"
-    t.boolean "show_on_applicant_form", default: true, null: false
     t.boolean "show_on_caseworker_form", default: true, null: false
+    t.string "validation_regex"
+    t.boolean "required_for_submit", default: false, null: false
     t.index ["partner_config_id"], name: "index_partner_application_attributes_on_partner_config_id"
+  end
+
+  create_table "partner_attribute_usages", force: :cascade do |t|
+    t.string "context", null: false
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.bigint "partner_config_id", null: false
+    t.integer "position", default: 0, null: false
+    t.boolean "required", default: false, null: false
+    t.datetime "updated_at", null: false
+    t.index ["partner_config_id", "context", "name"], name: "idx_partner_attribute_usages_unique", unique: true
+    t.index ["partner_config_id", "context", "position"], name: "idx_partner_attribute_usages_order"
+    t.index ["partner_config_id"], name: "index_partner_attribute_usages_on_partner_config_id"
   end
 
   create_table "partner_configs", force: :cascade do |t|
@@ -118,7 +136,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_15_120100) do
     t.string "logo_path"
     t.string "argyle_environment"
     t.boolean "staff_portal_enabled", default: false, null: false
-    t.boolean "pilot_ended", default: false, null: false
     t.string "default_origin"
     t.boolean "generic_links_enabled", default: false, null: false
     t.boolean "invitation_links_enabled", default: false, null: false
@@ -137,6 +154,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_15_120100) do
     t.boolean "include_paystubs", default: false, null: false
     t.boolean "include_full_ssn", default: false, null: false
     t.boolean "include_direct_deposit_last_4", default: false, null: false
+    t.boolean "encourage_link_sharing", default: true, null: false
+    t.boolean "allow_user_comment", default: true, null: false
+    t.boolean "allow_outside_jobs", default: true, null: false
     t.index ["partner_id"], name: "index_partner_configs_on_partner_id", unique: true
   end
 
@@ -179,6 +199,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_15_120100) do
     t.string "synchronization_status", default: "unknown"
     t.datetime "redacted_at"
     t.datetime "discarded_at"
+    t.string "report_status", default: "unknown", null: false
     t.index ["cbv_flow_id"], name: "index_payroll_accounts_on_cbv_flow_id"
     t.index ["discarded_at"], name: "index_payroll_accounts_on_discarded_at"
   end
@@ -216,6 +237,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_15_120100) do
   add_foreign_key "cbv_flow_transmissions", "cbv_flows"
   add_foreign_key "cbv_flows", "cbv_flow_invitations"
   add_foreign_key "partner_application_attributes", "partner_configs"
+  add_foreign_key "partner_attribute_usages", "partner_configs"
   add_foreign_key "partner_translations", "partner_configs"
   add_foreign_key "partner_transmission_configs", "partner_transmission_methods"
   add_foreign_key "partner_transmission_methods", "partner_configs"

@@ -38,7 +38,7 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
   end
 
   describe 'POST #create' do
-    let!(:cbv_flow) { create(:cbv_flow, argyle_user_id: "abc-def-ghi") }
+    let!(:cbv_flow) { create(:cbv_flow, :applicant_information_completed, argyle_user_id: "abc-def-ghi") }
 
     context 'with accounts.connected webhook' do
       it_behaves_like "receiving a webhook", "accounts.connected"
@@ -73,7 +73,7 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
   end
 
   describe 'when receiving webhooks for a full Argyle sync' do
-    let(:cbv_flow) { create(:cbv_flow, argyle_user_id: "abc-def-ghi") }
+    let(:cbv_flow) { create(:cbv_flow, :applicant_information_completed, argyle_user_id: "abc-def-ghi") }
     # Use the account ID from the "sarah" fixture so pick_employment can find matching employments
     let(:argyle_account_id) { '01956d5f-cb8d-af2f-9232-38bce8531f58' }
     let(:fake_event_logger) { instance_double(GenericEventTracker) }
@@ -121,6 +121,118 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
               .and_return(argyle_load_relative_json_file("bob", "request_account.json"))
       allow(controller).to receive(:event_logger).and_return(fake_event_logger)
       allow(fake_event_logger).to receive(:track)
+    end
+
+    # The sync outcome and the report verdict are separate: the first is known the
+    # moment the sync ends, the second can wait for data the applicant has yet to
+    # give us.
+    describe "sync status vs report verdict" do
+      def run_full_sync
+        process_webhook("accounts.connected")
+        process_webhook("identities.added")
+        process_webhook("users.fully_synced")
+        process_webhook("paystubs.fully_synced")
+        process_webhook("gigs.fully_synced")
+        PayrollAccount.last.reload
+      end
+
+      it "does not re-fetch the report when duplicate webhooks arrive after the sync" do
+        cbv_flow.update!(generic: true, applicant_information_completed_at: nil)
+        cbv_flow.cbv_applicant.update!(first_name: nil, last_name: nil, case_number: nil, date_of_birth: nil)
+
+        fetches = 0
+        allow_any_instance_of(Aggregators::AggregatorReports::ArgyleReport)
+          .to receive(:fetch).and_wrap_original { |m, *a| fetches += 1; m.call(*a) }
+
+        run_full_sync
+        expect(fetches).to eq(1)
+
+        # The report verdict stays `unknown` while applicant data is outstanding,
+        # so the short-circuit has to key off the sync outcome instead.
+        process_webhook("paystubs.fully_synced")
+        process_webhook("gigs.fully_synced")
+
+        expect(fetches).to eq(1)
+      end
+
+      context "when the partner still has applicant information to collect" do
+        let(:cbv_flow) do
+          create(:cbv_flow, :generic, argyle_user_id: "abc-def-ghi",
+                 cbv_applicant: create(:cbv_applicant, :blank))
+        end
+
+        it "marks the sync finished without waiting on the applicant" do
+          expect(run_full_sync).to be_sync_succeeded
+        end
+
+        it "leaves the report verdict for the applicant-information step" do
+          expect(run_full_sync).to be_report_unknown
+        end
+      end
+
+      context "when there is nothing left to collect from the applicant" do
+        it "decides both the sync and the report verdict straight away" do
+          account = run_full_sync
+
+          expect(account).to be_sync_succeeded
+          expect(account).not_to be_report_unknown
+        end
+      end
+
+      it "marks the report not useful when the necessary jobs did not succeed" do
+        allow_any_instance_of(PayrollAccount::Argyle).to receive(:necessary_jobs_succeeded?).and_return(false)
+
+        process_webhook("accounts.connected")
+        process_webhook("identities.added")
+        process_webhook("users.fully_synced")
+        process_webhook("paystubs.fully_synced")
+        process_webhook("gigs.fully_synced")
+        account = PayrollAccount.last.reload
+
+        expect(account).to be_sync_failed
+        expect(account).to be_report_not_useful
+      end
+
+      it "saves neither status when deciding the verdict raises, so a later webhook retries" do
+        process_webhook("accounts.connected")
+        process_webhook("identities.added")
+        process_webhook("users.fully_synced")
+        process_webhook("paystubs.fully_synced")
+
+        allow_any_instance_of(Aggregators::AccountReportService).to receive(:validate).and_raise("boom")
+        expect { process_webhook("gigs.fully_synced") }.to raise_error("boom")
+
+        account = PayrollAccount.last.reload
+        expect(account).to be_sync_in_progress
+        expect(account).to be_report_unknown
+
+        allow_any_instance_of(Aggregators::AccountReportService).to receive(:validate).and_call_original
+        process_webhook("gigs.fully_synced")
+
+        account.reload
+        expect(account).to be_sync_succeeded
+        expect(account).to be_report_useful
+      end
+
+      # Argyle can report a system_error on accounts.updated during an ongoing
+      # refresh, after the sync already succeeded with a useful report.
+      it "marks a useful report not useful when a later system_error fails the sync" do
+        process_webhook("accounts.connected")
+        process_webhook("identities.added")
+        process_webhook("users.fully_synced")
+        process_webhook("paystubs.fully_synced")
+        process_webhook("gigs.fully_synced")
+        account = PayrollAccount.last
+        expect(account.reload).to be_usable
+
+        process_webhook("accounts.updated", variant: :system_error)
+
+        account.reload
+        expect(account).to be_sync_failed
+        expect(account).to be_report_not_useful
+        expect(account).not_to be_usable
+        expect(cbv_flow.accounts_with_required_data).to be_empty
+      end
     end
 
     it "results in a fully synced payroll account" do
@@ -436,7 +548,7 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
                 .and_return(argyle_load_relative_json_file("empty", "request_account.json"))
       end
 
-      it 'tracks an ApplicantReportFailedUsefulRequirements event and marks sync as failed' do
+      it 'tracks an ApplicantReportFailedUsefulRequirements event and marks the report unusable' do
         process_webhook("accounts.connected")
         process_webhook("identities.added")
         process_webhook("users.fully_synced")
@@ -460,8 +572,10 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
 
         process_webhook("paystubs.partially_synced")
 
-        payroll_account = PayrollAccount.last
-        expect(payroll_account.reload.sync_failed?).to be(true)
+        # The sync itself completed; it is the report that is unusable.
+        payroll_account = PayrollAccount.last.reload
+        expect(payroll_account).to be_sync_succeeded
+        expect(payroll_account).to be_report_not_useful
       end
     end
 
@@ -577,7 +691,7 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
   end
 
   describe 'when receiving webhooks to remove an Argyle Account' do
-    let(:cbv_flow) { create(:cbv_flow, argyle_user_id: "abc-def-ghi") }
+    let(:cbv_flow) { create(:cbv_flow, :applicant_information_completed, argyle_user_id: "abc-def-ghi") }
     # Use the account ID from the "sarah" fixture so pick_employment can find matching employments
     let(:argyle_account_id) { '01956d5f-cb8d-af2f-9232-38bce8531f58' }
     let(:fake_event_logger) { instance_double(GenericEventTracker) }

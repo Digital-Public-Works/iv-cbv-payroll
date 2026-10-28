@@ -26,7 +26,7 @@ class Cbv::AddJobsController < Cbv::BaseController
     if params[:additional_jobs] == "true"
       cbv_flow_employer_search_path
     elsif params[:additional_jobs] == "false"
-      cbv_flow_other_job_path
+      helpers.allow_outside_jobs? ? cbv_flow_other_job_path : cbv_flow_applicant_information_path
     end
   end
 end

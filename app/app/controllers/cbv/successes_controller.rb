@@ -8,12 +8,17 @@ class Cbv::SuccessesController < Cbv::BaseController
 
   private
 
+  # the link applicants can share with others
   def invitation_link
-    if @cbv_flow.cbv_flow_invitation.present?
-      @cbv_flow.cbv_flow_invitation.to_url(origin: "shared")
-    else
+    if share_generic_link?
       @cbv_flow.to_generic_url(origin: "shared")
+    else
+      @cbv_flow.cbv_flow_invitation.to_url(origin: "shared")
     end
+  end
+
+  def share_generic_link?
+    @cbv_flow.generic? || @cbv_flow.cbv_flow_invitation.blank?
   end
 
   def track_accessed_success_event

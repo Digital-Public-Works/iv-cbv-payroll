@@ -59,6 +59,51 @@ RSpec.describe Cbv::SuccessesController do
         expect(survey_link["href"]).to eq(feedbacks_path(form: "survey", referer: cbv_flow_success_url))
       end
 
+      it "shows the default what's next copy" do
+        get :show
+        expect(response.body).to include(I18n.t("cbv.successes.show.whats_next_1_title.default"))
+      end
+
+      context "when the agency does not encourage link sharing" do
+        before do
+          stub_client_agency_config_value("sandbox", "encourage_link_sharing", false)
+        end
+
+        it "does not show the share link section" do
+          get :show
+          expect(response.body).not_to include(I18n.t("cbv.successes.show.share_invitation_link_title"))
+          expect(response.body).not_to have_selector('button[data-copy-link-target="copyLinkButton"]')
+          expect(response.body).not_to have_selector("input#invitation_link")
+        end
+      end
+
+      context "when the partner overrides the what's next copy" do
+        before do
+          partner = PartnerConfig.find_by(partner_id: "sandbox")
+          {
+            "cbv.successes.show.whats_next_1_title" => "Complete your pre-application.",
+            "cbv.successes.show.whats_next_1_li_1" => "Your employment verification is complete.",
+            "cbv.successes.show.whats_next_1_li_2_html" => "Go to %{website_link}.",
+            "cbv.successes.show.whats_next_1_link_label" => "your profile"
+          }.each do |key, value|
+            PartnerTranslation.create!(partner_config: partner, locale: "en", key: key, value: value)
+          end
+          stub_client_agency_config_value("sandbox", "agency_contact_website", "https://example.com/profile")
+        end
+
+        it "shows the partner's copy with a link to the configured portal URL" do
+          get :show
+          page = Nokogiri::HTML(response.body)
+
+          expect(response.body).to include("Complete your pre-application.")
+          expect(response.body).to include("Your employment verification is complete.")
+          expect(response.body).not_to include(I18n.t("cbv.successes.show.whats_next_1_title.default"))
+          link = page.at_css('a[href="https://example.com/profile"]')
+          expect(link).to be_present
+          expect(link.text).to include("your profile")
+        end
+      end
+
       describe "#invitation_link" do
         context "in any environment" do
           before do
@@ -85,16 +130,32 @@ RSpec.describe Cbv::SuccessesController do
           end
         end
 
-        context "when the cbv_flow originates from a generic link" do
+        context "when the cbv_flow began at a generic link" do
+          let(:generic_cbv_flow) { create(:cbv_flow, :generic, confirmation_code: "ABC12345") }
+
+          before do
+            session[:cbv_flow_id] = generic_cbv_flow.id
+            stub_client_agency_config_value("sandbox", "agency_domain", "demo.divt.app")
+          end
+
+          it "shares the partner's generic /start link rather than this applicant's invitation" do
+            get :show
+
+            expect(response.body).to include("https://demo.divt.app/en/start?origin=shared")
+            expect(response.body).not_to include(generic_cbv_flow.cbv_flow_invitation.auth_token)
+          end
+        end
+
+        context "when the cbv_flow has no invitation at all" do
           before do
             session[:cbv_flow_id] = cbv_flow_without_invitation.id
             stub_client_agency_config_value("sandbox", "agency_domain", "demo.divt.app")
           end
 
-          it "generates a simplified generic link with shared origin" do
+          it "generates a generic link with shared origin" do
             get :show
 
-            expected_url = "https://demo.divt.app/en?origin=shared"
+            expected_url = "https://demo.divt.app/en/start?origin=shared"
             expect(response.body).to include(expected_url)
           end
 
@@ -104,11 +165,10 @@ RSpec.describe Cbv::SuccessesController do
               stub_client_agency_config_value("sandbox", "agency_domain", nil)
             end
 
-            it "generates a generic link with shared origin" do
+            it "offers no link to share, since the partner has no subdomain to send people to" do
               get :show
 
-              expected_url = "http://localhost/en/cbv/links/sandbox"
-              expect(response.body).to include(expected_url)
+              expect(response.body).not_to have_selector("input#invitation_link")
             end
           end
         end
