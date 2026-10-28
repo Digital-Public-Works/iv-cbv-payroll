@@ -63,7 +63,8 @@ module IvCbvPayroll
 
     # This is tech debt. Supported providers is a required env variable, but should be configured elsewhere.
     config.supported_providers = (ENV["SUPPORTED_PROVIDERS"] || "pinwheel")&.split(",")&.map(&:to_sym)
-    config.cbv_session_expires_after = 30.minutes
+    # TODO: CRITICAL reset this to 30.minutes - being extended temporarily due to keyboard operability issue with session timeout modal
+    config.cbv_session_expires_after = 120.minutes
 
     config.max_paystubs_per_account = 1000
   end
