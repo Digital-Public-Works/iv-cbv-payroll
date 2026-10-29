@@ -39,4 +39,15 @@ module "dev_config" {
 
   # NewRelic configuration for metrics
   newrelic_account_id = "4619676"
+
+  # Partner-config admin API for the vmi-admin portal. Turn on after prod's
+  # admin API is applied: source_vpc_endpoint_id is prod's
+  # admin_api_vpc_endpoint_id output (the portal runs in prod's VPC). Needs SSM
+  # /service/app-demo/admin-api-service-secret and the ExternalId parameter below.
+  # admin_api = {
+  #   settings_writable         = true
+  #   portal_task_role_arn      = "arn:aws:iam::850027065051:role/vmi-admin-task"
+  #   source_vpc_endpoint_id    = "vpce-<prod admin_api_vpc_endpoint_id>"
+  #   invoker_external_id_param = "/service/app-demo/admin-api-invoker-external-id"
+  # }
 }

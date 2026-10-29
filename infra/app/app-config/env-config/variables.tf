@@ -146,3 +146,26 @@ variable "enable_aws_backup" {
   type        = bool
   default     = false
 }
+
+variable "admin_api" {
+  description = <<EOT
+    Turns on the partner-config admin API for the vmi-admin portal: the service
+    secret (SSM /service/<app>-<env>/admin-api-service-secret, created by hand
+    first), the settings write policy, and the private API gateway
+    (modules/admin-api-gateway). Null leaves the admin API off.
+
+    settings_writable: true in demo; false in prod (settings change only by promotion).
+    portal_task_role_arn: the portal's ECS task role (vmi-admin/infra/identity).
+    source_vpc_endpoint_id: null creates the execute-api endpoint in this VPC (prod,
+      the portal's VPC); set it to prod's endpoint id for demo.
+    invoker_external_id_param: cross-account only (demo): SSM parameter holding the
+      ExternalId the portal sends when it assumes the invoker role.
+  EOT
+  type = object({
+    settings_writable         = bool
+    portal_task_role_arn      = string
+    source_vpc_endpoint_id    = optional(string)
+    invoker_external_id_param = optional(string)
+  })
+  default = null
+}

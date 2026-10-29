@@ -1,0 +1,50 @@
+{
+  "comment": "Known-good VMI-ADMIN-HMAC-V1 vectors. Shared with the vmi-admin portal; both signers must reproduce every canonical_string and signature exactly. Generated independently of the Ruby implementation.",
+  "secret": "test-admin-api-secret",
+  "vectors": [
+    {
+      "name": "GET with no query or body",
+      "method": "GET",
+      "path": "/api/admin/v1/partners",
+      "query": "",
+      "timestamp": "1760889600",
+      "body": "",
+      "actor": "operator@digitalpublicworks.org",
+      "canonical_string": "VMI-ADMIN-HMAC-V1\nGET\n/api/admin/v1/partners\n1760889600\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\noperator@digitalpublicworks.org",
+      "signature": "f7db801c92bc3291f4d6821ea31521fccaf3d35f33294adeba4f4e3f7459e953"
+    },
+    {
+      "name": "GET with unsorted query",
+      "method": "get",
+      "path": "/api/admin/v1/partners",
+      "query": "b=2&a=1&a=0",
+      "timestamp": "1760889600",
+      "body": "",
+      "actor": "operator@digitalpublicworks.org",
+      "canonical_string": "VMI-ADMIN-HMAC-V1\nGET\n/api/admin/v1/partners?a=0&a=1&b=2\n1760889600\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\noperator@digitalpublicworks.org",
+      "signature": "1a52cde692d3508222e0a80f674620bcf24df672effe5fabb1abf025fcb53880"
+    },
+    {
+      "name": "POST with JSON body",
+      "method": "POST",
+      "path": "/api/admin/v1/partners/sandbox/validate",
+      "query": "",
+      "timestamp": "1760889601",
+      "body": "{\"settings\":{\"name\":\"Sandbox\"}}",
+      "actor": "approver@digitalpublicworks.org",
+      "canonical_string": "VMI-ADMIN-HMAC-V1\nPOST\n/api/admin/v1/partners/sandbox/validate\n1760889601\nf2882a73bdaed146fbe620d2a11baa7bd4f373c89eeebf155136b4bdbcea0600\napprover@digitalpublicworks.org",
+      "signature": "88b53873b10c44015f8456de505c83a12535b8d816d74b7a54b2547a1b511b31"
+    },
+    {
+      "name": "Percent-encoded query is sorted raw",
+      "method": "GET",
+      "path": "/api/admin/v1/audit",
+      "query": "q=a%20b&after=2026-10-19T00%3A00%3A00Z",
+      "timestamp": "1760889602",
+      "body": "",
+      "actor": "operator@digitalpublicworks.org",
+      "canonical_string": "VMI-ADMIN-HMAC-V1\nGET\n/api/admin/v1/audit?after=2026-10-19T00%3A00%3A00Z&q=a%20b\n1760889602\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\noperator@digitalpublicworks.org",
+      "signature": "0c9b9dd2a31caae793427ce6f32d1b9d31e039af136519597e879ee2895970b8"
+    }
+  ]
+}

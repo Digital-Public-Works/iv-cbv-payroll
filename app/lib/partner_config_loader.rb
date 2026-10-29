@@ -65,6 +65,10 @@ class PartnerConfigLoader
   # DB columns to assign on the model — the union of both partitions.
   PARTNER_CONFIG_ATTRS = (SETTINGS_ATTRS | CREDENTIAL_ATTRS).freeze
 
+  # Sections apply_scoped! can reconcile.
+  SETTINGS_SECTIONS = %i[application_attributes attribute_usages translations].freeze
+  ALL_SECTIONS = (SETTINGS_SECTIONS + %i[transmission_methods]).freeze
+
   REQUIRED_ATTRS = %w[partner_id name timezone pay_income_days_w2 pay_income_days_gig partner_identifier_name].freeze
 
   # Credential attrs that must be present (with a valid value) in every env.
@@ -86,6 +90,25 @@ class PartnerConfigLoader
   }.freeze
   BLANK_ALLOWED_KEYS = %w[path_prefix].freeze
 
+  # Optional config keys each transmitter reads, and the keys that hold secrets
+  # (stored encrypted by default). Not enforced by validation; declared here,
+  # next to REQUIRED_CREDENTIAL_KEYS, so the admin API's schema endpoint can
+  # describe every method's form. Transmission config keys can't be
+  # introspected from the database (a generic key/value bag).
+  OPTIONAL_CREDENTIAL_KEYS = {
+    "sftp" => %w[port],
+    "webhook" => %w[],
+    "json" => %w[include_report_pdf custom_headers api_key],
+    "shared_email" => %w[],
+    "encrypted_s3" => %w[bucket region aws_access_key_id aws_secret_access_key endpoint force_path_style],
+    "unencrypted_s3" => %w[bucket region aws_access_key_id aws_secret_access_key endpoint force_path_style]
+  }.freeze
+  SECRET_CREDENTIAL_KEYS = %w[password api_key aws_secret_access_key].freeze
+
+  # Methods whose path_prefix is used as a remote directory; a leading "/" breaks
+  # remote_directory_for at transmission time, so it's rejected up front.
+  PATH_PREFIX_METHODS = %w[sftp unencrypted_s3 encrypted_s3].freeze
+
   # Sentinel written by .export in place of an encrypted secret value. It is a
   # human-readable placeholder, NOT a real value — applying it verbatim is a
   # mistake, so #validate_no_masked_placeholders rejects it.
@@ -105,7 +128,12 @@ class PartnerConfigLoader
   # claiming one of these would never receive traffic — DNS for the
   # subdomain points elsewhere (e.g. `static` is the CloudFront-fronted
   # static-assets CDN).
-  RESERVED_DOMAIN_PREFIXES = %w[static].freeze
+  # `admin` is the vmi-admin portal's host (admin.<domain>), routed to the
+  # portal by the load balancer before VMI sees it.
+  RESERVED_DOMAIN_PREFIXES = %w[static admin].freeze
+
+  # partner_ids that would collide with infrastructure hosts.
+  RESERVED_PARTNER_IDS = %w[admin].freeze
 
   VALID_TRANSMISSION_METHODS = PartnerTransmissionMethod.method_types.keys.freeze
   VALID_DATA_TYPES = PartnerApplicationAttribute.data_types.keys.freeze
@@ -119,14 +147,32 @@ class PartnerConfigLoader
 
   attr_reader :yaml_data, :settings_data, :credentials_data, :errors, :warnings
 
+  # Errors and warnings as { message:, path: } hashes, where path points at the
+  # offending field (e.g. "application_attributes[2].validation_regex"). The
+  # admin API returns these; #errors / #warnings keep the plain messages.
+  attr_reader :error_details, :warning_details
+
+  # [method_type, key] pairs whose submitted value is MASKED_PLACEHOLDER and
+  # which are stored encrypted: "keep the stored secret" (see #keep_stored_secrets!).
+  attr_reader :kept_secrets
+
   def initialize(settings_source, credentials_source)
     @settings_source = settings_source
     @credentials_source = credentials_source
     @errors = []
     @warnings = []
+    @error_details = []
+    @warning_details = []
+    @kept_secrets = Set.new
     @yaml_data = nil
     @settings_data = nil
     @credentials_data = nil
+  end
+
+  # A loader over documents that are already parsed (the admin API's JSON
+  # bodies, or a document built from the database), instead of sources to fetch.
+  def self.from_documents(settings, credentials)
+    new(nil, nil).load_documents!(settings, credentials)
   end
 
   # ---------------------------------------------------------------------------
@@ -144,6 +190,38 @@ class PartnerConfigLoader
     raise SourceError, "Invalid YAML: #{e.message}"
   end
 
+  def load_documents!(settings, credentials)
+    @settings_data = settings.to_h.with_indifferent_access
+    @credentials_data = credentials.to_h.with_indifferent_access
+    @yaml_data = @settings_data.merge(@credentials_data)
+    self
+  end
+
+  # keep what is present for secrets if the configured masked placholder is submitted, do not overwrite.
+  # overwrite if something else is submitted
+  def keep_stored_secrets!(partner_config)
+    raise "Call load! first" unless @yaml_data
+    @kept_secrets = Set.new
+    return self if partner_config.nil?
+
+    Array(@yaml_data[:transmission_methods]).each do |tm|
+      next unless tm.respond_to?(:keys)
+      Array(tm[:configs]).each do |tc|
+        next unless tc.respond_to?(:keys) && tc[:value].to_s == MASKED_PLACEHOLDER
+        next if tc.key?(:encrypted) && tc[:encrypted] == false
+
+        stored = partner_config.partner_transmission_methods.find { |m| m.method_type == tm[:method_type].to_s }
+        config = stored&.partner_transmission_configs&.find { |c| c.key == tc[:key].to_s }
+        @kept_secrets << [ tm[:method_type].to_s, tc[:key].to_s ] if config&.is_encrypted
+      end
+    end
+    self
+  end
+
+  def kept_secret?(method_type, key)
+    @kept_secrets.include?([ method_type.to_s, key.to_s ])
+  end
+
   # ---------------------------------------------------------------------------
   # Validation
   # ---------------------------------------------------------------------------
@@ -152,6 +230,13 @@ class PartnerConfigLoader
     raise "Call load! first" unless @yaml_data
     @errors = []
     @warnings = []
+    @error_details = []
+    @warning_details = []
+
+    # Later checks index into these sections; stop before they'd raise on a
+    # wrongly shaped document (e.g. a list where a mapping belongs).
+    validate_shapes
+    return self unless valid?
 
     validate_partition
     validate_partner_id_match
@@ -164,6 +249,8 @@ class PartnerConfigLoader
     validate_no_masked_placeholders
     validate_pay_income_days
     validate_domain
+    validate_reserved_partner_id
+    validate_path_prefixes
     validate_application_attributes
     validate_attribute_usages
     validate_validation_regexes
@@ -181,29 +268,54 @@ class PartnerConfigLoader
   # Apply (upsert DB to match the merged config)
   # ---------------------------------------------------------------------------
 
+  # Upserts the whole partner: every column, then a destructive reconcile of
+  # every section (anything not in the documents is deleted). Used by the rake
+  # task and by admin-API imports of both documents.
   def apply!
+    apply_scoped!(scalar_keys: PARTNER_CONFIG_ATTRS, sections: ALL_SECTIONS)
+  end
+
+  # Settings only: settings columns and sections. Credentials (argyle mode,
+  # report recipients, transmission methods and their ciphertext) are left as
+  # they are. Used by promotion and by settings-only imports; validate against
+  # the target's current credentials first.
+  def apply_settings!
+    apply_scoped!(scalar_keys: SETTINGS_ATTRS, sections: SETTINGS_SECTIONS)
+  end
+
+  # Applies only the named columns and sections. Anything not named is left
+  # untouched, including columns this loader doesn't know about. The admin
+  # API's partial updates use this; the documents must still be complete
+  # enough to validate.
+  def apply_scoped!(scalar_keys:, sections:)
     raise "Call load! and validate! first" unless @yaml_data
     raise ValidationError, "Cannot apply invalid config:\n  #{@errors.join("\n  ")}" unless valid?
+    unknown = sections.map(&:to_sym) - ALL_SECTIONS
+    raise ArgumentError, "Unknown sections: #{unknown.join(', ')}" if unknown.any?
 
     partner_id = @yaml_data[:partner_id]
-    changes = { config: nil, transmission_methods: { created: 0, updated: 0, deleted: 0 },
-                application_attributes: { created: 0, updated: 0, deleted: 0 },
-                attribute_usages: { created: 0, updated: 0, deleted: 0 },
-                translations: { created: 0, updated: 0, deleted: 0 } }
+    empty = { created: 0, updated: 0, deleted: 0 }
+    changes = { config: nil, transmission_methods: empty.dup, application_attributes: empty.dup,
+                attribute_usages: empty.dup, translations: empty.dup }
 
     ActiveRecord::Base.transaction do
       pc = PartnerConfig.find_or_initialize_by(partner_id: partner_id)
       is_new = pc.new_record?
 
-      config_attrs = @yaml_data.slice(*PARTNER_CONFIG_ATTRS)
+      config_attrs = @yaml_data.slice(*(PARTNER_CONFIG_ATTRS & scalar_keys.map(&:to_s)))
       pc.assign_attributes(config_attrs)
       changes[:config] = is_new ? :created : (pc.changed? ? :updated : :unchanged)
       pc.save!
 
-      changes[:transmission_methods] = reconcile_transmission_methods(pc)
-      changes[:application_attributes] = reconcile_application_attributes(pc)
-      changes[:attribute_usages] = reconcile_attribute_usages(pc)
-      changes[:translations] = reconcile_translations(pc)
+      changes[:transmission_methods] = reconcile_transmission_methods(pc) if sections.include?(:transmission_methods)
+      changes[:application_attributes] = reconcile_application_attributes(pc) if sections.include?(:application_attributes)
+      changes[:attribute_usages] = reconcile_attribute_usages(pc) if sections.include?(:attribute_usages)
+      changes[:translations] = reconcile_translations(pc) if sections.include?(:translations)
+
+      # partner_configs.updated_at is the partner's version token (the admin
+      # API's concurrency check), so a change to any section moves it.
+      section_changed = changes.except(:config).values.any? { |c| c.values.sum.positive? }
+      pc.touch if changes[:config] == :unchanged && section_changed
     end
 
     ClientAgencyConfig.reset!
@@ -219,13 +331,17 @@ class PartnerConfigLoader
   # values are masked with MASKED_PLACEHOLDER so an export never leaks secrets;
   # the resulting credentials document is therefore a snapshot/skeleton, not a
   # re-appliable file (masked values must be replaced with the real secret).
-  def self.export(partner_id)
+  #
+  # include_secrets: true decrypts them instead, for backups that must re-apply
+  # as-is (the admin API's "export with secrets"). The rake task never asks for it.
+  def self.export(partner_id, include_secrets: false)
+    # Rows are ordered by id so the same config always exports identically.
     pc = PartnerConfig.find_by!(partner_id: partner_id)
 
     settings = {}
     SETTINGS_ATTRS.each { |attr| settings[attr] = pc.send(attr) }
 
-    settings["application_attributes"] = pc.partner_application_attributes.map do |attr|
+    settings["application_attributes"] = pc.partner_application_attributes.order(:id).map do |attr|
       {
         "name" => attr.name,
         "description" => attr.description,
@@ -256,11 +372,14 @@ class PartnerConfigLoader
     credentials = {}
     CREDENTIAL_ATTRS.each { |attr| credentials[attr] = pc.send(attr) }
 
-    credentials["transmission_methods"] = pc.partner_transmission_methods.map do |ptm|
+    credentials["transmission_methods"] = pc.partner_transmission_methods.order(:id).map do |ptm|
       method_data = { "method_type" => ptm.method_type }
-      method_data["configs"] = ptm.partner_transmission_configs.map do |tc|
+      method_data["configs"] = ptm.partner_transmission_configs.order(:id).map do |tc|
         entry = { "key" => tc.key, "encrypted" => tc.is_encrypted }
-        entry["value"] = tc.is_encrypted ? MASKED_PLACEHOLDER : tc[:value]
+        entry["value"] = if !tc.is_encrypted then tc[:value]
+                         elsif include_secrets then tc.value
+                         else MASKED_PLACEHOLDER
+                         end
         entry
       end
       method_data
@@ -270,6 +389,16 @@ class PartnerConfigLoader
   end
 
   private
+
+  def add_error(message, path = nil)
+    @errors << message
+    @error_details << { message: message, path: path }.compact
+  end
+
+  def add_warning(message, path = nil)
+    @warnings << message
+    @warning_details << { message: message, path: path }.compact
+  end
 
   def parse(raw)
     YAML.safe_load(raw, permitted_classes: [ Symbol ]).to_h.with_indifferent_access
@@ -299,35 +428,60 @@ class PartnerConfigLoader
   # Validation helpers
   # ---------------------------------------------------------------------------
 
+  def validate_shapes
+    {
+      "application_attributes" => Array, "transmission_methods" => Array, "translations" => Hash
+    }.merge(ATTRIBUTE_USAGE_SECTIONS.keys.index_with { Array }).each do |section, type|
+      value = @yaml_data[section]
+      next if value.nil?
+      unless value.is_a?(type)
+        add_error("#{section} must be a #{type == Array ? 'list' : 'mapping'}", section)
+        next
+      end
+
+      entries = type == Array ? value.each_with_index.map { |v, i| [ "#{section}[#{i}]", v ] } : value.map { |k, v| [ "#{section}.#{k}", v ] }
+      entries.each do |path, entry|
+        add_error("#{path} must be a mapping", path) unless entry.is_a?(Hash) || (type == Hash && entry.nil?)
+      end
+    end
+
+    Array(@yaml_data[:transmission_methods]).each_with_index do |tm, i|
+      next unless tm.is_a?(Hash) && !tm[:configs].nil?
+      unless tm[:configs].is_a?(Array) && tm[:configs].all? { |c| c.is_a?(Hash) }
+        add_error("transmission_methods[#{i}].configs must be a list of mappings", "transmission_methods[#{i}]")
+      end
+    end
+  end
+
   # Enforce the settings/credentials partition at the top level: a key found in
   # the wrong document fails loudly (so a credential can't hide in the settings
   # document, or a shared setting drift into a per-env file), and an entirely
   # unknown key is rejected as a typo/stale format.
   def validate_partition
     (@settings_data.keys.map(&:to_s) - SETTINGS_TOP_LEVEL).sort.each do |key|
-      @errors << if CREDENTIAL_TOP_LEVEL.include?(key)
-                   "Settings file contains credential key '#{key}' (belongs in the credentials file)"
-                 else
-                   "Settings file: unknown top-level key '#{key}'"
-                 end
+      add_error(if CREDENTIAL_TOP_LEVEL.include?(key)
+                  "Settings file contains credential key '#{key}' (belongs in the credentials file)"
+                else
+                  "Settings file: unknown top-level key '#{key}'"
+                end, key)
     end
 
     (@credentials_data.keys.map(&:to_s) - CREDENTIAL_TOP_LEVEL).sort.each do |key|
-      @errors << if SETTINGS_TOP_LEVEL.include?(key)
-                   "Credentials file contains settings key '#{key}' (belongs in the settings file)"
-                 else
-                   "Credentials file: unknown top-level key '#{key}'"
-                 end
+      add_error(if SETTINGS_TOP_LEVEL.include?(key)
+                  "Credentials file contains settings key '#{key}' (belongs in the settings file)"
+                else
+                  "Credentials file: unknown top-level key '#{key}'"
+                end, key)
     end
   end
 
   def validate_partner_id_match
     settings_id = @settings_data[:partner_id]
     credentials_id = @credentials_data[:partner_id]
-    @errors << "Missing partner_id in settings file" if settings_id.blank?
-    @errors << "Missing partner_id in credentials file" if credentials_id.blank?
+    add_error("Missing partner_id in settings file", "partner_id") if settings_id.blank?
+    add_error("Missing partner_id in credentials file", "partner_id") if credentials_id.blank?
     if settings_id.present? && credentials_id.present? && settings_id.to_s != credentials_id.to_s
-      @errors << "partner_id mismatch: settings='#{settings_id}' vs credentials='#{credentials_id}'"
+      add_error("partner_id mismatch: settings='#{settings_id}' vs credentials='#{credentials_id}'", "partner_id")
     end
   end
 
@@ -339,12 +493,12 @@ class PartnerConfigLoader
     Array(@yaml_data[:transmission_methods]).each_with_index do |tm, i|
       next unless tm.respond_to?(:keys)
       (tm.keys.map(&:to_s) - TRANSMISSION_METHOD_KEYS).sort.each do |key|
-        @errors << "transmission_methods[#{i}]: unknown key '#{key}'"
+        add_error("transmission_methods[#{i}]: unknown key '#{key}'", "transmission_methods[#{i}]")
       end
       Array(tm[:configs]).each_with_index do |tc, j|
         next unless tc.respond_to?(:keys)
         (tc.keys.map(&:to_s) - TRANSMISSION_CONFIG_KEYS).sort.each do |key|
-          @errors << "transmission_methods[#{i}].configs[#{j}]: unknown key '#{key}'"
+          add_error("transmission_methods[#{i}].configs[#{j}]: unknown key '#{key}'", "transmission_methods[#{i}].configs[#{j}]")
         end
       end
     end
@@ -352,7 +506,7 @@ class PartnerConfigLoader
     Array(@yaml_data[:application_attributes]).each_with_index do |attr, i|
       next unless attr.respond_to?(:keys)
       (attr.keys.map(&:to_s) - APPLICATION_ATTRIBUTE_KEYS).sort.each do |key|
-        @errors << "application_attributes[#{i}]: unknown key '#{key}'"
+        add_error("application_attributes[#{i}]: unknown key '#{key}'", "application_attributes[#{i}]")
       end
     end
 
@@ -360,7 +514,7 @@ class PartnerConfigLoader
       Array(@yaml_data[section.to_sym]).each_with_index do |entry, i|
         next unless entry.respond_to?(:keys)
         (entry.keys.map(&:to_s) - ATTRIBUTE_USAGE_KEYS).sort.each do |key|
-          @errors << "#{section}[#{i}]: unknown key '#{key}'"
+          add_error("#{section}[#{i}]: unknown key '#{key}'", "#{section}[#{i}]")
         end
       end
     end
@@ -368,41 +522,41 @@ class PartnerConfigLoader
 
   def validate_required_attrs
     REQUIRED_ATTRS.each do |attr|
-      @errors << "Missing required attribute: #{attr}" if @yaml_data[attr].blank?
+      add_error("Missing required attribute: #{attr}", attr) if @yaml_data[attr].blank?
     end
   end
 
   def validate_required_credential_attrs
     env = @credentials_data[:argyle_environment]
     if env.blank?
-      @errors << "Missing required credential: argyle_environment"
+      add_error("Missing required credential: argyle_environment", "argyle_environment")
     elsif !VALID_ARGYLE_ENVIRONMENTS.include?(env.to_s)
-      @errors << "Invalid argyle_environment '#{env}'. Valid: #{VALID_ARGYLE_ENVIRONMENTS.join(', ')}"
+      add_error("Invalid argyle_environment '#{env}'. Valid: #{VALID_ARGYLE_ENVIRONMENTS.join(', ')}", "argyle_environment")
     end
   end
 
   def validate_transmission_methods
     if @yaml_data.key?(:transmission_method)
-      @errors << "Use 'transmission_methods' (plural), not 'transmission_method'"
+      add_error("Use 'transmission_methods' (plural), not 'transmission_method'", "transmission_method")
       return
     end
 
     methods = @yaml_data[:transmission_methods]
     if methods.blank?
-      @errors << "At least one transmission method is required"
+      add_error("At least one transmission method is required", "transmission_methods")
       return
     end
 
     methods.each_with_index do |tm, i|
       method_type = tm[:method_type]
       if method_type.blank?
-        @errors << "transmission_methods[#{i}]: missing 'method_type'"
+        add_error("transmission_methods[#{i}]: missing 'method_type'", "transmission_methods[#{i}]")
       elsif !VALID_TRANSMISSION_METHODS.include?(method_type.to_s)
-        @errors << "transmission_methods[#{i}]: invalid method_type '#{method_type}'. Valid: #{VALID_TRANSMISSION_METHODS.join(', ')}"
+        add_error("transmission_methods[#{i}]: invalid method_type '#{method_type}'. Valid: #{VALID_TRANSMISSION_METHODS.join(', ')}", "transmission_methods[#{i}]")
       end
 
       (tm[:configs] || []).each_with_index do |tc, j|
-        @errors << "transmission_methods[#{i}].configs[#{j}]: missing 'key'" if tc[:key].blank?
+        add_error("transmission_methods[#{i}].configs[#{j}]: missing 'key'", "transmission_methods[#{i}].configs[#{j}]") if tc[:key].blank?
       end
     end
   end
@@ -420,9 +574,9 @@ class PartnerConfigLoader
       values = Array(tm[:configs]).each_with_object({}) { |tc, h| h[tc[:key].to_s] = tc[:value] }
       required.each do |key|
         if !values.key?(key)
-          @errors << "transmission_methods[#{i}] (#{method_type}): missing required credential '#{key}'"
+          add_error("transmission_methods[#{i}] (#{method_type}): missing required credential '#{key}'", "transmission_methods[#{i}]")
         elsif BLANK_ALLOWED_KEYS.exclude?(key) && values[key].to_s.strip.empty?
-          @errors << "transmission_methods[#{i}] (#{method_type}): credential '#{key}' must not be blank"
+          add_error("transmission_methods[#{i}] (#{method_type}): credential '#{key}' must not be blank", "transmission_methods[#{i}]")
         end
       end
     end
@@ -449,7 +603,8 @@ class PartnerConfigLoader
     Array(@yaml_data[:transmission_methods]).each_with_index do |tm, i|
       Array(tm[:configs]).each_with_index do |tc, j|
         next unless tc[:value].to_s == MASKED_PLACEHOLDER
-        @errors << "transmission_methods[#{i}].configs[#{j}] (#{tc[:key]}): value is the masked placeholder #{MASKED_PLACEHOLDER}; replace it with the real secret before applying"
+        next if kept_secret?(tm[:method_type], tc[:key])
+        add_error("transmission_methods[#{i}].configs[#{j}] (#{tc[:key]}): value is the masked placeholder #{MASKED_PLACEHOLDER}; replace it with the real secret before applying", "transmission_methods[#{i}].configs[#{j}]")
       end
     end
   end
@@ -459,7 +614,7 @@ class PartnerConfigLoader
       val = @yaml_data[attr]
       next if val.blank? # already caught by required check
       unless VALID_PAY_INCOME_DAYS.include?(val.to_i)
-        @errors << "Invalid #{attr} '#{val}'. Valid: #{VALID_PAY_INCOME_DAYS.join(', ')}"
+        add_error("Invalid #{attr} '#{val}'. Valid: #{VALID_PAY_INCOME_DAYS.join(', ')}", attr)
       end
     end
   end
@@ -468,7 +623,25 @@ class PartnerConfigLoader
     domain = @yaml_data[:domain]
     return if domain.blank?
     if RESERVED_DOMAIN_PREFIXES.include?(domain.to_s.downcase)
-      @errors << "Invalid domain '#{domain}'. Reserved prefixes: #{RESERVED_DOMAIN_PREFIXES.join(', ')}"
+      add_error("Invalid domain '#{domain}'. Reserved prefixes: #{RESERVED_DOMAIN_PREFIXES.join(', ')}", "domain")
+    end
+  end
+
+  def validate_reserved_partner_id
+    partner_id = @yaml_data[:partner_id]
+    return if partner_id.blank?
+    if RESERVED_PARTNER_IDS.include?(partner_id.to_s.downcase)
+      add_error("Invalid partner_id '#{partner_id}'. Reserved: #{RESERVED_PARTNER_IDS.join(', ')}", "partner_id")
+    end
+  end
+
+  def validate_path_prefixes
+    Array(@yaml_data[:transmission_methods]).each_with_index do |tm, i|
+      next unless PATH_PREFIX_METHODS.include?(tm[:method_type].to_s)
+      Array(tm[:configs]).each_with_index do |tc, j|
+        next unless tc[:key].to_s == "path_prefix" && tc[:value].to_s.start_with?("/")
+        add_error("transmission_methods[#{i}] (#{tm[:method_type]}): path_prefix must not start with '/'", "transmission_methods[#{i}].configs[#{j}]")
+      end
     end
   end
 
@@ -476,12 +649,12 @@ class PartnerConfigLoader
     attrs = @yaml_data[:application_attributes] || []
     names = []
     attrs.each_with_index do |attr, i|
-      @errors << "application_attributes[#{i}]: missing 'name'" if attr[:name].blank?
+      add_error("application_attributes[#{i}]: missing 'name'", "application_attributes[#{i}].name") if attr[:name].blank?
       if attr[:data_type].present? && !VALID_DATA_TYPES.include?(attr[:data_type].to_s)
-        @errors << "application_attributes[#{i}] (#{attr[:name]}): invalid data_type '#{attr[:data_type]}'. Valid: #{VALID_DATA_TYPES.join(', ')}"
+        add_error("application_attributes[#{i}] (#{attr[:name]}): invalid data_type '#{attr[:data_type]}'. Valid: #{VALID_DATA_TYPES.join(', ')}", "application_attributes[#{i}].data_type")
       end
       if names.include?(attr[:name])
-        @errors << "application_attributes[#{i}]: duplicate name '#{attr[:name]}'"
+        add_error("application_attributes[#{i}]: duplicate name '#{attr[:name]}'", "application_attributes[#{i}].name")
       end
       names << attr[:name]
     end
@@ -497,13 +670,13 @@ class PartnerConfigLoader
       Array(@yaml_data[section.to_sym]).each_with_index do |entry, i|
         name = entry[:name].to_s
         if name.blank?
-          @errors << "#{section}[#{i}]: missing 'name'"
+          add_error("#{section}[#{i}]: missing 'name'", "#{section}[#{i}]")
           next
         end
         unless defined_names.include?(name)
-          @errors << "#{section}[#{i}]: '#{name}' is not defined in application_attributes"
+          add_error("#{section}[#{i}]: '#{name}' is not defined in application_attributes", "#{section}[#{i}]")
         end
-        @errors << "#{section}[#{i}]: duplicate name '#{name}'" if seen.include?(name)
+        add_error("#{section}[#{i}]: duplicate name '#{name}'", "#{section}[#{i}]") if seen.include?(name)
         seen << name
       end
     end
@@ -518,7 +691,7 @@ class PartnerConfigLoader
       begin
         Regexp.new(source.to_s)
       rescue RegexpError => e
-        @errors << "application_attributes[#{i}] (#{attr[:name]}): invalid validation_regex: #{e.message}"
+        add_error("application_attributes[#{i}] (#{attr[:name]}): invalid validation_regex: #{e.message}", "application_attributes[#{i}].validation_regex")
       end
     end
   end
@@ -529,7 +702,7 @@ class PartnerConfigLoader
     attrs = @yaml_data[:application_attributes] || []
     matching = attrs.find { |a| a[:name].to_s == name.to_s }
     if matching.nil?
-      @errors << "partner_identifier_name '#{name}' must be defined as an entry in application_attributes"
+      add_error("partner_identifier_name '#{name}' must be defined as an entry in application_attributes", "partner_identifier_name")
       return
     end
 
@@ -537,7 +710,7 @@ class PartnerConfigLoader
     # invitations auto created by generic does not require these - they will be collected later.
     usage = Array(@yaml_data[:invitation_attributes]).find { |u| u[:name].to_s == name.to_s }
     if usage && !usage[:required]
-      @errors << "partner_identifier_name '#{name}' must be required in invitation_attributes"
+      add_error("partner_identifier_name '#{name}' must be required in invitation_attributes", "invitation_attributes")
     end
   end
 
@@ -547,7 +720,7 @@ class PartnerConfigLoader
       locale_translations = translations[locale] || {}
       REQUIRED_TRANSLATION_KEYS.each do |key|
         unless locale_translations.key?(key)
-          @warnings << "Missing recommended translation for locale '#{locale}': #{key}"
+          add_warning("Missing recommended translation for locale '#{locale}': #{key}", "translations")
         end
       end
     end
@@ -578,6 +751,8 @@ class PartnerConfigLoader
       yaml_configs.each do |tc_data|
         value = tc_data[:value]
         existing = ptm.partner_transmission_configs.find_by(key: tc_data[:key])
+        next if existing && kept_secret?(method_type, tc_data[:key])
+
         if existing
           existing.update!(is_encrypted: tc_data.fetch(:encrypted, false), value: value)
           counts[:updated] += 1
