@@ -112,6 +112,9 @@ resource "aws_lb_listener_rule" "app_https_forward" {
 # public load balancer; only the private, IAM-authenticated API Gateway may
 # reach it. These rules run before the /* forward rules (priority 100) on both
 # listeners and answer with the same fixed 404 as the listener default.
+# Where the gateway exists (modules/admin-api-gateway), its priority-5 rule on
+# the HTTPS listener lets the admin path through for traffic from this VPC's
+# own addresses only, which is how the gateway's NLB arrives.
 # A post-deploy check (bin/check-admin-api-not-public) proves it in every
 # environment.
 resource "aws_lb_listener_rule" "admin_api_block_http" {
