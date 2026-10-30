@@ -97,28 +97,32 @@
       aria-labelledby="<%= @selected_tab == "payroll" ? "payroll_providers_tab" : "app_based_providers_tab" %>"
       class="grid-row grid-gap margin-top-2"
     >
-      <% (ProviderSearchService.new(@cbv_flow.client_agency_id).top_aggregator_options(@selected_tab)).each do |provider| %>
+      <% popular_providers = ProviderSearchService.new(@cbv_flow.client_agency_id).top_aggregator_options(@selected_tab) %>
+        <%# Each button is described as "<position> of <total>" via these spans, since not all screen readers announce group size on focus. %>
+        <span id="providers_total" class="display-none"><%= popular_providers.size %></span>
+      <% popular_providers.each_with_index do |provider, index| %>
         <div class="grid-col-4 tablet:grid-col-2 margin-top-2">
+          <span id="providers_position_<%= index %>" class="display-none"><%= t(".provider_position", position: index + 1) %></span>
           <button
             data-action="click->cbv-employer-search#select"
             data-id="<%= provider.provider_options.provider_id %>"
             data-name="<%= provider.name %>"
             data-response-type="<%= provider.provider_options.response_type %>"
             data-provider-name="<%= provider.provider_name %>"
-            aria-label="<%= provider.name %>"
             data-is-default-option="true"
             data-cbv-employer-search-target="employerButton"
             type="button"
             class="width-full height-full usa-button usa-button--outline box-shadow-gray"
+            aria-describedby="providers_position_<%= index %> providers_total"
           >
-            <figure class="margin-0 pointer-events-none">
+            <span class="display-block">
               <img
                 class="usa-icon--size-7 radius-pill width-6 height-6"
                 src="<%= provider.logo_url %>"
                 alt=""
               >
-              <figcaption class="margin-top-1"><%= provider.name %></figcaption>
-            </figure>
+              <span class="display-block margin-top-1"><%= provider.name %></span>
+            </span>
           </button>
         </div>
       <% end %>

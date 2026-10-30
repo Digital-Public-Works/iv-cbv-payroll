@@ -183,4 +183,57 @@ RSpec.describe ClientAgency do
       expect(ClientAgencyConfig::ClientAgency.new(partner_config).encourage_link_sharing).to be(false)
     end
   end
+
+  context "client-provided information flags" do
+    let(:partner_config) do
+      pc = PartnerConfig.create!(
+        partner_id: 'foo',
+        name: 'foo',
+        timezone: 'America/Los_Angeles',
+        argyle_environment: 'sandbox',
+        pay_income_days_w2: 90,
+        pay_income_days_gig: 182,
+        partner_identifier_name: 'case_number'
+      )
+      pc.partner_transmission_methods.create!(method_type: :shared_email)
+      pc
+    end
+
+    it "allows user comments and outside jobs by default" do
+      agency = ClientAgencyConfig::ClientAgency.new(partner_config)
+      expect(agency.allow_user_comment).to be(true)
+      expect(agency.allow_outside_jobs).to be(true)
+    end
+
+    it "reads both flags from the partner config" do
+      partner_config.update!(allow_user_comment: false, allow_outside_jobs: false)
+      agency = ClientAgencyConfig::ClientAgency.new(partner_config)
+      expect(agency.allow_user_comment).to be(false)
+      expect(agency.allow_outside_jobs).to be(false)
+    end
+
+    describe "#collects_client_provided_information?" do
+      it "is true when only user comments are allowed" do
+        partner_config.update!(allow_outside_jobs: false)
+        expect(ClientAgencyConfig::ClientAgency.new(partner_config).collects_client_provided_information?).to be(true)
+      end
+
+      it "is true when only outside jobs are asked about" do
+        partner_config.update!(allow_user_comment: false)
+        expect(ClientAgencyConfig::ClientAgency.new(partner_config).collects_client_provided_information?).to be(true)
+      end
+
+      it "is true when only applicant-supplied attributes are collected" do
+        partner_config.update!(allow_user_comment: false, allow_outside_jobs: false)
+        agency = ClientAgencyConfig::ClientAgency.new(partner_config)
+        allow(agency).to receive(:applicant_supplied_attribute_names).and_return([ "first_name" ])
+        expect(agency.collects_client_provided_information?).to be(true)
+      end
+
+      it "is false when the partner collects nothing from the client" do
+        partner_config.update!(allow_user_comment: false, allow_outside_jobs: false)
+        expect(ClientAgencyConfig::ClientAgency.new(partner_config).collects_client_provided_information?).to be(false)
+      end
+    end
+  end
 end

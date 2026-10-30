@@ -60,6 +60,20 @@
         color: #1b1b1b;
         font-size: 0.875rem;
       }
+      .preview-bar__form {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem 1.25rem;
+      }
+      .preview-bar__field {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .preview-bar__field .preview-bar__label {
+        white-space: nowrap;
+      }
       .preview-bar__select {
         padding: 0.5rem;
         border: 1px solid #71767a;
@@ -116,111 +130,125 @@
               class: "preview-bar__select",
               data: { controller: "preview-form", action: "change->preview-form#navigateToRoute" } %>
 
-          <%= form_with url: request.path, method: :get, class: "display-flex", data: { controller: "preview-form" } do |f| %>
-          <label for="fixture_user" class="preview-bar__label margin-right-1">Mock User:</label>
-          <%= select_tag :fixture_user,
-              options_for_select(
-                [
-                  [ "Pay stub images — all jobs", "paystubs_all_images" ],
-                  [ "Pay stub images — some jobs", "paystubs_some_images" ],
-                  [ "Pay stub images — no images", "paystubs_no_images" ],
-                  [ "ADP - Different Employers", "adp_paystubs_different_employer" ],
-                  [ "ADP - Mixed Employers", "adp_paystubs_mixed_employers" ],
-                  [ "Bob - Lyft Driver (default)", "bob" ],
-                  [ "Busy Joe", "busy_joe" ],
-                  [ "Empty - No Data", "empty" ],
-                  [ "Joe", "joe" ],
-                  [ "Joe - Null Total Hours", "joe_null_total_hours" ],
-                  [ "Kim/Sarah", "kim" ],
-                  [ "Sarah", "sarah" ],
-                  [ "Tim", "tim" ],
-                  [ "GPL Bethany", "gpl_bethany" ],
-                  [ "GPL Brent", "gpl_brent" ],
-                  [ "GPL Celeste", "gpl_celeste" ],
-                  [ "GPL Frank", "gpl_frank" ],
-                  [ "GPL Remberto", "gpl_remberto" ],
-                  [ "GPL Tolliver", "gpl_tolliver" ],
-                  [ "Multiple Akira", "multiple_akira" ],
-                  [ "Multiple Neil", "multiple_neil" ],
-                  [ "Multiple Direct Deposits (Dee Deposito)", "multiple_direct_deposits" ],
-                  [ "Multi-Year Mileage (2025/2026)", "multi_year_mileage" ]
-                ],
-                params[:fixture_user] || "bob"
-              ),
-              class: "preview-bar__select",
-              data: { action: "change->preview-form#submit" } %>
+          <%= form_with url: request.path, method: :get, class: "preview-bar__form", data: { controller: "preview-form" } do |f| %>
+          <div class="preview-bar__field">
+            <label for="fixture_user" class="preview-bar__label">Mock User:</label>
+            <%= select_tag :fixture_user,
+                options_for_select(
+                  [
+                    [ "Pay stub images — all jobs", "paystubs_all_images" ],
+                    [ "Pay stub images — some jobs", "paystubs_some_images" ],
+                    [ "Pay stub images — no images", "paystubs_no_images" ],
+                    [ "ADP - Different Employers", "adp_paystubs_different_employer" ],
+                    [ "ADP - Mixed Employers", "adp_paystubs_mixed_employers" ],
+                    [ "Bob - Lyft Driver (default)", "bob" ],
+                    [ "Busy Joe", "busy_joe" ],
+                    [ "Empty - No Data", "empty" ],
+                    [ "Joe", "joe" ],
+                    [ "Joe - Null Total Hours", "joe_null_total_hours" ],
+                    [ "Kim/Sarah", "kim" ],
+                    [ "Sarah", "sarah" ],
+                    [ "Tim", "tim" ],
+                    [ "GPL Bethany", "gpl_bethany" ],
+                    [ "GPL Brent", "gpl_brent" ],
+                    [ "GPL Celeste", "gpl_celeste" ],
+                    [ "GPL Frank", "gpl_frank" ],
+                    [ "GPL Remberto", "gpl_remberto" ],
+                    [ "GPL Tolliver", "gpl_tolliver" ],
+                    [ "Multiple Akira", "multiple_akira" ],
+                    [ "Multiple Neil", "multiple_neil" ],
+                    [ "Multiple Direct Deposits (Dee Deposito)", "multiple_direct_deposits" ],
+                    [ "Multi-Year Mileage (2025/2026)", "multi_year_mileage" ]
+                  ],
+                  params[:fixture_user] || "bob"
+                ),
+                class: "preview-bar__select",
+                data: { action: "change->preview-form#submit" } %>
+          </div>
 
-          <label for="client_agency_id" class="preview-bar__label margin-left-2 margin-right-1">Agency:</label>
-          <%= select_tag :client_agency_id,
-              options_for_select(
-                ClientAgencyConfig.client_agency_ids.map do |agency_id|
-                  [ "#{ClientAgencyConfig.instance[agency_id].agency_name} (#{agency_id})", agency_id ]
-                end,
-                params[:client_agency_id] || "sandbox"
-              ),
-              class: "preview-bar__select",
-              data: { action: "change->preview-form#submit" } %>
+          <div class="preview-bar__field">
+            <label for="client_agency_id" class="preview-bar__label">Agency:</label>
+            <%= select_tag :client_agency_id,
+                options_for_select(
+                  ClientAgencyConfig.client_agency_ids.map do |agency_id|
+                    [ "#{ClientAgencyConfig.instance[agency_id].agency_name} (#{agency_id})", agency_id ]
+                  end,
+                  params[:client_agency_id] || "sandbox"
+                ),
+                class: "preview-bar__select",
+                data: { action: "change->preview-form#submit" } %>
+          </div>
 
-          <label for="include_paystubs" class="preview-bar__label margin-left-2 margin-right-1">Include paystubs?</label>
-          <%= select_tag :include_paystubs,
-                         options_for_select(
-                           [
-                             [ "False (default)", "false" ],
-                             [ "True", "true" ]
-                           ],
-                           params[:include_paystubs] || "false"
-                         ),
-                         class: "preview-bar__select",
-                         data: { action: "change->preview-form#submit" } %>
+          <div class="preview-bar__field">
+            <label for="include_paystubs" class="preview-bar__label">Include paystubs?</label>
+            <%= select_tag :include_paystubs,
+                           options_for_select(
+                             [
+                               [ "False (default)", "false" ],
+                               [ "True", "true" ]
+                             ],
+                             params[:include_paystubs] || "false"
+                           ),
+                           class: "preview-bar__select",
+                           data: { action: "change->preview-form#submit" } %>
+          </div>
 
-          <label for="is_caseworker" class="preview-bar__label margin-left-2 margin-right-1">Is Caseworker?</label>
-          <%= select_tag :is_caseworker,
-                         options_for_select(
-                           [
-                             [ "False (default)", "false" ],
-                             [ "True", "true" ]
-                           ],
-                           params[:is_caseworker] || "false"
-                         ),
-                         class: "preview-bar__select",
-                         data: { action: "change->preview-form#submit" } %>
+          <div class="preview-bar__field">
+            <label for="is_caseworker" class="preview-bar__label">Is Caseworker?</label>
+            <%= select_tag :is_caseworker,
+                           options_for_select(
+                             [
+                               [ "False (default)", "false" ],
+                               [ "True", "true" ]
+                             ],
+                             params[:is_caseworker] || "false"
+                           ),
+                           class: "preview-bar__select",
+                           data: { action: "change->preview-form#submit" } %>
+          </div>
 
-          <label for="count_of_valid_accounts" class="preview-bar__label margin-left-2 margin-right-1">Valid accounts:</label>
-          <%= select_tag :count_of_valid_accounts,
-                         options_for_select(
-                           [
-                             [ "0", "0" ],
-                             [ "1 (default)", "1" ],
-                             [ "2", "2" ]
-                           ],
-                           params[:count_of_valid_accounts] || "1"
-                         ),
-                         class: "preview-bar__select",
-                         data: { action: "change->preview-form#submit" } %>
+          <div class="preview-bar__field">
+            <label for="count_of_valid_accounts" class="preview-bar__label">Valid accounts:</label>
+            <%= select_tag :count_of_valid_accounts,
+                           options_for_select(
+                             [
+                               [ "0", "0" ],
+                               [ "1 (default)", "1" ],
+                               [ "2", "2" ]
+                             ],
+                             params[:count_of_valid_accounts] || "1"
+                           ),
+                           class: "preview-bar__select",
+                           data: { action: "change->preview-form#submit" } %>
+          </div>
 
-          <label for="include_full_ssn" class="preview-bar__label margin-left-2 margin-right-1">Full SSN?</label>
-          <%= select_tag :include_full_ssn,
-                         options_for_select(
-                           [
-                             [ "False (default)", "false" ],
-                             [ "True", "true" ]
-                           ],
-                           params[:include_full_ssn] || "false"
-                         ),
-                         class: "preview-bar__select",
-                         data: { action: "change->preview-form#submit" } %>
+          <div class="preview-bar__field">
+            <label for="include_full_ssn" class="preview-bar__label">Full SSN?</label>
+            <%= select_tag :include_full_ssn,
+                           options_for_select(
+                             [
+                               [ "False (default)", "false" ],
+                               [ "True", "true" ]
+                             ],
+                             params[:include_full_ssn] || "false"
+                           ),
+                           class: "preview-bar__select",
+                           data: { action: "change->preview-form#submit" } %>
+          </div>
 
-          <label for="include_direct_deposit_last_4" class="preview-bar__label margin-left-2 margin-right-1">Direct deposit last 4?</label>
-          <%= select_tag :include_direct_deposit_last_4,
-                         options_for_select(
-                           [
-                             [ "False (default)", "false" ],
-                             [ "True", "true" ]
-                           ],
-                           params[:include_direct_deposit_last_4] || "false"
-                         ),
-                         class: "preview-bar__select",
-                         data: { action: "change->preview-form#submit" } %>
+          <div class="preview-bar__field">
+            <label for="include_direct_deposit_last_4" class="preview-bar__label">Direct deposit last 4?</label>
+            <%= select_tag :include_direct_deposit_last_4,
+                           options_for_select(
+                             [
+                               [ "False (default)", "false" ],
+                               [ "True", "true" ]
+                             ],
+                             params[:include_direct_deposit_last_4] || "false"
+                           ),
+                           class: "preview-bar__select",
+                           data: { action: "change->preview-form#submit" } %>
+          </div>
           <% end %>
 
           <span class="preview-bar__info">

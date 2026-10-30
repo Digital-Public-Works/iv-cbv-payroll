@@ -16,6 +16,11 @@ class Transmitters::WebhookTransmitter
   REPORT_SUBMISSION = "ReportSubmission".freeze
   TRANSMISSION_COMPLETE = "TransmissionComplete".freeze
 
+  # Responses that mean the transmission got there but the partner rejected it. Don't retry
+  NON_RETRYABLE_STATUS_CODES = %w[400 413 422].freeze
+
+  class NonRetryableResponseError < ApplicationJob::NonRetryableError; end
+
   LEGACY_CONTRACT_VERSION = "1".freeze
   EVENTS_CONTRACT_VERSION = "2".freeze
   CONTRACT_VERSIONS = [ LEGACY_CONTRACT_VERSION, EVENTS_CONTRACT_VERSION ].freeze
@@ -60,7 +65,8 @@ class Transmitters::WebhookTransmitter
     else
       Rails.logger.error "Unexpected response: #{res.code} #{res.message}"
       Rails.logger.error "  Body: #{res.body}"
-      raise "Unexpected response from agency: #{res.code} #{res.message}"
+      error_class = NON_RETRYABLE_STATUS_CODES.include?(res.code) ? NonRetryableResponseError : RuntimeError
+      raise error_class, "Unexpected response from agency: #{res.code} #{res.message}"
     end
   end
 

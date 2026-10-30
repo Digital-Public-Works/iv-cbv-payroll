@@ -32,6 +32,7 @@ class PartnerConfigLoader
     include_paystubs
     include_full_ssn include_direct_deposit_last_4
     encourage_link_sharing
+    allow_user_comment allow_outside_jobs
     weekly_report_enabled weekly_report_variant
     include_invitation_details_on_weekly_report
     partner_identifier_name

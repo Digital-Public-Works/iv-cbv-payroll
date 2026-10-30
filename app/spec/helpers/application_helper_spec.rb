@@ -240,6 +240,70 @@ RSpec.describe ApplicationHelper do
     end
   end
 
+  describe "#allow_user_comment?" do
+    before do
+      without_partial_double_verification do
+        allow(helper).to receive(:current_agency).and_return(current_agency)
+      end
+    end
+
+    context "when the agency allows user comments" do
+      let(:current_agency) { instance_double(ClientAgencyConfig::ClientAgency, allow_user_comment: true) }
+
+      it "returns true" do
+        expect(helper.allow_user_comment?).to be true
+      end
+    end
+
+    context "when the agency does not allow user comments" do
+      let(:current_agency) { instance_double(ClientAgencyConfig::ClientAgency, allow_user_comment: false) }
+
+      it "returns false" do
+        expect(helper.allow_user_comment?).to be false
+      end
+    end
+
+    context "when there is no current agency" do
+      let(:current_agency) { nil }
+
+      it "returns true" do
+        expect(helper.allow_user_comment?).to be true
+      end
+    end
+  end
+
+  describe "#allow_outside_jobs?" do
+    before do
+      without_partial_double_verification do
+        allow(helper).to receive(:current_agency).and_return(current_agency)
+      end
+    end
+
+    context "when the agency asks about outside jobs" do
+      let(:current_agency) { instance_double(ClientAgencyConfig::ClientAgency, allow_outside_jobs: true) }
+
+      it "returns true" do
+        expect(helper.allow_outside_jobs?).to be true
+      end
+    end
+
+    context "when the agency does not ask about outside jobs" do
+      let(:current_agency) { instance_double(ClientAgencyConfig::ClientAgency, allow_outside_jobs: false) }
+
+      it "returns false" do
+        expect(helper.allow_outside_jobs?).to be false
+      end
+    end
+
+    context "when there is no current agency" do
+      let(:current_agency) { nil }
+
+      it "returns true" do
+        expect(helper.allow_outside_jobs?).to be true
+      end
+    end
+  end
+
   describe "#agency_website_link" do
     let(:url) { "https://compass.example.gov" }
     let(:current_agency) do

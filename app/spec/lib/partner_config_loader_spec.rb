@@ -444,6 +444,28 @@ RSpec.describe PartnerConfigLoader do
       expect(PartnerConfig.find_by(partner_id: "test_partner").include_paystubs).to be true
     end
 
+    it "defaults allow_user_comment and allow_outside_jobs to true when omitted" do
+      loader = loader_for(valid_yaml)
+      loader.load!
+      loader.validate!
+      loader.apply!
+      pc = PartnerConfig.find_by(partner_id: "test_partner")
+      expect(pc.allow_user_comment).to be true
+      expect(pc.allow_outside_jobs).to be true
+    end
+
+    it "applies allow_user_comment and allow_outside_jobs" do
+      valid_yaml["allow_user_comment"] = false
+      valid_yaml["allow_outside_jobs"] = false
+      loader = loader_for(valid_yaml)
+      loader.load!
+      loader.validate!
+      loader.apply!
+      pc = PartnerConfig.find_by(partner_id: "test_partner")
+      expect(pc.allow_user_comment).to be false
+      expect(pc.allow_outside_jobs).to be false
+    end
+
     it "creates transmission methods and their configs" do
       loader = loader_for(valid_yaml)
       loader.load!
