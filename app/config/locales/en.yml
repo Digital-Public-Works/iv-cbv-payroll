@@ -256,6 +256,7 @@ en:
         header: Find your employer or payroll company
         payroll_providers: Payroll providers
         popular_providers: Or choose from popular payroll providers or apps
+        provider_position: "%{position} of"
         results: Results found (%{result_count})
         results_header: Search results
         search: Search
@@ -289,6 +290,7 @@ en:
         step1_note: Verify My Income will not keep or share your login information.
         step2: Review pay from your job
         step2_description: After you log in, Verify My Income pulls your recent paychecks into a single report. You can check the details and add comments to the report before you allow it to be sent to %{agency_full_name}.
+        step2_description_no_comments: After you log in, Verify My Income pulls your recent paychecks into a single report. You can check the details of the report before you allow it to be sent to %{agency_full_name}.
         step2_note: You can also add more jobs to your report if you need to.
         step3: Submit your income report
         step3_description: Your pay information gets sent directly to %{agency_acronym}. When you finish, you can save a copy of your report.
@@ -428,6 +430,7 @@ en:
         hours_paid: "%{category}: Hours paid"
         none_found: We didn't find any payments from this employer in the past %{report_data_range}.
         none_found_description: This typically happens when you haven't received income from this job in the past %{report_data_range}. If you believe this is an error, please add a comment in the additional comments box. Otherwise, continue to the next page.
+        none_found_description_no_comments: This typically happens when you haven't received income from this job in the past %{report_data_range}. Continue to the next page.
         number_of_hours_worked: Number of hours worked
         pay_date_prompt: Pay date
         pay_frequency: Pay frequency
@@ -440,6 +443,7 @@ en:
         payments_and_deductions_table_header: Payments and deductions
         ssn_disclaimer: Your Social Security number will be securely sent to %{agency_acronym} to confirm who you are. Verify My Income will not keep or store this information.
         subheader_html: We have gathered your payment records from the past %{report_data_range} from %{start_date} to %{end_date}.<br>Please review your information. If something is missing or inaccurate, add a comment for %{agency_acronym}. This will be included in your income report.
+        subheader_no_comments_html: We have gathered your payment records from the past %{report_data_range} from %{start_date} to %{end_date}.<br>Please review your information.
         unknown: Unknown
     submits:
       show:
@@ -491,7 +495,6 @@ en:
             with_intro: 'There are pay stub images for these jobs:'
             without_intro: 'Verify My Income did not find pay stub images for these jobs:'
           shared:
-            additional_jobs_to_report: Does the client have additional jobs they will verify separately?
             additional_jobs_to_report_html: Does the client have additional jobs they will verify separately?<sup>1</sup>
             client_information: Client information
             confirmation_code: Confirmation code
@@ -538,6 +541,7 @@ en:
           default: This must match what is shown on your %{agency_acronym} application.
         none_found: We didn't find any payments from this employer in the past %{report_data_range}.
         none_found_description: This typically happens when you haven't received income from this job in the past %{report_data_range}. If you believe this is an error, please add a comment in the additional comments box. Otherwise, continue to the next page.
+        none_found_description_no_comments: This typically happens when you haven't received income from this job in the past %{report_data_range}. Continue to the next page.
         other_jobs: Other jobs
         phone_number: Employer phone
         question: Question
@@ -831,6 +835,7 @@ en:
       report_details: Report details
       review_note: Review the report for more complete information about the client's jobs.
       supplement_body: The income report is a separate file. It shows monthly summaries of the pay stubs in this file, and any client comments.
+      supplement_body_no_comments: The income report is a separate file. It shows monthly summaries of the pay stubs in this file.
       supplement_heading: This file is a supplement to the Income Verification Report
       title: 'Income Verification Report: Pay stub images'
   us_form_with:

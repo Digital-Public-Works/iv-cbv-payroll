@@ -65,6 +65,57 @@ RSpec.describe Cbv::EmployerSearchesController do
         get :show, params: { type: "employer" }
       end
 
+      context "popular provider buttons" do
+        let(:button_selector) { "#popular_providers_panel button[data-cbv-employer-search-target='employerButton']" }
+
+        %w[payroll employer].each do |type|
+          it "describes each popular #{type} option by its position out of the total" do
+            get :show, params: { type: type }
+
+            html = Capybara.string(response.body)
+            buttons = html.all(button_selector)
+            expect(buttons).not_to be_empty
+            expect(html.find("#providers_total")).to have_text(buttons.size.to_s, exact: true)
+
+            buttons.each_with_index do |button, index|
+              position_id, total_id = button["aria-describedby"].split
+              expect(total_id).to eq("providers_total")
+              expect(html.find("##{position_id}")).to have_text("#{index + 1} of", exact: true)
+            end
+          end
+
+          it "hides the #{type} position and total text from everyone except aria-describedby" do
+            get :show, params: { type: type }
+
+            html = Capybara.string(response.body)
+            spans = html.all("#providers_total, [id^='providers_position_']")
+            expect(spans.size).to eq(html.all(button_selector).size + 1)
+            spans.each do |span|
+              expect(span[:class].split).to include("display-none")
+              expect(span[:class].split).not_to include("usa-sr-only")
+            end
+          end
+
+          it "names each popular #{type} button by its visible provider name, stacked under the logo" do
+            get :show, params: { type: type }
+
+            Capybara.string(response.body).all(button_selector).each do |button|
+              expect(button["aria-label"]).to be_nil
+              expect(button.find("> span.display-block > img")["alt"]).to eq("")
+              expect(button.find("> span.display-block > span.display-block.margin-top-1"))
+                .to have_text(button["data-name"], exact: true)
+            end
+          end
+        end
+
+        it "translates the position text" do
+          get :show, params: { type: "payroll", locale: :es }
+
+          html = Capybara.string(response.body)
+          expect(html.find("#providers_position_0")).to have_text("1 de", exact: true)
+        end
+      end
+
       it "renders the expandable unemployed tips box with tracking attributes" do
         get :show
 

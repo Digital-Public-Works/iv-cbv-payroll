@@ -4,13 +4,18 @@
   <%= header %>
 </h1>
 
+<% subheader_options = {
+     start_date: format_date(@aggregator_report.from_date),
+     end_date: format_date(@aggregator_report.to_date),
+     agency_acronym: agency_acronym_or_full_name,
+     report_data_range: report_data_range(@aggregator_report, params[:user][:account_id])
+   } %>
 <p>
-  <%= t(".subheader_html",
-      start_date: format_date(@aggregator_report.from_date),
-      end_date: format_date(@aggregator_report.to_date),
-      agency_acronym: agency_acronym_or_full_name,
-      report_data_range: report_data_range(@aggregator_report, params[:user][:account_id])
-    ) %>
+  <% if allow_user_comment? %>
+    <%= t(".subheader_html", **subheader_options) %>
+  <% else %>
+    <%= t(".subheader_no_comments_html", **subheader_options) %>
+  <% end %>
 </p>
 
 <% if current_agency&.include_full_ssn %>
@@ -35,7 +40,11 @@
     <%= render(Report::W2MonthlySummaryTableComponent.new(@aggregator_report, @payroll_account)) %>
   <% else %>
     <%= render Uswds::Alert.new(type: :info, heading: t(".none_found", report_data_range: report_data_range(@aggregator_report, params[:user][:account_id])), class: "margin-top-5") do %>
-      <%= t(".none_found_description", report_data_range: report_data_range(@aggregator_report, params[:user][:account_id])) %>
+      <% if allow_user_comment? %>
+        <%= t(".none_found_description", report_data_range: report_data_range(@aggregator_report, params[:user][:account_id])) %>
+      <% else %>
+        <%= t(".none_found_description_no_comments", report_data_range: report_data_range(@aggregator_report, params[:user][:account_id])) %>
+      <% end %>
     <% end %>
   <% end %>
 
@@ -48,19 +57,26 @@
 <% else %>
   <%= render(Report::GigMonthlySummaryTableComponent.new(@aggregator_report, @payroll_account)) %>
 <% end %>
-<div class="usa-form-group margin-top-5"
-     data-controller="cbv-character-count"
-     data-cbv-character-count-maxlength-value="1000"
-     data-cbv-character-count-over-limit-text-value="<%= t(".character_count_over_limit") %>"
-     data-cbv-character-count-shorten-text-value="<%= t(".character_count_shorten") %>">
-  <h2 id="additional_info_header"><%= t(".additional_information_header") %></h2>
-  <%= form_with(model: @cbv_flow, url: cbv_flow_payment_details_path, method: :patch, class: "usa-form usa-form--large", data: { action: "submit->cbv-character-count#guardSubmit" }) do |form| %>
+<% if allow_user_comment? %>
+  <div class="usa-form-group margin-top-5"
+       data-controller="cbv-character-count"
+       data-cbv-character-count-maxlength-value="1000"
+       data-cbv-character-count-over-limit-text-value="<%= t(".character_count_over_limit") %>"
+       data-cbv-character-count-shorten-text-value="<%= t(".character_count_shorten") %>">
+    <h2 id="additional_info_header"><%= t(".additional_information_header") %></h2>
+    <%= form_with(model: @cbv_flow, url: cbv_flow_payment_details_path, method: :patch, class: "usa-form usa-form--large", data: { action: "submit->cbv-character-count#guardSubmit" }) do |form| %>
+      <%= hidden_field_tag "user[account_id]", params[:user][:account_id] %>
+      <%= form.label :additional_information, t(".additional_information_label", agency_acronym: agency_acronym_or_full_name), class: "usa-label", id: "additional_information_description" %>
+      <%= content_tag :span, t(".character_count_description"), id: "additional_information_count_description", class: "usa-sr-only" %>
+      <%= form.text_area :additional_information, class: "usa-textarea", rows: 5, value: @account_comment, placeholder: t(".additional_information_placeholder"), "aria-labelledby": "additional_info_header additional_information_description", "aria-describedby": "additional_information_count_description", data: { cbv_character_count_target: "input", action: "input->cbv-character-count#update" } %>
+      <%= content_tag :div, "0/1000", class: "usa-hint margin-top-1", "aria-hidden": "true", data: { cbv_character_count_target: "message" } %>
+      <%= content_tag :div, "", class: "usa-sr-only", "aria-live": "polite", data: { cbv_character_count_target: "srMessage" } %>
+      <%= form.submit t(".continue"), class: "usa-button usa-button--primary", data: { cbv_character_count_target: "submitButton" } %>
+    <% end %>
+  </div>
+<% else %>
+  <%= form_with(model: @cbv_flow, url: cbv_flow_payment_details_path, method: :patch, class: "usa-form usa-form--large margin-top-5") do |form| %>
     <%= hidden_field_tag "user[account_id]", params[:user][:account_id] %>
-    <%= form.label :additional_information, t(".additional_information_label", agency_acronym: agency_acronym_or_full_name), class: "usa-label", id: "additional_information_description" %>
-    <%= content_tag :span, t(".character_count_description"), id: "additional_information_count_description", class: "usa-sr-only" %>
-    <%= form.text_area :additional_information, class: "usa-textarea", rows: 5, value: @account_comment, placeholder: t(".additional_information_placeholder"), "aria-labelledby": "additional_info_header additional_information_description", "aria-describedby": "additional_information_count_description", data: { cbv_character_count_target: "input", action: "input->cbv-character-count#update" } %>
-    <%= content_tag :div, "0/1000", class: "usa-hint margin-top-1", "aria-hidden": "true", data: { cbv_character_count_target: "message" } %>
-    <%= content_tag :div, "", class: "usa-sr-only", "aria-live": "polite", data: { cbv_character_count_target: "srMessage" } %>
-    <%= form.submit t(".continue"), class: "usa-button usa-button--primary", data: { cbv_character_count_target: "submitButton" } %>
+    <%= form.submit t(".continue"), class: "usa-button usa-button--primary" %>
   <% end %>
-</div>
+<% end %>

@@ -61,6 +61,22 @@ module Cbv::MonthlySummaryHelper
          .reverse
   end
 
+  # Like unique_months, but also includes any months between the earliest and latest months that
+  # have no dates of their own. Months before the earliest date or after the latest date are not added.
+  def contiguous_months(dates)
+    months = unique_months(dates)
+    return months if months.empty?
+
+    oldest_month = months.last
+    result = []
+    month = months.first
+    while month >= oldest_month
+      result << month
+      month = month.prev_month
+    end
+    result
+  end
+
   # return all paystub.pay_date and gig.start_date into a single list of dates.
   # this is used as a helper to determine all unique months present in the report.
   def extract_dates(paystubs, gigs)

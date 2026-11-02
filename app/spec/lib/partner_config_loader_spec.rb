@@ -365,6 +365,44 @@ RSpec.describe PartnerConfigLoader do
         expect(loader.errors).not_to include(/path_prefix/)
       end
 
+      describe "webhook contract_version" do
+        def webhook_methods(contract_version_config = nil)
+          configs = [
+            { "key" => "webhook_url", "value" => "https://example.com/hook" },
+            { "key" => "api_key", "value" => "secret" }
+          ]
+          configs << contract_version_config if contract_version_config
+          [ { "method_type" => "webhook", "configs" => configs } ]
+        end
+
+        it "is optional" do
+          valid_yaml["transmission_methods"] = webhook_methods
+          loader = loader_for(valid_yaml)
+          loader.load!
+          loader.validate!
+          expect(loader.errors).not_to include(/contract_version/)
+        end
+
+        it "accepts 1 and 2, as strings or integers" do
+          [ "1", "2", 1, 2 ].each do |version|
+            valid_yaml["transmission_methods"] = webhook_methods({ "key" => "contract_version", "value" => version })
+            loader = loader_for(valid_yaml)
+            loader.load!
+            loader.validate!
+            expect(loader.errors).not_to include(/contract_version/)
+          end
+        end
+
+        it "rejects an unknown value instead of falling back to the legacy contract" do
+          valid_yaml["transmission_methods"] = webhook_methods({ "key" => "contract_version", "value" => "v2" })
+          loader = loader_for(valid_yaml)
+          loader.load!
+          loader.validate!
+          expect(loader.valid?).to be false
+          expect(loader.errors).to include(/\(webhook\): invalid contract_version 'v2' \(must be one of 1, 2\)/)
+        end
+      end
+
       it "rejects a masked $ENCRYPTED placeholder value" do
         valid_yaml["transmission_methods"] = [
           { "method_type" => "webhook", "configs" => [
@@ -404,6 +442,28 @@ RSpec.describe PartnerConfigLoader do
       loader.validate!
       loader.apply!
       expect(PartnerConfig.find_by(partner_id: "test_partner").include_paystubs).to be true
+    end
+
+    it "defaults allow_user_comment and allow_outside_jobs to true when omitted" do
+      loader = loader_for(valid_yaml)
+      loader.load!
+      loader.validate!
+      loader.apply!
+      pc = PartnerConfig.find_by(partner_id: "test_partner")
+      expect(pc.allow_user_comment).to be true
+      expect(pc.allow_outside_jobs).to be true
+    end
+
+    it "applies allow_user_comment and allow_outside_jobs" do
+      valid_yaml["allow_user_comment"] = false
+      valid_yaml["allow_outside_jobs"] = false
+      loader = loader_for(valid_yaml)
+      loader.load!
+      loader.validate!
+      loader.apply!
+      pc = PartnerConfig.find_by(partner_id: "test_partner")
+      expect(pc.allow_user_comment).to be false
+      expect(pc.allow_outside_jobs).to be false
     end
 
     it "creates transmission methods and their configs" do

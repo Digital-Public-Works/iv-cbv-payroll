@@ -613,6 +613,86 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
       end
     end
 
+    context "bob, with no paystubs or gigs in February" do
+      let(:argyle_report) { described_class.new(
+        payroll_accounts: [ payroll_account ],
+        argyle_service: argyle_service,
+        days_to_fetch_for_w2: days_ago_to_fetch,
+        days_to_fetch_for_gig: days_ago_to_fetch) }
+
+      let(:account) { "019571bc-2f60-3955-d972-dbadfe0913a8" }
+      let(:from_date) { Date.parse("2025-01-08") }
+      let(:to_date) { Date.parse("2025-03-31") }
+      let(:paystubs_json) do
+        argyle_load_relative_json_file("bob", "request_paystubs.json", drop_results_if: ->(paystub) { february?(paystub["paystub_date"]) })
+      end
+      let(:gigs_json) do
+        argyle_load_relative_json_file("bob", "request_gigs.json", drop_results_if: ->(gig) {
+          february?(gig["start_datetime"]) || february?(gig["end_datetime"])
+        })
+      end
+
+      def february?(date_string)
+        date_string.to_s.start_with?("2025-02")
+      end
+
+      before do
+        argyle_report.send(:fetch_report_data)
+      end
+
+      it "skips February by default" do
+        monthly_summary = argyle_report.summarize_by_month(from_date: from_date, to_date: to_date)[account]
+
+        expect(monthly_summary.keys).to eq([ "2025-03", "2025-01" ])
+      end
+
+      it "includes an empty February, in order, when include_empty_months is set" do
+        monthly_summary = argyle_report.summarize_by_month(from_date: from_date, to_date: to_date, include_empty_months: true)[account]
+        expect(monthly_summary.keys).to eq([ "2025-03", "2025-02", "2025-01" ])
+
+        feb = monthly_summary["2025-02"]
+        expect(feb[:paystubs]).to be_empty
+        expect(feb[:gigs]).to be_empty
+        expect(feb[:accrued_gross_earnings]).to eq(0)
+        expect(feb[:total_w2_hours]).to eq(0)
+        expect(feb[:total_gig_hours]).to eq(0)
+        expect(feb[:total_mileage]).to eq(0)
+        expect(feb[:partial_month_range]).to an_object_eq_to({
+                                                               is_partial_month: false,
+                                                               description: nil,
+                                                               included_range_start: Date.parse("2025-02-01"),
+                                                               included_range_end: Date.parse("2025-02-28")
+                                                             })
+      end
+
+      it "does not change the months that have data when include_empty_months is set" do
+        without_empty_months = argyle_report.summarize_by_month(from_date: from_date, to_date: to_date)[account]
+        with_empty_months = argyle_report.summarize_by_month(from_date: from_date, to_date: to_date, include_empty_months: true)[account]
+
+        expect(with_empty_months.except("2025-02")).to eq(without_empty_months)
+      end
+
+      context "when a gig starts in January and ends in February" do
+        let(:gigs_json) do
+          json = argyle_load_relative_json_file("bob", "request_gigs.json", drop_results_if: ->(gig) {
+            february?(gig["start_datetime"]) || february?(gig["end_datetime"])
+          })
+          completed_gig = json["results"].find { |gig| gig["end_datetime"].present? }
+          json["results"] << completed_gig.merge("id" => "overnight-gig", "start_datetime" => "2025-01-31T23:50:00Z", "end_datetime" => "2025-02-01T00:20:00Z")
+          json
+        end
+
+        it "includes the gig in February, the month it ended, when include_empty_months is set" do
+          monthly_summary = argyle_report.summarize_by_month(from_date: from_date, to_date: to_date, include_empty_months: true)[account]
+
+          feb = monthly_summary["2025-02"]
+          expect(feb[:gigs].length).to eq(1)
+          expect(feb[:paystubs]).to be_empty
+          expect(feb[:total_gig_hours]).to be > 0
+        end
+      end
+    end
+
     context "busy_joe, an employee with multiple employments" do
       let(:account) { "01959b15-8b7f-5487-212d-2c0f50e3ec96" }
       let!(:payroll_account_2) do

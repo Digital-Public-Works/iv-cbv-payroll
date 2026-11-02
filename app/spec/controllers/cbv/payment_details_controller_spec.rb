@@ -442,6 +442,32 @@ RSpec.describe Cbv::PaymentDetailsController do
           expect(response).to be_successful
         end
 
+        it "shows the comment box and the comment copy" do
+          expect(response.body).to have_css("textarea[name='cbv_flow[additional_information]']")
+          expect(response.body).to include(I18n.t("cbv.payment_details.show.additional_information_header"))
+          expect(response.body).to include("add a comment for")
+        end
+
+        context "when the partner does not allow user comments" do
+          before do
+            stub_client_agency_config_value("sandbox", "allow_user_comment", false)
+            get :show, params: { user: { account_id: account_id } }
+          end
+
+          it "hides the comment box but keeps a way to continue" do
+            expect(response.body).not_to have_css("textarea[name='cbv_flow[additional_information]']")
+            expect(response.body).not_to include(I18n.t("cbv.payment_details.show.additional_information_header"))
+            expect(response.body).not_to have_css("[data-controller='cbv-character-count']")
+            expect(response.body).to have_css("form[action='#{cbv_flow_payment_details_path}'] input[type='submit'][value='#{I18n.t("cbv.payment_details.show.continue")}']")
+            expect(response.body).to have_css("input[type='hidden'][name='user[account_id]'][value='#{account_id}']", visible: :all)
+          end
+
+          it "does not ask the applicant to add a comment" do
+            expect(response.body).not_to include("add a comment")
+            expect(response.body).to include("Please review your information.")
+          end
+        end
+
         context "when deductions include a zero dollar amount" do
           it "does not show that deduction" do
             get :show, params: { user: { account_id: account_id } }
@@ -638,6 +664,37 @@ RSpec.describe Cbv::PaymentDetailsController do
         ))
 
       patch :update, params: { user: { account_id: account_id }, cbv_flow: { additional_information: comment } }
+    end
+
+    context "when the partner does not allow user comments" do
+      before do
+        stub_client_agency_config_value("sandbox", "allow_user_comment", false)
+        cbv_flow.update!(additional_information: {})
+      end
+
+      it "continues to the next step without saving a comment" do
+        patch :update, params: { user: { account_id: account_id } }
+
+        expect(response).to redirect_to(cbv_flow_add_job_path)
+        expect(cbv_flow.reload.additional_information).to eq({})
+      end
+
+      it "ignores a comment submitted anyway" do
+        patch :update, params: { user: { account_id: account_id }, cbv_flow: { additional_information: comment } }
+
+        expect(cbv_flow.reload.additional_information).to eq({})
+      end
+
+      it "still tracks the saved event, with no comment length" do
+        allow(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+
+        expect(MixpanelEventTrackingJob).to receive(:perform_later).with("ApplicantSavedPaymentDetails", anything, hash_including(
+          cbv_flow_id: cbv_flow.id,
+          additional_information_length: 0
+        ))
+
+        patch :update, params: { user: { account_id: account_id } }
+      end
     end
   end
 end

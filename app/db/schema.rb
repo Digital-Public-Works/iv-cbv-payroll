@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_11_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_26_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -155,6 +155,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_120000) do
     t.boolean "include_full_ssn", default: false, null: false
     t.boolean "include_direct_deposit_last_4", default: false, null: false
     t.boolean "encourage_link_sharing", default: true, null: false
+    t.boolean "allow_user_comment", default: true, null: false
+    t.boolean "allow_outside_jobs", default: true, null: false
     t.index ["partner_id"], name: "index_partner_configs_on_partner_id", unique: true
   end
 
