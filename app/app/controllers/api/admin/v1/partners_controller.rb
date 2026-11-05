@@ -46,7 +46,7 @@ class Api::Admin::V1::PartnersController < Api::Admin::V1::BaseController
   end
 
   def export
-    include_secrets = params[:include_secrets] == "true"
+    include_secrets = include_secrets_requested?
     if include_secrets
       logged("export_with_secrets", partner_id: @partner.partner_id) do
         render json: AdminApi::PartnerDocuments.export_files(@partner.partner_id, include_secrets: true)

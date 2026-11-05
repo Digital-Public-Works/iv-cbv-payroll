@@ -98,7 +98,7 @@ class PartnerConfigLoader
   OPTIONAL_CREDENTIAL_KEYS = {
     "sftp" => %w[port],
     "webhook" => %w[],
-    "json" => %w[include_report_pdf custom_headers api_key],
+    "json" => %w[include_report_pdf custom_headers],
     "shared_email" => %w[],
     "encrypted_s3" => %w[bucket region aws_access_key_id aws_secret_access_key endpoint force_path_style],
     "unencrypted_s3" => %w[bucket region aws_access_key_id aws_secret_access_key endpoint force_path_style]

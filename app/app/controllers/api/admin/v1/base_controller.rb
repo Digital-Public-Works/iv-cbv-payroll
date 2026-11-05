@@ -39,6 +39,12 @@ class Api::Admin::V1::BaseController < ActionController::API
     raise AdminApi::Errors::BadRequest, "The request body is not valid JSON"
   end
 
+  # Read from the query string only (not body or path params): the flag is
+  # part of the signed GET URL, and nothing else should be able to set it.
+  def include_secrets_requested?
+    request.query_parameters["include_secrets"] == "true"
+  end
+
   def find_partner
     @partner = PartnerConfig.find_by!(partner_id: params[:partner_id])
   end
