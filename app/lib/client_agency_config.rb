@@ -315,7 +315,7 @@ class ClientAgencyConfig
 
       @transmission_methods.each do |entry|
         method_type = entry.method.to_sym
-        next unless TransmissionFilename::EXTENSIONS.key?(method_type)
+        next unless TransmissionFilename.file_method?(method_type)
         # remote_directory_for validates that path_prefix is valid for method_type
         TransmissionFilename.remote_directory_for(
           method_type: method_type,

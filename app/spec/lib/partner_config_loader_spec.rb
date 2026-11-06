@@ -167,6 +167,36 @@ RSpec.describe PartnerConfigLoader do
       expect(loader.errors).to include(/invalid method_type/)
     end
 
+    %w[encrypted_s3 unencrypted_s3].each do |retired|
+      it "rejects the retired #{retired} method_type with a pointer to s3" do
+        valid_yaml["transmission_methods"] = [ { "method_type" => retired, "configs" => [ { "key" => "path_prefix", "value" => "" } ] } ]
+        loader = loader_for(valid_yaml)
+        loader.load!
+        loader.validate!
+        expect(loader.valid?).to be false
+        expect(loader.errors).to include(/method_type '#{retired}' no longer exists; use 's3'/)
+        expect(loader.errors).not_to include(/invalid method_type/)
+      end
+    end
+
+    it "accepts s3 without a public_key (uploads go unencrypted)" do
+      valid_yaml["transmission_methods"] = [ { "method_type" => "s3", "configs" => [ { "key" => "path_prefix", "value" => "inbox" } ] } ]
+      loader = loader_for(valid_yaml)
+      loader.load!
+      loader.validate!
+      expect(loader.errors).to be_empty
+    end
+
+    it "errors when the same method_type appears twice" do
+      s3 = { "method_type" => "s3", "configs" => [ { "key" => "path_prefix", "value" => "" } ] }
+      valid_yaml["transmission_methods"] = [ s3, s3.merge("configs" => [ { "key" => "path_prefix", "value" => "other" } ]) ]
+      loader = loader_for(valid_yaml)
+      loader.load!
+      loader.validate!
+      expect(loader.valid?).to be false
+      expect(loader.errors).to include(/transmission_methods\[1\]: duplicate method_type 's3'/)
+    end
+
     it "errors when no transmission methods are configured" do
       valid_yaml.delete("transmission_methods")
       loader = loader_for(valid_yaml)
@@ -187,7 +217,7 @@ RSpec.describe PartnerConfigLoader do
 
     it "rejects the singular transmission_method / top-level transmission_configs format" do
       valid_yaml.delete("transmission_methods")
-      valid_yaml["transmission_method"] = "unencrypted_s3"
+      valid_yaml["transmission_method"] = "s3"
       valid_yaml["transmission_configs"] = [ { "key" => "bucket", "value" => "b" } ]
       loader = loader_for(valid_yaml)
       loader.load!

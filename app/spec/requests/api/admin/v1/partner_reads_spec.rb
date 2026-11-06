@@ -52,6 +52,12 @@ RSpec.describe "Admin API: reading partners", type: :request do
       expect(sftp["keys"].find { |k| k["key"] == "password" }).to include("required" => true, "encrypted" => true)
       expect(sftp["keys"].find { |k| k["key"] == "path_prefix" }).to include("blank_allowed" => true)
       expect(body["transmission_methods"].map { |m| m["method_type"] }).to match_array(PartnerConfigLoader::VALID_TRANSMISSION_METHODS)
+
+      s3 = body["transmission_methods"].find { |m| m["method_type"] == "s3" }
+      expect(s3["label"]).to eq("S3")
+      expect(s3["keys"].find { |k| k["key"] == "path_prefix" }).to include("required" => true, "blank_allowed" => true)
+      expect(s3["keys"].find { |k| k["key"] == "public_key" }).to include("required" => false, "encrypted" => false)
+      expect(body["transmission_methods"].map { |m| m["method_type"] }).not_to include("encrypted_s3", "unencrypted_s3")
       expect(body["reserved_names"]).to include("admin", "static")
     end
   end

@@ -8,8 +8,8 @@ FactoryBot.define do
       method_type { :shared_email }
     end
 
-    trait :encrypted_s3 do
-      method_type { :encrypted_s3 }
+    trait :s3 do
+      method_type { :s3 }
     end
 
     trait :json do
