@@ -221,8 +221,34 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
       let(:w2_identity) { argyle_load_relative_json_file("joe", "request_identity.json")["results"].first }
       let(:w2_paystubs) { argyle_load_relative_json_file("joe", "request_paystubs.json")["results"] }
 
+      # Logging is opt-in (only the sync-completion webhook turns it on).
+      let(:argyle_report) do
+        described_class.new(
+          payroll_accounts: [ payroll_account ],
+          argyle_service: argyle_service,
+          days_to_fetch_for_w2: days_ago_to_fetch,
+          days_to_fetch_for_gig: days_ago_to_fetch_for_gig,
+          log_paystub_hours: true
+        )
+      end
+
       before do
         allow(GenericEventTracker).to receive(:new).and_return(tracker_instance)
+      end
+
+      it "does not log paystub hours when the report is not asked to" do
+        allow(argyle_service).to receive_messages(fetch_identities_api: argyle_load_relative_json_file("joe", "request_identity.json"), fetch_paystubs_api: { "results" => w2_paystubs })
+        default_report = described_class.new(
+          payroll_accounts: [ payroll_account ],
+          argyle_service: argyle_service,
+          days_to_fetch_for_w2: days_ago_to_fetch,
+          days_to_fetch_for_gig: days_ago_to_fetch_for_gig
+        )
+
+        default_report.send(:fetch_report_data)
+
+        expect(tracker_instance).not_to have_received(:track)
+          .with(TrackEvent::ArgylePaystubHours, any_args)
       end
 
       it "does not log paystub hours for a gig employment's paystubs" do
@@ -412,6 +438,17 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
       it "does not discard the payroll_account" do
         argyle_report.fetch
         expect(discarded_in_db?(payroll_account)).to be false
+      end
+
+      it "reuses the pre-flight account response instead of fetching the account twice" do
+        argyle_report.fetch
+        expect(argyle_service).to have_received(:fetch_account_api).with(account: account).once
+      end
+
+      it "re-checks the account on each fetch, refreshing the stored response" do
+        argyle_report.fetch
+        argyle_report.fetch
+        expect(argyle_service).to have_received(:fetch_account_api).with(account: account).twice
       end
 
       it "still fetches report data" do

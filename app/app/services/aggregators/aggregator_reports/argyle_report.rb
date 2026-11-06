@@ -14,9 +14,11 @@ module Aggregators::AggregatorReports
 
     attr_reader :argyle_service
 
-    def initialize(argyle_service: nil, **params)
+    # only log hours one time, on sync complete - don't need to log them each time this is built
+    def initialize(argyle_service: nil, log_paystub_hours: false, **params)
       super(**params)
       @argyle_service = argyle_service
+      @log_paystub_hours = log_paystub_hours
     end
 
     def fetch
@@ -46,8 +48,14 @@ module Aggregators::AggregatorReports
       end
     end
 
+    def prefetched_accounts
+      @prefetched_accounts ||= {}
+    end
+
     def account_missing_in_argyle?(payroll_account)
       account_json = @argyle_service.fetch_account_api(account: payroll_account.aggregator_account_id)
+      # Keep the response so fetch_report_data_for_account doesn't request it again.
+      prefetched_accounts[payroll_account.aggregator_account_id] = account_json
       DISCONNECTED_STATES.include?(account_json.dig("connection", "status"))
     rescue Faraday::ResourceNotFound
       true
@@ -75,9 +83,9 @@ module Aggregators::AggregatorReports
         @fetched_days = @days_to_fetch_for_gig
       end
 
-      account_json = @argyle_service.fetch_account_api(
-        account: payroll_account.aggregator_account_id
-      )
+      # re-use cached data if present
+      account_json = prefetched_accounts[payroll_account.aggregator_account_id] ||
+        @argyle_service.fetch_account_api(account: payroll_account.aggregator_account_id)
       paystubs_json = @argyle_service.fetch_paystubs_api(
         account: payroll_account.aggregator_account_id,
         from_start_date: from_date,
@@ -163,7 +171,7 @@ module Aggregators::AggregatorReports
     def transform_paystubs(paystubs_json, gig_employment_ids:)
       paystubs_json["results"].map do |paystub_json|
         is_gig_paystub = gig_employment_ids.include?(paystub_json["employment"])
-        Paystub.from_argyle(paystub_json, log_hours_to_mixpanel: !is_gig_paystub)
+        Paystub.from_argyle(paystub_json, log_hours_to_mixpanel: @log_paystub_hours && !is_gig_paystub)
       end
     end
 

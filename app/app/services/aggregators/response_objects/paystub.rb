@@ -43,7 +43,8 @@ module Aggregators::ResponseObjects
       )
     end
 
-    def self.from_argyle(response_body, log_hours_to_mixpanel: true)
+    # hours mixpanel should only be logged a single time, 'true' is passed when it needs to be
+    def self.from_argyle(response_body, log_hours_to_mixpanel: false)
       if log_hours_to_mixpanel
         begin
           self.log_paystub_to_mixpanel(response_body)
