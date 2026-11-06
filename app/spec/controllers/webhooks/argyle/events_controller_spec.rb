@@ -164,9 +164,9 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
 
         # Sarah is a W-2 worker with 10 paystubs in the fixture.
         expect(MixpanelEventTrackingJob).to have_received(:perform_later)
-          .with(TrackEvent::ArgylePaystubHours, anything, anything).exactly(10).times
+          .with(TrackEvent::ArgylePaystubHours, anything, hash_including(cbv_applicant_id: cbv_flow.cbv_applicant_id)).exactly(10).times
         expect(MixpanelEventTrackingJob).to have_received(:perform_later)
-          .with(TrackEvent::ArgyleReportHours, anything, hash_including(total_paystubs: 10)).once
+          .with(TrackEvent::ArgyleReportHours, anything, hash_including(total_paystubs: 10, cbv_applicant_id: cbv_flow.cbv_applicant_id)).once
       end
 
       context "when the partner still has applicant information to collect" do

@@ -44,10 +44,10 @@ module Aggregators::ResponseObjects
     end
 
     # hours mixpanel should only be logged a single time, 'true' is passed when it needs to be
-    def self.from_argyle(response_body, log_hours_to_mixpanel: false)
+    def self.from_argyle(response_body, log_hours_to_mixpanel: false, cbv_applicant_id: nil)
       if log_hours_to_mixpanel
         begin
-          self.log_paystub_to_mixpanel(response_body)
+          self.log_paystub_to_mixpanel(response_body, cbv_applicant_id: cbv_applicant_id)
         rescue => ex
           NewRelic::Agent.notice_error(ex)
           Rails.logger.error "Error logging paystub to MixPanel: #{ex}"
@@ -83,12 +83,13 @@ module Aggregators::ResponseObjects
 
     # TODO: Tech Debt - this will need to be moved after PF-586 (https://app.asana.com/1/1210277703905441/project/1210563646012085/task/1213127420002904?focus=true)
     # is complete and we are operating on an internal model instead of regenerating the synthetic hours as part of the view
-    def self.log_paystub_to_mixpanel(response_body)
+    def self.log_paystub_to_mixpanel(response_body, cbv_applicant_id: nil)
       gross_pay_total = response_body["gross_pay_list"]&.map { |item| item["hours"] || 0 }&.map(&:to_f)&.sum
       synthetic_total_hours = Aggregators::FormatMethods::Argyle.synthetic_hours(response_body["gross_pay_list"])
 
       GenericEventTracker.new.track(TrackEvent::ArgylePaystubHours, nil, {
         time: Time.now.to_i,
+        cbv_applicant_id: cbv_applicant_id,
         argyle_total_hours: response_body["hours"],
         gross_pay_sum: gross_pay_total,
         synthetic_total_hours: synthetic_total_hours,

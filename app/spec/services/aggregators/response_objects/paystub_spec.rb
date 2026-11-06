@@ -116,10 +116,11 @@ RSpec.describe Aggregators::ResponseObjects::Paystub, type: :model do
           gross_pay_sum: 65.5861,
           synthetic_total_hours: 65.5861,
           argyle_total_hours_matches_synthetic: false,
-          argyle_hours_null: false
+          argyle_hours_null: false,
+          cbv_applicant_id: 123
         )).once
 
-      paystub = described_class.from_argyle(argyle_response, log_hours_to_mixpanel: true)
+      paystub = described_class.from_argyle(argyle_response, log_hours_to_mixpanel: true, cbv_applicant_id: 123)
     end
 
     it 'does not log paystub hours unless asked to' do

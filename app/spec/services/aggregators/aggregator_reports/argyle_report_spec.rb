@@ -266,7 +266,7 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
         argyle_report.send(:fetch_report_data)
 
         expect(tracker_instance).to have_received(:track)
-          .with(TrackEvent::ArgylePaystubHours, nil, anything)
+          .with(TrackEvent::ArgylePaystubHours, nil, hash_including(cbv_applicant_id: payroll_account.cbv_flow.cbv_applicant_id))
           .exactly(w2_paystubs.size).times
       end
 

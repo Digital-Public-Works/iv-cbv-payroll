@@ -103,7 +103,7 @@ module Aggregators::AggregatorReports
                                                  paystubs_json,
                                                  account_json))
       @incomes.append(*transform_incomes(identities_json))
-      @paystubs.append(*transform_paystubs(paystubs_json, gig_employment_ids: gig_employment_ids))
+      @paystubs.append(*transform_paystubs(paystubs_json, gig_employment_ids: gig_employment_ids, payroll_account: payroll_account))
       @gigs.append(*transform_gigs(gigs_json))
 
       check_hours(paystubs_json)
@@ -168,10 +168,12 @@ module Aggregators::AggregatorReports
       end
     end
 
-    def transform_paystubs(paystubs_json, gig_employment_ids:)
+    def transform_paystubs(paystubs_json, gig_employment_ids:, payroll_account: nil)
+      # Only look up the applicant when the hours events will actually be sent.
+      cbv_applicant_id = payroll_account&.cbv_flow&.cbv_applicant_id if @log_paystub_hours
       paystubs_json["results"].map do |paystub_json|
         is_gig_paystub = gig_employment_ids.include?(paystub_json["employment"])
-        Paystub.from_argyle(paystub_json, log_hours_to_mixpanel: @log_paystub_hours && !is_gig_paystub)
+        Paystub.from_argyle(paystub_json, log_hours_to_mixpanel: @log_paystub_hours && !is_gig_paystub, cbv_applicant_id: cbv_applicant_id)
       end
     end
 
