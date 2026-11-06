@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe Transmitters::EncryptedS3Transmitter, :integration do
+RSpec.describe Transmitters::S3Transmitter, :integration do
   subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
 
   include_context "gpg_setup"
@@ -43,7 +43,7 @@ RSpec.describe Transmitters::EncryptedS3Transmitter, :integration do
   before do
     allow(mock_client_agency).to receive_messages(id: "sandbox", logo_path: "", report_customization_show_earnings_list: true, timezone: "America/New_York", partner_identifier_name: "case_number", applicant_attributes: {}, include_paystubs: false)
 
-    stub_pdf_generation(label: "EncryptedS3Transmitter integration test")
+    stub_pdf_generation(label: "S3Transmitter (encrypted) integration test")
   end
 
 
@@ -106,13 +106,6 @@ RSpec.describe Transmitters::EncryptedS3Transmitter, :integration do
         expect(key).not_to be_nil, "no prefixed VMI tar.gz.gpg landed in the bucket; saw: #{keys.inspect}"
       end
     end
-
-    it "raises when public_key is missing" do
-      bad_config = transmission_method_configuration.merge("public_key" => nil)
-      transmitter = described_class.new(cbv_flow, mock_client_agency, aggregator_report, bad_config)
-
-      expect { transmitter.deliver }.to raise_error(/Public key is required/)
-    end
   end
 
   describe "with bad credentials" do
@@ -123,7 +116,7 @@ RSpec.describe Transmitters::EncryptedS3Transmitter, :integration do
       )
       transmission = create(:cbv_flow_transmission,
         cbv_flow: cbv_flow,
-        method_type: :encrypted_s3,
+        method_type: :s3,
         status: :pending,
         configuration: bad_config
       )

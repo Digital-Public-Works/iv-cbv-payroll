@@ -2,7 +2,7 @@ require "net/http"
 
 # No-op connectivity check for one transmission method, using its stored
 # credentials: SFTP login plus a stat of path_prefix, S3 HeadBucket (and a GPG
-# key parse for encrypted_s3), or an OPTIONS/HEAD request for webhook and json.
+# key parse when s3 has a public_key), or an OPTIONS/HEAD request for webhook and json.
 # shared_email can't be checked without sending mail. Nothing is uploaded,
 # posted or sent; it's a guard against mistyped credentials and unreachable
 # endpoints, not proof that delivery will succeed.
@@ -23,8 +23,7 @@ module AdminApi
     def call
       case @type
       when "sftp" then sftp
-      when "unencrypted_s3" then s3
-      when "encrypted_s3" then encrypted_s3
+      when "s3" then s3
       when "webhook" then http(@config["webhook_url"])
       when "json" then http(@config["url"])
       else result(false, "not_applicable", "Email delivery can't be checked without sending mail")
@@ -59,21 +58,20 @@ module AdminApi
       result(true, "handshake", "Connected to #{url}:#{port} as #{user}; #{directory} exists")
     end
 
+    # With a public_key, the key must parse (uploads are encrypted to it);
+    # without one, uploads go unencrypted and the detail says so.
     def s3
       return result(false, "handshake", "No bucket configured") if @config["bucket"].blank?
 
-      S3Service.new(@config).head_bucket
-      result(true, "handshake", "HeadBucket succeeded for #{@config['bucket']}")
-    end
-
-    def encrypted_s3
       key = @config["public_key"]
-      return result(false, "handshake", "No public_key configured") if key.blank?
+      if key.present?
+        fingerprint = GPGME::Key.import(key).imports.first&.fingerprint
+        return result(false, "handshake", "public_key is not a GPG public key") if fingerprint.blank?
+      end
 
-      fingerprint = GPGME::Key.import(key).imports.first&.fingerprint
-      return result(false, "handshake", "public_key is not a GPG public key") if fingerprint.blank?
-
-      s3.tap { |r| r[:detail] = "#{r[:detail]}; GPG key #{fingerprint}" }
+      S3Service.new(@config).head_bucket
+      encryption = fingerprint ? "encrypting to GPG key #{fingerprint}" : "no public_key, so uploads are not encrypted"
+      result(true, "handshake", "HeadBucket succeeded for #{@config['bucket']}; #{encryption}")
     end
 
     def http(raw_url)

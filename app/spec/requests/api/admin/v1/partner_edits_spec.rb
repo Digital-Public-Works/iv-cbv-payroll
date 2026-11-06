@@ -190,6 +190,13 @@ RSpec.describe "Admin API: editing partners", type: :request do
       admin_request(:put, "#{base}/transmission_methods", body: { updated_at: updated_at, transmission_methods: methods })
     end
 
+    it "rejects a retired S3 method type, pointing at s3" do
+      put_methods(methods_with(password: "$ENCRYPTED", extra: [ { method_type: "unencrypted_s3", configs: [ { key: "path_prefix", value: "", encrypted: false } ] } ]))
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(json_body["errors"]).to include(a_hash_including("message" => a_string_including("'unencrypted_s3' no longer exists; use 's3'")))
+    end
+
     it "keeps a stored secret sent as $ENCRYPTED" do
       put_methods(methods_with(password: "$ENCRYPTED", url: "sftp2.example.org"))
 

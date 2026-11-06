@@ -3,12 +3,9 @@
 class TransmissionFilename
   MAX_TOTAL_LENGTH = 100
 
-  # Per-method extension for file-producing transmissions.
-  EXTENSIONS = {
-    sftp:            ".pdf",
-    unencrypted_s3:  ".tar.gz",
-    encrypted_s3:    ".tar.gz.gpg"
-  }.freeze
+  # Transmission methods that produce a file. s3 is a .tar.gz, or .tar.gz.gpg
+  # when the partner has a GPG public_key (see .encrypted? / .extension_for).
+  FILE_METHOD_TYPES = %i[sftp s3].freeze
 
   # Legacy partners shipped before the VMI rename and have downstream automation
   # that parses the `CBVPilot_`
@@ -19,9 +16,10 @@ class TransmissionFilename
 
   # The full remote path where this transmission lands.
   # e.g. path/to/inbox/VMI_00012345_20260513_ConfABC123.pdf
-  def self.full_path(cbv_flow:, agency:, method_type:, remote_directory:, suffix: "")
+  # Pass encrypted: for s3 (see .encrypted?); it picks the .gpg extension.
+  def self.full_path(cbv_flow:, agency:, method_type:, remote_directory:, encrypted: false, suffix: "")
     method_type = method_type.to_sym
-    basename = basename_for(cbv_flow: cbv_flow, agency: agency, method_type: method_type, suffix: suffix)
+    basename = basename_for(cbv_flow: cbv_flow, agency: agency, method_type: method_type, encrypted: encrypted, suffix: suffix)
     dir = remote_directory_for(method_type: method_type, remote_directory: remote_directory)
     dir.empty? ? basename : File.join(dir, basename)
   end
@@ -30,11 +28,8 @@ class TransmissionFilename
   # the same deterministic stem; only the extension differs by method_type.
   # The suffix distinguishes companion files (e.g. "_paystubs") that share the stem.
   # e.g. VMI_00012345_20260513_ConfABC123.pdf
-  def self.basename_for(cbv_flow:, agency:, method_type:, suffix: "")
-    method_type = method_type.to_sym
-    extension = EXTENSIONS.fetch(method_type) do
-      raise KeyError, "TransmissionFilename: `#{method_type}` is not a file-producing method (only #{EXTENSIONS.keys.join(', ')} are)"
-    end
+  def self.basename_for(cbv_flow:, agency:, method_type:, encrypted: false, suffix: "")
+    extension = extension_for(method_type, encrypted: encrypted)
     if cbv_flow.consented_to_authorized_use_at.nil?
       raise "Cannot generate transmission filename: consent timestamp is missing for cbv_flow #{cbv_flow.id}"
     end
@@ -49,10 +44,27 @@ class TransmissionFilename
     full
   end
 
+  def self.file_method?(method_type)
+    FILE_METHOD_TYPES.include?(method_type.to_sym)
+  end
+
+  # encryptes when the partner has provided a public GPG key
+  def self.encrypted?(method_type:, configuration:)
+    method_type.to_sym == :s3 && (configuration || {})["public_key"].present?
+  end
+
+  def self.extension_for(method_type, encrypted: false)
+    case method_type.to_sym
+    when :sftp then ".pdf"
+    when :s3 then encrypted ? ".tar.gz.gpg" : ".tar.gz"
+    else
+      raise KeyError, "TransmissionFilename: `#{method_type}` is not a file-producing method (only #{FILE_METHOD_TYPES.join(', ')} are)"
+    end
+  end
+
   # The configured remote directory for a file-producing transmission method, or nil otherwise.
   def self.remote_directory_from_config(method_type:, configuration:)
-    method_type = method_type.to_sym
-    return nil unless EXTENSIONS.key?(method_type)
+    return nil unless file_method?(method_type)
     configuration["path_prefix"]
   end
 
@@ -63,7 +75,7 @@ class TransmissionFilename
     method_type = method_type.to_sym
     return "" if remote_directory.blank?
 
-    if %i[unencrypted_s3 encrypted_s3].include?(method_type) && remote_directory.start_with?("/")
+    if method_type == :s3 && remote_directory.start_with?("/")
       raise ArgumentError,
             "TransmissionFilename: remote_directory for #{method_type} must not start with '/' (got #{remote_directory.inspect})"
     end

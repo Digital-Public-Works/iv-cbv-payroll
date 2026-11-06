@@ -33,27 +33,37 @@ RSpec.describe AdminApi::ConnectivityCheck do
     end
   end
 
-  describe "unencrypted_s3" do
-    it "calls HeadBucket" do
-      method = method_with("unencrypted_s3", "bucket" => "reports", "region" => "us-east-1", "path_prefix" => "")
+  describe "s3" do
+    it "calls HeadBucket and says uploads are unencrypted when there is no public_key" do
+      method = method_with("s3", "bucket" => "reports", "region" => "us-east-1", "path_prefix" => "")
       s3 = instance_double(S3Service, head_bucket: true)
       allow(S3Service).to receive(:new).and_return(s3)
 
-      expect(described_class.call(method)).to include(ok: true, kind: "handshake", detail: a_string_including("reports"))
+      expect(described_class.call(method)).to include(ok: true, kind: "handshake",
+        detail: a_string_including("reports", "not encrypted"))
     end
 
     it "fails without a bucket" do
-      method = method_with("unencrypted_s3", "path_prefix" => "")
+      method = method_with("s3", "path_prefix" => "")
 
       expect(described_class.call(method)).to include(ok: false, detail: "No bucket configured")
     end
-  end
 
-  describe "encrypted_s3" do
-    it "fails when public_key isn't a GPG key" do
-      method = method_with("encrypted_s3", "bucket" => "reports", "public_key" => "not a key", "path_prefix" => "")
+    it "fails when public_key isn't a GPG key, without calling HeadBucket" do
+      method = method_with("s3", "bucket" => "reports", "public_key" => "not a key", "path_prefix" => "")
+      allow(S3Service).to receive(:new)
 
       expect(described_class.call(method)).to include(ok: false)
+      expect(S3Service).not_to have_received(:new)
+    end
+
+    it "reports the GPG fingerprint when public_key is a valid key" do
+      method = method_with("s3", "bucket" => "reports", "public_key" => "KEY", "path_prefix" => "")
+      import = instance_double(GPGME::ImportResult, imports: [ instance_double(GPGME::ImportStatus, fingerprint: "ABC123") ])
+      allow(GPGME::Key).to receive(:import).with("KEY").and_return(import)
+      allow(S3Service).to receive(:new).and_return(instance_double(S3Service, head_bucket: true))
+
+      expect(described_class.call(method)).to include(ok: true, detail: a_string_including("GPG key ABC123"))
     end
   end
 

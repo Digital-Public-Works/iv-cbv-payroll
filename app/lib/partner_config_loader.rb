@@ -85,8 +85,7 @@ class PartnerConfigLoader
     "webhook" => %w[webhook_url api_key],
     "json" => %w[url],
     "shared_email" => %w[email],
-    "encrypted_s3" => %w[public_key path_prefix],
-    "unencrypted_s3" => %w[path_prefix]
+    "s3" => %w[path_prefix]
   }.freeze
   BLANK_ALLOWED_KEYS = %w[path_prefix].freeze
 
@@ -100,14 +99,21 @@ class PartnerConfigLoader
     "webhook" => %w[],
     "json" => %w[include_report_pdf custom_headers],
     "shared_email" => %w[],
-    "encrypted_s3" => %w[bucket region aws_access_key_id aws_secret_access_key endpoint force_path_style],
-    "unencrypted_s3" => %w[bucket region aws_access_key_id aws_secret_access_key endpoint force_path_style]
+    # public_key: when set, s3 GPG-encrypts the upload; when absent it uploads unencrypted.
+    "s3" => %w[public_key bucket region aws_access_key_id aws_secret_access_key endpoint force_path_style]
   }.freeze
   SECRET_CREDENTIAL_KEYS = %w[password api_key aws_secret_access_key].freeze
 
   # Methods whose path_prefix is used as a remote directory; a leading "/" breaks
   # remote_directory_for at transmission time, so it's rejected up front.
-  PATH_PREFIX_METHODS = %w[sftp unencrypted_s3 encrypted_s3].freeze
+  PATH_PREFIX_METHODS = %w[sftp s3].freeze
+
+  # Method types that were merged into s3. Rejected with a pointer to s3 so an
+  # old YAML file fails clearly instead of with a bare "invalid method_type".
+  RETIRED_METHOD_TYPES = {
+    "encrypted_s3" => "use 's3' with a public_key config (the upload is GPG-encrypted when public_key is set)",
+    "unencrypted_s3" => "use 's3' without a public_key config"
+  }.freeze
 
   # Sentinel written by .export in place of an encrypted secret value. It is a
   # human-readable placeholder, NOT a real value — applying it verbatim is a
@@ -547,10 +553,20 @@ class PartnerConfigLoader
       return
     end
 
+    seen_types = []
     methods.each_with_index do |tm, i|
       method_type = tm[:method_type]
+      # Each flow records one transmission per method_type, so a second entry
+      # of the same type would never be delivered (e.g. two s3 buckets).
+      if method_type.present?
+        add_error("transmission_methods[#{i}]: duplicate method_type '#{method_type}'", "transmission_methods[#{i}]") if seen_types.include?(method_type.to_s)
+        seen_types << method_type.to_s
+      end
+
       if method_type.blank?
         add_error("transmission_methods[#{i}]: missing 'method_type'", "transmission_methods[#{i}]")
+      elsif RETIRED_METHOD_TYPES.key?(method_type.to_s)
+        add_error("transmission_methods[#{i}]: method_type '#{method_type}' no longer exists; #{RETIRED_METHOD_TYPES[method_type.to_s]}", "transmission_methods[#{i}]")
       elsif !VALID_TRANSMISSION_METHODS.include?(method_type.to_s)
         add_error("transmission_methods[#{i}]: invalid method_type '#{method_type}'. Valid: #{VALID_TRANSMISSION_METHODS.join(', ')}", "transmission_methods[#{i}]")
       end
