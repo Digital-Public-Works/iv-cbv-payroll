@@ -158,7 +158,9 @@ class Webhooks::Argyle::EventsController < ApplicationController
         payroll_accounts: [ payroll_account ],
         argyle_service: argyle_for(@cbv_flow),
         days_to_fetch_for_w2: agency_config[@cbv_flow.client_agency_id].pay_income_days[:w2],
-        days_to_fetch_for_gig: agency_config[@cbv_flow.client_agency_id].pay_income_days[:gig]
+        days_to_fetch_for_gig: agency_config[@cbv_flow.client_agency_id].pay_income_days[:gig],
+        # log the paystub hours mixpanel event from here, only once, instead of every time we build the object for use on a page
+        log_paystub_hours: true
       )
       report.fetch
 

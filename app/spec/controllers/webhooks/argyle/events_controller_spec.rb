@@ -155,6 +155,20 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
         expect(fetches).to eq(1)
       end
 
+      it "logs hours to Mixpanel once per sync: one event per W-2 paystub and one per report" do
+        allow(MixpanelEventTrackingJob).to receive(:perform_later)
+
+        run_full_sync
+        # Duplicate webhooks after the sync must not log again.
+        process_webhook("paystubs.fully_synced")
+
+        # Sarah is a W-2 worker with 10 paystubs in the fixture.
+        expect(MixpanelEventTrackingJob).to have_received(:perform_later)
+          .with(TrackEvent::ArgylePaystubHours, anything, hash_including(cbv_applicant_id: cbv_flow.cbv_applicant_id)).exactly(10).times
+        expect(MixpanelEventTrackingJob).to have_received(:perform_later)
+          .with(TrackEvent::ArgyleReportHours, anything, hash_including(total_paystubs: 10, cbv_applicant_id: cbv_flow.cbv_applicant_id)).once
+      end
+
       context "when the partner still has applicant information to collect" do
         let(:cbv_flow) do
           create(:cbv_flow, :generic, argyle_user_id: "abc-def-ghi",

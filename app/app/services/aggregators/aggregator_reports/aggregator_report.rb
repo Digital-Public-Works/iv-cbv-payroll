@@ -3,7 +3,16 @@ module Aggregators::AggregatorReports
   class AggregatorReport
     include Cbv::MonthlySummaryHelper
 
-    attr_accessor :payroll_accounts, :identities, :incomes, :employments, :gigs, :paystubs, :fetched_days
+    attr_accessor :fetched_days
+    attr_reader :payroll_accounts, :identities, :incomes, :employments, :gigs, :paystubs
+
+    # if any of the items are replaced, clear the cache of the previous copy of that data
+    %i[payroll_accounts identities incomes employments gigs paystubs].each do |attribute|
+      define_method(:"#{attribute}=") do |value|
+        clear_account_report_cache
+        instance_variable_set(:"@#{attribute}", value)
+      end
+    end
 
     def initialize(payroll_accounts: [], days_to_fetch_for_w2: nil, days_to_fetch_for_gig: nil)
       @payroll_accounts = payroll_accounts
@@ -29,6 +38,7 @@ module Aggregators::AggregatorReports
     end
 
     def fetch_report_data
+      clear_account_report_cache
       @payroll_accounts.each do |payroll_account|
         fetch_report_data_for_account(payroll_account)
       end
@@ -41,7 +51,12 @@ module Aggregators::AggregatorReports
       raise
     end
 
+    # cache per page so that we don't continually repull/reprocess argyle data
     def find_account_report(account_id)
+      account_report_cache[account_id] ||= build_account_report(account_id)
+    end
+
+    def build_account_report(account_id)
       account_employment = pick_employment(@employments, @paystubs, account_id)
       employment_filter = employment_filter_for(account_id, account_employment&.employment_matching_id)
 
@@ -52,25 +67,13 @@ module Aggregators::AggregatorReports
       null_employment_paystubs = @paystubs.select(&null_employment_filter)
       notify_flagged_paystubs(null_employment_paystubs)
 
-      report = AccountReport.new(
+      AccountReport.new(
         identity: @identities.filter(&employment_filter).first,
         income: @incomes.filter(&employment_filter).first,
         employment: account_employment,
         paystubs: filtered_paystubs,
         gigs: @gigs.find_all { |gig| gig.account_id == account_id }
       )
-
-      log_report_hours_to_mixpanel(report)
-
-      report
-    end
-
-    def log_report_hours_to_mixpanel(report)
-      GenericEventTracker.new.track(TrackEvent::ArgyleReportHours, nil, {
-        time: Time.now.to_i,
-        total_paystubs: report&.paystubs&.size,
-        paystubs_with_argyle_hours_null: report&.paystubs&.select { |s| s&.hours.nil? }.size
-      })
     end
 
     def notify_flagged_paystubs(paystubs_to_report)
@@ -269,6 +272,14 @@ module Aggregators::AggregatorReports
     end
 
     private
+
+    def account_report_cache
+      @account_report_cache ||= {}
+    end
+
+    def clear_account_report_cache
+      @account_report_cache = nil
+    end
 
     def employment_filter_for(account_id, employment_matching_id)
       # Create a filter that filters any entities that don't match the account id and the employment id.
