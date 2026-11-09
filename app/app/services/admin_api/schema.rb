@@ -5,8 +5,8 @@ module AdminApi
     L = PartnerConfigLoader
 
     METHOD_LABELS = {
-      "sftp" => "SFTP", "shared_email" => "Shared email", "encrypted_s3" => "Encrypted S3",
-      "json" => "JSON", "webhook" => "Webhook", "unencrypted_s3" => "Unencrypted S3"
+      "sftp" => "SFTP", "shared_email" => "Shared email", "s3" => "S3",
+      "json" => "JSON", "webhook" => "Webhook"
     }.freeze
 
     DESCRIPTIONS = {
@@ -20,7 +20,7 @@ module AdminApi
       "endpoint" => "Test only",
       "force_path_style" => "Test only",
       "custom_headers" => "May carry auth tokens",
-      "public_key" => "GPG public key"
+      "public_key" => "GPG public key; when set, files are encrypted before upload"
     }.freeze
 
     USAGE_LABELS = { "invitation_attributes" => "Invitation", "landing_page_attributes" => "Landing page", "applicant_input_page" => "Applicant input page" }.freeze
