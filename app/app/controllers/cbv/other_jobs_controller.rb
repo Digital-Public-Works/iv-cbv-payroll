@@ -1,4 +1,6 @@
 class Cbv::OtherJobsController < Cbv::BaseController
+  before_action :skip_unless_outside_jobs_allowed
+
   def show
   end
 
@@ -26,6 +28,12 @@ class Cbv::OtherJobsController < Cbv::BaseController
   end
 
   private
+
+  # Partners that don't ask about outside jobs skip this step, including when
+  # it is reached by a direct link.
+  def skip_unless_outside_jobs_allowed
+    redirect_to cbv_flow_applicant_information_path unless helpers.allow_outside_jobs?
+  end
 
   def other_jobs_params
     params.fetch(:cbv_flow, {}).permit(:has_other_jobs)

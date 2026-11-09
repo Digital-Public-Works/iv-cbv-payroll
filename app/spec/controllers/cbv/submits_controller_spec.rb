@@ -264,6 +264,63 @@ RSpec.describe Cbv::SubmitsController do
           expect(pdf_text).not_to include("Base Pay")
         end
 
+        it "asks about other jobs and explains the client-provided footnote" do
+          get :show, format: :pdf
+          pdf_text = extract_pdf_text(response)
+
+          expect(pdf_text).to include("Does the client have additional jobs they will verify separately?")
+          expect(pdf_text).to include(I18n.t("cbv.submits.show.pdf.caseworker.client_provided_information"))
+        end
+
+        context "when the partner does not ask about outside jobs" do
+          before do
+            stub_client_agency_config_value("sandbox", "allow_outside_jobs", false)
+          end
+
+          it "leaves out the other jobs row but keeps the rest of the client information" do
+            get :show, format: :pdf
+            pdf_text = extract_pdf_text(response)
+
+            expect(pdf_text).not_to include("additional jobs they will verify separately")
+            expect(pdf_text).to include(I18n.t("cbv.submits.show.pdf.shared.client_information"))
+          end
+        end
+
+        context "when the partner collects no client-provided information" do
+          before do
+            stub_client_agency_config_value("sandbox", "allow_outside_jobs", false)
+            stub_client_agency_config_value("sandbox", "allow_user_comment", false)
+            stub_client_agency_config_value("sandbox", "applicant_supplied_attribute_names", [])
+          end
+
+          it "leaves out the empty client information table and the footnote" do
+            get :show, format: :pdf
+            pdf_text = extract_pdf_text(response)
+
+            expect(pdf_text).not_to include(I18n.t("cbv.submits.show.pdf.shared.client_information"))
+            expect(pdf_text).not_to include(I18n.t("cbv.submits.show.pdf.caseworker.client_provided_information"))
+            expect(pdf_text).to include(I18n.t("cbv.submits.show.pdf.shared.report_details"))
+          end
+
+          # The table is hidden by whether it has rows, not by the partner's
+          # settings, so the caseworker's partner identifier still shows.
+          context "when the caseworker report has a partner identifier" do
+            before do
+              allow(ClientAgency::ReportFields).to receive(:caseworker_specific_fields)
+                .and_return([ [ ".pdf.caseworker.case_number", "ABC1234" ] ])
+            end
+
+            it "keeps the client information table for the caseworker" do
+              get :show, format: :pdf, params: { is_caseworker: "true" }
+              pdf_text = extract_pdf_text(response)
+
+              expect(pdf_text).to include(I18n.t("cbv.submits.show.pdf.shared.client_information"))
+              expect(pdf_text).to include("ABC1234")
+              expect(pdf_text).not_to include(I18n.t("cbv.submits.show.pdf.caseworker.client_provided_information"))
+            end
+          end
+        end
+
         context "when the client has added a comment" do
           let(:cbv_flow) do
             create(:cbv_flow,
@@ -281,6 +338,18 @@ RSpec.describe Cbv::SubmitsController do
 
             expect(pdf_text).to include("Client Comments")
             expect(pdf_text).to include("My hours vary seasonally")
+          end
+
+          context "when the partner does not allow user comments" do
+            before { stub_client_agency_config_value("sandbox", "allow_user_comment", false) }
+
+            it "does not render the client comment block" do
+              get :show, format: :pdf
+              pdf_text = extract_pdf_text(response)
+
+              expect(pdf_text).not_to include("Client Comments")
+              expect(pdf_text).not_to include("My hours vary seasonally")
+            end
           end
         end
 

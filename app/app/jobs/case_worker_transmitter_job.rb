@@ -21,7 +21,8 @@ class CaseWorkerTransmitterJob < ApplicationJob
 
     configured_methods.map do |method_type, entry|
       transmission = cbv_flow.cbv_flow_transmissions.find_or_initialize_by(method_type: method_type)
-      transmission.configuration = entry.configuration
+      # guard against config changing; once it is transmitted the path that was used should not change
+      transmission.configuration = entry.configuration unless transmission.succeeded?
       transmission.status = :pending if transmission.failed?
       transmission.save!
       transmission

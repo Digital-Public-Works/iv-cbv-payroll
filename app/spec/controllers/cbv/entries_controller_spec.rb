@@ -173,6 +173,23 @@ RSpec.describe Cbv::EntriesController do
         expect(response.body).to include(I18n.t("cbv.entries.show.step3_description_link_sharing"))
       end
 
+      it "mentions adding comments to the report" do
+        get :show, params: { token: invitation.auth_token }
+        expect(response.body).to include("You can check the details and add comments to the report")
+      end
+
+      context "when the agency does not allow user comments" do
+        before do
+          stub_client_agency_config_value("sandbox", "allow_user_comment", false)
+        end
+
+        it "does not mention adding comments to the report" do
+          get :show, params: { token: invitation.auth_token }
+          expect(response.body).to include("You can check the details of the report")
+          expect(response.body).not_to include("add comments")
+        end
+      end
+
       context "when the agency does not encourage link sharing" do
         before do
           stub_client_agency_config_value("sandbox", "encourage_link_sharing", false)

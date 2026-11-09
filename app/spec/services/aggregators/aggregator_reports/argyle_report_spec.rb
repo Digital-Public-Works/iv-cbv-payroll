@@ -221,8 +221,34 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
       let(:w2_identity) { argyle_load_relative_json_file("joe", "request_identity.json")["results"].first }
       let(:w2_paystubs) { argyle_load_relative_json_file("joe", "request_paystubs.json")["results"] }
 
+      # Logging is opt-in (only the sync-completion webhook turns it on).
+      let(:argyle_report) do
+        described_class.new(
+          payroll_accounts: [ payroll_account ],
+          argyle_service: argyle_service,
+          days_to_fetch_for_w2: days_ago_to_fetch,
+          days_to_fetch_for_gig: days_ago_to_fetch_for_gig,
+          log_paystub_hours: true
+        )
+      end
+
       before do
         allow(GenericEventTracker).to receive(:new).and_return(tracker_instance)
+      end
+
+      it "does not log paystub hours when the report is not asked to" do
+        allow(argyle_service).to receive_messages(fetch_identities_api: argyle_load_relative_json_file("joe", "request_identity.json"), fetch_paystubs_api: { "results" => w2_paystubs })
+        default_report = described_class.new(
+          payroll_accounts: [ payroll_account ],
+          argyle_service: argyle_service,
+          days_to_fetch_for_w2: days_ago_to_fetch,
+          days_to_fetch_for_gig: days_ago_to_fetch_for_gig
+        )
+
+        default_report.send(:fetch_report_data)
+
+        expect(tracker_instance).not_to have_received(:track)
+          .with(TrackEvent::ArgylePaystubHours, any_args)
       end
 
       it "does not log paystub hours for a gig employment's paystubs" do
@@ -240,7 +266,7 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
         argyle_report.send(:fetch_report_data)
 
         expect(tracker_instance).to have_received(:track)
-          .with(TrackEvent::ArgylePaystubHours, nil, anything)
+          .with(TrackEvent::ArgylePaystubHours, nil, hash_including(cbv_applicant_id: payroll_account.cbv_flow.cbv_applicant_id))
           .exactly(w2_paystubs.size).times
       end
 
@@ -412,6 +438,17 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
       it "does not discard the payroll_account" do
         argyle_report.fetch
         expect(discarded_in_db?(payroll_account)).to be false
+      end
+
+      it "reuses the pre-flight account response instead of fetching the account twice" do
+        argyle_report.fetch
+        expect(argyle_service).to have_received(:fetch_account_api).with(account: account).once
+      end
+
+      it "re-checks the account on each fetch, refreshing the stored response" do
+        argyle_report.fetch
+        argyle_report.fetch
+        expect(argyle_service).to have_received(:fetch_account_api).with(account: account).twice
       end
 
       it "still fetches report data" do
@@ -610,6 +647,86 @@ RSpec.describe Aggregators::AggregatorReports::ArgyleReport, type: :service do
                                                                included_range_start: Date.parse("2025-01-02"),
                                                                included_range_end: Date.parse("2025-01-31")
                                                              })
+      end
+    end
+
+    context "bob, with no paystubs or gigs in February" do
+      let(:argyle_report) { described_class.new(
+        payroll_accounts: [ payroll_account ],
+        argyle_service: argyle_service,
+        days_to_fetch_for_w2: days_ago_to_fetch,
+        days_to_fetch_for_gig: days_ago_to_fetch) }
+
+      let(:account) { "019571bc-2f60-3955-d972-dbadfe0913a8" }
+      let(:from_date) { Date.parse("2025-01-08") }
+      let(:to_date) { Date.parse("2025-03-31") }
+      let(:paystubs_json) do
+        argyle_load_relative_json_file("bob", "request_paystubs.json", drop_results_if: ->(paystub) { february?(paystub["paystub_date"]) })
+      end
+      let(:gigs_json) do
+        argyle_load_relative_json_file("bob", "request_gigs.json", drop_results_if: ->(gig) {
+          february?(gig["start_datetime"]) || february?(gig["end_datetime"])
+        })
+      end
+
+      def february?(date_string)
+        date_string.to_s.start_with?("2025-02")
+      end
+
+      before do
+        argyle_report.send(:fetch_report_data)
+      end
+
+      it "skips February by default" do
+        monthly_summary = argyle_report.summarize_by_month(from_date: from_date, to_date: to_date)[account]
+
+        expect(monthly_summary.keys).to eq([ "2025-03", "2025-01" ])
+      end
+
+      it "includes an empty February, in order, when include_empty_months is set" do
+        monthly_summary = argyle_report.summarize_by_month(from_date: from_date, to_date: to_date, include_empty_months: true)[account]
+        expect(monthly_summary.keys).to eq([ "2025-03", "2025-02", "2025-01" ])
+
+        feb = monthly_summary["2025-02"]
+        expect(feb[:paystubs]).to be_empty
+        expect(feb[:gigs]).to be_empty
+        expect(feb[:accrued_gross_earnings]).to eq(0)
+        expect(feb[:total_w2_hours]).to eq(0)
+        expect(feb[:total_gig_hours]).to eq(0)
+        expect(feb[:total_mileage]).to eq(0)
+        expect(feb[:partial_month_range]).to an_object_eq_to({
+                                                               is_partial_month: false,
+                                                               description: nil,
+                                                               included_range_start: Date.parse("2025-02-01"),
+                                                               included_range_end: Date.parse("2025-02-28")
+                                                             })
+      end
+
+      it "does not change the months that have data when include_empty_months is set" do
+        without_empty_months = argyle_report.summarize_by_month(from_date: from_date, to_date: to_date)[account]
+        with_empty_months = argyle_report.summarize_by_month(from_date: from_date, to_date: to_date, include_empty_months: true)[account]
+
+        expect(with_empty_months.except("2025-02")).to eq(without_empty_months)
+      end
+
+      context "when a gig starts in January and ends in February" do
+        let(:gigs_json) do
+          json = argyle_load_relative_json_file("bob", "request_gigs.json", drop_results_if: ->(gig) {
+            february?(gig["start_datetime"]) || february?(gig["end_datetime"])
+          })
+          completed_gig = json["results"].find { |gig| gig["end_datetime"].present? }
+          json["results"] << completed_gig.merge("id" => "overnight-gig", "start_datetime" => "2025-01-31T23:50:00Z", "end_datetime" => "2025-02-01T00:20:00Z")
+          json
+        end
+
+        it "includes the gig in February, the month it ended, when include_empty_months is set" do
+          monthly_summary = argyle_report.summarize_by_month(from_date: from_date, to_date: to_date, include_empty_months: true)[account]
+
+          feb = monthly_summary["2025-02"]
+          expect(feb[:gigs].length).to eq(1)
+          expect(feb[:paystubs]).to be_empty
+          expect(feb[:total_gig_hours]).to be > 0
+        end
       end
     end
 

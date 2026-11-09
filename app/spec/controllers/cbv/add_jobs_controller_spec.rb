@@ -62,6 +62,22 @@ RSpec.describe Cbv::AddJobsController do
       expect(response).to redirect_to(cbv_flow_other_job_path)
     end
 
+    context "when the partner does not ask about outside jobs" do
+      before do
+        stub_client_agency_config_value("sandbox", "allow_outside_jobs", false)
+      end
+
+      it 'skips the other jobs page when false radio button is selected' do
+        post :create, params: { 'additional_jobs': 'false' }
+        expect(response).to redirect_to(cbv_flow_applicant_information_path)
+      end
+
+      it 'still goes to employer search when true radio button is selected' do
+        post :create, params: { 'additional_jobs': 'true' }
+        expect(response).to redirect_to(cbv_flow_employer_search_path)
+      end
+    end
+
     it 'redirects with notice when no radio button has been selected' do
       post :create
       expect(flash[:slim_alert]).to include(type: "error", field: "additional_jobs")

@@ -69,5 +69,28 @@ RSpec.describe Aggregators::Sdk::MockArgyleService do
         expect(docs.size).to eq(1)
       end
     end
+
+    it "accepts the document date window that PaystubsPdfService passes" do
+      docs = service("paystubs_some_images").fetch_payroll_documents_api(
+        account: ARAMARK,
+        from_available_date: "2025-01-01",
+        to_available_date: "2025-03-31"
+      )["results"]
+      expect(docs.size).to eq(1)
+    end
+  end
+
+  describe "method signatures" do
+    it "accepts every keyword argument that the real ArgyleService accepts" do
+      real = Aggregators::Sdk::ArgyleService
+      keywords = ->(method) { method.parameters.filter_map { |type, name| name if %i[key keyreq].include?(type) } }
+
+      shared_methods = described_class.public_instance_methods(false) & real.public_instance_methods(false)
+      missing = shared_methods.to_h do |name|
+        [ name, keywords.(real.instance_method(name)) - keywords.(described_class.instance_method(name)) ]
+      end.reject { |_name, keys| keys.empty? }
+
+      expect(missing).to be_empty
+    end
   end
 end

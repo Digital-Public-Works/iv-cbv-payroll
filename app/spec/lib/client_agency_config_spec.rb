@@ -69,7 +69,7 @@ RSpec.describe ClientAgencyConfig do
         pay_income_days_gig: 90,
         partner_identifier_name: "first_name"
       )
-      ptm = pc.partner_transmission_methods.create!(method_type: :encrypted_s3)
+      ptm = pc.partner_transmission_methods.create!(method_type: :s3)
       ptm.partner_transmission_configs.create!(key: "path_prefix", value: bad_prefix, is_encrypted: false)
       pc
     end

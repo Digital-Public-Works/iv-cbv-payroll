@@ -27,11 +27,21 @@ RSpec.describe ClientAgency::ReportFields, type: :service do
   describe ".applicant_specific_fields" do
     let(:cbv_flow) { create(:cbv_flow, client_agency_id: "sandbox") }
 
-    it "returns the additional jobs field" do
+    it "returns the additional jobs field, marked as client-provided" do
       fields = described_class.applicant_specific_fields(cbv_flow)
       field_keys = fields.map(&:first)
 
-      expect(field_keys).to include(a_string_matching(/additional_jobs_to_report/))
+      expect(field_keys).to eq([ ".pdf.shared.additional_jobs_to_report_html" ])
+    end
+
+    context "when the partner does not ask about outside jobs" do
+      before do
+        stub_client_agency_config_value("sandbox", "allow_outside_jobs", false)
+      end
+
+      it "returns no fields" do
+        expect(described_class.applicant_specific_fields(cbv_flow)).to eq([])
+      end
     end
   end
 end

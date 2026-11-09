@@ -167,6 +167,36 @@ RSpec.describe PartnerConfigLoader do
       expect(loader.errors).to include(/invalid method_type/)
     end
 
+    %w[encrypted_s3 unencrypted_s3].each do |retired|
+      it "rejects the retired #{retired} method_type with a pointer to s3" do
+        valid_yaml["transmission_methods"] = [ { "method_type" => retired, "configs" => [ { "key" => "path_prefix", "value" => "" } ] } ]
+        loader = loader_for(valid_yaml)
+        loader.load!
+        loader.validate!
+        expect(loader.valid?).to be false
+        expect(loader.errors).to include(/method_type '#{retired}' no longer exists; use 's3'/)
+        expect(loader.errors).not_to include(/invalid method_type/)
+      end
+    end
+
+    it "accepts s3 without a public_key (uploads go unencrypted)" do
+      valid_yaml["transmission_methods"] = [ { "method_type" => "s3", "configs" => [ { "key" => "path_prefix", "value" => "inbox" } ] } ]
+      loader = loader_for(valid_yaml)
+      loader.load!
+      loader.validate!
+      expect(loader.errors).to be_empty
+    end
+
+    it "errors when the same method_type appears twice" do
+      s3 = { "method_type" => "s3", "configs" => [ { "key" => "path_prefix", "value" => "" } ] }
+      valid_yaml["transmission_methods"] = [ s3, s3.merge("configs" => [ { "key" => "path_prefix", "value" => "other" } ]) ]
+      loader = loader_for(valid_yaml)
+      loader.load!
+      loader.validate!
+      expect(loader.valid?).to be false
+      expect(loader.errors).to include(/transmission_methods\[1\]: duplicate method_type 's3'/)
+    end
+
     it "errors when no transmission methods are configured" do
       valid_yaml.delete("transmission_methods")
       loader = loader_for(valid_yaml)
@@ -187,7 +217,7 @@ RSpec.describe PartnerConfigLoader do
 
     it "rejects the singular transmission_method / top-level transmission_configs format" do
       valid_yaml.delete("transmission_methods")
-      valid_yaml["transmission_method"] = "unencrypted_s3"
+      valid_yaml["transmission_method"] = "s3"
       valid_yaml["transmission_configs"] = [ { "key" => "bucket", "value" => "b" } ]
       loader = loader_for(valid_yaml)
       loader.load!
@@ -365,6 +395,44 @@ RSpec.describe PartnerConfigLoader do
         expect(loader.errors).not_to include(/path_prefix/)
       end
 
+      describe "webhook contract_version" do
+        def webhook_methods(contract_version_config = nil)
+          configs = [
+            { "key" => "webhook_url", "value" => "https://example.com/hook" },
+            { "key" => "api_key", "value" => "secret" }
+          ]
+          configs << contract_version_config if contract_version_config
+          [ { "method_type" => "webhook", "configs" => configs } ]
+        end
+
+        it "is optional" do
+          valid_yaml["transmission_methods"] = webhook_methods
+          loader = loader_for(valid_yaml)
+          loader.load!
+          loader.validate!
+          expect(loader.errors).not_to include(/contract_version/)
+        end
+
+        it "accepts 1 and 2, as strings or integers" do
+          [ "1", "2", 1, 2 ].each do |version|
+            valid_yaml["transmission_methods"] = webhook_methods({ "key" => "contract_version", "value" => version })
+            loader = loader_for(valid_yaml)
+            loader.load!
+            loader.validate!
+            expect(loader.errors).not_to include(/contract_version/)
+          end
+        end
+
+        it "rejects an unknown value instead of falling back to the legacy contract" do
+          valid_yaml["transmission_methods"] = webhook_methods({ "key" => "contract_version", "value" => "v2" })
+          loader = loader_for(valid_yaml)
+          loader.load!
+          loader.validate!
+          expect(loader.valid?).to be false
+          expect(loader.errors).to include(/\(webhook\): invalid contract_version 'v2' \(must be one of 1, 2\)/)
+        end
+      end
+
       it "rejects a masked $ENCRYPTED placeholder value" do
         valid_yaml["transmission_methods"] = [
           { "method_type" => "webhook", "configs" => [
@@ -404,6 +472,28 @@ RSpec.describe PartnerConfigLoader do
       loader.validate!
       loader.apply!
       expect(PartnerConfig.find_by(partner_id: "test_partner").include_paystubs).to be true
+    end
+
+    it "defaults allow_user_comment and allow_outside_jobs to true when omitted" do
+      loader = loader_for(valid_yaml)
+      loader.load!
+      loader.validate!
+      loader.apply!
+      pc = PartnerConfig.find_by(partner_id: "test_partner")
+      expect(pc.allow_user_comment).to be true
+      expect(pc.allow_outside_jobs).to be true
+    end
+
+    it "applies allow_user_comment and allow_outside_jobs" do
+      valid_yaml["allow_user_comment"] = false
+      valid_yaml["allow_outside_jobs"] = false
+      loader = loader_for(valid_yaml)
+      loader.load!
+      loader.validate!
+      loader.apply!
+      pc = PartnerConfig.find_by(partner_id: "test_partner")
+      expect(pc.allow_user_comment).to be false
+      expect(pc.allow_outside_jobs).to be false
     end
 
     it "creates transmission methods and their configs" do

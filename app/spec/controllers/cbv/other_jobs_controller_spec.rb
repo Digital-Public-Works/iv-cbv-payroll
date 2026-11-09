@@ -32,6 +32,17 @@ RSpec.describe Cbv::OtherJobsController do
       end
     end
 
+    context "when the partner does not ask about outside jobs" do
+      before do
+        stub_client_agency_config_value("sandbox", "allow_outside_jobs", false)
+      end
+
+      it "skips ahead to the next step" do
+        get :show
+        expect(response).to redirect_to(cbv_flow_applicant_information_path)
+      end
+    end
+
     it "indicates the agency website link opens in a new tab" do
       get :show
       link = Capybara.string(response.body).find("a[target='_blank']", text: I18n.t("cbv.other_jobs.show.learn_more_link", agency_portal_name: ""))
@@ -86,6 +97,22 @@ RSpec.describe Cbv::OtherJobsController do
 
       expect(MixpanelEventTrackingJob).not_to receive(:perform_later).with("ApplicantContinuedFromOtherJobsPage", anything, anything)
       patch :update, params: { cbv_flow: { has_other_jobs: '' } }
+    end
+
+    context "when the partner does not ask about outside jobs" do
+      before do
+        stub_client_agency_config_value("sandbox", "allow_outside_jobs", false)
+      end
+
+      it 'skips ahead without saving an answer or tracking the event' do
+        allow(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+        expect(MixpanelEventTrackingJob).not_to receive(:perform_later).with("ApplicantContinuedFromOtherJobsPage", anything, anything)
+
+        patch :update, params: { cbv_flow: { has_other_jobs: 'true' } }
+
+        expect(response).to redirect_to(cbv_flow_applicant_information_path)
+        expect(cbv_flow.reload.has_other_jobs).to be_nil
+      end
     end
 
     context "when event tracking fails in production" do
