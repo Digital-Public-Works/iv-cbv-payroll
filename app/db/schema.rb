@@ -10,11 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-<<<<<<< HEAD
-ActiveRecord::Schema[8.1].define(version: 2026_10_12_140000) do
-=======
 ActiveRecord::Schema[8.1].define(version: 2026_11_06_120000) do
->>>>>>> fd6b53083a1564397407f51186ea9d15ff80615e
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -109,15 +105,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_06_120000) do
     t.string "redact_type"
     t.boolean "redactable", default: false, null: false
     t.boolean "required_for_submit", default: false, null: false
-<<<<<<< HEAD
-    t.string "source_field"
-=======
     t.boolean "show_on_caseworker_form", default: true, null: false
     t.boolean "show_on_caseworker_report", default: false, null: false
     t.string "source_field"
     t.datetime "updated_at", null: false
     t.string "validation_regex"
->>>>>>> fd6b53083a1564397407f51186ea9d15ff80615e
     t.index ["partner_config_id"], name: "index_partner_application_attributes_on_partner_config_id"
   end
 
