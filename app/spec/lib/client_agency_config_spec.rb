@@ -88,6 +88,15 @@ RSpec.describe ClientAgencyConfig do
           .with(%r{bad_s3 failed validation.*must not start with '/'}).at_least(:once)
       end
 
+      it "does not rebuild (and re-report) the broken partner on every request" do
+        allow(Rails.logger).to receive(:error)
+        config = described_class.new(true)
+
+        expect(PartnerConfig).to receive(:find_by).with(partner_id: "bad_s3").once.and_call_original
+
+        3.times { expect(config["bad_s3"]).to be_nil }
+      end
+
       it "logs the failure during the boot validation pass without raising" do
         allow(Rails.logger).to receive(:error)
 
@@ -121,33 +130,47 @@ RSpec.describe ClientAgencyConfig do
       2.times { expect(config["foo"].agency_name).to eq("Foo Agency Name") }
     end
 
-    it "returns nil for an unknown agency and caches the miss" do
+    it "returns nil for an unknown agency without querying for it" do
       config = described_class.new(true)
 
-      expect(PartnerConfig).to receive(:find_by).with(partner_id: "ghost").once.and_call_original
+      expect(PartnerConfig).not_to receive(:find_by)
 
       5.times { expect(config["ghost"]).to be_nil }
     end
 
-    it "re-queries an unknown agency once the miss TTL expires" do
+    it "answers any number of distinct unknown ids and domains without a query once the known keys are loaded" do
+      config = described_class.new(true)
+      config["warm_up"]
+      queries = []
+      callback = ->(*, payload) { queries << payload[:sql] }
+
+      ActiveSupport::Notifications.subscribed(callback, "sql.active_record") do
+        100.times do |i|
+          expect(config["ghost_#{i}"]).to be_nil
+          expect(config.find_by_domain("ghost-#{i}")).to be_nil
+        end
+      end
+
+      expect(queries).to be_empty
+    end
+
+    it "reloads the known keys once their TTL expires" do
       config = described_class.new(true)
       fake_time = 0.0
       allow(config).to receive(:now) { fake_time }
 
-      expect(PartnerConfig).to receive(:find_by).with(partner_id: "ghost").twice.and_call_original
+      expect(PartnerConfig).to receive(:select).twice.and_call_original
 
       config["ghost"]
 
-      # Still within the miss TTL: answered from the negative cache.
-      fake_time = ClientAgencyConfig::MISS_CACHE_TTL_SECONDS - 1
+      fake_time = ClientAgencyConfig::KNOWN_KEYS_TTL_SECONDS - 1
       config["ghost"]
 
-      # Past the miss TTL: the database is consulted again.
-      fake_time = ClientAgencyConfig::MISS_CACHE_TTL_SECONDS + 1
+      fake_time = ClientAgencyConfig::KNOWN_KEYS_TTL_SECONDS + 1
       config["ghost"]
     end
 
-    it "picks up a partner added after a cached miss, once the miss TTL expires" do
+    it "picks up a partner added after the known keys were loaded, once their TTL expires" do
       config = described_class.new(true)
       fake_time = 0.0
       allow(config).to receive(:now) { fake_time }
@@ -165,33 +188,40 @@ RSpec.describe ClientAgencyConfig do
       )
       pc.partner_transmission_methods.create!(method_type: :shared_email)
 
-      fake_time = ClientAgencyConfig::MISS_CACHE_TTL_SECONDS - 1
+      fake_time = ClientAgencyConfig::KNOWN_KEYS_TTL_SECONDS - 1
       expect(config["late_arrival"]).to be_nil
 
-      fake_time = ClientAgencyConfig::MISS_CACHE_TTL_SECONDS + 1
+      fake_time = ClientAgencyConfig::KNOWN_KEYS_TTL_SECONDS + 1
       expect(config["late_arrival"]&.agency_name).to eq("Late Arrival Agency")
     end
 
-    it "bounds the negative cache so scan traffic cannot grow it without limit" do
-      stub_const("ClientAgencyConfig::MAX_CACHED_MISSES", 3)
-      config = described_class.new(true)
-
-      4.times { |i| expect(config["ghost_#{i}"]).to be_nil }
-
-      misses = config.instance_variable_get(:@misses)
-      expect(misses.size).to be <= 3
-      expect(misses).not_to have_key("partner:ghost_0")
-      expect(misses).to have_key("partner:ghost_3")
-    end
-
-    it "does not cache misses in development so a new partner is routable immediately" do
+    it "makes a new partner routable immediately in development" do
       allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("development"))
       config = described_class.new(true)
 
-      expect(PartnerConfig).to receive(:find_by).with(partner_id: "ghost").twice.and_call_original
+      expect(config["late_arrival"]).to be_nil
 
-      config["ghost"]
-      config["ghost"]
+      pc = PartnerConfig.create!(
+        partner_id: "late_arrival",
+        name: "Late Arrival Agency",
+        timezone: "America/Los_Angeles",
+        argyle_environment: "sandbox",
+        pay_income_days_w2: 90,
+        pay_income_days_gig: 182,
+        partner_identifier_name: "first_name"
+      )
+      pc.partner_transmission_methods.create!(method_type: :shared_email)
+
+      expect(config["late_arrival"]&.agency_name).to eq("Late Arrival Agency")
+    end
+
+    it "only admits partners active in the current environment" do
+      sample_config.update!(active_demo: false, active_prod: false)
+      config = described_class.new(false)
+
+      expect(PartnerConfig).not_to receive(:find_by)
+
+      expect(config["foo"]).to be_nil
     end
 
     it "returns nil for a blank id without touching the database" do
@@ -258,10 +288,10 @@ RSpec.describe ClientAgencyConfig do
       expect(config.find_by_domain("not-a-domain")).to be_nil
     end
 
-    it "caches an unrecognized domain so repeated lookups don't hit the database" do
+    it "answers an unrecognized domain without querying for it" do
       config = described_class.new(true)
 
-      expect(PartnerConfig).to receive(:find_by).with(domain: "not-a-domain").once.and_call_original
+      expect(PartnerConfig).not_to receive(:find_by)
 
       3.times { expect(config.find_by_domain("not-a-domain")).to be_nil }
     end
