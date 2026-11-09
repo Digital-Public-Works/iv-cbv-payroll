@@ -123,6 +123,53 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
       allow(fake_event_logger).to receive(:track)
     end
 
+    describe "prefilling applicant attributes from the sync" do
+      def run_full_sync
+        process_webhook("accounts.connected")
+        process_webhook("identities.added")
+        process_webhook("users.fully_synced")
+        process_webhook("paystubs.fully_synced")
+        process_webhook("gigs.fully_synced")
+        PayrollAccount.last.reload
+      end
+
+      before do
+        partner = PartnerConfig.find_by(partner_id: "sandbox")
+        partner.partner_application_attributes.where(name: "first_name")
+               .update_all(source_field: "identity.first_name")
+        ClientAgencyConfig.reset!
+        cbv_flow.cbv_applicant.update!(first_name: nil, last_name: nil)
+      end
+
+      it "fills a mapped attribute once the account has synced" do
+        run_full_sync
+
+        expect(cbv_flow.cbv_applicant.reload.first_name).to be_present
+      end
+
+      it "attributes it to the payroll provider, not the applicant" do
+        run_full_sync
+        applicant = cbv_flow.cbv_applicant.reload
+
+        expect(applicant).not_to be_applicant_provided(:first_name)
+        expect(applicant.provenance_for(:first_name)["source"]).to eq("payroll_provider")
+      end
+
+      it "does not overwrite a value that came in on the invitation" do
+        cbv_flow.cbv_applicant.update!(first_name: "FromCaseworker")
+
+        run_full_sync
+
+        expect(cbv_flow.cbv_applicant.reload.first_name).to eq("FromCaseworker")
+      end
+
+      it "leaves unmapped attributes for the applicant to supply" do
+        run_full_sync
+
+        expect(cbv_flow.cbv_applicant.reload.last_name).to be_nil
+      end
+    end
+
     # The sync outcome and the report verdict are separate: the first is known the
     # moment the sync ends, the second can wait for data the applicant has yet to
     # give us.

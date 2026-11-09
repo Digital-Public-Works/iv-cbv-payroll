@@ -44,7 +44,7 @@ class Cbv::ApplicantInformationsController < Cbv::BaseController
   private
 
 
-  # renders required user input that has not yet been populated
+  # renders required user input that has not yet been populated (from argyle, usually)
   def applicant_field_names
     if show_all_applicant_fields?
       current_agency.attribute_names_for(CONTEXT) | current_agency.required_for_submit_attributes
