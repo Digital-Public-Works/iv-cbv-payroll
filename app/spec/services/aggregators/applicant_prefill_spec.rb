@@ -111,6 +111,12 @@ RSpec.describe Aggregators::ApplicantPrefill do
       expect(applicant.reload.first_name).to eq("Daphne")
     end
 
+    it "treats values that differ only in case as agreeing, keeping the first spelling" do
+      prefill(identity(first_name: "Daphne"), identity(first_name: "DAPHNE"))
+
+      expect(applicant.reload.first_name).to eq("Daphne")
+    end
+
     it "ignores accounts with nothing to say" do
       prefill(identity(first_name: "Daphne"), identity(first_name: nil))
 
@@ -163,6 +169,28 @@ RSpec.describe Aggregators::ApplicantPrefill do
       prefill(identity(first_name: "123456"))
 
       expect(applicant.reload.case_number).to eq("123456")
+    end
+
+    context "when a value fails the applicant's model validations" do
+      before do
+        map(:first_name, "identity.first_name")
+        map(:date_of_birth, "identity.date_of_birth")
+      end
+
+      it "skips that value but keeps the others" do
+        expect { prefill(identity(first_name: "Daphne", date_of_birth: "1900-01-01")) }.not_to raise_error
+
+        expect(applicant.reload.date_of_birth).to be_nil
+        expect(applicant.provenance_for(:date_of_birth)).to be_nil
+        expect(applicant.first_name).to eq("Daphne")
+      end
+
+      it "leaves it for the applicant to enter" do
+        prefill(identity(date_of_birth: (Date.current + 1).iso8601))
+
+        expect(applicant.reload.fields_to_collect_for(PartnerAttributeUsage::APPLICANT_INPUT_PAGE))
+          .to include("date_of_birth")
+      end
     end
 
     it "takes the first usable entry from a list-valued field" do

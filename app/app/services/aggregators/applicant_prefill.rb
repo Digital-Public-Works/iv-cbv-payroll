@@ -4,6 +4,8 @@
 # - if there is already a value there (from landing page), don't overwrite
 # - all completely synced resources have to have the same value, otherwise it is left for user to populate
 # - value has to match the defined validation regex, or is left blank
+# - value has to pass the applicant model's validations, or is left blank (the
+#   applicant enters it by hand; the flow is not interrupted)
 # - provenance will be recorded as payroll_provider (not user-provided input)
 module Aggregators
   class ApplicantPrefill
@@ -51,8 +53,12 @@ module Aggregators
     end
 
     # The single value every identity that has an opinion agrees on, or nil.
+    # Strings are compared ignoring case ("DAPHNE" and "Daphne" agree); the
+    # first identity's spelling is the one kept.
     def agreed_value(name, source_field)
-      values = @identities.filter_map { |identity| usable_value(name, identity, source_field) }.uniq
+      values = @identities
+        .filter_map { |identity| usable_value(name, identity, source_field) }
+        .uniq { |value| value.is_a?(String) ? value.downcase : value }
 
       values.one? ? values.first : nil
     end
@@ -97,10 +103,17 @@ module Aggregators
       @applicant.valid_format_for?(name, value)
     end
 
+    # Validate each value, dump the ones that miss validation so the user can enter a valid value themselves
     def apply(name, value)
-      return nil if @applicant.send(name) == value
+      previous = @applicant.send(name)
+      return nil if previous == value
 
       @applicant.public_send("#{name}=", value)
+
+      unless value.nil? || valid_attribute?(name)
+        @applicant.public_send("#{name}=", previous)
+        return nil
+      end
 
       if value.nil?
         @applicant.clear_attribute_provenance([ name ])
@@ -109,6 +122,12 @@ module Aggregators
       end
 
       name
+    end
+
+    # Only errors on this attribute count
+    def valid_attribute?(name)
+      @applicant.valid?
+      @applicant.errors[name].empty?
     end
   end
 end
