@@ -17,6 +17,15 @@ FactoryBot.define do
       client_agency_id { "sandbox" }
     end
 
+    # Nothing but the partner: every applicant attribute still to be supplied.
+    trait :blank do
+      case_number { nil }
+      first_name { nil }
+      middle_name { nil }
+      last_name { nil }
+      date_of_birth { nil }
+    end
+
     trait :az_des do
       client_agency_id { "az_des" }
       first_name { nil }
@@ -85,12 +94,6 @@ FactoryBot.define do
           }
         ]
       end
-    end
-
-    trait :la_ldh do
-      client_agency_id { "la_ldh" }
-      date_of_birth { Date.new(2000, 1, 1) }
-      doc_id { "%08d" % rand(100_000_000) }
     end
   end
 end

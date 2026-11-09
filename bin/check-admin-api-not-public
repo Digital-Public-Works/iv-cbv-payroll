@@ -1,0 +1,81 @@
+#!/bin/bash
+# -----------------------------------------------------------------------------
+# Check that the partner-config admin API is not reachable through the public
+# load balancer.
+#
+# The admin API (/api/admin) must only be reachable through the private,
+# IAM-authenticated API Gateway. The public ALB answers the path with a fixed
+# "Not Found" 404 (infra/modules/service/load-balancer.tf). This requests the
+# admin path from outside the VPC, over HTTPS and HTTP, on the base domain and
+# on a partner-style subdomain, and fails unless every response is the ALB's
+# fixed 404. A Rails response (a 401, a redirect, an HTML 404) fails the check.
+#
+# Positional parameters:
+#   app_name (required) – the name of subdirectory of /infra that holds the
+#     application's infrastructure code.
+#   environment (required) – the name of the application environment (e.g.
+#     demo, prod)
+# -----------------------------------------------------------------------------
+
+set -euo pipefail
+
+app_name="$1"
+environment="$2"
+
+echo "==================================="
+echo "Check admin API is not public"
+echo "==================================="
+echo "Input parameters"
+echo "  app_name=${app_name}"
+echo "  environment=${environment}"
+echo
+
+terraform -chdir="infra/${app_name}/app-config" init > /dev/null
+terraform -chdir="infra/${app_name}/app-config" apply -auto-approve > /dev/null
+service_config=$(terraform -chdir="infra/${app_name}/app-config" output -json environment_configs | jq -r ".${environment}.service_config")
+domain_name=$(echo "${service_config}" | jq -r ".domain_name")
+enable_https=$(echo "${service_config}" | jq -r ".enable_https")
+
+if [ "${domain_name}" = "null" ] || [ -z "${domain_name}" ]; then
+  # No custom domain: probe the load balancer's own endpoint over HTTP only.
+  endpoint=$(terraform -chdir="infra/${app_name}/service" output -raw service_endpoint)
+  base_urls=("${endpoint}")
+else
+  hosts=("${domain_name}" "admin-api-check.${domain_name}")
+  base_urls=()
+  for host in "${hosts[@]}"; do
+    if [ "${enable_https}" = "true" ]; then
+      base_urls+=("https://${host}")
+    fi
+    base_urls+=("http://${host}")
+  done
+fi
+
+failures=0
+body_file=$(mktemp)
+trap 'rm -f "${body_file}"' EXIT
+
+for base_url in "${base_urls[@]}"; do
+  for method in GET POST; do
+    url="${base_url}/api/admin/v1/partners"
+    status=$(curl --silent --show-error --max-time 20 --request "${method}" \
+      --output "${body_file}" --write-out "%{http_code}" "${url}" || echo "error")
+    body=$(cat "${body_file}")
+
+    if [ "${status}" = "404" ] && [ "${body}" = "Not Found" ]; then
+      echo "ok:   ${method} ${url} -> 404 from the load balancer"
+    else
+      echo "FAIL: ${method} ${url} -> ${status} (expected the load balancer's fixed 404)"
+      failures=$((failures + 1))
+    fi
+  done
+done
+
+if [ "${failures}" -gt 0 ]; then
+  echo
+  echo "::error::The admin API path is reachable through the public load balancer in ${environment}"
+  exit 1
+fi
+
+echo
+echo "The admin API path is blocked on the public load balancer in ${environment}"

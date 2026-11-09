@@ -63,6 +63,10 @@ class UswdsFormBuilder < ActionView::Helpers::FormBuilder
     label_text = options.delete(:label)
     label_options = { for: field_id(attribute, tag_value) }.merge(options)
 
+    if @radio_group_error_id
+      options = options.merge(aria: { invalid: true, describedby: @radio_group_error_id })
+    end
+
     @template.content_tag(:div, class: "usa-radio") do
       super(attribute, tag_value, options) + us_toggle_label("radio", attribute, label_text, label_options)
     end
@@ -165,6 +169,30 @@ class UswdsFormBuilder < ActionView::Helpers::FormBuilder
 
   def hint(text)
     @template.content_tag(:div, @template.raw(text), class: "usa-hint")
+  end
+
+  # Groups radio buttons under a visible heading (referenced by id via
+  # aria-labelledby). When error_id is given, each radio is marked
+  # aria-invalid and described by that element (e.g. the page's error alert),
+  # and the field-error-focus controller moves focus to the first radio.
+  #
+  # Example usage:
+  #   <%= f.radio_group labelledby: "foo-question", error_id: field_error_alert_id(:foo) do %>
+  #     <%= f.radio_button :foo, true, label: "Yes" %>
+  #   <% end %>
+  def radio_group(labelledby:, error_id: nil, &block)
+    data = {}
+    if error_id
+      data[:controller] = "field-error-focus"
+      data[:field_error_focus_alert_id_value] = error_id
+    end
+
+    @radio_group_error_id = error_id
+    children = @template.capture(&block)
+
+    @template.content_tag(:fieldset, children, class: "usa-fieldset", aria: { labelledby: labelledby }, data: data)
+  ensure
+    @radio_group_error_id = nil
   end
 
   def form_group(attribute = nil, options = {}, &block)

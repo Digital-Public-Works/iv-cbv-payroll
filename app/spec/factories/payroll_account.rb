@@ -19,6 +19,7 @@ FactoryBot.define do
     trait :pinwheel_fully_synced do
       type { "pinwheel" }
       synchronization_status { :succeeded }
+      report_status { :useful }
 
       after(:build) do |payroll_account, evaluator|
         payroll_account.supported_jobs.each do |job|
@@ -33,6 +34,7 @@ FactoryBot.define do
 
         if payroll_account.necessary_jobs_succeeded?
           payroll_account.synchronization_status = :succeeded
+          payroll_account.report_status = :useful
         else
           payroll_account.synchronization_status = :failed
         end
@@ -73,6 +75,9 @@ FactoryBot.define do
 
         if payroll_account.necessary_jobs_succeeded?
           payroll_account.synchronization_status = :succeeded
+          # A finished sync that produced what we need; whether the report is
+          # useful is left to whatever the example's fixture data says.
+          payroll_account.report_status = :useful
         else
           payroll_account.synchronization_status = :failed
         end

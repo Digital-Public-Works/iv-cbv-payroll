@@ -46,4 +46,16 @@ RSpec.describe Uswds::Alert, type: :component do
       expect(result).to have_element(:div, class: 'usa-alert usa-alert--info usa-alert--slim')
     end
   end
+
+  context 'with id option' do
+    let(:result) { render_inline(described_class.new(id: 'slim-alert')) { 'Alert' } }
+
+    it 'sets the id on the alert' do
+      expect(result).to have_css('div.usa-alert#slim-alert')
+    end
+  end
+
+  it 'omits the id when not given' do
+    expect(result.css('div.usa-alert').first['id']).to be_nil
+  end
 end

@@ -11,8 +11,8 @@ RSpec.describe "Dynamic client agency routing", type: :routing do
     expect(get: "/definitely-not-a-partner").not_to be_routable
   end
 
-  it "recognizes the generic link route for a known partner id" do
-    expect(get: "/cbv/links/sandbox").to be_routable
+  it "does not recognize a path-based generic link; the partner comes from the subdomain" do
+    expect(get: "/cbv/links/sandbox").not_to be_routable
   end
 
   # Verify that a newly-created partner is routable.

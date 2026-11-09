@@ -9,7 +9,10 @@ require "aws-sdk-sqs"
 Shoryuken.logger.level = ENV.fetch("SHORYUKEN_LOG_LEVEL", "INFO").then { |l| Logger.const_get(l) rescue Logger::INFO }
 
 region   = ENV.fetch("AWS_REGION", "us-east-1")
-endpoint = ENV["AWS_SQS_ENDPOINT"] # <-- set ONLY in local dev (Moto/LocalStack). Unset in ECS.
+endpoint = ENV["AWS_SQS_ENDPOINT"].presence || ENV["SQS_ENDPOINT"].presence # <-- set ONLY in local dev (Moto/LocalStack). Unset in ECS.
+
+# ensure no aws login required for local dev
+endpoint ||= "http://localhost:3456" if Rails.env.development?
 
 if endpoint && !endpoint.empty?
   # Local dev: explicit dummy credentials + custom endpoint

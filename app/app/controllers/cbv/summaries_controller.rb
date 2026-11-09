@@ -1,6 +1,7 @@
 class Cbv::SummariesController < Cbv::BaseController
   include Cbv::AggregatorDataHelper
 
+  before_action :ensure_applicant_information_completed, only: %i[show]
   before_action :set_aggregator_report, only: %i[show]
   before_action :check_aggregator_report, only: %i[show]
 
@@ -9,6 +10,14 @@ class Cbv::SummariesController < Cbv::BaseController
   end
 
   private
+
+  # can't show summary if there is still applicant info to collect. applicant shouldn't get here without required
+  # info entered anyway, this is a guard
+  def ensure_applicant_information_completed
+    return if @cbv_flow.applicant_information_completed?
+
+    redirect_to cbv_flow_applicant_information_path
+  end
 
   def check_aggregator_report
     if @aggregator_report.nil?

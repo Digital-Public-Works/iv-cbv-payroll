@@ -27,6 +27,13 @@ class Cbv::BaseController < ApplicationController
         track_expired_event(invitation)
         return redirect_to(cbv_flow_expired_invitation_path(client_agency_id: invitation.client_agency_id))
       end
+
+      # make sure the invitation is still valid - specifically ensure the method of ingress has not been turned off for the partner
+      unless invitation_flow_still_open?(invitation)
+        Rails.logger.info("Refusing invitation #{invitation.id}: that flow is no longer enabled for #{invitation.client_agency_id}")
+        return redirect_to(root_url, flash: { info: t("cbv.error_invalid_link") })
+      end
+
       # check backstop of how many times an invitation can be used to prevent runaway costs from a bot or something
       if invitation.at_flow_limit?
         Rails.logger.warn("Invitation #{invitation.id} reached flow limit")
@@ -37,7 +44,10 @@ class Cbv::BaseController < ApplicationController
         return redirect_to(root_url, flash: { alert: t("cbv.error_invitation_limit_reached") })
       end
 
-      @cbv_flow = CbvFlow.create_from_invitation(invitation, cookies.permanent.signed[:device_id])
+      # entry point from GenericLinkController
+      generic = session.delete(:cbv_generic_entry).present?
+
+      @cbv_flow = CbvFlow.create_from_invitation(invitation, cookies.permanent.signed[:device_id], generic: generic)
       session[:cbv_flow_id] = @cbv_flow.id
       cookies.permanent.encrypted[:cbv_applicant_id] = @cbv_flow.cbv_applicant_id
       track_invitation_clicked_event(invitation, @cbv_flow)
@@ -55,6 +65,15 @@ class Cbv::BaseController < ApplicationController
     end
   end
 
+  # ensure the invitation being used is of a type the partner currently has enabled. This could become relevant if
+  # we were to 'turn off' specific types for a partner or wrap up a pilot or something
+  def invitation_flow_still_open?(invitation)
+    agency = agency_config[invitation.client_agency_id]
+    return false if agency.nil?
+
+    invitation.auto_created? ? agency.generic_flow_available? : agency.invitation_flow_available?
+  end
+
   def set_cbv_origin
     origin_param = params.fetch(:origin, "")
     if origin_param.present?
@@ -68,7 +87,8 @@ class Cbv::BaseController < ApplicationController
       origin = agency&.default_origin
     else
       # Otherwise, do not change the origin.
-      # This allows LA /start to preserve the initial 'email' origin specified in our routes
+      # This lets an origin captured at the generic entry point survive the
+      # redirect into the tokenized link.
       return
     end
 
@@ -92,6 +112,8 @@ class Cbv::BaseController < ApplicationController
   def next_path
     case params[:controller]
     when "cbv/generic_links"
+      cbv_flow_entry_path
+    when "cbv/landing_pages"
       cbv_flow_entry_path
     when "cbv/entries"
       cbv_flow_employer_search_path
@@ -183,7 +205,9 @@ class Cbv::BaseController < ApplicationController
       household_member_count: count_unique_members(invitation),
       completed_reports_count: invitation.cbv_flows.completed.count,
       flows_started_count: invitation.cbv_flows.count,
-      origin: session[:cbv_origin]
+      origin: session[:cbv_origin],
+      generic: cbv_flow.generic,
+      auto_created_invitation: invitation.auto_created
     })
   end
 

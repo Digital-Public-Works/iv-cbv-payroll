@@ -145,6 +145,11 @@ RSpec.describe CbvFlowInvitation, type: :model do
       double("ClientAgency",
         invitation_valid_days: invitation_valid_days,
         applicant_attributes: partner_app_attributes,
+        attribute_names_for: partner_app_attributes.keys,
+        # These examples are about expiry, not required-ness.
+        required_attributes_for: [],
+        required_for_submit_attributes: [],
+        validation_regex_for: nil,
         require_applicant_information_on_invitation: true,
         timezone: "America/New_York",
         partner_identifier_name: "case_number"
@@ -227,6 +232,11 @@ RSpec.describe CbvFlowInvitation, type: :model do
       double("ClientAgency",
         invitation_valid_days: invitation_valid_days,
         applicant_attributes: partner_app_attributes,
+        attribute_names_for: partner_app_attributes.keys,
+        # These examples are about expiry, not required-ness.
+        required_attributes_for: [],
+        required_for_submit_attributes: [],
+        validation_regex_for: nil,
         require_applicant_information_on_invitation: true,
         timezone: "America/New_York",
         partner_identifier_name: "case_number"
@@ -365,6 +375,23 @@ RSpec.describe CbvFlowInvitation, type: :model do
     it "returns invitations with no flows" do
       expect(described_class.unstarted).to include(invitation_without_flows)
       expect(described_class.unstarted).not_to include(invitation_with_flow)
+    end
+  end
+
+  describe "auto-created invitations" do
+    it "saves without the partner's required applicant attributes" do
+      invitation = build(:cbv_flow_invitation, :auto_created)
+
+      expect(invitation).to be_valid
+    end
+
+    it "still requires them when a caseworker or the partner API creates it" do
+      invitation = build(:cbv_flow_invitation,
+        client_agency_id: "sandbox",
+        cbv_applicant: create(:cbv_applicant, :sandbox, :blank))
+
+      expect(invitation).not_to be_valid
+      expect(invitation.errors.attribute_names).to include(:"cbv_applicant.case_number")
     end
   end
 end

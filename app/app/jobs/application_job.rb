@@ -3,6 +3,9 @@ require_relative "../concerns/queueable"
 class ApplicationJob < ActiveJob::Base
   include Queueable
 
+  # If transmission succeeeded but the partner rejected the payload, do not retry, and raise the error
+  class NonRetryableError < StandardError; end
+
   retry_on Exception, wait: :polynomially_longer, attempts: 3
 
   def event_logger
@@ -17,8 +20,9 @@ class ApplicationJob < ActiveJob::Base
       queue_name: (self.queue_name || "default"),
       failed_at: Time.current.to_s,
       error_class: error.class.name,
-      error_message: error.message
+      error_message: error.message,
+      retryable: !error.is_a?(NonRetryableError)
     })
-    raise error
+    raise error unless error.is_a?(NonRetryableError)
   end
 end

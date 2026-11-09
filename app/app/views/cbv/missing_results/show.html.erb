@@ -1,5 +1,5 @@
 <% content_for :title, t(".header") %>
-<% job_count = @cbv_flow.payroll_accounts.select(&:sync_succeeded?).count %>
+<% job_count = @cbv_flow.accounts_presumed_usable.count %>
 
 <div data-controller="scroll-reset click-tracker" data-click-tracker-page-value="missing_results" data-context-jobs-already-added="<%= job_count %>">
 
@@ -94,7 +94,7 @@
 <%# Other ways to verify job income %>
 <section id="other-ways" class="margin-top-5">
   <h2><%= t(".other_ways_heading") %></h2>
-  <% if @cbv_flow.has_account_with_required_data? %>
+  <% if @cbv_flow.has_presumed_usable_account? %>
     <p><%= t(".other_ways_intro_with_jobs", count: job_count) %></p>
 
     <ol class="usa-list">
@@ -134,7 +134,7 @@
     <% end %>
   </div>
 
-  <% if @cbv_flow.has_account_with_required_data? %>
+  <% if @cbv_flow.has_presumed_usable_account? %>
     <%= link_to t(".go_to_income_summary"), next_path, class: "usa-button usa-button--outline margin-top-4", data: { action: "click->click-tracker#track", element_type: ClickTracker::ElementType::InternalLink, element_name: "go_to_income_summary", track_event: TrackEvent::ApplicantAccessedIncomeSummary } %>
   <% else %>
     <%= link_to t(".go_to_agency_portal", agency_portal_name: agency_translation("shared.agency_portal_name")),

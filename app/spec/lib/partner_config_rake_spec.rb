@@ -24,14 +24,15 @@ RSpec.describe "partner_config.rake" do
       "application_attributes" => [
         {
           "name" => "case_number",
-          "required" => true,
           "data_type" => "string",
           "form_field_type" => "text_field",
-          "show_on_applicant_form" => false,
           "show_on_caseworker_form" => true,
           "show_on_caseworker_report" => true,
           "redactable" => false
         }
+      ],
+      "invitation_attributes" => [
+        { "name" => "case_number", "required" => true }
       ],
       "translations" => {
         "en" => {
@@ -52,7 +53,7 @@ RSpec.describe "partner_config.rake" do
       "argyle_environment" => "sandbox",
       "transmission_methods" => [
         {
-          "method_type" => "unencrypted_s3",
+          "method_type" => "s3",
           "configs" => [
             { "key" => "bucket", "encrypted" => false, "value" => "test-bucket" },
             { "key" => "path_prefix", "encrypted" => false, "value" => "outout" }
@@ -101,7 +102,7 @@ RSpec.describe "partner_config.rake" do
 
       pc = PartnerConfig.find_by(partner_id: partner_id)
       expect(pc.include_paystubs).to be true
-      ptm = pc.partner_transmission_methods.find_by(method_type: "unencrypted_s3")
+      ptm = pc.partner_transmission_methods.find_by(method_type: "s3")
       expect(ptm.partner_transmission_configs.find_by(key: "path_prefix").value).to eq("outout")
     end
 

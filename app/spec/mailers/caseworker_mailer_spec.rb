@@ -40,16 +40,6 @@ RSpec.describe CaseworkerMailer, type: :mailer do
           expect(mail.subject).to eq("Income Verification Report #{cbv_flow.cbv_applicant.case_number} has been received")
         end
       end
-
-      context 'with la_ldh agency' do
-        before do
-          cbv_flow.update!(client_agency_id: "la_ldh")
-        end
-
-        it 'uses the custom format with confirmation code' do
-          expect(mail.subject).to eq("CBV Report #{cbv_flow.confirmation_code}")
-        end
-      end
     end
 
     it 'sends to the correct email' do

@@ -2,7 +2,7 @@
 <h1><%= t(".header") %></h1>
 <p><%= t(".header_sub_text") %></p>
 
-<h2><%= t(".header_2") %></h2>
+<h2 id="additional-jobs-question"><%= t(".header_2") %></h2>
 <p>
   <%= t(".header_2_lead") %>
 </p>
@@ -18,14 +18,16 @@
         data: {
           controller: "cbv-employer-search"
         }) do |f| %>
-<%= f.radio_button(:additional_jobs,
-                    true,
-                    checked: session[:additional_jobs] && ActiveModel::Type::Boolean.new.cast(session[:additional_jobs]) == true,
-                    label: t(".radio_yes")) %>
-<%= f.radio_button(:additional_jobs,
-                    false,
-                    checked: session[:additional_jobs] && !(ActiveModel::Type::Boolean.new.cast(session[:additional_jobs]) == true),
-                    label: t(".radio_no")) %>
+<%= f.radio_group(labelledby: "additional-jobs-question", error_id: field_error_alert_id(:additional_jobs)) do %>
+  <%= f.radio_button(:additional_jobs,
+                      true,
+                      checked: session[:additional_jobs] && ActiveModel::Type::Boolean.new.cast(session[:additional_jobs]) == true,
+                      label: t(".radio_yes")) %>
+  <%= f.radio_button(:additional_jobs,
+                      false,
+                      checked: session[:additional_jobs] && !(ActiveModel::Type::Boolean.new.cast(session[:additional_jobs]) == true),
+                      label: t(".radio_no")) %>
+<% end %>
 
 <%= f.submit t("continue"),
   class: "margin-top-4 margin-bottom-2" %>

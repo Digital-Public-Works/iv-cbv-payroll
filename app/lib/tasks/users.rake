@@ -1,5 +1,5 @@
 namespace :users do
-  # bin/rails 'users:create_api_token[la_ldh]'
+  # bin/rails 'users:create_api_token[pa_dhs]'
   desc "Creates an API token for a client agency, and user if necessary."
   task :create_api_token, [ :client_agency_id ] => [ :environment ] do |_, args|
     client_agency_id = args[:client_agency_id]

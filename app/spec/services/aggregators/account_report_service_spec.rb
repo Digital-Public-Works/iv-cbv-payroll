@@ -55,6 +55,7 @@ RSpec.describe Aggregators::AccountReportService do
         expect(MixpanelEventTrackingJob).to receive(:perform_later)
           .with("ArgyleReportHours", anything, hash_including(
             time: be_a(Integer),
+            cbv_applicant_id: cbv_flow.cbv_applicant_id,
             total_paystubs: 10,
             paystubs_with_argyle_hours_null: 0
           )).once
@@ -97,6 +98,7 @@ RSpec.describe Aggregators::AccountReportService do
         expect(MixpanelEventTrackingJob).to receive(:perform_later)
           .with("ArgyleReportHours", anything, hash_including(
             time: be_a(Integer),
+            cbv_applicant_id: cbv_flow.cbv_applicant_id,
             total_paystubs: 0,
             paystubs_with_argyle_hours_null: 0
           )).once

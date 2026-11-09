@@ -1,51 +1,28 @@
 {
   "ignored_warnings": [
     {
-      "warning_type": "Command Injection",
-      "warning_code": 14,
-      "fingerprint": "a114e4102237985d8d3c47b932561e60dd9e8a46464aa2f8e28d2a83afd31c8e",
-      "check_name": "Execute",
-      "message": "Possible command injection",
-      "file": "services/locale_diff_service.rb",
-      "line": 70,
-      "link": "https://brakemanscanner.org/docs/warning_types/command_injection/",
-      "code": "Open3.capture3(\"git\", \"show\", \"#{\"main\"}:#{path}\", :chdir => find_project_root)",
+      "warning_type": "File Access",
+      "warning_code": 16,
+      "fingerprint": "f426c8740a5ab991409570c520e9d6d8a311f20531d2bba2f5f7204af30d255b",
+      "check_name": "FileAccess",
+      "message": "Parameter value used in file name",
+      "file": "app/controllers/cbv/preview_controller.rb",
+      "line": 250,
+      "link": "https://brakemanscanner.org/docs/warning_types/file_access/",
+      "code": "File.read(Rails.root.join(\"spec\", \"support\", \"fixtures\", \"argyle\", File.basename((params[:fixture_user] or \"bob\")), \"request_account.json\"))",
       "render_path": null,
       "location": {
         "type": "method",
-        "class": "LocaleDiffService",
-        "method": "get_content_from_main"
+        "class": "Cbv::PreviewController",
+        "method": "argyle_account_id"
       },
-      "user_input": "path",
-      "confidence": "Medium",
+      "user_input": "params[:fixture_user]",
+      "confidence": "Weak",
       "cwe_id": [
-        77
+        22
       ],
-      "note": ""
-    },
-    {
-      "warning_type": "Command Injection",
-      "warning_code": 14,
-      "fingerprint": "c71078f13cb4e9fa2c95e028c5e24f10c329a8250a5810bd81266ab6df7a2d6d",
-      "check_name": "Execute",
-      "message": "Possible command injection",
-      "file": "services/locale_diff_service.rb",
-      "line": 59,
-      "link": "https://brakemanscanner.org/docs/warning_types/command_injection/",
-      "code": "Open3.capture3(\"git\", \"show\", \"#{merge_base_commit}:#{get_locale_file_path(locale)}\", :chdir => find_project_root)",
-      "render_path": null,
-      "location": {
-        "type": "method",
-        "class": "LocaleDiffService",
-        "method": "get_content_from_common_ancestor"
-      },
-      "user_input": "merge_base_commit",
-      "confidence": "Medium",
-      "cwe_id": [
-        77
-      ],
-      "note": ""
+      "note": "This check flags any parameter used in a filename. fixture_user is wrapped in File.basename so it cannot escape the fixtures directory, and the controller is non-production only."
     }
   ],
-  "brakeman_version": "7.0.2"
+  "brakeman_version": "8.0.6"
 }

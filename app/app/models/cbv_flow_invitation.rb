@@ -83,12 +83,12 @@ class CbvFlowInvitation < ApplicationRecord
     self.language = language.to_s.downcase if language.present?
   end
 
+  # attributes marked as required for invitation can be blank if it is auto-gen invitation; will be collected later
   def applicant_information
     return unless cbv_applicant.present?
+    return if auto_created?
 
-    cbv_applicant.required_applicant_attributes.each do |attr|
-      next if cbv_applicant.send(attr).present?
-
+    cbv_applicant.missing_required_attributes_for(PartnerAttributeUsage::INVITATION).each do |attr|
       errors.add(
         :"cbv_applicant.#{attr}",
         I18n.t(

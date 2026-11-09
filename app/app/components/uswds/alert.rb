@@ -14,6 +14,10 @@ class Uswds::Alert < ViewComponent::Base
 
   private
 
+  def alert_attributes
+    { class: alert_classes, id: @options[:id] }
+  end
+
   def alert_classes
     classes = [ "usa-alert", "usa-alert--#{@type}" ]
     classes << @options[:class] if @options[:class]

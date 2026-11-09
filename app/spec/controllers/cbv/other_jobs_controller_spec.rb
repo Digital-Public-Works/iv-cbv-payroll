@@ -14,6 +14,41 @@ RSpec.describe Cbv::OtherJobsController do
       get :show
       expect(response).to be_successful
     end
+
+    it "labels the radio group with the question and leaves it valid" do
+      get :show
+      expect(response.body).to have_css('fieldset.usa-fieldset[aria-labelledby="other-jobs-question"] input[type="radio"]', count: 2)
+      expect(response.body).to have_css("#other-jobs-question")
+      expect(response.body).not_to have_css('input[aria-invalid]')
+    end
+
+    context "after submitting without an answer" do
+      it "links the radios to the error alert" do
+        get :show, flash: { slim_alert: { "message" => I18n.t("shared.next_path.notice_no_answer"), "type" => "error", "field" => "has_other_jobs" } }
+
+        expect(response.body).to have_css("div.usa-alert#slim-alert", text: I18n.t("shared.next_path.notice_no_answer"))
+        expect(response.body).to have_css('input[type="radio"][aria-invalid="true"][aria-describedby="slim-alert"]', count: 2)
+        expect(response.body).to have_css('fieldset[data-controller="field-error-focus"][data-field-error-focus-alert-id-value="slim-alert"]')
+      end
+    end
+
+    context "when the partner does not ask about outside jobs" do
+      before do
+        stub_client_agency_config_value("sandbox", "allow_outside_jobs", false)
+      end
+
+      it "skips ahead to the next step" do
+        get :show
+        expect(response).to redirect_to(cbv_flow_applicant_information_path)
+      end
+    end
+
+    it "indicates the agency website link opens in a new tab" do
+      get :show
+      link = Capybara.string(response.body).find("a[target='_blank']", text: I18n.t("cbv.other_jobs.show.learn_more_link", agency_portal_name: ""))
+      expect(link).to have_css("svg.usa-icon use[href$='#launch']", visible: :all)
+      expect(link).to have_css("span.usa-sr-only", text: I18n.t("shared.opens_in_new_tab"), visible: :all)
+    end
   end
 
   describe "#update" do
@@ -29,7 +64,7 @@ RSpec.describe Cbv::OtherJobsController do
 
     it 'redirects with notice when no radio button has been selected' do
       patch :update, params: { cbv_flow: { has_other_jobs: '' } }
-      expect(flash[:slim_alert]).to be_present
+      expect(flash[:slim_alert]).to include(type: "error", field: "has_other_jobs")
       expect(response).to redirect_to(cbv_flow_other_job_path)
     end
 
@@ -62,6 +97,22 @@ RSpec.describe Cbv::OtherJobsController do
 
       expect(MixpanelEventTrackingJob).not_to receive(:perform_later).with("ApplicantContinuedFromOtherJobsPage", anything, anything)
       patch :update, params: { cbv_flow: { has_other_jobs: '' } }
+    end
+
+    context "when the partner does not ask about outside jobs" do
+      before do
+        stub_client_agency_config_value("sandbox", "allow_outside_jobs", false)
+      end
+
+      it 'skips ahead without saving an answer or tracking the event' do
+        allow(MixpanelEventTrackingJob).to receive(:perform_later).with("CbvPageView", anything, anything)
+        expect(MixpanelEventTrackingJob).not_to receive(:perform_later).with("ApplicantContinuedFromOtherJobsPage", anything, anything)
+
+        patch :update, params: { cbv_flow: { has_other_jobs: 'true' } }
+
+        expect(response).to redirect_to(cbv_flow_applicant_information_path)
+        expect(cbv_flow.reload.has_other_jobs).to be_nil
+      end
     end
 
     context "when event tracking fails in production" do

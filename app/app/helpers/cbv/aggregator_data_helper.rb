@@ -28,9 +28,10 @@ module Cbv::AggregatorDataHelper
     end
   end
 
+  # we only want items that have been determined to be 'useful'
   def filter_payroll_accounts(aggregator)
     @cbv_flow.payroll_accounts.filter do |payroll_account|
-      payroll_account.type == aggregator && payroll_account.sync_succeeded?
+      payroll_account.type == aggregator && payroll_account.usable?
     end
   end
 

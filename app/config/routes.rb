@@ -53,8 +53,8 @@ Rails.application.routes.draw do
     # Feedback CTA
     get "/feedback", to: "feedbacks#show", as: :feedbacks
 
-    # RFI (mail) origin tracking route for LA
-    get "/start", to: "pages#home", defaults: { origin: "mail" }
+    # generic link. gets partner via subdomain, creates invitation or finds invitation via device_id.
+    get "/start", to: "cbv/generic_links#show"
 
     # Tokenized links
     get "/start/:token", to: "cbv/entries#show", as: :start_flow, token: /[^\/]+/
@@ -74,13 +74,7 @@ Rails.application.routes.draw do
       resource :payment_details, only: %i[show update]
       resource :expired_invitation, only: %i[show]
       resource :applicant_information, only: %i[show update]
-
-      # Generic link. The client_agency_id segment is validated dynamically per
-      # request against the database (see ClientAgencyIdConstraint), so partners
-      # are not enumerated into the route table at boot.
-      scope "links/:client_agency_id", constraints: ClientAgencyIdConstraint.new do
-        root to: "generic_links#show", as: :new
-      end
+      resource :landing_page, only: %i[show update]
 
       # Session management
       post "session/refresh", to: "sessions#refresh", as: :session_refresh
@@ -93,6 +87,7 @@ Rails.application.routes.draw do
         get "employer_search", to: "preview#employer_search"
         get "entry", to: "preview#entry"
         get "applicant_information", to: "preview#applicant_information"
+        get "landing_page", to: "preview#landing_page"
         get "add_job", to: "preview#add_job"
         get "other_job", to: "preview#other_job"
         get "expired_invitation", to: "preview#expired_invitation"
@@ -110,6 +105,9 @@ Rails.application.routes.draw do
         get "paystubs.pdf", to: "preview#paystubs", defaults: { format: :pdf }
         get "paystubs_pdf_as_html", to: "preview#paystubs_pdf_as_html"
         get "transmitted_json", to: "preview#transmitted_json"
+        get "sync_playground", to: "preview/sync_playground#show"
+        post "sync_playground/webhook", to: "preview/sync_playground#webhook", as: :sync_playground_webhook
+        patch "sync_playground/poll", to: "preview/sync_playground#poll", as: :sync_playground_poll
       end
     end
 
@@ -156,6 +154,28 @@ Rails.application.routes.draw do
     # DEV/TEST ONLY: Load testing session generation
     scope :load_test do
       post "/sessions", to: "load_test_sessions#create"
+    end
+
+    # these routes only exist if there is a ADMIN_API_SERVICE_SECRET value in the env configuration
+    constraints(->(_req) { AdminApi::Config.enabled? }) do
+      namespace :admin do
+        namespace :v1 do
+          get "schema", to: "schema#show"
+          get "export", to: "exports#index"
+          post "partners/import", to: "imports#create"
+
+          resources :partners, only: [ :index, :show, :create, :update ], param: :partner_id do
+            member do
+              post :validate
+              post :diff
+              get :export
+              post :promote_settings
+              put :transmission_methods, to: "transmission_methods#update"
+              post "transmission_methods/:method_type/check", to: "transmission_methods#check", as: :check_transmission_method
+            end
+          end
+        end
+      end
     end
   end
 

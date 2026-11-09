@@ -121,6 +121,10 @@ infra-update-app-static-assets: ## Create or update $APP_NAME's static assets in
 	@:$(call check_defined, APP_NAME, the name of subdirectory of /infra that holds the application's infrastructure code)
 	./bin/terraform-init-and-apply infra/$(APP_NAME)/static-assets shared
 
+infra-update-app-security-scan-reports: ## Create or update $APP_NAME's static-analysis report archive (S3 + Object Lock). Must be run once before the Brakeman workflow can publish.
+	@:$(call check_defined, APP_NAME, the name of subdirectory of /infra that holds the application's infrastructure code)
+	./bin/terraform-init-and-apply infra/$(APP_NAME)/security-scan-reports shared
+
 infra-update-app-service: ## Create or update $APP_NAME's web service module
 	@:$(call check_defined, APP_NAME, the name of subdirectory of /infra that holds the application's infrastructure code)
 	@:$(call check_defined, ENVIRONMENT, the name of the application environment e.g. "prod" or "staging")
