@@ -8,10 +8,6 @@ class Webhooks::Argyle::EventsController < ApplicationController
     case params["event"]
     when "users.fully_synced"
       # Handle the users.fully_synced event with potentially multiple accounts.
-      # If users add more than one account then this array will contain the IDs
-      # of all the accounts that were connected. This method iterates over the
-      # account IDs and creates webhook events for any accounts that don't yet
-      # have a "users.fully_synced" event.
       handle_users_fully_synced.each do |webhook_event|
         process_webhook_event(webhook_event)
       end
@@ -22,8 +18,6 @@ class Webhooks::Argyle::EventsController < ApplicationController
 
       log_data_sync_events(payroll_account, params)
     else
-      # All other webhooks have a params["data"]["account"], which we can use
-      # to find the account.
       account_id = params.dig("data", "account")
       payroll_account = @cbv_flow.payroll_accounts.find_or_create_by(type: :argyle, aggregator_account_id: account_id) do |new_payroll_account|
         new_payroll_account.synchronization_status = :in_progress
@@ -45,11 +39,6 @@ class Webhooks::Argyle::EventsController < ApplicationController
     accounts_connected = params.dig("data", "resource", "accounts_connected")
     raise "No accounts_connected in users.fully_synced webhook" unless accounts_connected.present?
 
-    # Get the payroll accounts that do not have a webhook event for "users.fully_synced"
-    # rather than iterating over each account entry that Argyle sends back.
-    #
-    # In the event that a user adds multiple payroll accounts we do not want to
-    # record duplicate webhook events
     syncing_payroll_accounts = PayrollAccount::Argyle
                                  .awaiting_fully_synced_webhook
                                  .where(cbv_flow: @cbv_flow)
@@ -76,23 +65,25 @@ class Webhooks::Argyle::EventsController < ApplicationController
     @cbv_flow = CbvFlow.find_by(argyle_user_id: user_id)
 
     unless @cbv_flow
+      # stop the callback chain if we somehow lose the flow for the user, it is required for anything else.
+      # This could happen on random webhooks from argyle even after the user has abanonded, etc... and is not necessarily an error
       Rails.logger.info "Unable to find CbvFlow with argyle_user_id: #{user_id}"
       render json: { status: "ok" }
     end
   end
 
-  # @see https://docs.argyle.com/api-guide/webhooks
   def authorize_webhook
-    argyle_service = @cbv_flow.present? ? argyle_for(@cbv_flow) : ArgyleService.new("sandbox")
+    signature = request.headers["X-Argyle-Signature"]
+
+    unless signature.present? &&
+        Aggregators::Webhooks::Argyle.verify_signature(signature, request.raw_post, argyle_for(@cbv_flow).webhook_secret)
+      Rails.logger.info "Ignoring webhook with invalid signature: #{params["event"]}"
+      return render json: { error: "Invalid signature" }, status: :unauthorized
+    end
 
     unless Aggregators::Webhooks::Argyle.get_webhook_events(type: :all).include?(params["event"])
       Rails.logger.info "Ignoring unhandled webhook: #{params["event"]}"
       render json: { info: "Unhandled webhook" }, status: :ok
-    end
-
-    unless Aggregators::Webhooks::Argyle.verify_signature(request.headers["X-Argyle-Signature"], request.raw_post, argyle_service.webhook_secret)
-      Rails.logger.info "Ignoring webhook with invalid signature: #{params["event"]}"
-      render json: { error: "Invalid signature" }, status: :unauthorized
     end
   end
 
@@ -131,9 +122,6 @@ class Webhooks::Argyle::EventsController < ApplicationController
   end
 
   def process_partially_synced_event(webhook_event)
-    # Check if this webhook signifies a completed sync (i.e. that we have
-    # fetched at least `pay_income_days` of data). If so, update the webhook to
-    # have a "success" outcome.
     client_agency_config = agency_config[@cbv_flow.client_agency_id]
     days_synced = params.dig("data", "days_synced")
     if days_synced.to_i >= client_agency_config.pay_income_days.values.max
@@ -177,8 +165,6 @@ class Webhooks::Argyle::EventsController < ApplicationController
     end
   end
 
-  # attempt to pre-fill attributes if the payroll provider has a mapped value for it.
-  # if it does not, the user will be prompted. If it does, the user will not be prompted.
   def prefill_applicant_attributes(payroll_account, report)
     identities = Aggregators::SyncedIdentities
       .new(@cbv_flow, already_fetched: { payroll_account.id => report.identities })
@@ -191,9 +177,6 @@ class Webhooks::Argyle::EventsController < ApplicationController
     NewRelic::Agent.notice_error(e)
   end
 
-  # a failed sync has no report worth judging. If we still need to collect user
-  # data (per partner configuration), leave the verdict for after that step;
-  # otherwise decide whether it is useful now.
   def decide_report_status(payroll_account, report)
     return :not_useful unless payroll_account.necessary_jobs_succeeded?
     return payroll_account.report_status if applicant_information_outstanding?
@@ -201,16 +184,12 @@ class Webhooks::Argyle::EventsController < ApplicationController
     validate_useful_report_requirements(report, payroll_account) ? :useful : :not_useful
   end
 
-  # Whether the partner still expects something from the applicant on the
-  # applicant-information page.
   def applicant_information_outstanding?
     return false if @cbv_flow.applicant_information_completed?
 
     @cbv_flow.cbv_applicant.fields_to_collect_for(PartnerAttributeUsage::APPLICANT_INPUT_PAGE).any?
   end
 
-  # For analytics during testing (and maybe for the pilots as well) we want to
-  # measure the time it takes for real users at extra time intervals.
   def log_data_sync_events(payroll_account, params)
     if params["event"] == "paystubs.partially_synced" || params["event"] == "gigs.partially_synced"
       days_synced = params["data"]["days_synced"].to_i
