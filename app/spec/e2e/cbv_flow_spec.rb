@@ -15,9 +15,7 @@ RSpec.describe "e2e CBV flow test", :js, type: :feature do
     end
   end
 
-  # Playback repeats: the app now fetches the Argyle account more times than the
-  # 2025-06 recording captured. Re-recording is tracked in PF-801.
-  it "completes the flow for an Argyle employer", :allow_playback_repeats do
+  it "completes the flow for an Argyle employer" do
     raise "Argyle not in supported_providers!" unless Rails.application.config.supported_providers.include?(:argyle)
 
     # /cbv/entry
