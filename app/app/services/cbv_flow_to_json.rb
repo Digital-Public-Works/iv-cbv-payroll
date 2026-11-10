@@ -86,7 +86,7 @@ class CbvFlowToJson
 
     @current_agency.transmission_methods.each_with_object({}) do |entry, hash|
       method = entry.method.to_sym
-      next unless TransmissionFilename::EXTENSIONS.key?(method)
+      next unless TransmissionFilename.file_method?(method)
 
       # A blank stored configuration (the column default) records nothing, so use the partner's
       configuration = transmission_configs[method].presence || entry.configuration
@@ -95,7 +95,8 @@ class CbvFlowToJson
         cbv_flow: @cbv_flow,
         agency: @current_agency,
         method_type: method,
-        remote_directory: remote_directory
+        remote_directory: remote_directory,
+        encrypted: TransmissionFilename.encrypted?(method_type: method, configuration: configuration)
       )
     end
   end

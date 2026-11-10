@@ -4,8 +4,8 @@ namespace :integration do
   INTEGRATION_SPECS = {
     webhook:         "spec/services/transmitters/webhook_transmitter_integration_spec.rb",
     sftp:            "spec/services/transmitters/sftp_transmitter_integration_spec.rb",
-    unencrypted_s3:  "spec/services/transmitters/unencrypted_s3_transmitter_integration_spec.rb",
-    encrypted_s3:    "spec/services/transmitters/encrypted_s3_transmitter_integration_spec.rb"
+    s3_unencrypted:  "spec/services/transmitters/s3_transmitter_unencrypted_integration_spec.rb",
+    s3_encrypted:    "spec/services/transmitters/s3_transmitter_encrypted_integration_spec.rb"
   }.freeze
 
   COMPOSE_FILE = ENV.fetch("INTEGRATION_COMPOSE_FILE", "docker-compose.integration.yml").freeze

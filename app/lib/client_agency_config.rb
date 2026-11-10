@@ -15,12 +15,16 @@ class ClientAgencyConfig
   # 'ninety_days'/'six_months' to see other places you will need to customize.
   VALID_PAY_INCOME_DAYS = [ 90, 182 ]
 
-  # How long a hydrated agency stays cached before it is reloaded from the
-  # database. Bounds how stale a config can be: changes made to partner_configs
-  # while the app is running are picked up within this window without a restart.
-  # In development the effective TTL is 0 so edits show up immediately (see
-  # #cache_ttl_seconds).
+  # Config cache for partners - changes in an environment will be picked up within this timeframe
   CACHE_TTL_SECONDS = 10.minutes.to_i
+
+  # known ids list that helps prevent scanners from continually pinging the database
+  # while working through a wordlist
+  # Keep this value and the note in lib/tasks/partner_config.rake in sync.
+  KNOWN_KEYS_TTL_SECONDS = 60
+
+  # Returned while the schema isn't ready (see #known_keys); never cached.
+  NO_KNOWN_KEYS = { partner_ids: Set.new.freeze, domains: {}.freeze }.freeze
 
   def self.instance
     @instance ||= new(Rails.env.development? || Rails.env.test?)
@@ -43,10 +47,10 @@ class ClientAgencyConfig
     # Configs are loaded lazily, per-agency, the first time each one is requested
     # (see #[]). Nothing is loaded at boot. Each cache holds timestamped entries
     # that expire after CACHE_TTL_SECONDS so DB changes are picked up at runtime.
-    # @agencies caches hydrated agencies by partner_id; @domain_index caches
-    # resolved domain => partner_id lookups.
+    # @agencies caches hydrated agencies by partner_id.
+    # @known_keys is a snapshot that helps prevent un-needed database hits
     @agencies = {}
-    @domain_index = {}
+    @known_keys = nil
   end
 
   # Lazily loads and caches a single agency by partner_id, based on the
@@ -57,13 +61,14 @@ class ClientAgencyConfig
   #
   # Returns nil when the partner does not exist, is not active in this
   # environment, or fails hard validation (in which case a warning is logged so a
-  # single broken partner can't crash the request). Misses are not cached.
+  # single broken partner can't crash the request). Ids that are not in the
+  # known-keys snapshot are rejected without querying the database.
   def [](client_agency_id)
     return nil if client_agency_id.blank?
 
     entry = @agencies[client_agency_id]
     return entry[:agency] if entry && fresh?(entry)
-    return nil unless db_ready?
+    return nil unless known_keys[:partner_ids].include?(client_agency_id.to_s)
 
     config = PartnerConfig.find_by(partner_id: client_agency_id)
     unless config && active_in_current_environment?(config)
@@ -73,7 +78,7 @@ class ClientAgencyConfig
 
     agency = build_agency(config)
     if agency.nil?
-      @agencies.delete(client_agency_id)
+      @agencies[client_agency_id] = { agency: nil, loaded_at: now, ttl: known_keys_ttl_seconds }
       return nil
     end
 
@@ -82,27 +87,13 @@ class ClientAgencyConfig
   end
 
   # Resolves an agency by its configured subdomain/host slug (e.g. "pa" or
-  # "pa.example.com"). A single indexed lookup (cached with the same TTL as #[]),
-  # then delegates to #[] for hydration.
+  # "pa.example.com") using the known-keys snapshot, then delegates to #[] for
+  # hydration. Unknown domains never reach the database.
   def find_by_domain(domain)
     return nil if domain.blank?
-    return nil unless db_ready?
 
-    entry = @domain_index[domain]
-    if entry && fresh?(entry)
-      partner_id = entry[:partner_id]
-    else
-      config = PartnerConfig.find_by(domain: domain)
-      unless config && active_in_current_environment?(config)
-        @domain_index.delete(domain)
-        return nil
-      end
-
-      partner_id = config.partner_id
-      @domain_index[domain] = { partner_id: partner_id, loaded_at: now }
-    end
-
-    self[partner_id]
+    partner_id = known_keys[:domains][domain.to_s]
+    partner_id && self[partner_id]
   end
 
   def client_agency_ids
@@ -122,10 +113,27 @@ class ClientAgencyConfig
 
   private
 
-  # A cache entry is fresh until it is older than the TTL, after which the next
-  # lookup reloads it from the database.
-  def fresh?(entry)
-    now - entry[:loaded_at] < cache_ttl_seconds
+  # A cache entry is fresh until it is older than its TTL (the entry's own :ttl
+  # if it has one, else the agency cache TTL), after which the next lookup
+  # reloads it from the database.
+  def fresh?(entry, ttl = entry[:ttl] || cache_ttl_seconds)
+    now - entry[:loaded_at] < ttl
+  end
+
+  # freeze a snapshot of valid partners so that unknown domains don't do a db query
+  def known_keys
+    snapshot = @known_keys
+    return snapshot if snapshot && fresh?(snapshot, known_keys_ttl_seconds)
+    return NO_KNOWN_KEYS unless db_ready?
+
+    configs = PartnerConfig.select(:partner_id, :domain, :active_demo, :active_prod)
+      .select { |config| active_in_current_environment?(config) }
+
+    @known_keys = {
+      partner_ids: configs.map(&:partner_id).to_set.freeze,
+      domains: configs.filter_map { |c| [ c.domain, c.partner_id ] if c.domain.present? }.to_h.freeze,
+      loaded_at: now
+    }.freeze
   end
 
   # Effective cache TTL. In development it is 0 so every lookup reloads from the
@@ -133,6 +141,13 @@ class ClientAgencyConfig
   # CACHE_TTL_SECONDS.
   def cache_ttl_seconds
     Rails.env.development? ? 0 : CACHE_TTL_SECONDS
+  end
+
+  # Effective known-keys TTL. Zero in development for the same reason as
+  # #cache_ttl_seconds: a partner added locally should be routable on the very
+  # next request rather than a minute later.
+  def known_keys_ttl_seconds
+    Rails.env.development? ? 0 : KNOWN_KEYS_TTL_SECONDS
   end
 
   # Monotonic clock (seconds) so cache expiry is unaffected by wall-clock changes.
@@ -315,7 +330,7 @@ class ClientAgencyConfig
 
       @transmission_methods.each do |entry|
         method_type = entry.method.to_sym
-        next unless TransmissionFilename::EXTENSIONS.key?(method_type)
+        next unless TransmissionFilename.file_method?(method_type)
         # remote_directory_for validates that path_prefix is valid for method_type
         TransmissionFilename.remote_directory_for(
           method_type: method_type,
@@ -413,6 +428,13 @@ class ClientAgencyConfig
     # goes into useful report validator - these are the itmes that need values before it can submit
     def required_for_submit_attributes
       applicant_attributes.select { |_name, attr| attr.required_for_submit }.keys
+    end
+
+    # attributes that can be prefilled from payroll aggregator response model
+    def prefillable_attributes
+      applicant_attributes.each_with_object({}) do |(name, attr), h|
+        h[name] = attr.source_field if attr.source_field.present?
+      end
     end
 
     def validation_regex_for(name)

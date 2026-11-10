@@ -30,5 +30,15 @@ RSpec.describe "Pages", type: :request do
         expect(response).to render_template(:home)
       end
     end
+
+    # Screen readers only move their reading position when the skip link's
+    # target can actually receive focus, which a <main> needs tabindex="-1" for.
+    it "renders a skip link whose target is programmatically focusable" do
+      get "/"
+
+      page = Nokogiri::HTML(response.body)
+      expect(page.at_css("a.usa-skipnav")["href"]).to eq("#main-content")
+      expect(page.at_css("main#main-content")["tabindex"]).to eq("-1")
+    end
   end
 end

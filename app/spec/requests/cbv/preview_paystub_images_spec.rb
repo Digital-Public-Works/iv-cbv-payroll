@@ -33,6 +33,15 @@ RSpec.describe "Cbv::Preview pay stub images", type: :request do
     end
   end
 
+  # Preview layout mirrors the application layout's skip link; see pages_spec.
+  it "renders a skip link whose target is programmatically focusable" do
+    preview_get "/cbv/preview/submit_pdf_as_html", fixture: "paystubs_all_images"
+
+    page = Nokogiri::HTML(response.body)
+    expect(page.at_css("a.usa-skipnav")["href"]).to eq("#main-content")
+    expect(page.at_css("main#main-content")["tabindex"]).to eq("-1")
+  end
+
   describe "client report cover page content" do
     it "lists both the with- and without-image jobs for the mixed fixture" do
       preview_get "/cbv/preview/submit_pdf_as_html", fixture: "paystubs_some_images"

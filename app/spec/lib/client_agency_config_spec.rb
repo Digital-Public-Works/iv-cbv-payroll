@@ -69,7 +69,7 @@ RSpec.describe ClientAgencyConfig do
         pay_income_days_gig: 90,
         partner_identifier_name: "first_name"
       )
-      ptm = pc.partner_transmission_methods.create!(method_type: :encrypted_s3)
+      ptm = pc.partner_transmission_methods.create!(method_type: :s3)
       ptm.partner_transmission_configs.create!(key: "path_prefix", value: bad_prefix, is_encrypted: false)
       pc
     end
@@ -86,6 +86,15 @@ RSpec.describe ClientAgencyConfig do
         expect(result).to be_nil
         expect(Rails.logger).to have_received(:error)
           .with(%r{bad_s3 failed validation.*must not start with '/'}).at_least(:once)
+      end
+
+      it "does not rebuild (and re-report) the broken partner on every request" do
+        allow(Rails.logger).to receive(:error)
+        config = described_class.new(true)
+
+        expect(PartnerConfig).to receive(:find_by).with(partner_id: "bad_s3").once.and_call_original
+
+        3.times { expect(config["bad_s3"]).to be_nil }
       end
 
       it "logs the failure during the boot validation pass without raising" do
@@ -121,13 +130,98 @@ RSpec.describe ClientAgencyConfig do
       2.times { expect(config["foo"].agency_name).to eq("Foo Agency Name") }
     end
 
-    it "returns nil for an unknown agency and does not cache the miss" do
+    it "returns nil for an unknown agency without querying for it" do
       config = described_class.new(true)
 
-      expect(PartnerConfig).to receive(:find_by).with(partner_id: "ghost").twice.and_call_original
+      expect(PartnerConfig).not_to receive(:find_by)
 
-      expect(config["ghost"]).to be_nil
-      expect(config["ghost"]).to be_nil
+      5.times { expect(config["ghost"]).to be_nil }
+    end
+
+    it "answers any number of distinct unknown ids and domains without a query once the known keys are loaded" do
+      config = described_class.new(true)
+      config["warm_up"]
+      queries = []
+      callback = ->(*, payload) { queries << payload[:sql] }
+
+      ActiveSupport::Notifications.subscribed(callback, "sql.active_record") do
+        100.times do |i|
+          expect(config["ghost_#{i}"]).to be_nil
+          expect(config.find_by_domain("ghost-#{i}")).to be_nil
+        end
+      end
+
+      expect(queries).to be_empty
+    end
+
+    it "reloads the known keys once their TTL expires" do
+      config = described_class.new(true)
+      fake_time = 0.0
+      allow(config).to receive(:now) { fake_time }
+
+      expect(PartnerConfig).to receive(:select).twice.and_call_original
+
+      config["ghost"]
+
+      fake_time = ClientAgencyConfig::KNOWN_KEYS_TTL_SECONDS - 1
+      config["ghost"]
+
+      fake_time = ClientAgencyConfig::KNOWN_KEYS_TTL_SECONDS + 1
+      config["ghost"]
+    end
+
+    it "picks up a partner added after the known keys were loaded, once their TTL expires" do
+      config = described_class.new(true)
+      fake_time = 0.0
+      allow(config).to receive(:now) { fake_time }
+
+      expect(config["late_arrival"]).to be_nil
+
+      pc = PartnerConfig.create!(
+        partner_id: "late_arrival",
+        name: "Late Arrival Agency",
+        timezone: "America/Los_Angeles",
+        argyle_environment: "sandbox",
+        pay_income_days_w2: 90,
+        pay_income_days_gig: 182,
+        partner_identifier_name: "first_name"
+      )
+      pc.partner_transmission_methods.create!(method_type: :shared_email)
+
+      fake_time = ClientAgencyConfig::KNOWN_KEYS_TTL_SECONDS - 1
+      expect(config["late_arrival"]).to be_nil
+
+      fake_time = ClientAgencyConfig::KNOWN_KEYS_TTL_SECONDS + 1
+      expect(config["late_arrival"]&.agency_name).to eq("Late Arrival Agency")
+    end
+
+    it "makes a new partner routable immediately in development" do
+      allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("development"))
+      config = described_class.new(true)
+
+      expect(config["late_arrival"]).to be_nil
+
+      pc = PartnerConfig.create!(
+        partner_id: "late_arrival",
+        name: "Late Arrival Agency",
+        timezone: "America/Los_Angeles",
+        argyle_environment: "sandbox",
+        pay_income_days_w2: 90,
+        pay_income_days_gig: 182,
+        partner_identifier_name: "first_name"
+      )
+      pc.partner_transmission_methods.create!(method_type: :shared_email)
+
+      expect(config["late_arrival"]&.agency_name).to eq("Late Arrival Agency")
+    end
+
+    it "only admits partners active in the current environment" do
+      sample_config.update!(active_demo: false, active_prod: false)
+      config = described_class.new(false)
+
+      expect(PartnerConfig).not_to receive(:find_by)
+
+      expect(config["foo"]).to be_nil
     end
 
     it "returns nil for a blank id without touching the database" do
@@ -192,6 +286,14 @@ RSpec.describe ClientAgencyConfig do
     it "returns nil for an unrecognized domain" do
       config = described_class.new(true)
       expect(config.find_by_domain("not-a-domain")).to be_nil
+    end
+
+    it "answers an unrecognized domain without querying for it" do
+      config = described_class.new(true)
+
+      expect(PartnerConfig).not_to receive(:find_by)
+
+      3.times { expect(config.find_by_domain("not-a-domain")).to be_nil }
     end
   end
 

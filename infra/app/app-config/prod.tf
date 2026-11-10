@@ -36,4 +36,12 @@ module "prod_config" {
 
   # NewRelic configuration for metrics
   newrelic_account_id = "7001719"
+
+  # Partner-config admin API for the vmi-admin portal (settings change only by
+  # promotion from demo). Creates the execute-api endpoint the portal uses for
+  # both environments. Needs SSM /service/app-prod/admin-api-service-secret.
+  admin_api = {
+    settings_writable    = false
+    portal_task_role_arn = "arn:aws:iam::850027065051:role/vmi-admin-task"
+  }
 }

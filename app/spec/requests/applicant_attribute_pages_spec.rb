@@ -292,6 +292,49 @@ RSpec.describe "Applicant attribute pages", type: :request do
       expect(rendered_fields).to match_array(%w[first_name middle_name])
     end
 
+    it "shows a value the payroll provider supplied, prefilled and editable" do
+      start_generic_flow
+      applicant = CbvFlow.last.cbv_applicant
+      applicant.first_name = "FromArgyle"
+      applicant.record_attribute_provenance([ :first_name ], source: CbvApplicant::PAYROLL_PROVIDER_SOURCE)
+      applicant.save!
+
+      get "/cbv/applicant_information"
+
+      expect(rendered_fields).to include("first_name")
+      expect(rendered_value("first_name")).to eq("FromArgyle")
+    end
+
+    it "re-attributes it to the applicant once they correct it" do
+      start_generic_flow
+      applicant = CbvFlow.last.cbv_applicant
+      applicant.first_name = "FromArgyle"
+      applicant.record_attribute_provenance([ :first_name ], source: CbvApplicant::PAYROLL_PROVIDER_SOURCE)
+      applicant.save!
+
+      get "/cbv/applicant_information"
+      submit_rendered_form(first_name: "Corrected", middle_name: "")
+
+      applicant.reload
+      expect(applicant.first_name).to eq("Corrected")
+      expect(applicant).to be_applicant_provided(:first_name)
+    end
+
+    it "leaves it attributed to the provider when confirmed unchanged" do
+      start_generic_flow
+      applicant = CbvFlow.last.cbv_applicant
+      applicant.first_name = "FromArgyle"
+      applicant.record_attribute_provenance([ :first_name ], source: CbvApplicant::PAYROLL_PROVIDER_SOURCE)
+      applicant.save!
+
+      get "/cbv/applicant_information"
+      submit_rendered_form(first_name: "FromArgyle", middle_name: "")
+
+      applicant.reload
+      expect(applicant).not_to be_applicant_provided(:first_name)
+      expect(applicant.provenance_for(:first_name)["source"]).to eq("payroll_provider")
+    end
+
     it "does not ask again for a value that is already present" do
       start_generic_flow
       CbvFlow.last.cbv_applicant.update!(first_name: "Daph")
