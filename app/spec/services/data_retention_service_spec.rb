@@ -1190,4 +1190,146 @@ RSpec.describe DataRetentionService do
       end
     end
   end
+
+  describe "#redact_all! run event" do
+    let(:service) { described_class.new }
+    let(:now) { Time.now }
+    let(:event_logger) { instance_double(GenericEventTracker, track: nil) }
+
+    around do |ex|
+      Timecop.freeze(now, &ex)
+    end
+
+    before do
+      allow(GenericEventTracker).to receive(:new).and_return(event_logger)
+      allow(NewRelic::Agent).to receive(:record_custom_event)
+    end
+
+    def run_event
+      event = nil
+      expect(NewRelic::Agent).to have_received(:record_custom_event)
+        .with(DataRetentionService::RUN_EVENT, anything).once do |_name, attributes|
+          event = attributes
+        end
+      event
+    end
+
+    def flow_created(ago)
+      invitation = create(:cbv_flow_invitation, :sandbox)
+      CbvFlow.create_from_invitation(invitation, "device").tap do |flow|
+        flow.update_columns(created_at: now - ago)
+      end
+    end
+
+    def invitation_expired(ago)
+      create(:cbv_flow_invitation, :sandbox).tap do |invitation|
+        invitation.update_columns(expires_at: now - ago)
+      end
+    end
+
+    context "when nothing is due" do
+      it "records a completed run with zero counts" do
+        service.redact_all!
+
+        expect(run_event).to include(
+          status: "completed",
+          total_redacted: 0,
+          overdue_found: false,
+          redaction_failures: 0
+        )
+        expect(run_event).not_to have_key(:error_class)
+      end
+    end
+
+    context "with records due today but not overdue" do
+      before do
+        flow_created(DataRetentionService::REDACT_CBV_FLOWS_AFTER + 1.hour)
+        invitation_expired(1.hour)
+      end
+
+      it "counts what it redacted and reports nothing overdue" do
+        service.redact_all!
+
+        expect(run_event).to include(
+          status: "completed",
+          invitations_redacted: 1,
+          cbv_flows_redacted: 1,
+          total_redacted: 2,
+          overdue_invitations: 0,
+          overdue_cbv_flows: 0,
+          backstop_hits: 0,
+          overdue_found: false
+        )
+      end
+    end
+
+    context "with records a previous run should have redacted" do
+      before do
+        flow_created(DataRetentionService::REDACT_CBV_FLOWS_AFTER + DataRetentionService::OVERDUE_GRACE + 1.hour)
+        invitation_expired(DataRetentionService::OVERDUE_GRACE + 1.hour)
+      end
+
+      it "reports them as overdue, counted before this run redacts them" do
+        service.redact_all!
+
+        expect(run_event).to include(
+          overdue_invitations: 1,
+          overdue_cbv_flows: 1,
+          overdue_found: true,
+          total_redacted: 2
+        )
+      end
+    end
+
+    context "with an orphaned applicant caught by the backstop" do
+      before do
+        create(:cbv_applicant, client_agency_id: "sandbox").tap do |applicant|
+          applicant.update_columns(created_at: now - DataRetentionService::REDACT_BACKSTOP - 1.day)
+        end
+      end
+
+      it "reports the backstop hit as overdue" do
+        service.redact_all!
+
+        expect(run_event).to include(
+          backstop_hits: 1,
+          backstop_applicants_redacted: 1,
+          overdue_found: true
+        )
+      end
+    end
+
+    context "when a redaction fails in production" do
+      before do
+        flow_created(DataRetentionService::REDACT_CBV_FLOWS_AFTER + 1.hour)
+        allow(Rails.env).to receive(:production?).and_return(true)
+        allow_any_instance_of(CbvFlow).to receive(:redact!).and_raise(RuntimeError, "boom")
+      end
+
+      it "counts the failure and does not count the flow as redacted" do
+        service.redact_all!
+
+        expect(run_event).to include(
+          status: "completed",
+          cbv_flows_redacted: 0,
+          redaction_failures: 1
+        )
+      end
+    end
+
+    context "when the run raises" do
+      before do
+        allow(service).to receive(:redact_cbv_flows).and_raise(ActiveRecord::ConnectionNotEstablished, "db gone")
+      end
+
+      it "records a failed run with the error class and re-raises" do
+        expect { service.redact_all! }.to raise_error(ActiveRecord::ConnectionNotEstablished)
+
+        expect(run_event).to include(
+          status: "failed",
+          error_class: "ActiveRecord::ConnectionNotEstablished"
+        )
+      end
+    end
+  end
 end
