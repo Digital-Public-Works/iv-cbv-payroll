@@ -365,13 +365,6 @@ reader announcements among others still need a person to review them.
 
 See [Testing Conventions](./CONTRIBUTING.md#testing-conventions) in CONTRIBUTING.md for when and how an axe rule may be skipped.
 
-## Automated E2E Testing
-We achieve End-to-End (E2E) testing by using `capybara` (which in turn uses `selenium`) to simulate a real user completing the CBV flow.
-
-See the [E2E testing documentation](/docs/e2e/e2e-checks.md) for more information.
-
-When writing E2E tests, use the `verify_page` helper when possible to ensure that the page meets our sitewide requirements: it has no missing translations and it passes accessibility checks (per WCAG 2.1 A & AA).
-
 ## Integration Testing (Webhook)
 
 Integration tests validate webhook transmission against a running reference server. They are excluded from default test runs and CI.
