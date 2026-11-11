@@ -3,11 +3,13 @@
 # this file at deploy time — it exists so the repository dependency graph, and
 # therefore Dependabot security alerts, can see what the Lambda actually ships.
 #
-# Versions were confirmed by hashing the vendored files against each package's
-# RECORD, because vendor/ carries stale dist-info directories from earlier
-# installs. If the zip is rebuilt, re-derive these to match it.
-pg8000==1.31.2
-scramp==1.4.5
+# The zip is built from this file by `make infra-module-database-role-manager-archive`,
+# so the two stay in step: change a pin here, then rebuild the zip in the same commit.
+#
+# The Lambda runs python3.9, which caps these: pg8000 1.31.6 needs scramp 1.5.0, and
+# scramp 1.5.0 needs Python >= 3.11. Lift the caps with the runtime bump (PF-799).
+pg8000==1.31.5
+scramp==1.4.6
 asn1crypto==1.5.1
 python-dateutil==2.9.0.post0
-six==1.16.0
+six==1.17.0

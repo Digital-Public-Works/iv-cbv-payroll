@@ -1,13 +1,21 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+# Dependabot version updates. Security updates are enabled separately in the
+# repository settings and are not affected by the grouping below.
+# Options: https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# Not configured, on purpose:
+# - docker: app/Dockerfile selects its base image with `FROM ruby:$RUBY_VERSION`.
+#   Dependabot cannot resolve a build ARG there, so the entry never opened a PR.
+#   The OS layer is covered by Trivy in vulnerability-scans.yml and
+#   ci-app-vulnerability-scans.yml.
+# - terraform: no .terraform.lock.hcl is committed and the aws provider is a
+#   range (>= 5.35.0, < 6.0.0), so every `terraform init` already resolves the
+#   newest 5.x provider. The entry pointed at /infra, which has no .tf files,
+#   and never opened a PR.
+# - pip in app/analytics and go in infra/test: neither is in the production image.
 
 version: 2
 updates:
-  # Enable version updates for npm
   - package-ecosystem: "npm"
-    # Look for `package.json` and `lock` files in the `root` directory
     directory: "/app"
     schedule:
       interval: "weekly"
@@ -15,18 +23,21 @@ updates:
     commit-message:
       prefix: "deps"
       include: "scope"
-
-  - package-ecosystem: "docker"
-    directory: "/app" # location of dockerfile
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-    commit-message:
-      prefix: "deps"
-      include: "scope"
+    groups:
+      npm-minor-and-patch:
+        update-types: [ "minor", "patch" ]
+    ignore:
+      # Each entry below stops PRs that move a package to a new major version
+      # (minor and patch updates still come). Delete an entry to get those PRs again.
+      # vitest 5 (PR #733) changes test APIs; staying on 4.x for now.
+      - dependency-name: "vitest"
+        update-types: [ "version-update:semver-major" ]
+      # postcss-cli 12 (PR #681): staying on 11.x for now.
+      - dependency-name: "postcss-cli"
+        update-types: [ "version-update:semver-major" ]
 
   - package-ecosystem: "bundler"
-    directory: "/app" # location of Gemfile
+    directory: "/app"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
@@ -34,30 +45,29 @@ updates:
       prefix: "deps"
       include: "scope"
     allow:
-      - dependency-type: "direct"   # only update direct dependencies
+      # Direct and transitive gems. Direct-only meant runtime gems such as rack
+      # and net-ssh never got an update PR.
+      - dependency-type: "all"
+    groups:
+      bundler-minor-and-patch:
+        update-types: [ "minor", "patch" ]
     ignore:
       - dependency-name: "rails"
         update-types: [ "version-update:semver-major" ]
       - dependency-name: "puma"
         update-types: [ "version-update:semver-major" ]
-      - dependency-name: "ruby"
-        update-types: [ "version-update:semver-major" ]
       # 2.0.26 corrupts binary ciphertext. ignore, await future version
       - dependency-name: "gpgme"
         versions: [ "2.0.26" ]
-
-  - package-ecosystem: "terraform"
-    directory: "/infra" # path to your Terraform configs (adjust if needed)
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 5
-    commit-message:
-      prefix: "deps"
-      include: "scope"
+      # rack-mini-profiler 5 (PR #678): staying on 3.x for now.
+      - dependency-name: "rack-mini-profiler"
+        update-types: [ "version-update:semver-major" ]
 
   - package-ecosystem: "pip"
     # Dependencies are vendored in role_manager.zip; requirements.txt pins what
-    # that artifact ships so alerts can see it. See the file's header comment.
+    # that artifact ships so alerts can see it. Merging a PR here does not change
+    # the Lambda: check out the PR, run `make infra-module-database-role-manager-archive`,
+    # commit the zip, and include the database layer in the next admin apply.
     directory: "/infra/modules/database/role_manager"
     schedule:
       interval: "weekly"
@@ -65,3 +75,18 @@ updates:
     commit-message:
       prefix: "deps"
       include: "scope"
+    groups:
+      pip-minor-and-patch:
+        update-types: [ "minor", "patch" ]
+    ignore:
+      # python-dateutil 3 (PR #767) adds a tzdata dependency and rewrites time zone
+      # handling; staying on 2.x until the Lambda runtime bump (PF-799).
+      - dependency-name: "python-dateutil"
+        update-types: [ "version-update:semver-major" ]
+      # The Lambda runs python3.9; these versions need Python >= 3.11 (scramp 1.5.0,
+      # which pg8000 1.31.6 requires). Ignores also block security-update PRs, so
+      # watch the Dependabot alerts for these two. Remove both with PF-799.
+      - dependency-name: "scramp"
+        versions: [ ">= 1.5.0" ]
+      - dependency-name: "pg8000"
+        versions: [ ">= 1.31.6" ]
