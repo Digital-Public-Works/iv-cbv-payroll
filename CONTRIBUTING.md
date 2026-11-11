@@ -9,25 +9,8 @@ public contributions.
 Tests live in `app/spec`, mirroring the structure of `app/app`. See the [README](./README.md) for running the full
 test suite.
 
-### Automated accessibility checks
-
-The end-to-end (E2E) specs in `app/spec/e2e` are also where the automated accessibility checks live. Every call to
-`verify_page` (`app/spec/support/e2e/test_helpers.rb`) runs [axe-core](https://github.com/dequelabs/axe-core) against the
-current page using its default ruleset (WCAG 2.1 A/AA), so any page you visit through `verify_page` is checked. When
-you add a new page or a new state of a page to an E2E spec, check it with `verify_page`.
-
-These specs run automatically on every pull request that changes `app/`. To run them locally, from the `app`
-directory:
-
-```sh
-E2E_RUN_TESTS=1 bin/rspec spec/e2e
-```
-
-Add `E2E_SHOW_BROWSER=1` to watch the browser instead of running headless. See
-[docs/e2e/e2e-checks.md](./docs/e2e/e2e-checks.md) for record/replay mode and writing new E2E specs.
-
-**Automated checks catch only part of what matters.** Contextual issues like correct labels, keyboard behavior, focus management, and screen
-reader announcements among others still need a person to review them.
+The E2E specs also run the automated accessibility checks. See
+[Automated accessibility checks](./README.md#automated-accessibility-checks) in the README for how to run them.
 
 ### Skipping an accessibility rule
 
