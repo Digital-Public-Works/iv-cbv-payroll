@@ -5,6 +5,11 @@ runs:
   steps:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
+      env:
+        # debase 0.2.9 (development group) uses old-style C declarations that GCC 15,
+        # the compiler on ubuntu-latest since the Ubuntu 26.04 image (Nov 2026), rejects
+        # under its default C23 mode. Compile it as gnu17 so bundle install succeeds.
+        BUNDLE_BUILD__DEBASE: --with-cflags=-std=gnu17
       with:
         working-directory: app
         bundler-cache: true
