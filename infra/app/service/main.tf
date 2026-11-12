@@ -184,6 +184,14 @@ module "sqs_queues" {
   max_receive_count          = 5
 }
 
+locals {
+  # The resolved queue names (suffixed outside demo/prod) whose backlogs
+  # worker autoscaling reads: report_sender on its own, and the two analytics
+  # event queues together.
+  report_sender_queue_name = one([for name in keys(module.sqs_queues.queue_arns) : name if startswith(name, "report_sender")])
+  event_queue_names        = sort([for name in keys(module.sqs_queues.queue_arns) : name if startswith(name, "mixpanel_events") || startswith(name, "newrelic_events")])
+}
+
 module "service" {
   source       = "../../modules/service"
   service_name = local.service_config.service_name
@@ -208,6 +216,11 @@ module "service" {
   desired_instance_count           = local.is_temporary ? 1 : local.service_config.desired_instance_count
   shoryuken_desired_instance_count = local.service_config.shoryuken_desired_instance_count
   enable_command_execution         = local.service_config.enable_command_execution
+
+  max_instance_count           = local.is_temporary ? null : local.service_config.max_instance_count
+  shoryuken_max_instance_count = local.service_config.shoryuken_max_instance_count
+  worker_backlog_queue_name    = local.report_sender_queue_name
+  worker_event_queue_names     = local.event_queue_names
 
   aws_services_security_group_id = data.aws_security_groups.aws_services.ids[0]
 

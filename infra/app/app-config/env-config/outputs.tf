@@ -26,6 +26,8 @@ output "service_config" {
     memory                           = var.service_memory
     desired_instance_count           = var.service_desired_instance_count
     shoryuken_desired_instance_count = var.shoryuken_desired_instance_count
+    max_instance_count               = var.service_max_instance_count
+    shoryuken_max_instance_count     = var.shoryuken_max_instance_count
     enable_command_execution         = var.enable_command_execution
     additional_domains               = var.additional_domains
 
