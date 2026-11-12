@@ -30,8 +30,8 @@
 <% agency = ClientAgencyConfig.instance[@cbv_flow.client_agency_id] %>
 <% agency.applicant_supplied_attribute_names.each do |item| %>
   <% item = item.to_sym %>
-  <% if @cbv_flow.cbv_applicant[item].present? %>
-    <% value = item == :date_of_birth ? format_date(@cbv_flow.cbv_applicant[item]) : @cbv_flow.cbv_applicant[item] %>
+  <% if @cbv_flow.cbv_applicant.public_send(item).present? %>
+    <% value = item == :date_of_birth ? format_date(@cbv_flow.cbv_applicant.public_send(item)) : @cbv_flow.cbv_applicant.public_send(item) %>
     <% client_information_rows << [ agency_translation("cbv.applicant_informations.{agency}.fields.#{item}.super_one_html"), value ] %>
   <% end %>
 <% end %>

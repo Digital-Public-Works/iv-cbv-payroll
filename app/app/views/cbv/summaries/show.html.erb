@@ -83,9 +83,9 @@
       <% row.with_data_cell(data_label: t(".question"), class_names: "text-bold").with_content(agency_translation("cbv.applicant_informations.{agency}.fields.#{item}.prompt")) %>
       <% row.with_data_cell(data_label: t(".your_answer")) do %>
         <% if item == :date_of_birth %>
-          <%= format_date(@cbv_flow.cbv_applicant[item]) %>
+          <%= format_date(@cbv_flow.cbv_applicant.public_send(item)) %>
         <% else %>
-          <%= @cbv_flow.cbv_applicant[item] %>
+          <%= @cbv_flow.cbv_applicant.public_send(item) %>
         <% end %>
       <% end %>
     <% end %>
