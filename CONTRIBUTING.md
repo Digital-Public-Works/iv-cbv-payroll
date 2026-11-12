@@ -4,6 +4,39 @@ This project is being developed by Digital Public Works in partnership with vari
 tools to track our work (bugs and feature enhancements), and as such this repo is not architected to receive
 public contributions.
 
+## Testing Conventions
+
+Tests live in `app/spec`, mirroring the structure of `app/app`. See the [README](./README.md) for running the full
+test suite.
+
+The E2E specs also run the automated accessibility checks. See
+[Automated accessibility checks](./README.md#automated-accessibility-checks) in the README for how to run them.
+
+### Skipping an accessibility rule
+
+Skipping an axe rule should be a deliberate, documented decision, not a way to get a build green. A skip is acceptable
+only when:
+
+- the violation is a known issue with a ticket tracking the fix, or
+- the violation is a confirmed false positive (for example, axe misreading markup we don't control).
+
+#### Rules for every skip:
+
+- Skip per page, on the specific `verify_page` call, using `skip_axe_rules:`. Never disable a rule globally.
+- Skip only the specific rule ID that fails, not a broader set.
+- Put an inline comment directly above the call that names the rule, explains why it fails, and links the tracking
+  ticket (or says "false positive" and why).
+- Remove the skip when the underlying issue is fixed.
+
+##### Example:
+```ruby
+# axe-skip color-contrast: the third-party banner renders gray-on-white text we
+# can't restyle yet. Tracked in PF-1234.
+verify_page(page, title: I18n.t("cbv.example.show.header"), skip_axe_rules: %w[color-contrast])
+```
+
+Reviewers should ask for changes on any skip that doesn't follow this pattern.
+
 <details>
 <summary>Sections we will fill out once we open to external contributions</summary>
 ## Getting Started
@@ -34,10 +67,6 @@ We follow the [GitHub Flow Workflow](https://guides.github.com/introduction/flow
 7.  Wait for your change to be pulled into `{{ cookiecutter.project_org }}/{{ cookiecutter.project_repo_name }}/main`
 8.  Delete your feature branch
 -->
-
-### Testing Conventions
-
-<!--- TODO: Discuss where tests can be found, how they are run, and what kind of tests/coverage strategy and goals the project has. -->
 
 ### Coding Style and Linters
 
