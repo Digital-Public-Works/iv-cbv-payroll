@@ -39,6 +39,7 @@ variable "infra_service_actions" {
   description = "Coarse per-service allow actions for the infra-services policy. RDS is intentionally read-only."
   default = [
     "acm:*",
+    "apigateway:*",
     "backup:*",
     "cloudwatch:*",
     "dynamodb:*",
