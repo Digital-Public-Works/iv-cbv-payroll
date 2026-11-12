@@ -59,6 +59,9 @@ class Cbv::SubmitsController < Cbv::BaseController
     end
 
     CaseWorkerTransmitterJob.perform_later(@cbv_flow.id)
+
+    # Cleanup in case the browser is used for another submission.
+    cookies.delete(:cbv_applicant_id)
     redirect_to next_path
   end
 
