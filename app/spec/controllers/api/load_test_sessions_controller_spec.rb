@@ -93,6 +93,18 @@ RSpec.describe Api::LoadTestSessionsController, type: :controller do
           expect(cbv_flow.consented_to_authorized_use_at).to be_present
         end
 
+        it "marks the flow as load-test data" do
+          post :create, params: params
+
+          expect(CbvFlow.last.device_id).to eq(described_class::LOAD_TEST_DEVICE_ID)
+        end
+
+        it "marks applicant information as completed so the summary page renders" do
+          post :create, params: params
+
+          expect(CbvFlow.last.applicant_information_completed?).to be(true)
+        end
+
         it "creates a fully synced payroll account" do
           expect {
             post :create, params: params

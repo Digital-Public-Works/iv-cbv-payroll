@@ -3,35 +3,24 @@ import { sleep, check, group } from 'k6';
 import {
     URL,
     CLIENT_AGENCY_ID,
+    SLO,
     checkSlo,
+    commonOptions,
+    userFlowStages,
     SIMULATE_DELAY_SYNC_POLLING_S,
     SIMULATE_DELAY_PAYMENT_DETAILS_S,
     SIMULATE_DELAY_SUMMARY_S,
     SIMULATE_DELAY_PDF_DOWNLOAD_S,
     SIMULATE_DELAY_EMPLOYER_SEARCH_S,
-    SYNC_POLL_COUNT,
-    USER_FLOW_STEPS
 } from './common.js';
 
 export let options = {
-    vus: 0, // start at 0 users, and ramp up linearly
-    stages: [
-        { duration: '60s', target: 10 },
-        { duration: '30s', target: 10 },
-        { duration: '30s', target: 0 },
-    ],
-    maxRedirects: 0,
-    thresholds: {
-        // bail early if more than 10% of checks are failing (bad cookie?)
-        checks: [{ threshold: 'rate>0.1', abortOnFail: true }],
-        // measure against our SLO for p95, p99, and max durations
-        failed_slo: ['count<=0'],
-        http_req_duration: ['p(95)<500', 'p(99)<1000', 'max<2000'],
-    },
-    summaryTrendStats: ['avg', 'med', 'p(95)', 'p(99)', 'max'],
+    ...commonOptions,
+    stages: userFlowStages(), // PROFILE env var; see common.js
 };
 
-const SCENARIO = __ENV.SCENARIO || 'mixed'; // 'mixed', 'sync', 'summary', 'pdf'
+// 'mixed', 'sync', 'payment_details', 'summary', 'pdf', 'employer_search'
+const SCENARIO = __ENV.SCENARIO || 'mixed';
 
 // Session manager - reuses sessions across iterations per VU
 const getOrCreateSession = (() => {
@@ -74,8 +63,13 @@ function createSession(dataState) {
     }), {
         headers: {
             'Content-Type': 'application/json'
-        }
+        },
+        tags: { slo: SLO.setup, name: 'create_session' },
     });
+
+    check(sessionResponse, {
+        'load test session created': (r) => r.status === 201,
+    }, { slo: SLO.setup });
 
     if (sessionResponse.status === 201) {
         // Extract session cookie from Set-Cookie header (Rails automatically encrypts it)
@@ -155,7 +149,7 @@ function testSynchronization(session) {
 
         const response = http.patch(
             `${URL}/cbv/synchronizations?user%5Baccount_id%5D=${accountId}`, {},
-            { headers: requestHeaders }
+            { headers: requestHeaders, tags: { slo: SLO.standard, name: 'synchronizations' } }
         );
 
         check(response, {
@@ -175,7 +169,7 @@ function testPaymentDetails(session) {
     group("Payment details (DB + aggregation)", () => {
         const response = http.get(
             `${URL}/cbv/payment_details?user%5Baccount_id%5D=${accountId}`,
-            { headers }
+            { headers, tags: { slo: SLO.standard, name: 'payment_details' } }
         );
 
         check(response, {
@@ -195,7 +189,7 @@ function testSummary(session) {
     group("Summary page (aggregation)", () => {
         const response = http.get(
             `${URL}/cbv/summary`,
-            { headers }
+            { headers, tags: { slo: SLO.standard, name: 'summary' } }
         );
 
         check(response, {
@@ -219,7 +213,8 @@ function testPdfGeneration(session) {
                 headers: {
                     ...headers,
                     'Accept': 'application/pdf',
-                }
+                },
+                tags: { slo: SLO.pdf, name: 'submit_pdf' },
             }
         );
 
@@ -228,7 +223,7 @@ function testPdfGeneration(session) {
             'pdf content type': (r) => r.headers['Content-Type'] && r.headers['Content-Type'].includes('pdf'),
         });
 
-        checkSlo(response);
+        checkSlo(response, SLO.pdf);
     });
 
     // PDFs are downloaded less frequently
@@ -241,11 +236,11 @@ function testEmployerSearch(session) {
     group("Employer search page", () => {
         const response = http.get(
             `${URL}/cbv/employer_search`,
-            { headers }
+            { headers, tags: { slo: SLO.standard, name: 'employer_search' } }
         );
 
         check(response, {
-            'is Status 200': (r) => r.status === 200,
+            'employer search loaded': (r) => r.status === 200,
         });
 
         checkSlo(response);

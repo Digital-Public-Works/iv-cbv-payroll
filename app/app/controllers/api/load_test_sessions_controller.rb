@@ -1,6 +1,10 @@
 class Api::LoadTestSessionsController < ApplicationController
   include NonProductionAccessible
 
+  # Marks every flow this endpoint creates so `load_test:cleanup_sessions` can
+  # delete exactly these (and analytics events from them are easy to filter).
+  LOAD_TEST_DEVICE_ID = "load-test"
+
   skip_forgery_protection
 
   # Only allow in non-production environments (development/test/demo)
@@ -81,7 +85,11 @@ class Api::LoadTestSessionsController < ApplicationController
     cbv_flow = CbvFlow.create!(
       client_agency_id: client_agency_id,
       cbv_applicant: cbv_applicant,
-      consented_to_authorized_use_at: Time.current
+      consented_to_authorized_use_at: Time.current,
+      # A synced flow has passed the applicant-information step; without this
+      # the summary page redirects to /cbv/applicant_information.
+      applicant_information_completed_at: Time.current,
+      device_id: LOAD_TEST_DEVICE_ID
     )
 
     account_ids = argyle_account_ids
@@ -119,7 +127,8 @@ class Api::LoadTestSessionsController < ApplicationController
     cbv_flow = CbvFlow.create!(
       client_agency_id: client_agency_id,
       cbv_applicant: cbv_applicant,
-      consented_to_authorized_use_at: Time.current
+      consented_to_authorized_use_at: Time.current,
+      device_id: LOAD_TEST_DEVICE_ID
     )
 
     # Create pending payroll account
@@ -145,7 +154,8 @@ class Api::LoadTestSessionsController < ApplicationController
     cbv_flow = CbvFlow.create!(
       client_agency_id: client_agency_id,
       cbv_applicant: cbv_applicant,
-      consented_to_authorized_use_at: Time.current
+      consented_to_authorized_use_at: Time.current,
+      device_id: LOAD_TEST_DEVICE_ID
     )
 
     # Create failed payroll account
