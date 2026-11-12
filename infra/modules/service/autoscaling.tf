@@ -6,11 +6,17 @@
 #---------------------------------------------------------------------------
 
 locals {
-  web_max_instance_count    = coalesce(var.max_instance_count, var.desired_instance_count)
-  worker_max_instance_count = coalesce(var.shoryuken_max_instance_count, var.shoryuken_desired_instance_count)
+  # Scale-to-zero environments (a11y) run 0 or 1 tasks, switched by the
+  # sleep/wake alarms in scale_to_zero.tf instead of target tracking.
+  scale_to_zero = var.scale_to_zero_idle_hours != null && !var.is_temporary
 
-  web_autoscaling_enabled    = local.web_max_instance_count > var.desired_instance_count
-  worker_autoscaling_enabled = !var.is_temporary && local.worker_max_instance_count > var.shoryuken_desired_instance_count
+  web_min_instance_count    = local.scale_to_zero ? 0 : var.desired_instance_count
+  worker_min_instance_count = local.scale_to_zero ? 0 : var.shoryuken_desired_instance_count
+  web_max_instance_count    = local.scale_to_zero ? 1 : coalesce(var.max_instance_count, var.desired_instance_count)
+  worker_max_instance_count = local.scale_to_zero ? 1 : coalesce(var.shoryuken_max_instance_count, var.shoryuken_desired_instance_count)
+
+  web_autoscaling_enabled    = !local.scale_to_zero && local.web_max_instance_count > var.desired_instance_count
+  worker_autoscaling_enabled = !var.is_temporary && !local.scale_to_zero && local.worker_max_instance_count > var.shoryuken_desired_instance_count
 
   # Published by the web tasks only while web autoscaling is on.
   puma_metrics_namespace = "VMI/Puma"
@@ -29,13 +35,13 @@ resource "aws_appautoscaling_target" "web" {
   service_namespace  = "ecs"
   scalable_dimension = "ecs:service:DesiredCount"
   resource_id        = "service/${aws_ecs_cluster.cluster.name}/${aws_ecs_service.app.name}"
-  min_capacity       = var.desired_instance_count
+  min_capacity       = local.web_min_instance_count
   max_capacity       = local.web_max_instance_count
 
   lifecycle {
     precondition {
       condition     = local.web_max_instance_count >= var.desired_instance_count
-      error_message = "max_instance_count must be at least desired_instance_count."
+      error_message = local.scale_to_zero ? "desired_instance_count must be 0 or 1 when scale_to_zero_idle_hours is set." : "max_instance_count must be at least desired_instance_count."
     }
   }
 }
@@ -125,13 +131,13 @@ resource "aws_appautoscaling_target" "worker" {
   service_namespace  = "ecs"
   scalable_dimension = "ecs:service:DesiredCount"
   resource_id        = "service/${aws_ecs_cluster.cluster.name}/${aws_ecs_service.worker[0].name}"
-  min_capacity       = var.shoryuken_desired_instance_count
+  min_capacity       = local.worker_min_instance_count
   max_capacity       = local.worker_max_instance_count
 
   lifecycle {
     precondition {
       condition     = local.worker_max_instance_count >= var.shoryuken_desired_instance_count
-      error_message = "shoryuken_max_instance_count must be at least shoryuken_desired_instance_count."
+      error_message = local.scale_to_zero ? "shoryuken_desired_instance_count must be 0 or 1 when scale_to_zero_idle_hours is set." : "shoryuken_max_instance_count must be at least shoryuken_desired_instance_count."
     }
   }
 }

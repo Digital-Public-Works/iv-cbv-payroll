@@ -219,6 +219,7 @@ module "service" {
 
   max_instance_count           = local.is_temporary ? null : local.service_config.max_instance_count
   shoryuken_max_instance_count = local.service_config.shoryuken_max_instance_count
+  scale_to_zero_idle_hours     = local.is_temporary ? null : local.service_config.scale_to_zero_idle_hours
   worker_backlog_queue_name    = local.report_sender_queue_name
   worker_event_queue_names     = local.event_queue_names
 

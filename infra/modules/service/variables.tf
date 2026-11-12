@@ -68,6 +68,17 @@ variable "shoryuken_max_instance_count" {
   default     = null
 }
 
+variable "scale_to_zero_idle_hours" {
+  type        = number
+  description = "Scale web and worker to 0 tasks after this many hours with no CBV flows started and no invitations created, and back to 1 when someone requests a user-facing path (see scale_to_zero.tf). Replaces target-tracking autoscaling: capacity is 0 or 1, and max_instance_count / shoryuken_max_instance_count are ignored. Null turns it off. Ignored for temporary environments."
+  default     = null
+
+  validation {
+    condition     = var.scale_to_zero_idle_hours == null || try(var.scale_to_zero_idle_hours >= 1 && var.scale_to_zero_idle_hours <= 24 && floor(var.scale_to_zero_idle_hours) == var.scale_to_zero_idle_hours, false)
+    error_message = "scale_to_zero_idle_hours must be a whole number from 1 to 24 (CloudWatch alarms can't evaluate more than a day)."
+  }
+}
+
 variable "worker_backlog_queue_name" {
   type        = string
   description = "SQS queue whose backlog per running worker task drives worker autoscaling (report_sender). Null scales the worker on CPU only."

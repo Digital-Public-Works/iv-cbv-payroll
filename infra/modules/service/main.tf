@@ -118,6 +118,7 @@ resource "aws_ecs_task_definition" "app" {
       environment = concat(
         local.environment_variables,
         local.web_autoscaling_enabled ? [{ name : "PUMA_METRICS_SERVICE_NAME", value : var.service_name }] : [],
+        local.scale_to_zero ? [{ name : "ACTIVITY_METRICS_SERVICE_NAME", value : var.service_name }] : [],
       ),
       secrets = var.secrets,
       portMappings = [
