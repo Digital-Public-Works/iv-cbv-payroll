@@ -19,6 +19,11 @@ class S3Service
     end
   end
 
+  # used for admin portal connectivity / permissions check
+  def head_bucket
+    s3_client.head_bucket(bucket: @bucket_name)
+  end
+
   private
 
   def s3_client

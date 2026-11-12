@@ -155,6 +155,28 @@ Rails.application.routes.draw do
     scope :load_test do
       post "/sessions", to: "load_test_sessions#create"
     end
+
+    # these routes only exist if there is a ADMIN_API_SERVICE_SECRET value in the env configuration
+    constraints(->(_req) { AdminApi::Config.enabled? }) do
+      namespace :admin do
+        namespace :v1 do
+          get "schema", to: "schema#show"
+          get "export", to: "exports#index"
+          post "partners/import", to: "imports#create"
+
+          resources :partners, only: [ :index, :show, :create, :update ], param: :partner_id do
+            member do
+              post :validate
+              post :diff
+              get :export
+              post :promote_settings
+              put :transmission_methods, to: "transmission_methods#update"
+              post "transmission_methods/:method_type/check", to: "transmission_methods#check", as: :check_transmission_method
+            end
+          end
+        end
+      end
+    end
   end
 
   match "/404", to: "pages#error_404", via: :all

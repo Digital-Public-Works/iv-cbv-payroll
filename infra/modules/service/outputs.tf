@@ -28,3 +28,15 @@ output "public_endpoint" {
 output "sqs_access_policy_arn" {
   value = aws_iam_policy.sqs_access.arn
 }
+
+output "load_balancer_arn" {
+  value = aws_lb.alb.arn
+}
+
+output "https_listener_arn" {
+  value = length(aws_lb_listener.alb_listener_https) > 0 ? aws_lb_listener.alb_listener_https[0].arn : null
+}
+
+output "app_target_group_arn" {
+  value = aws_lb_target_group.app_tg.arn
+}

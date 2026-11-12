@@ -53,7 +53,7 @@ RSpec.describe "partner_config.rake" do
       "argyle_environment" => "sandbox",
       "transmission_methods" => [
         {
-          "method_type" => "unencrypted_s3",
+          "method_type" => "s3",
           "configs" => [
             { "key" => "bucket", "encrypted" => false, "value" => "test-bucket" },
             { "key" => "path_prefix", "encrypted" => false, "value" => "outout" }
@@ -102,7 +102,7 @@ RSpec.describe "partner_config.rake" do
 
       pc = PartnerConfig.find_by(partner_id: partner_id)
       expect(pc.include_paystubs).to be true
-      ptm = pc.partner_transmission_methods.find_by(method_type: "unencrypted_s3")
+      ptm = pc.partner_transmission_methods.find_by(method_type: "s3")
       expect(ptm.partner_transmission_configs.find_by(key: "path_prefix").value).to eq("outout")
     end
 

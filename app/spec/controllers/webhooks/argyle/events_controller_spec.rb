@@ -123,6 +123,53 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
       allow(fake_event_logger).to receive(:track)
     end
 
+    describe "prefilling applicant attributes from the sync" do
+      def run_full_sync
+        process_webhook("accounts.connected")
+        process_webhook("identities.added")
+        process_webhook("users.fully_synced")
+        process_webhook("paystubs.fully_synced")
+        process_webhook("gigs.fully_synced")
+        PayrollAccount.last.reload
+      end
+
+      before do
+        partner = PartnerConfig.find_by(partner_id: "sandbox")
+        partner.partner_application_attributes.where(name: "first_name")
+               .update_all(source_field: "identity.first_name")
+        ClientAgencyConfig.reset!
+        cbv_flow.cbv_applicant.update!(first_name: nil, last_name: nil)
+      end
+
+      it "fills a mapped attribute once the account has synced" do
+        run_full_sync
+
+        expect(cbv_flow.cbv_applicant.reload.first_name).to be_present
+      end
+
+      it "attributes it to the payroll provider, not the applicant" do
+        run_full_sync
+        applicant = cbv_flow.cbv_applicant.reload
+
+        expect(applicant).not_to be_applicant_provided(:first_name)
+        expect(applicant.provenance_for(:first_name)["source"]).to eq("payroll_provider")
+      end
+
+      it "does not overwrite a value that came in on the invitation" do
+        cbv_flow.cbv_applicant.update!(first_name: "FromCaseworker")
+
+        run_full_sync
+
+        expect(cbv_flow.cbv_applicant.reload.first_name).to eq("FromCaseworker")
+      end
+
+      it "leaves unmapped attributes for the applicant to supply" do
+        run_full_sync
+
+        expect(cbv_flow.cbv_applicant.reload.last_name).to be_nil
+      end
+    end
+
     # The sync outcome and the report verdict are separate: the first is known the
     # moment the sync ends, the second can wait for data the applicant has yet to
     # give us.
@@ -153,6 +200,20 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
         process_webhook("gigs.fully_synced")
 
         expect(fetches).to eq(1)
+      end
+
+      it "logs hours to Mixpanel once per sync: one event per W-2 paystub and one per report" do
+        allow(MixpanelEventTrackingJob).to receive(:perform_later)
+
+        run_full_sync
+        # Duplicate webhooks after the sync must not log again.
+        process_webhook("paystubs.fully_synced")
+
+        # Sarah is a W-2 worker with 10 paystubs in the fixture.
+        expect(MixpanelEventTrackingJob).to have_received(:perform_later)
+          .with(TrackEvent::ArgylePaystubHours, anything, hash_including(cbv_applicant_id: cbv_flow.cbv_applicant_id)).exactly(10).times
+        expect(MixpanelEventTrackingJob).to have_received(:perform_later)
+          .with(TrackEvent::ArgyleReportHours, anything, hash_including(total_paystubs: 10, cbv_applicant_id: cbv_flow.cbv_applicant_id)).once
       end
 
       context "when the partner still has applicant information to collect" do
@@ -759,6 +820,86 @@ RSpec.describe Webhooks::Argyle::EventsController, type: :controller do
       process_webhook("accounts.updated", variant: :connecting)
       process_webhook("accounts.connected")
       process_webhook("accounts.removed", expected_last_event_type: "accounts.connected", verify_webhook_event: false)
+    end
+  end
+
+  # The outer `before` in this file stubs #authorize_webhook wholesale, so the
+  # guard itself is otherwise untested. These exercise it for real.
+  describe '#authorize_webhook' do
+    let!(:cbv_flow) { create(:cbv_flow, argyle_user_id: "webhook-auth-user") }
+    let(:subscribed_event) { "accounts.connected" }
+    let(:unsubscribed_event) { "not.an.event.we.subscribe.to" }
+
+    before do
+      allow(controller).to receive(:authorize_webhook).and_call_original
+      # Isolate the guard's control flow from partner/environment secret lookup.
+      allow(controller).to receive(:argyle_for)
+        .and_return(instance_double(Aggregators::Sdk::ArgyleService, webhook_secret: "test_webhook_secret"))
+    end
+
+    def post_webhook(event, signature: nil, user: cbv_flow.argyle_user_id)
+      request.headers["X-Argyle-Signature"] = signature if signature
+      post :create, params: {
+        "event" => event,
+        "data" => { "user" => user, "account" => SecureRandom.uuid }
+      }
+    end
+
+    it "rejects a request that omits the signature header rather than raising" do
+      # secure_compare raises NoMethodError on nil, which surfaced as a 500.
+      expect { post_webhook(subscribed_event) }.not_to raise_error
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it "rejects a request whose signature does not match" do
+      post_webhook(subscribed_event, signature: "not-the-right-digest")
+
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it "sends exactly one response when a request is both wrongly signed and unsubscribed" do
+      # Regression: both guards rendered without returning, so an unsubscribed
+      # event with a bad signature rendered twice and raised
+      # AbstractController::DoubleRenderError -- a 500 any unauthenticated caller
+      # could trigger. The signature must be present but wrong to reach the
+      # second guard.
+      expect {
+        post_webhook(unsubscribed_event, signature: "not-the-right-digest")
+      }.not_to raise_error
+
+      expect(response).to have_http_status(:unauthorized)
+      expect(JSON.parse(response.body)).to eq("error" => "Invalid signature")
+    end
+
+    context "with a valid signature" do
+      before do
+        allow(Aggregators::Webhooks::Argyle).to receive(:verify_signature).and_return(true)
+      end
+
+      it "acknowledges but ignores an event we do not subscribe to" do
+        post_webhook(unsubscribed_event, signature: "a-valid-digest")
+
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)).to eq("info" => "Unhandled webhook")
+      end
+
+      it "lets a subscribed event through to the action" do
+        post_webhook(subscribed_event, signature: "a-valid-digest")
+
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)).to eq("status" => "ok")
+      end
+    end
+
+    context "when no CbvFlow matches the argyle user id" do
+      it "acknowledges the webhook without reaching signature verification" do
+        expect(Aggregators::Webhooks::Argyle).not_to receive(:verify_signature)
+
+        post_webhook(subscribed_event, signature: "a-valid-digest", user: "no-such-argyle-user")
+
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)).to eq("status" => "ok")
+      end
     end
   end
 end

@@ -67,23 +67,23 @@ RSpec.describe TransmissionCompleteWebhookJob, type: :job do
   end
 
   it "uses the S3 object key as the uri, with no path_prefix when none is configured" do
-    transmission.update!(method_type: :unencrypted_s3, configuration: {})
+    transmission.update!(method_type: :s3, configuration: {})
 
     described_class.new.perform(transmission.id)
 
     expect(sent_body).to include(
-      "transmission_method" => "unencrypted_s3",
+      "transmission_method" => "s3",
       "uri" => "VMI_00012345_20260513_ConfABC123.tar.gz"
     )
   end
 
-  it "uses the encrypted S3 object key as the uri" do
-    transmission.update!(method_type: :encrypted_s3, configuration: { "path_prefix" => "inbox" })
+  it "uses the encrypted S3 object key as the uri when the transmission had a public_key" do
+    transmission.update!(method_type: :s3, configuration: { "path_prefix" => "inbox", "public_key" => "KEY" })
 
     described_class.new.perform(transmission.id)
 
     expect(sent_body).to include(
-      "transmission_method" => "encrypted_s3",
+      "transmission_method" => "s3",
       "uri" => "inbox/VMI_00012345_20260513_ConfABC123.tar.gz.gpg"
     )
   end
