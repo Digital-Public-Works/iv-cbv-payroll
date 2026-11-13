@@ -22,6 +22,12 @@ resource "aws_ecs_service" "worker" {
     enable   = true
     rollback = true
   }
+
+  # Autoscaling owns the running count (autoscaling.tf); desired_count only
+  # sets it when the service is first created.
+  lifecycle {
+    ignore_changes = [desired_count]
+  }
 }
 
 resource "aws_ecs_task_definition" "worker" {

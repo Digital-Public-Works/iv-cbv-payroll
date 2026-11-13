@@ -66,6 +66,12 @@ resource "aws_ecs_service" "app" {
     container_name   = var.service_name
     container_port   = var.container_port
   }
+
+  # Autoscaling owns the running count (autoscaling.tf); desired_count only
+  # sets it when the service is first created.
+  lifecycle {
+    ignore_changes = [desired_count]
+  }
 }
 
 resource "aws_ecs_task_definition" "app" {
@@ -86,19 +92,35 @@ resource "aws_ecs_task_definition" "app" {
       # readonlyRootFilesystem = !var.enable_command_execution,
       readonlyRootFilesystem = false,
 
+      # 120 second drain down to allow running processes (such as PDF generation) to finish before
+      # the instance stops
+      stopTimeout = 120,
+
       # Need to define all parameters in the healthCheck block even if we want
       # to use AWS's defaults, otherwise the terraform plan will show a diff
       # that will force a replacement of the task definition
+      #
+      # /health waits in Puma's request queue behind real traffic, and ECS
+      # stops a task whose check fails `retries` times in a row. Lenient
+      # enough that a task that is overloaded but still serving rides out a
+      # traffic spike until autoscaling's new tasks arrive (about 5-7 minutes),
+      # instead of being stopped; with one web task that would be an outage.
+      # Takes about 2.5 minutes of failures (5 x 30s) to mark it unhealthy.
       healthCheck = {
         interval = 30,
-        retries  = 3,
-        timeout  = 5,
+        retries  = 5,
+        timeout  = 15,
         command = ["CMD-SHELL",
           "curl --fail http://localhost:${var.container_port}/health"
         ]
       },
-      environment = local.environment_variables,
-      secrets     = var.secrets,
+
+      environment = concat(
+        local.environment_variables,
+        local.web_autoscaling_enabled ? [{ name : "PUMA_METRICS_SERVICE_NAME", value : var.service_name }] : [],
+        local.scale_to_zero ? [{ name : "ACTIVITY_METRICS_SERVICE_NAME", value : var.service_name }] : [],
+      ),
+      secrets = var.secrets,
       portMappings = [
         {
           containerPort = var.container_port,
