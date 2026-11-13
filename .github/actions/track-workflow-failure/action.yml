@@ -1,0 +1,72 @@
+name: Track workflow failure in an issue
+description: >-
+  Keeps one open GitHub issue per label while a workflow is failing. A failed run
+  opens the issue (or comments on the open one); a passing run closes it. Runs
+  where any job was cancelled or skipped change nothing.
+  The calling job needs `permissions: issues: write` and must check out the repo.
+inputs:
+  needs-json:
+    description: "The calling job's needs context, as `toJSON(needs)`"
+    required: true
+  label:
+    description: Label that identifies this workflow's tracking issue
+    required: true
+  title:
+    description: Title for a newly opened issue
+    required: true
+  assignees:
+    description: Comma-separated GitHub logins to assign when an issue is opened. GitHub emails them.
+    required: false
+    default: ""
+runs:
+  using: composite
+  steps:
+    - name: Open, update, or close the tracking issue
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        NEEDS_JSON: ${{ inputs.needs-json }}
+        LABEL: ${{ inputs.label }}
+        TITLE: ${{ inputs.title }}
+        ASSIGNEES: ${{ inputs.assignees }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        RUN_CONTEXT: "${{ github.workflow }}, ${{ github.event_name }} run on ${{ github.ref_name }}"
+      run: |
+        set -euo pipefail
+
+        outcome=$(jq -r '[.[].result]
+          | if any(. == "failure") then "failure"
+            elif all(. == "success") then "success"
+            else "other" end' <<<"$NEEDS_JSON")
+        failed_jobs=$(jq -r 'to_entries | map(select(.value.result == "failure") | "- `\(.key)`") | join("\n")' <<<"$NEEDS_JSON")
+        echo "Outcome: $outcome"
+
+        open_issue=$(gh issue list --repo "$GITHUB_REPOSITORY" --label "$LABEL" --state open \
+          --json number --jq '.[0].number // empty')
+
+        case "$outcome" in
+          failure)
+            if [ -z "$open_issue" ]; then
+              gh label create "$LABEL" --repo "$GITHUB_REPOSITORY" --color B60205 \
+                --description "Opened automatically while a workflow is failing" 2>/dev/null || true
+              body=$(printf '%s\n\n%s\n%s\n\n%s' \
+                "$RUN_CONTEXT failed: $RUN_URL" \
+                "Failed jobs:" "$failed_jobs" \
+                "This issue closes automatically when the workflow next passes.")
+              gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" --label "$LABEL" \
+                ${ASSIGNEES:+--assignee "$ASSIGNEES"} --body "$body"
+            else
+              gh issue comment "$open_issue" --repo "$GITHUB_REPOSITORY" \
+                --body "$(printf '%s\n\n%s' "Still failing ($RUN_CONTEXT): $RUN_URL" "$failed_jobs")"
+            fi
+            ;;
+          success)
+            if [ -n "$open_issue" ]; then
+              gh issue close "$open_issue" --repo "$GITHUB_REPOSITORY" \
+                --comment "Passing again ($RUN_CONTEXT): $RUN_URL"
+            fi
+            ;;
+          *)
+            echo "A job was cancelled or skipped; leaving the tracking issue as it is."
+            ;;
+        esac
