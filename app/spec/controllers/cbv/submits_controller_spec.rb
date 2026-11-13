@@ -264,6 +264,17 @@ RSpec.describe Cbv::SubmitsController do
           expect(pdf_text).not_to include("Base Pay")
         end
 
+        # name is in custom_attributes, not on a database column
+        it "shows the applicant's name and case number in the client information" do
+          get :show, format: :pdf
+          pdf_text = extract_pdf_text(response)
+
+          expect(pdf_text).to include("Jane")
+          expect(pdf_text).to include("Sue")
+          expect(pdf_text).to include("Doe")
+          expect(pdf_text).to include("ABC1234")
+        end
+
         it "asks about other jobs and explains the client-provided footnote" do
           get :show, format: :pdf
           pdf_text = extract_pdf_text(response)
