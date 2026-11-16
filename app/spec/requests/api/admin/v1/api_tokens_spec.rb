@@ -79,13 +79,33 @@ RSpec.describe "Admin API: invitation API tokens", type: :request do
       expect(active_count).to eq(1)
     end
 
-    it "refuses when the partner has an active token" do
-      service_user.api_access_tokens.create!(expires_at: 1.day.from_now)
+    it "refuses when the partner has an active token without an expiry" do
+      service_user.api_access_tokens.create!
 
       expect { admin_request(:post, base) }.not_to change(ApiAccessToken, :count)
 
       expect(response).to have_http_status(:conflict)
       expect(json_body["message"]).to include("rotate it instead")
+    end
+
+    it "creates a new token when the partner's only active token is expiring, leaving that one as is" do
+      at = 1.day.from_now.change(usec: 0)
+      expiring = service_user.api_access_tokens.create!(expires_at: at)
+
+      expect { admin_request(:post, base) }.to change(ApiAccessToken, :count).by(1)
+
+      expect(response).to have_http_status(:created)
+      expect(active_count).to eq(2)
+      expect(expiring.reload.expires_at).to eq(at)
+    end
+
+    it "refuses when the partner has two expiring tokens" do
+      2.times { service_user.api_access_tokens.create!(expires_at: 1.day.from_now) }
+
+      expect { admin_request(:post, base) }.not_to change(ApiAccessToken, :count)
+
+      expect(response).to have_http_status(:conflict)
+      expect(json_body["message"]).to include("expire the extra ones")
     end
   end
 
@@ -143,25 +163,81 @@ RSpec.describe "Admin API: invitation API tokens", type: :request do
       expect(json_body["message"]).to include("ISO 8601")
     end
 
-    it "refuses while a rotation is in progress" do
+    it "refuses to rotate a token that isn't the partner's newest" do
       admin_request(:post, "#{base}/#{old.id}/rotate")
-      new_token = ApiAccessToken.last
 
-      expect { admin_request(:post, "#{base}/#{new_token.id}/rotate") }.not_to change(ApiAccessToken, :count)
-      expect(response).to have_http_status(:conflict)
+      expect { admin_request(:post, "#{base}/#{old.id}/rotate") }.not_to change(ApiAccessToken, :count)
 
-      admin_request(:post, "#{base}/#{old.id}/rotate")
       expect(response).to have_http_status(:conflict)
-      expect(json_body["message"]).to include("already expiring")
+      expect(json_body["message"]).to include("only the newest can be rotated")
     end
 
-    it "refuses for a partner with two tokens without an expiry" do
-      service_user.api_access_tokens.create!
-
+    it "ends the expiring token immediately when the new one is rotated during its grace period" do
       admin_request(:post, "#{base}/#{old.id}/rotate")
+      middle = ApiAccessToken.last
+
+      admin_request(:post, "#{base}/#{middle.id}/rotate")
+
+      expect(response).to have_http_status(:created)
+      newest = ApiAccessToken.last
+      expect(old.reload.active?).to be(false)
+      expect(User.find_by_access_token(old.access_token)).to be_nil
+      expect(middle.reload.expires_at).to be_within(1.minute).of(48.hours.from_now)
+      expect(active_count).to eq(2)
+      expect(User.signing_token_for_agency("admin_spec")).to eq(middle)
+      expect(User.find_by_access_token(newest.access_token)).to eq(service_user)
+    end
+
+    it "rotates the partner's only token when it is already expiring, keeping its expiry" do
+      at = 2.days.from_now.change(usec: 0)
+      old.update!(expires_at: at)
+
+      expect { admin_request(:post, "#{base}/#{old.id}/rotate") }.to change(ApiAccessToken, :count).by(1)
+
+      expect(response).to have_http_status(:created)
+      expect(json_body["api_token"]).to include("status" => "active")
+      expect(old.reload.expires_at).to eq(at)
+    end
+
+    it "uses the given expiry when rotating an already expiring token" do
+      old.update!(expires_at: 2.days.from_now)
+      at = 5.hours.from_now.change(usec: 0)
+
+      admin_request(:post, "#{base}/#{old.id}/rotate", body: { expires_at: at.utc.iso8601 })
+
+      expect(response).to have_http_status(:created)
+      expect(old.reload.expires_at).to eq(at)
+    end
+
+    it "ends the older expiring token when the newest is also expiring and there's no new one" do
+      newer = service_user.api_access_tokens.create!(expires_at: 2.days.from_now)
+      old.update!(expires_at: 1.day.from_now)
+
+      admin_request(:post, "#{base}/#{newer.id}/rotate")
+
+      expect(response).to have_http_status(:created)
+      expect(old.reload.active?).to be(false)
+      expect(active_count).to eq(2)
+    end
+
+    it "refuses to rotate an expiring token when the partner already has one without an expiry" do
+      newer = service_user.api_access_tokens.create!(expires_at: 2.days.from_now)
+
+      expect { admin_request(:post, "#{base}/#{newer.id}/rotate") }.not_to change(ApiAccessToken, :count)
+
+      expect(response).to have_http_status(:conflict)
+      expect(json_body["message"]).to include("already has an API token without an expiry")
+      expect(old.reload.expires_at).to be_nil
+    end
+
+    it "refuses for a partner with two tokens without an expiry, ending neither" do
+      newer = service_user.api_access_tokens.create!
+
+      expect { admin_request(:post, "#{base}/#{newer.id}/rotate") }.not_to change(ApiAccessToken, :count)
 
       expect(response).to have_http_status(:conflict)
       expect(json_body["message"]).to include("expire the extra ones")
+      expect(active_count).to eq(2)
     end
   end
 
@@ -202,6 +278,90 @@ RSpec.describe "Admin API: invitation API tokens", type: :request do
       admin_request(:post, "#{base}/#{token.id}/expire")
 
       expect(response).to have_http_status(:not_found)
+    end
+  end
+
+  describe "isolation between partners" do
+    let(:other_user) { User.create!(email: "ffs-eng+other@digitalpublicworks.org", client_agency_id: "other", is_service_account: true) }
+    # Newer than any admin_spec token, and in every state the rules look at
+    # (expiring, without an expiry), so a missing partner scope would change
+    # which token counts as newest, oldest or "new" for admin_spec.
+    let!(:other_tokens) do
+      [
+        other_user.api_access_tokens.create!(created_at: 3.days.ago, expires_at: 1.day.from_now),
+        other_user.api_access_tokens.create!(created_at: 1.minute.from_now)
+      ]
+    end
+
+    def other_snapshot
+      ApiAccessToken.where(user: other_user).order(:id).pluck(:id, :access_token, :expires_at, :deleted_at, :updated_at)
+    end
+
+    def expect_other_partner_untouched
+      before = other_snapshot
+      yield
+      expect(other_snapshot).to eq(before)
+    end
+
+    it "create ignores the other partner's tokens and leaves them alone" do
+      service_user
+      expect_other_partner_untouched { admin_request(:post, base) }
+
+      expect(response).to have_http_status(:created)
+      expect(ApiAccessToken.last.user).to eq(service_user)
+    end
+
+    it "rotate counts only this partner's tokens as newest and leaves the other partner's alone" do
+      token = service_user.api_access_tokens.create!(created_at: 1.day.ago)
+
+      expect_other_partner_untouched { admin_request(:post, "#{base}/#{token.id}/rotate") }
+
+      expect(response).to have_http_status(:created)
+    end
+
+    it "rotate only ends this partner's expiring token to make room" do
+      old = service_user.api_access_tokens.create!(created_at: 2.days.ago)
+      admin_request(:post, "#{base}/#{old.id}/rotate")
+      middle = ApiAccessToken.last
+
+      expect_other_partner_untouched { admin_request(:post, "#{base}/#{middle.id}/rotate") }
+
+      expect(response).to have_http_status(:created)
+      expect(old.reload.active?).to be(false)
+    end
+
+    it "rotate of an expiring token isn't blocked by the other partner's token without an expiry" do
+      token = service_user.api_access_tokens.create!(expires_at: 1.day.from_now)
+
+      expect_other_partner_untouched { admin_request(:post, "#{base}/#{token.id}/rotate") }
+
+      expect(response).to have_http_status(:created)
+    end
+
+    it "refuses every change to the other partner's token through this partner's routes" do
+      target = other_tokens.last
+      at = 2.days.from_now.utc.iso8601
+
+      expect_other_partner_untouched do
+        admin_request(:post, "#{base}/#{target.id}/rotate")
+        expect(response).to have_http_status(:not_found)
+        admin_request(:put, "#{base}/#{target.id}/expiry", body: { expires_at: at })
+        expect(response).to have_http_status(:not_found)
+        admin_request(:post, "#{base}/#{target.id}/expire")
+        expect(response).to have_http_status(:not_found)
+      end
+      expect(ApiAccessToken.where(user: service_user)).to be_empty
+    end
+
+    it "set expiry and expire on this partner's token leave the other partner's alone" do
+      token = service_user.api_access_tokens.create!
+
+      expect_other_partner_untouched do
+        admin_request(:put, "#{base}/#{token.id}/expiry", body: { expires_at: 2.days.from_now.utc.iso8601 })
+        expect(response).to have_http_status(:ok)
+        admin_request(:post, "#{base}/#{token.id}/expire")
+        expect(response).to have_http_status(:ok)
+      end
     end
   end
 

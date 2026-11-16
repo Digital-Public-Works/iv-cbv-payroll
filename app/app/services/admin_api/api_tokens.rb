@@ -19,8 +19,12 @@ module AdminApi
 
     def create(user: nil)
       token = locked do
-        if active_tokens.exists?
+        active = active_tokens.to_a
+        if active.any? { |t| t.expires_at.nil? }
           raise AdminApi::Errors::Conflict, "'#{@partner_id}' already has an active API token; rotate it instead"
+        end
+        if active.size > 1
+          raise AdminApi::Errors::Conflict, "'#{@partner_id}' already has #{active.size} active API tokens; expire the extra ones first"
         end
 
         (user || service_account).api_access_tokens.create!
@@ -33,19 +37,36 @@ module AdminApi
       existing ? existing.access_token : create[:access_token]
     end
 
-    # generates new token and sets the old one's expiry
+    # Generates a new token and sets the old one's expiry. Only the partner's
+    # newest active token can be rotated. When rotating, the oldest non-expired one is immediately expired
     def rotate(token_id, expires_at: nil)
       token = locked do
         old = find(token_id)
-        raise AdminApi::Errors::Conflict, "API token #{old.id} is already expiring; it can't be rotated" if old.expires_at
+        active = active_tokens.order(:created_at, :id).to_a
 
-        count = active_tokens.count
-        if count >= MAX_ACTIVE
-          raise AdminApi::Errors::Conflict, "'#{@partner_id}' already has #{count} active API tokens; expire the extra ones before rotating"
+        newest = active.last
+        if old.id != newest.id
+          raise AdminApi::Errors::Conflict, "API token #{old.id} isn't the newest API token for '#{@partner_id}' (#{newest.id} is); only the newest can be rotated"
         end
 
+        if old.expires_at && active.any? { |t| t.expires_at.nil? }
+          raise AdminApi::Errors::Conflict, "API token #{old.id} is already expiring and '#{@partner_id}' already has an API token without an expiry; it can't be rotated"
+        end
+
+        to_end = active.first([ active.size - MAX_ACTIVE + 1, 0 ].max)
+        if to_end.any? { |t| t.expires_at.nil? }
+          raise AdminApi::Errors::Conflict, "'#{@partner_id}' already has #{active.size} active API tokens; expire the extra ones before rotating"
+        end
+
+        new_expiry = if expires_at.present?
+                       valid_expiry(expires_at)
+                     elsif old.expires_at.nil?
+                       valid_expiry(DEFAULT_GRACE_HOURS.hours.from_now)
+                     end
+
+        to_end.each { |t| t.update!(expires_at: Time.current) }
         new_token = old.user.api_access_tokens.create!
-        old.update!(expires_at: valid_expiry(expires_at.presence || DEFAULT_GRACE_HOURS.hours.from_now))
+        old.update!(expires_at: new_expiry) if new_expiry
         new_token
       end
       created(token)
@@ -66,6 +87,8 @@ module AdminApi
     private
 
     def summary(token, signing_id)
+      # iso8601(3) keeps 3 fractional-second digits (milliseconds), e.g.
+      # 2026-11-16T18:22:41.123Z; plain iso8601 would drop them.
       {
         id: token.id,
         user_email: token.user.email,
