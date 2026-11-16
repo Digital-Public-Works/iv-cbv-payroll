@@ -37,8 +37,11 @@ module AdminApi::Errors
     def status = :forbidden
   end
 
-  # 409: the partner changed since the caller read it
   class Conflict < Base
     def status = :conflict
+  end
+
+  class NotFound < Base
+    def status = :not_found
   end
 end

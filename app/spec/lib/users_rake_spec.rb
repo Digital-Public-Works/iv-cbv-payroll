@@ -19,6 +19,15 @@ RSpec.describe "users.rake" do
           .to change(User, :count).by(0)
           .and change(ApiAccessToken, :count).by(1)
       end
+
+      it "refuses when the partner already has an active token" do
+        user.api_access_tokens.create!
+
+        expect { Rake::Task['users:create_api_token'].execute(client_agency_id: client_agency_id) }
+          .to raise_error(SystemExit)
+          .and output(/already has an active API token/).to_stderr
+        expect(user.api_access_tokens.count).to eq(1)
+      end
     end
   end
 
@@ -29,6 +38,17 @@ RSpec.describe "users.rake" do
       user.reload
       expect(user.is_service_account).to be(true)
       expect(user.api_access_tokens.count).to eq(1)
+    end
+
+    it "leaves the user unchanged when the partner already has an active token" do
+      create(:user, :with_access_token, is_service_account: true)
+      user = create(:user)
+
+      expect { Rake::Task['users:promote_to_service_account'].execute(user_id: user.id.to_s) }
+        .to raise_error(SystemExit)
+        .and output(/already has an active API token/).to_stderr
+      expect(user.reload.is_service_account).to be(false)
+      expect(user.api_access_tokens.count).to eq(0)
     end
   end
 
