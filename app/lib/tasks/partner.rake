@@ -2,15 +2,9 @@ namespace :partner do
   desc "create API production user for a partner"
   task :create_api_access_token, [ :partner_id ] => :environment do |_t, args|
     partner_id = args.fetch(:partner_id)
-    user = User.find_or_create_by(
-      email: "ffs-eng+#{partner_id}@digitalpublicworks.org",
-      client_agency_id: partner_id
-    )
+    access_token = AdminApi::ApiTokens.new(partner_id).find_or_create_value
 
-    user.update(is_service_account: true)
-    access_token = user.api_access_tokens.first || user.api_access_tokens.create
-
-    Rails.logger.info "User #{user.id} (#{user.email}) created, with API access token: #{access_token.access_token}"
+    Rails.logger.info "#{partner_id} API access token: #{access_token}"
   end
 
   desc "deliver csv summary of cases sent to a partner"

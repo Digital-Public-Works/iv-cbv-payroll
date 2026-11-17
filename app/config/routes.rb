@@ -172,6 +172,15 @@ Rails.application.routes.draw do
               post :promote_settings
               put :transmission_methods, to: "transmission_methods#update"
               post "transmission_methods/:method_type/check", to: "transmission_methods#check", as: :check_transmission_method
+
+              get "api_tokens", to: "api_tokens#index", as: :api_tokens
+              post "api_tokens", to: "api_tokens#create"
+              scope "api_tokens/:token_id", constraints: { token_id: /\d+/ } do
+                get "reveal", to: "api_tokens#reveal", as: :reveal_api_token
+                post "rotate", to: "api_tokens#rotate", as: :rotate_api_token
+                put "expiry", to: "api_tokens#update_expiry", as: :api_token_expiry
+                post "expire", to: "api_tokens#expire", as: :expire_api_token
+              end
             end
           end
         end
