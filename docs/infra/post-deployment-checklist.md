@@ -106,23 +106,21 @@ Use this checklist after deploying infrastructure and application to ensure all 
 ## ✅ API Management (If Needed)
 
 ### API User Setup
-- [ ] **API user created** for external integrations:
-  ```ruby
-  user = User.create(email: "api@agency.gov", client_agency_id: "agency_id")
-  ```
-- [ ] **User promoted to service account**:
+Each partner has **one** active invitation API token per environment, plus,
+while a rotation is in progress, the old token until its expiry (default 48
+hours, at most 30 days). The oldest active token's value is also the HMAC key
+that signs the partner's JSON transmissions, so signing moves to the new token
+when the old one expires; agree that timing with the partner. Rotate, change
+expiry and expire-now are on the partner page in the admin portal; expired
+tokens stay listed for auditability.
+- [ ] **API token created** in the admin portal (partner page → Invitation API
+  tokens → New token), or with the rake task, which reuses an existing active
+  token or creates the service account and token if there are none:
   ```bash
-  # Demo environment
-  rake 'users:promote_to_service_account[user_id]'
-
-  # Production environment
-  ./bin/run-command app prod '["./bin/rails", "az_des:create_api_access_token"]'
+  ./bin/run-command app prod '["./bin/rails", "partner:create_api_access_token[agency_id]"]'
   ```
-- [ ] **API token generated and tested**:
-  ```ruby
-  token = user.api_access_tokens.create
-  puts token.access_token
-  ```
+  Don't create tokens with `user.api_access_tokens.create` in a console; that
+  skips these rules.
 
 ### API Testing
 - [ ] **Authentication tested** with generated token
