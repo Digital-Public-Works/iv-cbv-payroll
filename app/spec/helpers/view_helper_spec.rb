@@ -22,5 +22,15 @@ RSpec.describe ViewHelper, type: :helper do
       expect(link).not_to include("evil.com")
       expect(link).to include("/es")
     end
+
+    it "does not allow script_name injection" do
+      malicious_params = params.merge(script_name: "//evil.example")
+      allow(helper.request).to receive(:params).and_return(ActionController::Parameters.new(malicious_params).permit!)
+
+      link = helper.switch_locale_link(:es)
+      expect(link).not_to include("//evil.example")
+      # It should be relative and safe
+      expect(link).to include("href=\"/es\"")
+    end
   end
 end
