@@ -57,6 +57,32 @@ describe("trackUserAction", () => {
   })
 })
 
+describe("the page's flow", () => {
+  beforeEach(() => {
+    fetch.mockResolvedValue(createFetchResponse({}))
+    const meta = document.createElement("meta")
+    meta.name = "cbv-flow-id"
+    meta.content = "42"
+    document.head.appendChild(meta)
+  })
+
+  afterEach(() => {
+    document.head.querySelector('meta[name="cbv-flow-id"]')?.remove()
+    fetch.mockReset()
+  })
+
+  it("is sent with user actions and token requests", async () => {
+    await api.trackUserAction("Event", {})
+    await api.fetchPinwheelToken("response_type", "id", "en")
+    await api.fetchArgyleToken("item_123")
+
+    fetch.mock.calls.forEach(([, options]) => {
+      expect(options.headers["X-CBV-Flow-Id"]).toBe("42")
+    })
+    expect(fetch).toHaveBeenCalledTimes(3)
+  })
+})
+
 describe("fetchPinwheelToken", () => {
   beforeEach(async () => {
     // Mock the fetch function.

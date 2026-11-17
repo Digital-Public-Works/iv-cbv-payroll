@@ -1,5 +1,6 @@
 import { fetchInternal } from "./fetchInternal"
 import CSRF from "./csrf"
+import { cbvFlowHeaders } from "./cbvFlowBinding"
 
 export const EVENTS_USER_ACTION = "/api/events/user_action"
 export const PINWHEEL_TOKENS_GENERATE = "/api/pinwheel/tokens"
@@ -18,6 +19,7 @@ export const fetchPinwheelToken = async (response_type, id, locale) => {
     headers: {
       "X-CSRF-Token": CSRF.token,
       "Content-Type": "application/json",
+      ...cbvFlowHeaders(),
     },
     // Keep payload shape consistent with existing backend handling
     body: JSON.stringify({ response_type, id, locale }),
@@ -37,6 +39,7 @@ export const fetchArgyleToken = async (itemId) => {
     headers: {
       "X-CSRF-Token": CSRF.token,
       "Content-Type": "application/json",
+      ...cbvFlowHeaders(),
     },
     body: JSON.stringify({ item_id: itemId }),
   })

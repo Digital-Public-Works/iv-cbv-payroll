@@ -1,5 +1,8 @@
 class Cbv::BaseController < ApplicationController
+  include CbvFlowTabBinding
+
   before_action :set_cbv_origin, :set_cbv_flow, :ensure_cbv_flow_not_yet_complete, :prevent_back_after_complete
+  before_action :record_cbv_activity
   helper_method :agency_url, :next_path, :get_comment_by_account_id, :current_agency
   # capture the page view in mixpanel if it properly responded and rendered, and is actually a page view (not turbo)
   after_action :capture_page_view, if: -> {
@@ -57,8 +60,10 @@ class Cbv::BaseController < ApplicationController
         @cbv_flow = CbvFlow.find(session[:cbv_flow_id])
       rescue ActiveRecord::RecordNotFound
         reset_cbv_session!
-        redirect_to root_url(cbv_flow_timeout: true)
+        return redirect_to root_url(cbv_flow_timeout: true)
       end
+
+      redirect_for_tab_flow_mismatch if tab_flow_mismatch?(@cbv_flow)
     else
       track_deeplink_without_cookie_event
       redirect_to root_url(cbv_flow_timeout: true), flash: { slim_alert: { type: "info", message_html: t("cbv.error_missing_token_html") } }
@@ -219,5 +224,23 @@ class Cbv::BaseController < ApplicationController
 
   def reset_cbv_session!
     session[:cbv_flow_id] = nil
+  end
+
+  # full page loads update the timer for determining end, nother else does
+  # otherwise frame updates and sycn events would never terminate the session
+  def record_cbv_activity
+    session[:last_seen] = Time.current.to_i if @cbv_flow && full_page_request?
+  end
+
+  def full_page_request?
+    request.get? &&
+      request.format.html? &&
+      !turbo_frame_request? &&
+      !prefetch_request?
+  end
+
+  # Turbofarme oddity
+  def prefetch_request?
+    [ request.headers["X-Sec-Purpose"], request.headers["Sec-Purpose"] ].any? { |purpose| purpose.to_s.include?("prefetch") }
   end
 end

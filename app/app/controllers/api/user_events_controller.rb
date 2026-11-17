@@ -1,12 +1,13 @@
 class Api::UserEventsController < ApplicationController
+  include CbvFlowTabBinding
+
   def user_action
     base_attributes = {
       time: Time.now.to_i
     }
 
-    if session[:cbv_flow_id].present?
-      @cbv_flow = CbvFlow.find(session[:cbv_flow_id])
-
+    @cbv_flow = session_cbv_flow_for_tab
+    if @cbv_flow.present?
       base_attributes.merge!({
         cbv_flow_id: @cbv_flow.id,
         cbv_applicant_id: @cbv_flow.cbv_applicant_id,

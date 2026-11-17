@@ -2,6 +2,7 @@ class Cbv::SynchronizationsController < Cbv::BaseController
   before_action :set_payroll_account, only: %i[show update]
   before_action :redirect_if_sync_finished, only: %i[show]
   skip_after_action :capture_page_view, only: %i[update]
+  skip_before_action :record_cbv_activity, only: %i[update]
 
   def show
   end

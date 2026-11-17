@@ -80,6 +80,7 @@ Rails.application.routes.draw do
       post "session/refresh", to: "sessions#refresh", as: :session_refresh
       get "session/end", to: "sessions#end", as: :session_end
       get "session/timeout", to: "sessions#timeout", as: :session_timeout
+      get "session/switched", to: "sessions#switched", as: :session_switched
 
       # Preview routes (non-production only)
       scope "/preview", as: :preview do

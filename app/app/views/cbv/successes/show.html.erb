@@ -11,7 +11,7 @@
         class: "usa-button",
         icon_position: :leading,
         variant: :primary,
-        url: cbv_flow_submit_path(format: "pdf"),
+        url: cbv_flow_submit_path(format: "pdf", CbvFlowTabBinding::TAB_FLOW_PARAM => @cbv_flow.id),
         target: "_blank",
         rel: "noopener noreferrer"
       )) %>
