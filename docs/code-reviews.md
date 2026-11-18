@@ -20,6 +20,17 @@ Send a vote of approval if the PR looks ready except for small minor changes,
 and trust that the recipient will address your comments before merging by replying via comment or code to any asks.
 Use "request changes" sparingly, unless there's a blocking issue or major refactors that should be done.
 
+### Accessibility
+
+For any PR that touches user-facing markup, check accessibility as part of your review:
+
+- "Audited for A11y" is checked, with the QA / Manual Testing checklist completed and a keyboard and screen reader
+  demo recorded.
+- The changes follow the [Engineering best practices](./accessibility/best-practices-by-role.md#engineering), for
+  example USWDS or semantic HTML before custom markup, and ARIA only when absolutely necessary.
+- Any skipped axe rule follows the [Skipping an accessibility rule](../CONTRIBUTING.md#skipping-an-accessibility-rule)
+  policy.
+
 ## For authors or requesters
 
 Your PR should be small enough that a reviewer can reasonably respond within 1-2 business days.
