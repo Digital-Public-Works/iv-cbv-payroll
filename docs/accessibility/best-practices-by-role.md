@@ -45,13 +45,13 @@ The goal here is a practical checklist, not a frontend accessibility primer.
 * **Color contrast.** Verify contrast on anything with custom colors, not just USWDS defaults. This is worth calling out explicitly, since it's the single most common accessibility failure Microsoft's LLM accessibility evaluation found in generated UI code (89% of failing samples), and it's an easy one to miss by eye.
 * **Zoom and reflow.** Layouts should hold up with larger text/zoom, not just at one fixed size. Text must scale to 200% zoom without assistive technology and without loss of content or functionality. At 400% zoom (or 320 pixels) layouts should not require horizontal scrolling.
   * For more information, see [Understanding Resize Text](https://www.w3.org/WAI/WCAG21/Understanding/resize-text.html) or [Understanding Reflow](https://www.w3.org/WAI/WCAG21/Understanding/reflow.html)
-* **AI-assisted code generation.** If code (yours or an AI coding agent's) is generated with no accessibility instruction at all, expect it to be wrong by default. Microsoft's evaluation found ~12% baseline pass rates on accessibility checks with no guidance, rising to ~60% with basic instructions, and ~86% with a structured "generate, then self-review against accessibility criteria" workflow. (see [§4](#4.-automated-testing-(prs-&-deployments))) — worth a deeper look as a follow-up, not something this draft implements.
+* **AI-assisted code generation.** If code (yours or an AI coding agent's) is generated with no accessibility instruction at all, expect it to be wrong by default. Microsoft's evaluation found ~12% baseline pass rates on accessibility checks with no guidance, rising to ~60% with basic instructions, and ~86% with a structured "generate, then self-review against accessibility criteria" workflow.
 
 ## QA / Manual Testing
 
 Adapted from the CMS Section 508 IT Developer Toolkit, [§2.3 "Accessibility Check-in Script Checklist"](https://www.cms.gov/files/document/cms-section-508-it-developer-toolkit.pdf), simplified for engineers who aren't accessibility specialists:
 
-1. **Run one automated checker.** axe DevTools, Accessibility Insights Fast Pass, WebAIM WAVE, or Pa11y — pick one, run it against the page, and fix the obvious/confirmed errors it reports (not the "needs review" items, those need human judgment, not necessarily code changes).
+1. **Run one in-browser automated checker.** axe DevTools, Accessibility Insights Fast Pass, WebAIM WAVE, or Pa11y — pick one, run it against the page, and review the obvious/confirmed errors it reports ("needs review" items required human judgment, but may not require a code change).
 2. **Check color contrast.** Turn on your OS or browser's high-contrast mode and confirm nothing becomes unreadable, and that no element (border, icon, focus ring) disappears entirely.
 3. **Spot-check the accessibility tree.** Open your browser's accessibility inspector (the Accessibility pane in developer tools) and look for obvious anomalies: an element's computed name/role not matching what it visually is, or stray/duplicate items in the tree.
 
@@ -63,7 +63,7 @@ Adapted from the CMS Section 508 IT Developer Toolkit, [§2.3 "Accessibility Che
 ## Additional resources
 
 * [CMS Section 508 IT Developer Toolkit](https://www.cms.gov/files/document/cms-section-508-it-developer-toolkit.pdf) — §2.3 checklist adapted in [Best Practices by Role → QA / Manual Testing](#qa--manual-testing).
-* [Microsoft a11y-llm-eval](https://github.com/microsoft/a11y-llm-eval) and its [report](https://microsoft.github.io/a11y-llm-eval-report/) — LLM-generated accessibility benchmark, cited in [Best Practices by Role → Engineering](#engineering) and [§4](#4.-automated-testing-(prs-&-deployments)).
+* [Microsoft a11y-llm-eval](https://github.com/microsoft/a11y-llm-eval) and its [report](https://microsoft.github.io/a11y-llm-eval-report/) — LLM-generated accessibility benchmark.
 * [MagentaA11y](https://www.magentaa11y.com/#/web-criteria/component/overview) — component-level accessibility criteria.
 * [Open UI](https://open-ui.org/) — research on common UI component patterns and their expected behavior across design systems.
 * [WAI-ARIA Authoring Practices Guide](https://www.w3.org/WAI/ARIA/apg/patterns/) — keyboard interaction patterns; useful but leans ARIA-heavy for implementation, prefer semantic HTML first per Best Practices by Role
