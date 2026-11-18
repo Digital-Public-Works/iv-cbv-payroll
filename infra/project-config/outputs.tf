@@ -35,6 +35,11 @@ output "github_actions_role_name" {
   value = local.github_actions_role_name
 }
 
+output "log_archive_account_id" {
+  description = "AWS account that holds immutable audit evidence (see infra/log-archive)."
+  value       = local.log_archive_account_id
+}
+
 output "network_configs" {
   value = local.network_configs
 }

@@ -45,6 +45,7 @@ __check_defined = \
 	infra-lint-workflows \
 	infra-module-database-role-manager \
 	infra-set-up-account \
+	infra-set-up-log-archive-account \
 	infra-test-service \
 	infra-update-app-build-repository \
 	infra-update-app-database-roles \
@@ -52,6 +53,7 @@ __check_defined = \
 	infra-update-app-service \
 	infra-update-app-static-assets \
 	infra-update-current-account \
+	infra-update-log-archive-account \
 	infra-update-network \
 	infra-validate-modules \
 	lint-markdown \
@@ -90,6 +92,12 @@ infra-configure-app-service: ## Configure infra/$APP_NAME/service module's tfbac
 	@:$(call check_defined, ENVIRONMENT, the name of the application environment e.g. "prod" or "staging")
 	./bin/create-tfbackend "infra/$(APP_NAME)/service" "$(ENVIRONMENT)"
 
+infra-set-up-log-archive-account: ## One-time bootstrap of the log-archive account (state backend, GitHub OIDC provider). Run as the break-glass profile.
+	./bin/set-up-log-archive-account
+
+infra-update-log-archive-account: ## Update account-level resources in the log-archive account. Run as the break-glass profile.
+	./bin/terraform-init-and-apply infra/log-archive log-archive
+
 infra-update-current-account: ## Update infra resources for current AWS profile
 	./bin/terraform-init-and-apply infra/accounts `./bin/current-account-config-name`
 
@@ -121,9 +129,9 @@ infra-update-app-static-assets: ## Create or update $APP_NAME's static assets in
 	@:$(call check_defined, APP_NAME, the name of subdirectory of /infra that holds the application's infrastructure code)
 	./bin/terraform-init-and-apply infra/$(APP_NAME)/static-assets shared
 
-infra-update-app-security-scan-reports: ## Create or update $APP_NAME's static-analysis report archive (S3 + Object Lock). Must be run once before the Brakeman workflow can publish.
+infra-update-app-security-scan-reports: ## Create or update $APP_NAME's static-analysis report archive (S3 + Object Lock) in the log-archive account. Run as the break-glass profile.
 	@:$(call check_defined, APP_NAME, the name of subdirectory of /infra that holds the application's infrastructure code)
-	./bin/terraform-init-and-apply infra/$(APP_NAME)/security-scan-reports shared
+	./bin/terraform-init-and-apply infra/$(APP_NAME)/security-scan-reports log-archive
 
 infra-update-app-service: ## Create or update $APP_NAME's web service module
 	@:$(call check_defined, APP_NAME, the name of subdirectory of /infra that holds the application's infrastructure code)
