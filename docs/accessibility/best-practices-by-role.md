@@ -53,9 +53,9 @@ Adapted from the CMS Section 508 IT Developer Toolkit, [§2.3 "Accessibility Che
 
 1. **Run one automated checker.** axe DevTools, Accessibility Insights Fast Pass, WebAIM WAVE, or Pa11y — pick one, run it against the page, and fix the obvious/confirmed errors it reports (not the "needs review" items, those need human judgment, not necessarily code changes).
 2. **Check color contrast.** Turn on your OS or browser's high-contrast mode and confirm nothing becomes unreadable, and that no element (border, icon, focus ring) disappears entirely.
-3. **Spot-check the accessibility tree.** Open your browser's accessibility inspector (Chrome DevTools → Elements → Accessibility pane) and look for obvious anomalies: an element's computed name/role not matching what it visually is, or stray/duplicate items in the tree.
+3. **Spot-check the accessibility tree.** Open your browser's accessibility inspector (the Accessibility pane in developer tools) and look for obvious anomalies: an element's computed name/role not matching what it visually is, or stray/duplicate items in the tree.
 
-   ![Chrome DevTools Accessibility pane](images/chrome-accessibility-pane.png)
+   ![Accessibility Pane](images/accessibility-pane.png)
 4. **Keyboard-only pass.** confirm every interactive element is reachable by Tab, focus is visible at every stop, nothing traps focus (you can Tab out of it), tabbing forward and Shift+Tab backward retrace the same path symmetrically.
 5. **Screen reader pass, default settings.** Turn on VoiceOver (Mac) or NVDA (Windows) with default settings and confirm: every meaningful element announces something useful, nothing important is skipped, filler/decorative content isn't read aloud, and dynamic updates (form errors, live-region announcements) are actually announced when they happen.
 6. **Scan the screen reader's element/command list** for anything that looks wrong at a glance (duplicate labels, missing landmarks, etc.) — this doesn't need to be exhaustive, just a spot check.
