@@ -3,7 +3,7 @@ locals {
   tf_state_bucket_name = "${module.project_config.project_name}-${module.project_config.log_archive_account_id}-${module.project_config.default_region}-tf"
 
   tags = merge(module.project_config.default_tags, {
-    description = "Log-archive account: Terraform backend, GitHub OIDC provider, account-wide S3 guardrails."
+    description = "Log-archive account - Terraform backend and GitHub OIDC provider and account-wide S3 guardrails"
   })
 }
 

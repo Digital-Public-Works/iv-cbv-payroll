@@ -15,7 +15,7 @@ locals {
   tags = merge(module.project_config.default_tags, {
     application      = module.project_config.project_name
     application_role = "security-scan-reports"
-    description      = "Immutable archive of static-analysis scan reports (AU-11)"
+    description      = "Immutable archive of static-analysis scan reports - AU-11"
   })
 }
 
