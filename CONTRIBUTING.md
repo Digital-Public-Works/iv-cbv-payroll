@@ -6,9 +6,7 @@ public contributions.
 
 ## Accessibility
 
-User-facing changes must meet WCAG 2.1 Level AA. Before opening a pull request that touches user-facing markup,
-review [Best Practices by Role](./docs/accessibility/best-practices-by-role.md), which covers Design & UX,
-Engineering, and QA / Manual Testing, and complete its QA / Manual Testing checklist.
+User-facing changes must meet WCAG 2.1 Level AA. Before opening a pull request that touches user-facing markup, review [Best Practices by Role](./docs/accessibility/best-practices-by-role.md), which covers Design & UX, Engineering, and QA / Manual Testing, and complete its QA / Manual Testing checklist.
 
 ## Testing Conventions
 

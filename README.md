@@ -363,8 +363,7 @@ Add `E2E_SHOW_BROWSER=1` to watch the browser instead of running headless. See
 **Automated checks catch only part of what matters.** Contextual issues like correct labels, keyboard behavior, focus management, and screen
 reader announcements among others still need a person to review them.
 
-For more information on manual testing, see [Best Practices by Role](./docs/accessibility/best-practices-by-role.md), including its
-QA / Manual Testing checklist.
+For more information on manual testing, see [Best Practices by Role](./docs/accessibility/best-practices-by-role.md), including its QA / Manual Testing checklist.
 
 See [Testing Conventions](./CONTRIBUTING.md#testing-conventions) in CONTRIBUTING.md for when and how an axe rule may be skipped.
 
