@@ -269,11 +269,13 @@ If you're new to CBV, here's a summary of how to get started navigating the app.
 1. Note: You can switch to a different pilot partner (state) by going to the irb prompt and running `CbvFlow.last.update(client_agency_id: 'az_des')` for any valid partner.
 
 ## Automated E2E Testing
-We achieve End-to-End (E2E) testing by using `capybara` (which in turn uses `selenium`) to simulate a real user completing the CBV flow.
+We achieve End-to-End (E2E) testing by using `capybara` (which in turn uses `selenium`) to simulate a real user completing the CBV flow. See the [E2E testing documentation](/docs/e2e/e2e-checks.md) for more information.
+
+These E2E specs are also where the automated [accessibility checks](#automated-accessibility-checks) live. Every `verify_page` call checks the current page for missing translations and runs axe-core against it (WCAG 2.1 A & AA). See [Skipping an accessibility rule](./CONTRIBUTING.md#skipping-an-accessibility-rule) in CONTRIBUTING.md for the policy on skipping an axe rule.
 
 How to run E2E tests:
 * **Run in *replay* mode:** `E2E_RUN_TESTS=1 bin/rspec spec/e2e`
-  * Note: Soon, we will enable these to run by default, so the environment variable prefix won't be necessary.
+  * These specs run automatically in CI on every pull request that changes `app/`. Locally, they are skipped unless `E2E_RUN_TESTS` is set.
 * **Run in *record* mode:** `E2E_RECORD_MODE=1 bin/rspec [spec/e2e/your_spec.rb:123]`
   * You will need environment variables set for Argyle and Pinwheel. Add these to `.env.local` or `.env.test.local`.
 
@@ -341,12 +343,27 @@ When editing the `E2eCallbackRecorder.js` file:
 * Multiple openings of the aggregator modals (either multiple Pinwheel, or Pinwheel then Argyle)
 * Anything regarding session expiration (as we currently remove session expiration during E2E testing)
 
-## Automated E2E Testing
-We achieve End-to-End (E2E) testing by using `capybara` (which in turn uses `selenium`) to simulate a real user completing the CBV flow.
+### Automated accessibility checks
 
-See the [E2E testing documentation](/docs/e2e/e2e-checks.md) for more information.
+The end-to-end (E2E) specs in `app/spec/e2e` are also where the automated accessibility checks live. Every call to
+`verify_page` (`app/spec/support/e2e/test_helpers.rb`) runs [axe-core](https://github.com/dequelabs/axe-core) against the
+current page using its default ruleset (WCAG 2.1 A/AA), so any page you visit through `verify_page` is checked. When
+you add a new page or a new state of a page to an E2E spec, check it with `verify_page`.
 
-When writing E2E tests, use the `verify_page` helper when possible to ensure that the page meets our sitewide requirements: it has no missing translations and it passes accessibility checks (per WCAG 2.1 A & AA).
+These specs run automatically on every pull request that changes `app/`. To run them locally, from the `app`
+directory:
+
+```sh
+E2E_RUN_TESTS=1 bin/rspec spec/e2e
+```
+
+Add `E2E_SHOW_BROWSER=1` to watch the browser instead of running headless. See
+[docs/e2e/e2e-checks.md](./docs/e2e/e2e-checks.md) for record/replay mode and writing new E2E specs.
+
+**Automated checks catch only part of what matters.** Contextual issues like correct labels, keyboard behavior, focus management, and screen
+reader announcements among others still need a person to review them.
+
+See [Testing Conventions](./CONTRIBUTING.md#testing-conventions) in CONTRIBUTING.md for when and how an axe rule may be skipped.
 
 ## Integration Testing (Webhook)
 

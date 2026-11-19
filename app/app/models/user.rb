@@ -6,7 +6,7 @@ class User < ApplicationRecord
   has_many :api_access_tokens, dependent: :destroy
 
   def self.find_by_access_token(token)
-    token_user = ApiAccessToken.find_by(access_token: token, deleted_at: nil)&.user
+    token_user = ApiAccessToken.active.find_by(access_token: token)&.user
 
     token_user if token_user && token_user.is_service_account
   end
@@ -34,14 +34,15 @@ class User < ApplicationRecord
   end
 
   def self.api_key_for_agency(agency_id)
-    user = find_by(client_agency_id: agency_id, is_service_account: true)
-    return nil unless user
+    signing_token_for_agency(agency_id)&.access_token
+  end
 
-    oldest_token = user.api_access_tokens
-      .where(deleted_at: nil)
-      .order(:created_at)
+  # oldes token is the one used for signing, when it expires, new active token is used for signing
+  def self.signing_token_for_agency(agency_id)
+    ApiAccessToken.active
+      .joins(:user)
+      .where(users: { client_agency_id: agency_id, is_service_account: true })
+      .order(:created_at, :id)
       .first
-
-    oldest_token&.access_token
   end
 end
