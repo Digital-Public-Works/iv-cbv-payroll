@@ -3,6 +3,10 @@ description: Set up ruby, javascript, and dependencies
 runs:
   using: composite
   steps:
+    - name: Skip development-only gems
+      shell: bash
+      run: echo "BUNDLE_WITHOUT=development" >> "$GITHUB_ENV"
+
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:

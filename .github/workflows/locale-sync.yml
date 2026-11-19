@@ -24,9 +24,10 @@ jobs:
 
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
+      # Uses the app's Ruby from app/.ruby-version, so this stays in step with the
+      # app. No bundle install: the check script only needs the standard library.
       with:
-        ruby-version: '3.4.5'
-        bundler-cache: true
+        working-directory: app
 
     - name: Check locale synchronization
       run: |
