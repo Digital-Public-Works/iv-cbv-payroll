@@ -13,8 +13,6 @@ on:
     # cron format: 'minute hour dayofmonth month dayofweek'
     # this will run at noon UTC every day (7am EST / 8am EDT)
     - cron: '0 12 * * *'
-  # Manual runs report like scheduled ones. Use one to test the alert path, or to
-  # close the tracking issue after a fix instead of waiting for the next cron.
   workflow_dispatch:
 
 jobs:
@@ -61,10 +59,6 @@ jobs:
           name: ruby-bom
           path: ./app/ruby_bom.xml
 
-  # A failed scheduled or manual run opens an issue assigned to the flaw-remediation
-  # owner, who gets an email (or comments on the open one); the next passing run
-  # closes it. PR and push runs don't report: those failures already show on the PR
-  # or commit.
   report-failure:
     name: Track failure in an issue
     needs: [ bundle-audit, npm-audit, ruby-bom ]

@@ -116,9 +116,6 @@ infra-update-app-database: ## Create or update $APP_NAME's database module for $
 	terraform -chdir="infra/$(APP_NAME)/database" init -input=false -reconfigure -backend-config="$(ENVIRONMENT).s3.tfbackend"
 	terraform -chdir="infra/$(APP_NAME)/database" apply -var="environment_name=$(ENVIRONMENT)"
 
-# Files sit at the zip root, because the Lambda handler is role_manager.lambda_handler with
-# PYTHONPATH=vendor. requirements.txt pins the full dependency closure, hence --no-deps. Keep
-# --python-version in step with `runtime` in infra/modules/database/role-manager.tf.
 infra-module-database-role-manager-archive: ## Build/rebuild role manager code package for Lambda deploys
 	rm -rf infra/modules/database/role_manager/vendor infra/modules/database/role_manager.zip
 	pip3 install --no-deps --python-version 3.9 --implementation py --only-binary=:all: \

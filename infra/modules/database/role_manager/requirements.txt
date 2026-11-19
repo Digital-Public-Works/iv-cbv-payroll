@@ -2,12 +2,7 @@
 # which Terraform uploads verbatim (see role-manager.tf). Nothing installs from
 # this file at deploy time — it exists so the repository dependency graph, and
 # therefore Dependabot security alerts, can see what the Lambda actually ships.
-#
-# The zip is built from this file by `make infra-module-database-role-manager-archive`,
-# so the two stay in step: change a pin here, then rebuild the zip in the same commit.
-#
-# The Lambda runs python3.9, which caps these: pg8000 1.31.6 needs scramp 1.5.0, and
-# scramp 1.5.0 needs Python >= 3.11. Lift the caps with the runtime bump (PF-799).
+
 pg8000==1.31.5
 scramp==1.4.6
 asn1crypto==1.5.1
