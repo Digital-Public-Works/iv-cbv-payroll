@@ -275,6 +275,55 @@ RSpec.describe Cbv::SubmitsController do
           expect(pdf_text).to include("ABC1234")
         end
 
+        it "shows the payroll account name on the applicant's PDF but not the SSN" do
+          get :show, format: :pdf
+          pdf_text = extract_pdf_text(response)
+
+          expect(pdf_text).to include("Client full name (linked to payroll account)")
+          expect(pdf_text).to include("Bob Jones")
+          expect(pdf_text).not_to include("XXX-XX-")
+        end
+
+        it "shows the payroll account name and SSN on the caseworker PDF" do
+          get :show, format: :pdf, params: { is_caseworker: "true" }
+          pdf_text = extract_pdf_text(response)
+
+          expect(pdf_text).to include("Client full name (linked to payroll account)")
+          expect(pdf_text).to include("Bob Jones")
+          expect(pdf_text).to include("XXX-XX-")
+        end
+
+        describe "client-provided footnote marker" do
+          let(:labels) { [] }
+
+          before do
+            allow(controller).to receive(:render_to_string).and_wrap_original do |original, *args, **kwargs|
+              html = original.call(*args, **kwargs)
+              labels.concat(Nokogiri::HTML(html).css("th, td").map { |cell| cell.inner_html.strip })
+              html
+            end
+          end
+
+          it "marks values the applicant entered" do
+            cbv_applicant.record_attribute_provenance([ :first_name ])
+            cbv_applicant.save!
+
+            get :show, format: :pdf
+
+            expect(labels).to include("First name<sup>1</sup>")
+          end
+
+          it "does not mark values prefilled from the payroll provider" do
+            cbv_applicant.record_attribute_provenance([ :first_name ], source: CbvApplicant::PAYROLL_PROVIDER_SOURCE)
+            cbv_applicant.save!
+
+            get :show, format: :pdf
+
+            expect(labels).to include("First name")
+            expect(labels).not_to include("First name<sup>1</sup>")
+          end
+        end
+
         it "asks about other jobs and explains the client-provided footnote" do
           get :show, format: :pdf
           pdf_text = extract_pdf_text(response)
