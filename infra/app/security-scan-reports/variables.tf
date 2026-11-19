@@ -65,10 +65,10 @@ variable "object_lock_retention_days" {
 #   + Recoverable. Brakeman JSON embeds source-code snippets, so a scan that captures
 #     a hardcoded secret would otherwise be undeletable for the full retention window.
 #   + Retention can be corrected in either direction before the matrix is confirmed.
-#   - Weaker immutability claim. Any principal with s3:BypassGovernanceRetention can
-#     delete a locked version, and the GitHub Actions role that writes these reports
-#     currently has account-admin permissions (see PF-795), so the writer can remove
-#     its own evidence. Scoping that role would restore the guarantee.
+#   - Weaker immutability claim on its own. Any principal with
+#     s3:BypassGovernanceRetention can delete a locked version. In the log-archive
+#     account the SCP restricts that to a controlled break-glass role, and the CI
+#     writer can only PutObject, so removing a report is a deliberate, logged action.
 variable "object_lock_mode" {
   description = "Object Lock retention mode. COMPLIANCE cannot be bypassed by any principal including the account root; GOVERNANCE can be bypassed by principals holding s3:BypassGovernanceRetention."
   type        = string

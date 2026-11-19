@@ -18,6 +18,9 @@ locals {
   # that the GitHub Action will assume when running CI/CD operations.
   github_actions_role_name = "${local.project_name}-github-actions"
 
+  # Dedicated AWS account for immutable audit evidence
+  log_archive_account_id = "899776212152"
+
   # Prefix for AWS security group name used for VPC endpoints to access AWS services
   # from the VPCs private subnets
   aws_services_security_group_name_prefix = "aws-service-vpc-endpoints"

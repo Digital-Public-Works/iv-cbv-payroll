@@ -79,6 +79,10 @@ jobs:
         run: |
           terraform -chdir="infra/app/security-scan-reports" init -backend=false
           terraform -chdir="infra/app/security-scan-reports" validate
+      - name: Validate log-archive
+        run: |
+          terraform -chdir="infra/log-archive" init -backend=false
+          terraform -chdir="infra/log-archive" validate
   check-compliance-with-checkov:
     name: Check compliance with checkov
     runs-on: ubuntu-latest
