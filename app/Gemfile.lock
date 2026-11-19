@@ -186,9 +186,6 @@ GEM
       railties (>= 6.0.0)
     csv (3.3.6)
     date (3.5.1)
-    debase (0.2.9)
-      debase-ruby_core_source (>= 3.4.1)
-    debase-ruby_core_source (4.0.1)
     debug (1.11.1)
       irb (~> 1.10)
       reline (>= 0.3.8)
@@ -599,8 +596,6 @@ DEPENDENCIES
   combine_pdf
   cssbundling-rails
   csv
-  debase (~> 0.2.9)
-  debase-ruby_core_source (~> 4.0)
   debug
   device_detector
   devise (~> 5.0)
