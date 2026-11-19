@@ -15,7 +15,7 @@ locals {
   tags = merge(module.project_config.default_tags, {
     application      = module.project_config.project_name
     application_role = "security-scan-reports"
-    description      = "Immutable archive of static-analysis scan reports (AU-11)"
+    description      = "Immutable archive of static-analysis scan reports - AU-11"
   })
 }
 
@@ -36,6 +36,8 @@ terraform {
 
 provider "aws" {
   region = module.project_config.default_region
+
+  allowed_account_ids = [module.project_config.log_archive_account_id]
 
   default_tags {
     tags = local.tags
@@ -90,10 +92,8 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "reports" {
 
 # Default retention applied to every uploaded object version: 3 years, GOVERNANCE mode.
 # GOVERNANCE blocks deletion and overwrite for every principal EXCEPT those holding
-# s3:BypassGovernanceRetention. The GitHub Actions role that writes these reports
-# currently has account-admin permissions (see PF-795) and therefore holds that
-# permission, so this protects against accident, not against a determined actor with
-# deploy access. See the trade-off recorded on var.object_lock_mode.
+# s3:BypassGovernanceRetention. In this account the SCP restricts that to the
+# break-glass role, and the CI writer role below can only PutObject.
 resource "aws_s3_bucket_object_lock_configuration" "reports" {
   bucket = aws_s3_bucket.reports.id
 
@@ -195,5 +195,60 @@ data "aws_iam_policy_document" "reports_bucket" {
       variable = "aws:SecureTransport"
       values   = ["false"]
     }
+  }
+}
+
+locals {
+  # One entry per scanner. Add a prefix here when another tool starts archiving.
+  writer_key_prefixes = ["brakeman/"]
+}
+
+data "aws_iam_openid_connect_provider" "github" {
+  url = "https://token.actions.githubusercontent.com"
+}
+
+resource "aws_iam_role" "report_writer" {
+  name                 = "${module.project_config.project_name}-security-scan-report-writer"
+  description          = "Write-only role GitHub Actions assumes to archive static-analysis reports."
+  assume_role_policy   = data.aws_iam_policy_document.report_writer_trust.json
+  max_session_duration = 3600
+}
+
+data "aws_iam_policy_document" "report_writer_trust" {
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+
+    principals {
+      type        = "Federated"
+      identifiers = [data.aws_iam_openid_connect_provider.github.arn]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:sub"
+      values   = ["repo:${module.project_config.code_repository}:ref:refs/heads/main"]
+    }
+  }
+}
+
+resource "aws_iam_role_policy" "report_writer" {
+  name   = "put-scan-reports"
+  role   = aws_iam_role.report_writer.id
+  policy = data.aws_iam_policy_document.report_writer.json
+}
+
+data "aws_iam_policy_document" "report_writer" {
+  statement {
+    sid       = "PutReports"
+    effect    = "Allow"
+    actions   = ["s3:PutObject"]
+    resources = [for prefix in local.writer_key_prefixes : "${aws_s3_bucket.reports.arn}/${prefix}*"]
   }
 }
