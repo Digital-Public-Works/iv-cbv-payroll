@@ -88,7 +88,8 @@ landing_page_attributes:
   required: true
 
 # attributes that are asked for on the user input page. If there are none, that page will be skipped.
-# If all values here are already populated before that step is reached, the page will be skipped.
+# If all values here are already populated before that step is reached (via aggregator response), the
+# page will be skipped.
 applicant_input_page:
 - name: first_name
   required: true

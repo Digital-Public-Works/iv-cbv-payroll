@@ -1,12 +1,16 @@
-class Transmitters::UnencryptedS3Transmitter
+# Uploads the report (PDF + CSV, plus paystubs when enabled) to the partner's
+# S3 bucket as one .tar.gz.
+# If the partner has provided a GPG public key the output is encrypted and the output
+# is one .tar.gz.gpg
+class Transmitters::S3Transmitter
   include Transmitter
+  include GpgEncryptable
   include Transmitters::Concerns::PaystubsOutput
   include TarFileCreatable
   include CsvHelper
 
   def deliver
     config = @transmission_config
-    pre_deliver_check(config)
 
     @file_stem = TransmissionFilename.stem(@cbv_flow, @current_agency)
 
@@ -96,21 +100,31 @@ class Transmitters::UnencryptedS3Transmitter
     input_tempfile.close unless input_tempfile.closed?
   end
 
-  protected
+  private
 
-  # no-op by default, encrypted_s3 verifies there is a public key
-  def pre_deliver_check(_config); end
+  def encrypt?
+    TransmissionFilename.encrypted?(method_type: :s3, configuration: @transmission_config)
+  end
 
-  # by default a no-op; subclass can transform (encrypted_s3 encrypts here)
-  def prepare_upload(tempfile, _config); tempfile; end
+  # encrypt if a GPG key is provided
+  def prepare_upload(tempfile, config)
+    return tempfile unless encrypt?
 
-  # this is defined as an instance method to allow encrypted_s3_transmitter subclass to override
+    encrypted = gpg_encrypt_file(tempfile.path, config["public_key"])
+    if encrypted.nil?
+      Rails.logger.error "Failed to encrypt file: encrypted_tempfile is nil"
+      raise "Encryption failed"
+    end
+    encrypted
+  end
+
   def upload_key
     TransmissionFilename.full_path(
       cbv_flow: @cbv_flow,
       agency: @current_agency,
-      method_type: :unencrypted_s3,
-      remote_directory: @transmission_config["path_prefix"]
+      method_type: :s3,
+      remote_directory: @transmission_config["path_prefix"],
+      encrypted: encrypt?
     )
   end
 end

@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe Transmitters::UnencryptedS3Transmitter do
+RSpec.describe Transmitters::S3Transmitter do
   subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
 
   let(:cbv_applicant) { create(:cbv_applicant, case_number: "S3CASE") }

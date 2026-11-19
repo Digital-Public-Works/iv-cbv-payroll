@@ -35,8 +35,8 @@ All integration-related tasks live under the `integration:` namespace:
 | `integration:rspec:all` | Run every integration spec (verifies Docker is up first) |
 | `integration:rspec:webhook` | Run just the webhook transmitter spec |
 | `integration:rspec:sftp` | Run just the SFTP transmitter spec |
-| `integration:rspec:unencrypted_s3` | Run just the unencrypted S3 transmitter spec |
-| `integration:rspec:encrypted_s3` | Run just the encrypted S3 transmitter spec |
+| `integration:rspec:s3_unencrypted` | Run just the S3 transmitter spec without a GPG key |
+| `integration:rspec:s3_encrypted` | Run just the S3 transmitter spec with a GPG key |
 | `integration:partner:setup` | Create the `integration_test` partner and API service account (for e2e browser testing) |
 | `integration:partner:teardown` | Remove the `integration_test` partner and service account |
 
@@ -50,7 +50,7 @@ The file `docker-compose.integration.yml` defines the following services:
 |---|---|---|---|
 | `sftp` | `atmoz/sftp:latest` | 2222 | SFTP server for `SftpTransmitter` |
 | `webhook-api` | [dicit-webhook-api-ref-impl](https://github.com/Digital-Public-Works/dicit-webhook-api-ref-impl) | 9292 | Webhook reference server for `WebhookTransmitter` |
-| `s3` | `andrewgaul/s3proxy:latest` | 9000 | S3-compatible storage for `UnencryptedS3Transmitter` and `EncryptedS3Transmitter` |
+| `s3` | `andrewgaul/s3proxy:latest` | 9000 | S3-compatible storage for `S3Transmitter` |
 
 Credentials:
 
@@ -68,8 +68,8 @@ Integration specs carry the tag `integration: true` and are excluded from the de
 |---|---|---|
 | `sftp_transmitter_integration_spec.rb` | `SftpTransmitter` | SFTP container |
 | `webhook_transmitter_integration_spec.rb` | `WebhookTransmitter` | Webhook ref impl (port 9292) |
-| `unencrypted_s3_transmitter_integration_spec.rb` | `UnencryptedS3Transmitter` | s3proxy (port 9000) |
-| `encrypted_s3_transmitter_integration_spec.rb` | `EncryptedS3Transmitter` | s3proxy (port 9000) + locally generated GPG keypair |
+| `s3_transmitter_unencrypted_integration_spec.rb` | `S3Transmitter` (no `public_key`) | s3proxy (port 9000) |
+| `s3_transmitter_encrypted_integration_spec.rb` | `S3Transmitter` (with `public_key`) | s3proxy (port 9000) + locally generated GPG keypair |
 
 ## Running the webhook spec against a customer environment
 

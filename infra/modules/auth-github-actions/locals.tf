@@ -5,6 +5,9 @@ locals {
     "arn:aws:iam::${var.aws_account_id}:role/app-*",
     # SES needs a service role to forward email observability events to New Relic
     "arn:aws:iam::${var.aws_account_id}:role/${var.ses_events_role_name}",
+    # Cross-account invoker the vmi-admin portal assumes to call demo's admin API
+    # (modules/admin-api-gateway, invoker_role_name)
+    "arn:aws:iam::${var.aws_account_id}:role/vmi-admin-demo-invoker",
   ]
   service_policy_arns = ["arn:aws:iam::${var.aws_account_id}:policy/app-*"]
 

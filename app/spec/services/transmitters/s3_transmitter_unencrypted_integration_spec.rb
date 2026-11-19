@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe Transmitters::UnencryptedS3Transmitter, :integration do
+RSpec.describe Transmitters::S3Transmitter, :integration do
   subject { described_class.new(cbv_flow, mock_client_agency, aggregator_report, transmission_method_configuration) }
 
   let(:cbv_applicant) { create(:cbv_applicant, case_number: "S3UNENC1") }
@@ -40,7 +40,7 @@ RSpec.describe Transmitters::UnencryptedS3Transmitter, :integration do
   before do
     allow(mock_client_agency).to receive_messages(id: "sandbox", logo_path: "", report_customization_show_earnings_list: true, timezone: "America/New_York", partner_identifier_name: "case_number", applicant_attributes: {}, include_paystubs: false)
 
-    stub_pdf_generation(label: "UnencryptedS3Transmitter integration test")
+    stub_pdf_generation(label: "S3Transmitter (unencrypted) integration test")
   end
 
 
@@ -147,7 +147,7 @@ RSpec.describe Transmitters::UnencryptedS3Transmitter, :integration do
       )
       transmission = create(:cbv_flow_transmission,
         cbv_flow: cbv_flow,
-        method_type: :unencrypted_s3,
+        method_type: :s3,
         status: :pending,
         configuration: bad_config
       )

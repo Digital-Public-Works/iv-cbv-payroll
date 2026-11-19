@@ -21,14 +21,19 @@ RSpec.describe TransmissionFilename do
         .to eq("VMI_00012345_20260513_ConfABC123.pdf")
     end
 
-    it "uses the same stem for unencrypted_s3 with .tar.gz" do
-      expect(described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :unencrypted_s3))
+    it "uses the same stem for unencrypted s3 with .tar.gz" do
+      expect(described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :s3))
         .to eq("VMI_00012345_20260513_ConfABC123.tar.gz")
     end
 
-    it "uses the same stem for encrypted_s3 with .tar.gz.gpg" do
-      expect(described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :encrypted_s3))
+    it "uses the same stem for encrypted s3 with .tar.gz.gpg" do
+      expect(described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :s3, encrypted: true))
         .to eq("VMI_00012345_20260513_ConfABC123.tar.gz.gpg")
+    end
+
+    it "ignores encrypted: for sftp" do
+      expect(described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :sftp, encrypted: true))
+        .to eq("VMI_00012345_20260513_ConfABC123.pdf")
     end
 
     it "raises for non-file methods (webhook, shared_email, json have no filename)" do
@@ -104,7 +109,7 @@ RSpec.describe TransmissionFilename do
       let(:confirmation_code) { "X" * 64 }
 
       it "raises an error referencing the 100-char ceiling" do
-        expect { described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :encrypted_s3) }
+        expect { described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :s3, encrypted: true) }
           .to raise_error(/100/)
       end
     end
@@ -121,7 +126,7 @@ RSpec.describe TransmissionFilename do
       end
 
       it "works for tar-based methods too" do
-        expect(described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :unencrypted_s3, suffix: "_paystubs"))
+        expect(described_class.basename_for(cbv_flow: cbv_flow, agency: agency, method_type: :s3, suffix: "_paystubs"))
           .to eq("VMI_00012345_20260513_ConfABC123_paystubs.tar.gz")
       end
 
@@ -142,7 +147,7 @@ RSpec.describe TransmissionFilename do
     end
 
     it "returns an empty string when remote_directory is an empty string" do
-      expect(described_class.remote_directory_for(method_type: :unencrypted_s3, remote_directory: "")).to eq("")
+      expect(described_class.remote_directory_for(method_type: :s3, remote_directory: "")).to eq("")
     end
 
     it "returns the input unchanged for sftp with a relative directory" do
@@ -153,21 +158,12 @@ RSpec.describe TransmissionFilename do
       expect(described_class.remote_directory_for(method_type: :sftp, remote_directory: "/var/inbox")).to eq("/var/inbox")
     end
 
-    it "returns the input unchanged for unencrypted_s3 with a relative prefix" do
-      expect(described_class.remote_directory_for(method_type: :unencrypted_s3, remote_directory: "inbox/prod")).to eq("inbox/prod")
+    it "returns the input unchanged for s3 with a relative prefix" do
+      expect(described_class.remote_directory_for(method_type: :s3, remote_directory: "inbox/prod")).to eq("inbox/prod")
     end
 
-    it "returns the input unchanged for encrypted_s3 with a relative prefix" do
-      expect(described_class.remote_directory_for(method_type: :encrypted_s3, remote_directory: "agency/prod")).to eq("agency/prod")
-    end
-
-    it "rejects a leading slash for unencrypted_s3" do
-      expect { described_class.remote_directory_for(method_type: :unencrypted_s3, remote_directory: "/inbox") }
-        .to raise_error(ArgumentError, %r{must not start with '/'})
-    end
-
-    it "rejects a leading slash for encrypted_s3" do
-      expect { described_class.remote_directory_for(method_type: :encrypted_s3, remote_directory: "/inbox") }
+    it "rejects a leading slash for s3" do
+      expect { described_class.remote_directory_for(method_type: :s3, remote_directory: "/inbox") }
         .to raise_error(ArgumentError, %r{must not start with '/'})
     end
   end
@@ -178,19 +174,14 @@ RSpec.describe TransmissionFilename do
         .to eq("inbox")
     end
 
-    it "returns the configured path_prefix for :unencrypted_s3" do
-      expect(described_class.remote_directory_from_config(method_type: :unencrypted_s3, configuration: { "path_prefix" => "inbox/prod" }))
+    it "returns the configured path_prefix for :s3" do
+      expect(described_class.remote_directory_from_config(method_type: :s3, configuration: { "path_prefix" => "inbox/prod" }))
         .to eq("inbox/prod")
-    end
-
-    it "returns the configured path_prefix for :encrypted_s3" do
-      expect(described_class.remote_directory_from_config(method_type: :encrypted_s3, configuration: { "path_prefix" => "agency/prod" }))
-        .to eq("agency/prod")
     end
 
     it "returns nil when the configured key is absent" do
       expect(described_class.remote_directory_from_config(method_type: :sftp, configuration: {})).to be_nil
-      expect(described_class.remote_directory_from_config(method_type: :unencrypted_s3, configuration: {})).to be_nil
+      expect(described_class.remote_directory_from_config(method_type: :s3, configuration: {})).to be_nil
     end
 
     it "returns nil for non-file-producing methods" do
@@ -199,7 +190,27 @@ RSpec.describe TransmissionFilename do
 
     it "reads string keys from a with_indifferent_access configuration" do
       configuration = { "path_prefix" => "inbox" }.with_indifferent_access
-      expect(described_class.remote_directory_from_config(method_type: :encrypted_s3, configuration: configuration)).to eq("inbox")
+      expect(described_class.remote_directory_from_config(method_type: :s3, configuration: configuration)).to eq("inbox")
+    end
+  end
+
+  describe ".encrypted?" do
+    it "is true for s3 with a public_key" do
+      expect(described_class.encrypted?(method_type: :s3, configuration: { "public_key" => "KEY" })).to be(true)
+    end
+
+    it "is false for s3 with a blank or missing public_key" do
+      expect(described_class.encrypted?(method_type: :s3, configuration: { "public_key" => "" })).to be(false)
+      expect(described_class.encrypted?(method_type: "s3", configuration: {})).to be(false)
+      expect(described_class.encrypted?(method_type: :s3, configuration: nil)).to be(false)
+    end
+
+    it "is false for other methods even with a public_key" do
+      expect(described_class.encrypted?(method_type: :sftp, configuration: { "public_key" => "KEY" })).to be(false)
+    end
+
+    it "reads a with_indifferent_access configuration" do
+      expect(described_class.encrypted?(method_type: :s3, configuration: { public_key: "KEY" }.with_indifferent_access)).to be(true)
     end
   end
 
@@ -210,12 +221,12 @@ RSpec.describe TransmissionFilename do
     end
 
     it "joins remote_directory and basename with a single slash" do
-      expect(described_class.full_path(cbv_flow: cbv_flow, agency: agency, method_type: :encrypted_s3, remote_directory: "agency/prod"))
+      expect(described_class.full_path(cbv_flow: cbv_flow, agency: agency, method_type: :s3, remote_directory: "agency/prod", encrypted: true))
         .to eq("agency/prod/VMI_00012345_20260513_ConfABC123.tar.gz.gpg")
     end
 
     it "collapses a single trailing slash on remote_directory" do
-      expect(described_class.full_path(cbv_flow: cbv_flow, agency: agency, method_type: :unencrypted_s3, remote_directory: "inbox/"))
+      expect(described_class.full_path(cbv_flow: cbv_flow, agency: agency, method_type: :s3, remote_directory: "inbox/"))
         .to eq("inbox/VMI_00012345_20260513_ConfABC123.tar.gz")
     end
 
@@ -225,7 +236,7 @@ RSpec.describe TransmissionFilename do
     end
 
     it "rejects a leading slash for s3 method types" do
-      expect { described_class.full_path(cbv_flow: cbv_flow, agency: agency, method_type: :unencrypted_s3, remote_directory: "/inbox") }
+      expect { described_class.full_path(cbv_flow: cbv_flow, agency: agency, method_type: :s3, remote_directory: "/inbox") }
         .to raise_error(ArgumentError, %r{must not start with '/'})
     end
   end

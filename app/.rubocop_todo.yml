@@ -96,7 +96,7 @@ RSpec/InstanceVariable:
     - 'spec/services/aggregators/argyle/full_ssn_fetcher_spec.rb'
     - 'spec/services/aggregators/paystubs_pdf_service_spec.rb'
     - 'spec/services/translation_service_spec.rb'
-    - 'spec/services/transmitters/encrypted_s3_transmitter_integration_spec.rb'
+    - 'spec/services/transmitters/s3_transmitter_encrypted_integration_spec.rb'
     - 'spec/support/context/gpg_setup.rb'
 
 # Offense count: 1
@@ -205,7 +205,7 @@ RSpec/StubbedMock:
 RSpec/SubjectStub:
   Exclude:
     - 'spec/services/aggregators/paystubs_pdf_service_spec.rb'
-    - 'spec/services/transmitters/unencrypted_s3_transmitter_paystubs_spec.rb'
+    - 'spec/services/transmitters/s3_transmitter_paystubs_spec.rb'
 
 # Offense count: 7
 # Configuration parameters: IgnoreNameless, IgnoreSymbolicNames.

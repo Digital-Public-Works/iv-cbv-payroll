@@ -1,5 +1,5 @@
 # Sends a TransmissionComplete webhook event after one non-webhook transmission
-# method (sftp, encrypted_s3, shared_email, etc.) has delivered successfully for
+# method (sftp, s3, shared_email, etc.) has delivered successfully for
 # a CbvFlow. CbvFlowTransmissionJob enqueues one of these per successful method,
 # only when the partner config has a webhook transmission method on the events
 # contract (contract_version "2"; legacy webhook consumers only accept
@@ -43,7 +43,7 @@ class TransmissionCompleteWebhookJob < ApplicationJob
   # step with CbvFlowToJson#build_filenames.
   def asset_uri(transmission, cbv_flow, current_agency)
     method_type = transmission.method_type.to_sym
-    return nil unless TransmissionFilename::EXTENSIONS.key?(method_type)
+    return nil unless TransmissionFilename.file_method?(method_type)
 
     TransmissionFilename.full_path(
       cbv_flow: cbv_flow,
@@ -52,7 +52,8 @@ class TransmissionCompleteWebhookJob < ApplicationJob
       remote_directory: TransmissionFilename.remote_directory_from_config(
         method_type: method_type,
         configuration: transmission.configuration
-      )
+      ),
+      encrypted: TransmissionFilename.encrypted?(method_type: method_type, configuration: transmission.configuration)
     )
   end
 end

@@ -108,6 +108,57 @@ resource "aws_lb_listener_rule" "app_https_forward" {
   }
 }
 
+# The partner-config admin API (/api/admin) must never be reachable through the
+# public load balancer; only the private, IAM-authenticated API Gateway may
+# reach it. These rules run before the /* forward rules (priority 100) on both
+# listeners and answer with the same fixed 404 as the listener default.
+# Where the gateway exists (modules/admin-api-gateway), its priority-5 rule on
+# the HTTPS listener lets the admin path through for traffic from this VPC's
+# own addresses only, which is how the gateway's NLB arrives.
+# A post-deploy check (bin/check-admin-api-not-public) proves it in every
+# environment.
+resource "aws_lb_listener_rule" "admin_api_block_http" {
+  listener_arn = aws_lb_listener.alb_listener_http.arn
+  priority     = 10
+
+  action {
+    type = "fixed-response"
+
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "Not Found"
+      status_code  = "404"
+    }
+  }
+  condition {
+    path_pattern {
+      values = ["/api/admin", "/api/admin/*"]
+    }
+  }
+}
+
+resource "aws_lb_listener_rule" "admin_api_block_https" {
+  count = var.certificate_arn != null ? 1 : 0
+
+  listener_arn = aws_lb_listener.alb_listener_https[0].arn
+  priority     = 10
+
+  action {
+    type = "fixed-response"
+
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "Not Found"
+      status_code  = "404"
+    }
+  }
+  condition {
+    path_pattern {
+      values = ["/api/admin", "/api/admin/*"]
+    }
+  }
+}
+
 resource "aws_lb_target_group" "app_tg" {
   # checkov:skip=CKV_AWS_378:TLS terminates at the ALB; HTTP between ALB and container is within the VPC
   # you must use a prefix, to facilitate successful tg changes

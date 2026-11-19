@@ -16,6 +16,35 @@ RSpec.describe Aggregators::AggregatorReports::AggregatorReport, type: :service 
       end
     end
 
+    describe '#find_account_report' do
+      let(:account_id) { report.payroll_accounts.first.aggregator_account_id }
+
+      it "builds each account's report once and reuses it" do
+        allow(report).to receive(:build_account_report).and_call_original
+
+        first = report.find_account_report(account_id)
+        second = report.find_account_report(account_id)
+
+        expect(second).to be(first)
+        expect(report).to have_received(:build_account_report).once
+      end
+
+      it "rebuilds after the underlying data is replaced" do
+        first = report.find_account_report(account_id)
+
+        report.paystubs = []
+
+        expect(report.find_account_report(account_id)).not_to be(first)
+        expect(report.find_account_report(account_id).paystubs).to eq([])
+      end
+
+      it "does not log ArgyleReportHours (that is logged once per sync during validation)" do
+        expect(MixpanelEventTrackingJob).not_to receive(:perform_later).with("ArgyleReportHours", any_args)
+
+        report.find_account_report(account_id)
+      end
+    end
+
     describe '#summarize_by_employer' do
       it "returns nil for income, employment & identity when job succeeds but no data found" do
         account_id = report.payroll_accounts.first.aggregator_account_id

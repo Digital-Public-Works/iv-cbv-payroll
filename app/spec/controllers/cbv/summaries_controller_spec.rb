@@ -152,6 +152,18 @@ end
           expect(response).to be_successful
         end
 
+        it "shows the applicant's name and case number on a generic link flow" do
+          cbv_flow.update!(cbv_flow_invitation: nil)
+          cbv_flow.cbv_applicant.update!(first_name: "Jane", middle_name: "Sue", last_name: "Doe")
+
+          get :show
+
+          expect(response.body).to include("Jane")
+          expect(response.body).to include("Sue")
+          expect(response.body).to include("Doe")
+          expect(response.body).to include("ABC1234")
+        end
+
         it "shows additional comments" do
           get :show
 

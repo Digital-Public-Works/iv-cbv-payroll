@@ -40,6 +40,9 @@ module Aggregators
         log.error "Failed to send New Relic notification: #{e}"
       end
 
+      # log the hours event to mixpanel here since we have all the data
+      log_report_hours_to_mixpanel(account_report)
+
       valid = account_report.valid?(:useful_report)
 
       unless valid
@@ -60,6 +63,20 @@ module Aggregators
         valid: valid,
         errors: account_report.errors
       )
+    end
+
+    private
+    def log_report_hours_to_mixpanel(account_report)
+      paystubs = account_report&.paystubs || []
+      # @cbv_flow is normally set by #validate; find_by so a missing flow doesn't stop the event.
+      @cbv_flow ||= CbvFlow.find_by(id: @payroll_account.cbv_flow_id)
+
+      GenericEventTracker.new.track(TrackEvent::ArgyleReportHours, nil, {
+        time: Time.now.to_i,
+        cbv_applicant_id: @cbv_flow&.cbv_applicant_id,
+        total_paystubs: paystubs.size,
+        paystubs_with_argyle_hours_null: paystubs.count { |paystub| paystub&.hours.nil? }
+      })
     end
   end
 end

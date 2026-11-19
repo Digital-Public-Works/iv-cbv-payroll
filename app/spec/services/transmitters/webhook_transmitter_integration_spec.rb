@@ -51,7 +51,7 @@ RSpec.describe Transmitters::WebhookTransmitter, :integration do
 
   let(:configured_methods) do
     [
-      ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(method: "encrypted_s3", configuration: {}),
+      ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(method: "s3", configuration: { "public_key" => "KEY" }),
       ClientAgencyConfig::ClientAgency::TransmissionMethodEntry.new(method: "webhook", configuration: {})
     ]
   end
@@ -284,7 +284,7 @@ RSpec.describe Transmitters::WebhookTransmitter, :integration do
     let(:file_method_configurations) do
       {
         sftp: { "path_prefix" => "upload/inbox" },
-        encrypted_s3: { "path_prefix" => "vmi/reports" },
+        s3: { "path_prefix" => "vmi/reports", "public_key" => "KEY" },
         shared_email: { "email" => "caseworker@example.gov" }
       }
     end
@@ -338,7 +338,7 @@ RSpec.describe Transmitters::WebhookTransmitter, :integration do
 
         expect(subject.deliver).to eq("ok")
         filenames = JSON.parse(sent_requests.last.body).dig("report_metadata", "filenames")
-        expect(filenames.keys).to contain_exactly("sftp", "encrypted_s3")
+        expect(filenames.keys).to contain_exactly("sftp", "s3")
 
         transmissions.each do |transmission|
           expect(TransmissionCompleteWebhookJob.new.perform(transmission.id)).to eq("ok")

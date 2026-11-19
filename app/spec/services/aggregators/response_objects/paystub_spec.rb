@@ -116,10 +116,19 @@ RSpec.describe Aggregators::ResponseObjects::Paystub, type: :model do
           gross_pay_sum: 65.5861,
           synthetic_total_hours: 65.5861,
           argyle_total_hours_matches_synthetic: false,
-          argyle_hours_null: false
+          argyle_hours_null: false,
+          cbv_applicant_id: 123
         )).once
 
-      paystub = described_class.from_argyle(argyle_response)
+      paystub = described_class.from_argyle(argyle_response, log_hours_to_mixpanel: true, cbv_applicant_id: 123)
+    end
+
+    it 'does not log paystub hours unless asked to' do
+      allow(GenericEventTracker).to receive(:new)
+
+      described_class.from_argyle(argyle_response)
+
+      expect(GenericEventTracker).not_to have_received(:new)
     end
 
     it 'sends an error to New Relic when it cannot send to MixPanel' do
@@ -127,7 +136,7 @@ RSpec.describe Aggregators::ResponseObjects::Paystub, type: :model do
       allow(GenericEventTracker).to receive(:new).and_raise(RuntimeError, "Test error")
       allow(NewRelic::Agent).to receive(:notice_error)
 
-      paystub = described_class.from_argyle(argyle_response)
+      paystub = described_class.from_argyle(argyle_response, log_hours_to_mixpanel: true)
 
       expect(NewRelic::Agent).to have_received(:notice_error)
                                    .with(kind_of(RuntimeError))
@@ -226,7 +235,7 @@ RSpec.describe Aggregators::ResponseObjects::Paystub, type: :model do
                   argyle_hours_null: false
                 )).once
 
-        paystub = described_class.from_argyle(argyle_response)
+        paystub = described_class.from_argyle(argyle_response, log_hours_to_mixpanel: true)
       end
     end
 

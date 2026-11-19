@@ -1,12 +1,12 @@
 name: E2E Tests
 
-# Disabled: E2E tests are currently blocked by a stale/broken recording of the
-# Argyle sandbox flow (VCR cassette drift, plus an Argyle Link widget
-# token-refresh issue). Tracked in PF-801. Re-enable the CI job when issue resolved.
+# Runs the E2E specs in replay mode. These specs are also where the automated
+# accessibility checks live: verify_page (spec/support/e2e/test_helpers.rb)
+# runs axe on every page it visits.
 on:
   workflow_dispatch:
-  # pull_request:
-  #   paths: ['app/**']
+  pull_request:
+    paths: ["app/**", ".github/workflows/e2e-tests.yml"]
 
 jobs:
   e2e:

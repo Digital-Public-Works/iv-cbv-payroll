@@ -22,6 +22,7 @@ namespace :partner_config do
     abort "Source error: #{e.message}"
   end
 
+  # NOTE: a new partner or changed domain may take up to ClientAgencyConfig::KNOWN_KEYS_TTL_SECONDS (default 60s) to be routable
   desc "Apply a partner's settings + credentials YAML to the database. Usage: rake partner_config:apply[partner_id,settings_source,credentials_source]"
   task :apply, [ :partner_id, :settings_source, :credentials_source ] => :environment do |t, args|
     partner_id, settings_source, credentials_source = fetch_partner_config_args(t, args)
@@ -101,14 +102,17 @@ def print_apply_summary(partner_id, changes, loader)
   puts "\n=== Applied #{partner_id} ==="
   puts "  Config: #{changes[:config]}"
 
-  # Echo the argyle environment so an operator can eyeball that the right
-  # credentials document was applied (e.g. "yes, this is prod"). Transmission
-  # config values are intentionally not printed: they can contain secrets, and
-  # the key set changes over time (another thing to keep in sync).
   puts "  argyle_environment (verify this is correct!): #{loader.yaml_data[:argyle_environment]}"
 
   [ :transmission_methods, :application_attributes, :attribute_usages, :translations ].each do |section|
     c = changes[section]
     puts "  #{section}: #{c[:created]} created, #{c[:updated]} updated, #{c[:deleted]} deleted"
   end
+
+  # See ClientAgencyConfig::KNOWN_KEYS_TTL_SECONDS.
+  puts ""
+  puts "  Note: running app instances may take up to " \
+    "#{ClientAgencyConfig::KNOWN_KEYS_TTL_SECONDS}s to serve a new partner or domain, " \
+    "because they cache the set of known partner ids. " \
+    "Restart the app to pick it up now."
 end

@@ -479,15 +479,10 @@ RSpec.describe Cbv::PaymentDetailsController do
         it "tracks events" do
           allow(MixpanelEventTrackingJob).to receive(:perform_later).with(TrackEvent::CbvPageView, anything, anything)
 
-          expect(MixpanelEventTrackingJob).to receive(:perform_later)
-            .with("ArgylePaystubHours", anything, hash_including(
-              time: be_a(Integer),
-              argyle_total_hours: be_a(String),
-              gross_pay_sum: be_a(Float),
-              synthetic_total_hours: be_a(Float),
-              argyle_total_hours_matches_synthetic: true,
-              argyle_hours_null: false
-            )).exactly(10).times
+          # Hours events are sent once per sync (webhook / validation), never on
+          # page views, where they used to flood the SQS queue.
+          expect(MixpanelEventTrackingJob).not_to receive(:perform_later).with("ArgylePaystubHours", any_args)
+          expect(MixpanelEventTrackingJob).not_to receive(:perform_later).with("ArgyleReportHours", any_args)
 
           expect(MixpanelEventTrackingJob).to receive(:perform_later).with(TrackEvent::ApplicantViewedPaymentDetails, anything, hash_including(
               cbv_flow_id: cbv_flow.id,
@@ -499,14 +494,6 @@ RSpec.describe Cbv::PaymentDetailsController do
               has_paystubs_data: true,
               has_income_data: true
             ))
-
-          # AggregatorReport::find_account_report is invoked several times during the render of show.
-          expect(MixpanelEventTrackingJob).to receive(:perform_later)
-            .with("ArgyleReportHours", anything, hash_including(
-              time: be_a(Integer),
-              total_paystubs: 10,
-              paystubs_with_argyle_hours_null: 0
-            )).exactly(6).times
 
           get :show, params: { user: { account_id: account_id } }
         end

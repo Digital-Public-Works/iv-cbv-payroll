@@ -31,12 +31,13 @@ output "service_config" {
 
     extra_environment_variables = merge(
       local.default_extra_environment_variables,
+      local.admin_api_environment_variables,
       var.service_override_extra_environment_variables
     )
 
     ssm_environment_parameters = local.ssm_environment_variables
 
-    secrets = local.secrets
+    secrets = merge(local.secrets, local.admin_api_secrets)
 
     file_upload_jobs = {
       for job_name, job_config in local.file_upload_jobs :
@@ -64,4 +65,8 @@ output "storage_config" {
   value = {
     bucket_name = local.bucket_name
   }
+}
+
+output "admin_api_config" {
+  value = var.admin_api
 }

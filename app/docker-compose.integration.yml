@@ -58,8 +58,8 @@ services:
       retries: 12
       start_period: 5s
 
-  # S3-compatible object storage for testing UnencryptedS3Transmitter and
-  # EncryptedS3Transmitter.
+  # S3-compatible object storage for testing S3Transmitter, with and without
+  # a GPG public_key.
   s3:
     image: andrewgaul/s3proxy:latest
     ports:
