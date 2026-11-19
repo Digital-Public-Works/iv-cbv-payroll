@@ -99,6 +99,11 @@ jobs:
       continue-on-error: true
       working-directory: ${{ github.workspace }}
       run: |
+        # make sure that continue-on-error still reports the issue in the summary
+        if [ ! -s brakeman-report.json ]; then
+          echo "::error title=No Brakeman report to archive::brakeman-report.json was not generated, so nothing was published to S3. Check the earlier setup and report steps."
+          exit 1
+        fi
         key="brakeman/$(date -u +%Y/%m/%d)/${GITHUB_SHA}/run-${GITHUB_RUN_ID}-attempt-${GITHUB_RUN_ATTEMPT}.json"
         echo "Publishing to s3://${REPORTS_BUCKET}/${key}"
         aws s3 cp brakeman-report.json "s3://${REPORTS_BUCKET}/${key}" \

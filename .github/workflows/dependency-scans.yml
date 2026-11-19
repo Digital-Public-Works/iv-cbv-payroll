@@ -13,6 +13,7 @@ on:
     # cron format: 'minute hour dayofmonth month dayofweek'
     # this will run at noon UTC every day (7am EST / 8am EDT)
     - cron: '0 12 * * *'
+  workflow_dispatch:
 
 jobs:
   bundle-audit:
@@ -57,3 +58,24 @@ jobs:
         with:
           name: ruby-bom
           path: ./app/ruby_bom.xml
+
+  report-failure:
+    name: Track failure in an issue
+    needs: [ bundle-audit, npm-audit, ruby-bom ]
+    if: ${{ always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    # One report at a time, so overlapping runs can't open two issues.
+    concurrency:
+      group: dependency-scan-report
+
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/track-workflow-failure
+        with:
+          needs-json: ${{ toJSON(needs) }}
+          label: dependency-scan-failure
+          title: Scheduled dependency scan is failing
+          assignees: dpw-quant
