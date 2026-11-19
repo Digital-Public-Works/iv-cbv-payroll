@@ -32,7 +32,8 @@
   <% item = item.to_sym %>
   <% if @cbv_flow.cbv_applicant.public_send(item).present? %>
     <% value = item == :date_of_birth ? format_date(@cbv_flow.cbv_applicant.public_send(item)) : @cbv_flow.cbv_applicant.public_send(item) %>
-    <% client_information_rows << [ agency_translation("cbv.applicant_informations.{agency}.fields.#{item}.super_one_html"), value ] %>
+    <% label_key = @cbv_flow.cbv_applicant.provider_supplied?(item) ? "prompt" : "super_one_html" %>
+    <% client_information_rows << [ agency_translation("cbv.applicant_informations.{agency}.fields.#{item}.#{label_key}"), value ] %>
   <% end %>
 <% end %>
 <% if is_caseworker %>
@@ -100,9 +101,11 @@
         <%= t(".pdf.shared.employment_information") %>
       </h4>
     <% end %>
-    <% if is_caseworker && summary[:has_identity_data] && summary[:identity].present? %>
+    <% if summary[:has_identity_data] && summary[:identity].present? %>
       <%= table.with_data_point(:client_full_name, summary[:identity].full_name) %>
-      <%= table.with_data_point(:ssn, summary[:identity].ssn) %>
+      <% if is_caseworker %>
+        <%= table.with_data_point(:ssn, summary[:identity].ssn) %>
+      <% end %>
     <% end %>
     <% if employment&.employer_name %>
       <%= table.with_data_point(:employer_phone, employment.employer_phone_number) %>
