@@ -765,3 +765,50 @@ describe("EmployerSearchController modal focus restoration", () => {
     expect(document.activeElement).toBe(pageHeading)
   })
 })
+
+// After the payroll modal succeeds, the hidden form is submitted natively (a
+// full page load, skipping Turbo), so it has to carry the page's flow as a
+// field for the server to check (CbvFlowTabBinding).
+describe("EmployerSearchController onSuccess", () => {
+  let element
+  let form
+
+  beforeEach(async () => {
+    const meta = document.createElement("meta")
+    meta.name = "cbv-flow-id"
+    meta.content = "9"
+    document.head.appendChild(meta)
+
+    element = document.createElement("div")
+    element.setAttribute("data-controller", "cbv-employer-search")
+    element.innerHTML = `
+      <form data-cbv-employer-search-target="form" action="/cbv/synchronizations" method="get">
+        <input type="hidden" name="user[account_id]" data-cbv-employer-search-target="userAccountId">
+      </form>
+    `
+    document.body.appendChild(element)
+    window.Stimulus.register("cbv-employer-search", EmployerSearchController)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    form = element.querySelector("form")
+    form.submit = vi.fn()
+  })
+
+  afterEach(() => {
+    document.head.querySelector('meta[name="cbv-flow-id"]')?.remove()
+    document.body.innerHTML = ""
+  })
+
+  it("submits the account with the page's flow", () => {
+    const controller = window.Stimulus.getControllerForElementAndIdentifier(
+      element,
+      "cbv-employer-search"
+    )
+
+    controller.onSuccess("account-123")
+
+    expect(form.submit).toHaveBeenCalledTimes(1)
+    expect(form.querySelector('input[name="user[account_id]"]').value).toBe("account-123")
+    expect(form.querySelector('input[name="cbv_flow_tab_id"]').value).toBe("9")
+  })
+})

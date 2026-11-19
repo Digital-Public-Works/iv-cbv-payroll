@@ -1,8 +1,9 @@
 class FeedbacksController < ApplicationController
   include ApplicationHelper
+  include CbvFlowTabBinding
 
   def show
-    @cbv_flow = session[:cbv_flow_id] ? CbvFlow.find_by(id: session[:cbv_flow_id]) : nil
+    @cbv_flow = session_cbv_flow_for_tab
     event_name = params[:form] == "survey" ? "ApplicantClickedFeedbackSurveyLink" : "ApplicantClickedFeedbackLink"
     attributes = {
       referer: params[:referer],

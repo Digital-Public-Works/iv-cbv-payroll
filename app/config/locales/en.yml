@@ -445,6 +445,14 @@ en:
         subheader_html: We have gathered your payment records from the past %{report_data_range} from %{start_date} to %{end_date}.<br>Please review your information. If something is missing or inaccurate, add a comment for %{agency_acronym}. This will be included in your income report.
         subheader_no_comments_html: We have gathered your payment records from the past %{report_data_range} from %{start_date} to %{end_date}.<br>Please review your information.
         unknown: Unknown
+    sessions:
+      switched:
+        description: X_ This tab is no longer valid, please close it and use the most recently opened income verification tab.
+        next_steps: X_ Go back to the tab or window you were using most recently. If you closed it, open your link again to start a new income report.
+        open_elsewhere:
+          description: X_ This tab was inactive, but your session is still open in another tab or window of this browser. Go back to that tab to continue.
+          title: X_ Your session is open in another tab
+        title: X_ This page is no longer active
     submits:
       show:
         application_or_recertification_date: SNAP application or recertification interview date

@@ -1,10 +1,13 @@
 class Api::PinwheelController < ApplicationController
+  include CbvFlowTabBinding
+
   after_action :track_event, only: :create_token
 
   # run the token here with the included employer/payroll provider id
   def create_token
     @cbv_flow = CbvFlow.find_by(id: session[:cbv_flow_id])
     return redirect_to(root_url(cbv_flow_timeout: true)) unless @cbv_flow
+    return redirect_for_tab_flow_mismatch if tab_flow_mismatch?(@cbv_flow)
 
     pinwheel = pinwheel_for(@cbv_flow)
     token_response = pinwheel.create_link_token(

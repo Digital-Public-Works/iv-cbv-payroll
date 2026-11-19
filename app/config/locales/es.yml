@@ -355,6 +355,14 @@ es:
         subheader_html: Hemos recopilado sus registros de pago del último %{report_data_range}, desde el %{start_date} hasta el %{end_date}.<br>Por favor, revise su información. Si falta información o si es incorrecta, deja un comentario para %{agency_acronym}. Su comentario se incluirá en su reporte de ingresos.
         subheader_no_comments_html: Hemos recopilado sus registros de pago del último %{report_data_range}, desde el %{start_date} hasta el %{end_date}.<br>Por favor, revise su información.
         unknown: Desconocido
+    sessions:
+      switched:
+        description: X_ Esta pestaña ya no es válida; por favor, ciérrela y utilice la pestaña de verificación de ingresos que abrió más recientemente.
+        next_steps: X_ Regrese a la pestaña o ventana que usó más recientemente. Si la cerró, abra su enlace otra vez para comenzar un nuevo reporte de ingresos.
+        open_elsewhere:
+          description: X_ Esta pestaña estuvo inactiva, pero su sesión sigue abierta en otra pestaña o ventana de este navegador. Regrese a esa pestaña para continuar.
+          title: X_ Su sesión está abierta en otra pestaña
+        title: X_ Esta página ya no está activa
     submits:
       show:
         application_or_recertification_date: SNAP application or recertification interview date

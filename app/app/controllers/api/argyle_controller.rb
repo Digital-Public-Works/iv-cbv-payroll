@@ -1,4 +1,6 @@
 class Api::ArgyleController < ApplicationController
+  include CbvFlowTabBinding
+
   before_action :set_cbv_flow, :resume_previous_argyle_account_connection
   after_action :track_event
 
@@ -37,7 +39,9 @@ class Api::ArgyleController < ApplicationController
 
   def set_cbv_flow
     @cbv_flow = CbvFlow.find_by(id: session[:cbv_flow_id])
-    redirect_to(root_url(cbv_flow_timeout: true)) unless @cbv_flow
+    return redirect_to(root_url(cbv_flow_timeout: true)) unless @cbv_flow
+
+    redirect_for_tab_flow_mismatch if tab_flow_mismatch?(@cbv_flow)
   end
 
   # Redirect if the user is attempting connect a previously connected account
