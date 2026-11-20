@@ -1,0 +1,56 @@
+#!/bin/bash
+# -----------------------------------------------------------------------------
+# One-time bootstrap of the log-archive account's Terraform backend
+# -----------------------------------------------------------------------------
+set -euo pipefail
+
+module_dir="infra/log-archive"
+
+terraform -chdir="infra/project-config" init -input=false > /dev/null
+terraform -chdir="infra/project-config" apply -auto-approve > /dev/null
+expected_account_id=$(terraform -chdir="infra/project-config" output -raw log_archive_account_id)
+project_name=$(terraform -chdir="infra/project-config" output -raw project_name)
+region=$(terraform -chdir="infra/project-config" output -raw default_region)
+
+current_account_id=$(./bin/current-account-id)
+if [[ "${current_account_id}" != "${expected_account_id}" ]]; then
+  echo "Refusing to run: authenticated to account ${current_account_id}, expected the log-archive account ${expected_account_id}." >&2
+  echo "Set AWS_PROFILE to the log-archive break-glass profile and try again." >&2
+  exit 1
+fi
+
+tf_state_bucket_name="${project_name}-${current_account_id}-${region}-tf"
+tf_state_key="infra/log-archive.tfstate"
+
+echo "Bootstrapping log-archive account ${current_account_id} (state bucket ${tf_state_bucket_name})"
+
+if aws s3api head-bucket --bucket "${tf_state_bucket_name}" 2> /dev/null; then
+  echo "State bucket already exists; skipping creation."
+else
+  create_bucket_configuration=()
+  if [[ "${region}" != "us-east-1" ]]; then
+    create_bucket_configuration=("--create-bucket-configuration" "LocationConstraint=${region}")
+  fi
+  aws s3api create-bucket --bucket "${tf_state_bucket_name}" --region "${region}" "${create_bucket_configuration[@]}" > /dev/null
+  echo "Created state bucket."
+fi
+
+# Phase 1: no lock table yet.
+terraform -chdir="${module_dir}" init \
+  -input=false \
+  -reconfigure \
+  -backend-config="bucket=${tf_state_bucket_name}" \
+  -backend-config="key=${tf_state_key}" \
+  -backend-config="region=${region}"
+
+if ! terraform -chdir="${module_dir}" state list module.backend.aws_s3_bucket.tf_state > /dev/null 2>&1; then
+  terraform -chdir="${module_dir}" import module.backend.aws_s3_bucket.tf_state "${tf_state_bucket_name}"
+fi
+
+terraform -chdir="${module_dir}" apply -input=false
+
+# Phase 2: switch to the committed backend config, which includes the lock table.
+./bin/terraform-init "${module_dir}" log-archive
+
+echo
+echo "Log-archive account bootstrapped. Next: make infra-update-app-security-scan-reports APP_NAME=app"

@@ -42,12 +42,12 @@ RSpec.describe "Help Features", :js, type: :feature do
         expect(page).to have_content(I18n.t("help.index.select_prompt"))
 
         # Verify all help topic buttons are present
-        expect(page).to have_button(I18n.t("help.index.username"))
-        expect(page).to have_button(I18n.t("help.index.password"))
-        expect(page).to have_button(I18n.t("help.index.company_id"))
-        expect(page).to have_button(I18n.t("help.index.employer"))
-        expect(page).to have_button(I18n.t("help.index.provider"))
-        expect(page).to have_button(I18n.t("help.index.credentials"))
+        expect(page).to have_button(I18n.t("help.index.username"), enable_aria_role: true)
+        expect(page).to have_button(I18n.t("help.index.password"), enable_aria_role: true)
+        expect(page).to have_button(I18n.t("help.index.company_id"), enable_aria_role: true)
+        expect(page).to have_button(I18n.t("help.index.employer"), enable_aria_role: true)
+        expect(page).to have_button(I18n.t("help.index.provider"), enable_aria_role: true)
+        expect(page).to have_button(I18n.t("help.index.credentials"), enable_aria_role: true)
 
         # Verify feedback link opens in new tab with correct URL
         feedback_link = find_link(I18n.t("help.index.feedback"))
@@ -64,10 +64,10 @@ RSpec.describe "Help Features", :js, type: :feature do
       expect(page).to have_selector(".usa-modal__content", visible: true)
 
       within(".usa-modal__content") do
-        click_button I18n.t("help.index.username")
+        click_button I18n.t("help.index.username"), enable_aria_role: true
         verify_page(page, title: I18n.t("help.show.username.title"))
 
-        click_button I18n.t("help.show.go_back")
+        click_button I18n.t("help.show.go_back"), enable_aria_role: true
         verify_page(page, title: I18n.t("help.index.title"))
       end
     end
@@ -77,7 +77,7 @@ RSpec.describe "Help Features", :js, type: :feature do
       click_link "Help"
 
       within(".usa-modal__content") do
-        click_button I18n.t("help.index.username")
+        click_button I18n.t("help.index.username"), enable_aria_role: true
         verify_page(page, title: I18n.t("help.show.username.title"))
       end
 
@@ -103,7 +103,7 @@ RSpec.describe "Help Features", :js, type: :feature do
       expect(page).to have_selector(".usa-modal__content", visible: true)
 
       within(".usa-modal__content") do
-        click_button I18n.t("help.index.username")
+        click_button I18n.t("help.index.username"), enable_aria_role: true
         verify_page(page, title: I18n.t("help.show.username.title"))
 
         # Focus should return to the modal container, not to an arbitrary
@@ -112,7 +112,7 @@ RSpec.describe "Help Features", :js, type: :feature do
         # screen reader's virtual cursor there).
         expect(page.evaluate_script("document.activeElement.classList.contains('usa-modal')")).to be(true)
 
-        click_button I18n.t("help.show.go_back")
+        click_button I18n.t("help.show.go_back"), enable_aria_role: true
         verify_page(page, title: I18n.t("help.index.title"))
 
         expect(page.evaluate_script("document.activeElement.classList.contains('usa-modal')")).to be(true)
@@ -123,11 +123,11 @@ RSpec.describe "Help Features", :js, type: :feature do
         document.querySelector('button[aria-label="Close this window"]').focus()
       JS
 
-      find("body").send_keys(:tab)
+      page.send_keys(:tab)
       expect(page.evaluate_script("document.activeElement.textContent.trim()"))
         .to eq(I18n.t("help.index.username"))
 
-      find("body").send_keys(%i[shift tab])
+      page.send_keys(%i[shift tab])
       expect(page.evaluate_script("document.activeElement.getAttribute('aria-label')"))
         .to eq("Close this window")
     end
@@ -137,10 +137,10 @@ RSpec.describe "Help Features", :js, type: :feature do
       click_link "Help"
 
       within(".usa-modal__content") do
-        click_button I18n.t("help.index.username")
+        click_button I18n.t("help.index.username"), enable_aria_role: true
         verify_page(page, title: I18n.t("help.show.username.title"))
 
-        click_button I18n.t("help.show.go_back")
+        click_button I18n.t("help.show.go_back"), enable_aria_role: true
         verify_page(page, title: I18n.t("help.index.title"))
       end
 
@@ -149,7 +149,7 @@ RSpec.describe "Help Features", :js, type: :feature do
       # catch-all in its Shift+Tab handling that used to fire on every
       # keypress after any content swap and swallow it, leaving the user
       # stuck unable to tab backward at all - even from the very first item.
-      first_topic = find_button(I18n.t("help.index.username"))
+      first_topic = find_button(I18n.t("help.index.username"), enable_aria_role: true)
       first_topic.send_keys(%i[shift tab])
 
       expect(page.evaluate_script("document.activeElement.getAttribute('aria-label')"))
@@ -163,7 +163,7 @@ RSpec.describe "Help Features", :js, type: :feature do
       expect(page).to have_selector(".usa-modal__content", visible: true)
 
       within(".usa-modal__content") do
-        find_button(I18n.t("help.index.username")).send_keys(:space)
+        find_button(I18n.t("help.index.username"), enable_aria_role: true).send_keys(:space)
         verify_page(page, title: I18n.t("help.show.username.title"))
       end
     end
@@ -173,7 +173,7 @@ RSpec.describe "Help Features", :js, type: :feature do
       click_link "Help"
 
       within(".usa-modal__content") do
-        click_button I18n.t("help.index.username")
+        click_button I18n.t("help.index.username"), enable_aria_role: true
         verify_page(page, title: I18n.t("help.show.username.title"))
       end
 
@@ -215,12 +215,12 @@ RSpec.describe "Help Features", :js, type: :feature do
         expect(page).to have_content(I18n.t("help.index.select_prompt"))
 
         # Verify all help topic buttons are present
-        expect(page).to have_button(I18n.t("help.index.username"))
-        expect(page).to have_button(I18n.t("help.index.password"))
-        expect(page).to have_button(I18n.t("help.index.company_id"))
-        expect(page).to have_button(I18n.t("help.index.employer"))
-        expect(page).to have_button(I18n.t("help.index.provider"))
-        expect(page).to have_button(I18n.t("help.index.credentials"))
+        expect(page).to have_button(I18n.t("help.index.username"), enable_aria_role: true)
+        expect(page).to have_button(I18n.t("help.index.password"), enable_aria_role: true)
+        expect(page).to have_button(I18n.t("help.index.company_id"), enable_aria_role: true)
+        expect(page).to have_button(I18n.t("help.index.employer"), enable_aria_role: true)
+        expect(page).to have_button(I18n.t("help.index.provider"), enable_aria_role: true)
+        expect(page).to have_button(I18n.t("help.index.credentials"), enable_aria_role: true)
 
         # Caseworker should not see the feedback flow
         expect(page).not_to have_link(I18n.t("help.index.feedback"))

@@ -27,6 +27,11 @@ defaults:
 env:
   # Must match local.bucket_name in infra/app/security-scan-reports/main.tf
   REPORTS_BUCKET: dpw-iv-cbv-payroll-security-scan-reports
+  # Write-only role in the log-archive account (log_archive_account_id in
+  # infra/project-config). Must match aws_iam_role.report_writer in
+  # infra/app/security-scan-reports/main.tf. It trusts runs on main only.
+  REPORTS_WRITER_ROLE: arn:aws:iam::899776212152:role/iv-cbv-payroll-security-scan-report-writer
+  REPORTS_REGION: us-east-1
 
 jobs:
   brakeman-scan:
@@ -67,28 +72,25 @@ jobs:
       run: ruby .github/scripts/enrich_brakeman_report.rb brakeman-report.json
 
     # continue-on-error on the two publishing steps below is a ROLLOUT ALLOWANCE,
-    # not a permanent setting: the bucket is created by a manual
-    # `make infra-update-app-security-scan-reports APP_NAME=app`, so until that has
-    # been applied these steps fail and would take main red. Remove both once the
-    # bucket exists, otherwise a silently broken archive looks like a passing build.
+    # not a permanent setting: the bucket and writer role are created by a manual
+    # `make infra-update-app-security-scan-reports APP_NAME=app` in the log-archive
+    # account, so until that has been applied these steps fail and would take main
+    # red. Remove both once the first report lands, otherwise a silently broken
+    # archive looks like a passing build.
     #
-    # configure-aws-credentials shells out to `terraform` to resolve the network,
-    # account id, and role ARN, so Terraform must be on the runner first. Every other
-    # workflow that uses that action does this too; omitting it fails with exit 127.
-    - name: Set up Terraform
-      if: ${{ always() && github.event_name != 'pull_request' }}
-      continue-on-error: true
-      uses: ./.github/actions/setup-terraform
-
-    # Fork PRs cannot assume the OIDC role, and PR-run reports are not the audit
-    # record -- only main and the weekly schedule are archived.
+    # This deliberately does not use ./.github/actions/configure-aws-credentials:
+    # that resolves an app account's deploy role, and the archive account has none.
+    # The writer role can only PutObject under brakeman/.
+    #
+    # PR-run reports are not the audit record -- only main and the weekly schedule
+    # are archived, and the role's trust policy accepts only refs/heads/main.
     - name: Configure AWS credentials
       if: ${{ always() && github.event_name != 'pull_request' }}
       continue-on-error: true
-      uses: ./.github/actions/configure-aws-credentials
+      uses: aws-actions/configure-aws-credentials@v4
       with:
-        app_name: app
-        environment: prod
+        role-to-assume: ${{ env.REPORTS_WRITER_ROLE }}
+        aws-region: ${{ env.REPORTS_REGION }}
 
     # Keyed by date and commit SHA. run id + attempt keep re-runs of the same
     # commit from overwriting each other (the bucket is versioned regardless).
@@ -97,6 +99,11 @@ jobs:
       continue-on-error: true
       working-directory: ${{ github.workspace }}
       run: |
+        # make sure that continue-on-error still reports the issue in the summary
+        if [ ! -s brakeman-report.json ]; then
+          echo "::error title=No Brakeman report to archive::brakeman-report.json was not generated, so nothing was published to S3. Check the earlier setup and report steps."
+          exit 1
+        fi
         key="brakeman/$(date -u +%Y/%m/%d)/${GITHUB_SHA}/run-${GITHUB_RUN_ID}-attempt-${GITHUB_RUN_ATTEMPT}.json"
         echo "Publishing to s3://${REPORTS_BUCKET}/${key}"
         aws s3 cp brakeman-report.json "s3://${REPORTS_BUCKET}/${key}" \
