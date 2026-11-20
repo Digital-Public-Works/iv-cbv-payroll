@@ -1,6 +1,34 @@
 require "rails_helper"
 
 RSpec.describe ApplicationHelper do
+  describe "#new_relic_browser_timing_header" do
+    let(:nonce) { "abc123" }
+    let(:nr_snippet) do
+      %(\n<script type="text/javascript" nonce="#{nonce}">window.NREUM||(NREUM={});NREUM.info={}</script>) +
+        %(\n<script type="text/javascript" nonce="#{nonce}">/* loader */</script>)
+    end
+
+    before do
+      allow(helper).to receive(:content_security_policy_nonce).and_return(nonce)
+    end
+
+    it "passes the CSP nonce and marks every script so Turbo won't re-run it" do
+      allow(NewRelic::Agent).to receive(:browser_timing_header).with(nonce).and_return(nr_snippet)
+
+      html = helper.new_relic_browser_timing_header
+
+      expect(html.scan("<script").size).to eq(2)
+      expect(html.scan('<script data-turbo-eval="false" type="text/javascript" nonce="abc123">').size).to eq(2)
+      expect(html).to be_html_safe
+    end
+
+    it "renders nothing when the agent returns no snippet" do
+      allow(NewRelic::Agent).to receive(:browser_timing_header).and_return("")
+
+      expect(helper.new_relic_browser_timing_header).to eq("")
+    end
+  end
+
   describe "#agency_translation" do
     let(:current_agency) { ClientAgencyConfig.instance["sandbox"] }
     let(:available_translations) { <<~YAML }
