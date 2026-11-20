@@ -36,12 +36,87 @@ RSpec.describe CspReportsController, type: :controller do
         post :create, body: valid_csp_report.to_json
       end
 
+      it 'does not send the original policy to New Relic' do
+        expect(NewRelic::EventLogger).to receive(:track).with(
+          "CSPViolation",
+          hash_excluding(:original_policy)
+        )
+
+        post :create, body: valid_csp_report.to_json
+      end
+
       it 'logs the violation to Rails logger' do
         expect(Rails.logger).to receive(:warn).with(
           "[CSP Violation] style-src 'self' - blocked: inline"
         )
 
         post :create, body: valid_csp_report.to_json
+      end
+    end
+
+    context 'with reports that are not actionable' do
+      def report_with(overrides)
+        { "csp-report" => valid_csp_report["csp-report"].merge(overrides) }.to_json
+      end
+
+      shared_examples 'an ignored report' do
+        it 'returns no_content without recording a New Relic event' do
+          expect(NewRelic::EventLogger).not_to receive(:track)
+
+          post :create, body: body
+
+          expect(response).to have_http_status(:no_content)
+        end
+      end
+
+      context 'when the blocked uri is a browser extension' do
+        let(:body) { report_with("violated-directive" => "script-src-elem", "blocked-uri" => "chrome-extension") }
+
+        it_behaves_like 'an ignored report'
+      end
+
+      context 'when the source file is a browser extension' do
+        let(:body) { report_with("source-file" => "moz-extension://abc123/content.js") }
+
+        it_behaves_like 'an ignored report'
+      end
+
+      context 'when it is an img-src violation' do
+        let(:body) do
+          report_with("violated-directive" => "img-src", "blocked-uri" => "https://joincheckmate.com/api/images/1.webp")
+        end
+
+        it_behaves_like 'an ignored report'
+      end
+
+      context 'when it is an img-src violation reported with the full directive' do
+        let(:body) do
+          report_with("violated-directive" => "img-src 'self' data:", "blocked-uri" => "https://storage.googleapis.com/wl-image/abc")
+        end
+
+        it_behaves_like 'an ignored report'
+      end
+
+      context 'when it is an Argyle SDK inline event handler' do
+        let(:body) do
+          report_with(
+            "violated-directive" => "script-src-attr",
+            "blocked-uri" => "inline",
+            "source-file" => "https://plugin.argyle.com/argyle.web.v5.js"
+          )
+        end
+
+        it_behaves_like 'an ignored report'
+      end
+
+      it 'still records inline script violations from our own code' do
+        expect(NewRelic::EventLogger).to receive(:track).with("CSPViolation", hash_including(violated_directive: "script-src-elem"))
+
+        post :create, body: report_with(
+          "violated-directive" => "script-src-elem",
+          "blocked-uri" => "inline",
+          "source-file" => "https://pa.verifymyincome.org/assets/application-abc.js"
+        )
       end
     end
 

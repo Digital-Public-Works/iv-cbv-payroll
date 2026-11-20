@@ -1,4 +1,15 @@
 module ApplicationHelper
+  # render browser snippet, auto-instrument is turned off to reduce noise
+  def new_relic_browser_timing_header
+    return "" unless defined?(NewRelic::Agent)
+
+    snippet = NewRelic::Agent.browser_timing_header(content_security_policy_nonce).to_s
+    return "" if snippet.blank?
+
+    # The snippet is two <script> tags (NREUM config + loader); mark both.
+    snippet.gsub("<script", '<script data-turbo-eval="false"').html_safe
+  end
+
   def current_agency?(client_agency_id)
     return false if current_agency.nil?
 
