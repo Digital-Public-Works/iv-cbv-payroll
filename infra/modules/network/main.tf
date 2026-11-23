@@ -1,4 +1,10 @@
-data "aws_availability_zones" "available" {}
+# Allowlist zones by name so the set cannot grow when AWS adds an AZ (Checkov CKV_AWS_394).
+data "aws_availability_zones" "available" {
+  filter {
+    name   = "zone-name"
+    values = [for suffix in ["a", "b", "c", "d", "e"] : "${data.aws_region.current.name}${suffix}"]
+  }
+}
 
 locals {
   public_subnet_offset   = 10 # e.g. 10.0.0.0/20 -> 10.0.10.0
