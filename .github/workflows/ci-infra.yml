@@ -111,8 +111,16 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Run Trivy IaC config scan
-        uses: aquasecurity/trivy-action@master
+        # Action and Trivy binary pinned so their behaviour only changes through a PR. The vulnerability
+        # DB is unpinned: so we catch newly published CVEs.
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          # Use the checks embedded in the pinned binary instead of downloading the latest bundle.
+          TRIVY_SKIP_CHECK_UPDATE: "true"
         with:
+          version: v0.76.2
+          # No cache so results depend on the pinned binary.
+          cache: "false"
           scan-type: config
           scan-ref: infra
           format: table
