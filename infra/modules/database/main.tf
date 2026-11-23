@@ -9,7 +9,7 @@ locals {
   # See https://aws.amazon.com/blogs/database/using-iam-authentication-to-connect-with-pgadmin-amazon-aurora-postgresql-or-amazon-rds-for-postgresql/
   db_user_arn_prefix = "arn:aws:rds-db:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:dbuser:${aws_rds_cluster.db.cluster_resource_id}"
 
-  engine_version       = "14.20"
+  engine_version       = "14.22"
   engine_major_version = regex("^\\d+", local.engine_version)
 }
 
@@ -61,6 +61,11 @@ resource "aws_rds_cluster" "db" {
   vpc_security_group_ids = [aws_security_group.db.id]
 
   enabled_cloudwatch_logs_exports = ["postgresql"]
+
+  lifecycle {
+    # Let AWS do minor version bumps without triggering our drift check.
+    ignore_changes = [engine_version]
+  }
 }
 
 resource "aws_rds_cluster_instance" "primary" {
