@@ -10,18 +10,18 @@ brew "nodenv"
 # Python (required for moto and other development tools)
 brew "python@3"
 
-# cloud.gov RDS is on postgres 12
-brew "postgresql@12", link: true
+# production (Aurora PostgreSQL) and docker-compose use postgres 14
+brew "postgresql@14", link: true
 
 # docker is used for building images for deployment, and in the bin/with-server script
-cask "docker"
+cask "docker-desktop"
 brew "dockerize"
 
 # helper scripts for creating new ADRs
 brew "adr-tools"
 
-# chromedriver for integration tests
-cask "chromedriver"
+# chromedriver for integration tests is downloaded automatically by Selenium Manager
+# (selenium-webdriver >= 4.11); just have Google Chrome installed.
 
 # used by rails-erd documentation tool
 brew "graphviz"
