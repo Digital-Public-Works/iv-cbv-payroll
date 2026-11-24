@@ -25,10 +25,8 @@ Most developers on the team code using macOS, so we recommend that platform if p
    * [Dockerize](https://github.com/jwilder/dockerize)
    * [ADR Tools](https://github.com/npryce/adr-tools)
    * [Graphviz](https://voormedia.github.io/rails-erd/install.html): brew install graphviz
-   * [Chromedriver](https://sites.google.com/chromium.org/driver/)
-     * Chromedriver must be allowed to run. You can either do that by:
-       * The command line: `xattr -d com.apple.quarantine $(which chromedriver)` (this is the only option if you are on Big Sur)
-       * Manually: clicking "allow" when you run the integration tests for the first time and a dialogue opens up
+   * [Google Chrome](https://www.google.com/chrome/) (for integration tests)
+     * Chromedriver is downloaded automatically by [Selenium Manager](https://www.selenium.dev/documentation/selenium_manager/); no separate install is needed.
    * [Ngrok](https://ngrok.com/downloads): brew install ngrok/ngrok/ngrok
      * Sign up for an account: https://dashboard.ngrok.com/signup
      * run `ngrok config add-authtoken {token goes here}`
@@ -48,7 +46,7 @@ Most developers on the team code using macOS, so we recommend that platform if p
    * `nodenv rehash`
    * `npm install`
 1. Start postgres:
-   * `brew services start postgresql@12`
+   * `brew services start postgresql@14`
 1. Set up moto for local SQS (mock AWS services)
    * **First, navigate to repo root**: `cd ..`
    * Create Python virtual environment: `python3 -m venv .venv`
