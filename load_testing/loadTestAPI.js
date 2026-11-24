@@ -3,7 +3,7 @@ import { check, group } from 'k6';
 import { URL, SLO, checkSlo, commonOptions } from './common.js';
 
 // Invitations per second, and how long to sustain it.
-export const API_RATE = Number(__ENV.API_RATE || 100);
+export const API_RATE = Number(__ENV.API_RATE || 2);
 const API_DURATION = __ENV.API_DURATION || '2m';
 
 export let options = {
@@ -14,8 +14,8 @@ export let options = {
             rate: API_RATE,
             timeUnit: '1s',
             duration: API_DURATION,
-            preAllocatedVUs: 50,
-            maxVUs: 100,            // Allow scaling if needed
+            preAllocatedVUs: 5,
+            maxVUs: 50,
         },
     },
 };

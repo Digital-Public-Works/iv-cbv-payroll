@@ -4,17 +4,18 @@ k6 scripts that load test VMI. Real runs target the **demo** environment (`https
 
 ## Test files
 
-- **`loadTestUserFlow.js`** - applicant page traffic: sync polling, employer search, payment details, summary, PDF download
+- **`loadTestUserFlow.js`** - applicant traffic in a realistic mix: sync polling, page views, front-end analytics events, signed Argyle webhooks, payment details, summary, PDF download
 - **`loadTestAPI.js`** - `POST /api/v1/invitations` at a constant rate, authenticated with an API token
-- **`loadTestAll.js`** - both of the above at the same time (the closest to production traffic)
-- **`common.js`** - shared settings: load profiles, thresholds, SLOs
+- **`loadTestAll.js`** - both of the above at the same time (the most realistic load)
+- **`common.js`** - shared settings: load profiles, scenario weights, thresholds, SLOs
 
 ### How user-flow sessions are created
 
-Each virtual user (VU) calls `POST /api/load_test/sessions`, which creates a CBV flow with Argyle payroll data already in place and returns a session cookie. The endpoint only exists outside production (`development`, `test`, and `*.divt.app`). The flows it creates:
+Each virtual user (VU) calls `POST /api/load_test/sessions`, which creates a CBV flow with Argyle payroll data already in place and returns a session cookie. The endpoint only works outside production (`development`, `test`, and `*.divt.app` hosts); elsewhere it returns 403. The flows it creates:
 
-- use Argyle account `019571bc-…` ("Bob" in the mock Argyle fixtures), so **the partner must use the `mock` Argyle environment** (see Preparation)
-- are tagged with `device_id = "load-test"`, so cleanup deletes only these flows and their analytics events are easy to filter out
+- use Argyle account `019571bc-…` ("Bob" in the mock Argyle fixtures), so **the partner must use the `mock` Argyle environment**
+- are tagged with `device_id = "load-test"`, so cleanup deletes only these flows, and analytics events from them are not recorded
+- get a unique `argyle_user_id` (`load-test-…`), returned in the response, so the webhook scenario can send Argyle webhooks for the flow
 
 ## Load profiles
 
@@ -24,20 +25,51 @@ User-flow load is set by `--env PROFILE=...`:
 |---|---|---|
 | `smoke` | 1 VU for 30s | Checking config before a real run (URL, cookie, Argyle mocking, API token) |
 | `baseline` (default) | ramp to 10 VUs, about 2 min | A quick check for regressions; matches historical runs |
-| `capacity` | steps at 12.5/25/50/75/100% of `MAX_VUS` (default 200), each a 1m ramp then a `STEP_HOLD` hold (default 4m), then a 2m ramp down; about 27 min | Finding where latency and errors start to degrade, and comparing fixed capacity with autoscaling |
+| `capacity` | steps at 12.5/25/50/75/100% of `MAX_VUS` (default 400, so 50/100/200/300/400 VUs), each a 1m ramp then a `STEP_HOLD` hold (default 4m), then a 2m ramp down; about 27 min | Finding where latency and errors start to degrade, and comparing fixed capacity with autoscaling |
 
-Mixed scenario weights, picked per iteration: 77% sync polling, 10% employer search, 5% payment details, 3% summary, 5% PDF. Each scenario waits between requests the way a real user would, so one VU makes roughly 0.3–0.5 requests per second on average. Run a single scenario with `--env SCENARIO=sync|employer_search|payment_details|summary|pdf`.
+Each iteration picks one scenario by the weights in `SCENARIO_WEIGHTS` (`common.js`) and makes one request, so the weights are the request mix (see [Traffic model](#traffic-model)):
 
-Other knobs (all optional):
+| Scenario | Share | Request |
+|---|---|---|
+| `sync` | 34% | `PATCH /cbv/synchronizations` (status polling) |
+| `employer_search` | 25% | `GET /cbv/employer_search`; also stands in for the other light page views (home, entry, add-job pages, etc.) |
+| `user_event` | 19% | `POST /api/events/user_action`, the front-end analytics call. Events from load-test traffic (k6 user agent or `load-test` device) are not sent to analytics, so this measures the request itself, not the analytics jobs a real event would enqueue |
+| `webhook` | 19% | Signed `POST /webhooks/argyle/events`. Each VU walks a fresh pending flow through a sync (`accounts.updated` ×2, `identities.added`, `paystubs.partially_synced`, `paystubs.fully_synced`, `users.fully_synced`); completing the sync builds the Argyle report from the mock fixtures, as in production |
+| `payment_details` / `summary` / `pdf` | 1% each | The heavy pages (`/cbv/payment_details`, `/cbv/summary`, `/cbv/submit.pdf`) |
+
+After each request a VU sleeps as a user (or Argyle) would, about 5.2s on average, so **one VU makes about 0.19–0.2 requests per second**. The webhook scenario also creates a new session every 6 webhooks; those requests are tagged `slo:setup`. Run a single scenario with `--env SCENARIO=<name>`.
+
+`URL` (the target, e.g. `http://localhost:3000`) is required for every script, and `API_KEY` (an API access token) for `loadTestAPI.js` and `loadTestAll.js`. Everything else is optional:
 
 | Env var | Default | Meaning |
 |---|---|---|
 | `CLIENT_AGENCY_ID` | `sandbox` | Partner the load-test flows belong to |
-| `MAX_VUS` / `STEP_HOLD` | `200` / `4m` | Size and hold time for the `capacity` profile |
-| `API_RATE` | `100` | Invitations per second (API and combined tests) |
+| `MAX_VUS` / `STEP_HOLD` | `400` / `4m` | Size and hold time for the `capacity` profile |
+| `API_RATE` | `2` | Invitations per second (API and combined tests). 2 is the planning target; use 5 as a stress test |
 | `API_DURATION` | `2m` | API-only test length (the combined test runs the API for the whole user-flow profile) |
 | `CUSTOM_ATTRIBUTES` | `{"case_number":"__UNIQUE__"}` | Invitation attributes, as JSON. Must satisfy the API user's partner's required invitation attributes. `"__UNIQUE__"` is replaced with a unique `LOAD_TEST_…` value |
 | `SLA_MS` / `PDF_SLA_MS` | `2000` / `10000` | Responses slower than this are counted in `failed_slo` |
+| `WEBHOOK_SECRET` | `mock` | Secret used to sign webhook payloads; `mock` matches the `mock` Argyle environment |
+
+## Traffic model
+
+The weights and targets are planning numbers for expected future volume, with headroom. They are set in `common.js` and the env-var defaults; update them there if the plan changes.
+
+- **What is modeled:** applicant requests, Argyle webhooks and invitation API calls, the traffic that grows with the number of invitations. Requests that never reach a controller (redirects for unknown subdomains, 404s, blocked hosts, static files) take a few milliseconds each, don't grow with invitations, and are not modeled.
+- **Mix:** sync polling dominates, followed by light page views, front-end analytics events and webhooks; the heavy pages (payment details, summary, PDF) are a small share. Each scenario's weight is in the table above.
+- **Planning peak:** **about 16–20 requests per second** of combined applicant, webhook and invitation traffic, with invitations at **about 2 per second** (hence `API_RATE=2`). The peak is a busy-minute figure, so it is already on the high side for sustained load.
+
+**Reading a capacity run:** at ~0.19 requests per second per VU, the steps are roughly:
+
+| Step | VUs | Requests/second | Relative to the planning peak |
+|---|---|---|---|
+| 1 | 50 | ~10 | below |
+| 2 | 100 | ~19 | about the planning peak |
+| 3 | 200 | ~38 | **2× margin: the go/no-go step** |
+| 4 | 300 | ~56 | 3× |
+| 5 | 400 | ~75 | 4× |
+
+Go/no-go: **at the step that delivers about 2× the planning peak (≈36–40 requests/second, normally step 3), p95 should stay under 500ms and errors under 1%.** Check the actual request rate per step in the dashboard (`http_reqs`) rather than relying on the VU count. If that step fails, check where the time went: a web-tier limit (ECS CPU high, database comfortable) means more web capacity (tasks, threads or autoscaling) is needed before volume reaches the planning peak.
 
 ## Thresholds and metrics
 
@@ -51,58 +83,6 @@ Every request is tagged `slo:standard`, `slo:pdf` or `slo:setup` (session creati
 
 A failed threshold makes k6 exit non-zero but does not stop the run. For capacity runs this is expected; the useful output is where things degraded, not pass/fail.
 
-## Running a load test against demo
-
-### Preparation
-
-1. **Deploy this branch's app code to demo.** The k6 scripts depend on the session endpoint marking flows `device_id = "load-test"` and completing the applicant-information step; without it, the summary page just returns a redirect.
-2. **Argyle must be mocked** for the partner under test. On demo, open a Rails console (ECS exec) and check `ClientAgencyConfig.instance["sandbox"].argyle_environment`. It must be `"mock"`. With `"sandbox"`, payment details, summary and PDF call the real Argyle sandbox, which doesn't know the test account. Those requests fail, and the results would measure Argyle rather than VMI.
-3. **API test user:** use a dedicated user that exists only for load testing. Its invitations are what `cleanup_invitations` deletes. Its partner must allow invitations, and `CUSTOM_ATTRIBUTES` must include that partner's required invitation attributes. Create a token in the demo console: `User.find_by(email: "...").api_access_tokens.create!.access_token`.
-4. **Queues:** decide whether the Shoryuken workers run. Leave them running to include background work (Mixpanel events, etc.) in the measurement; stop the worker service to measure the web tier alone. Either way, **do the same in every run you plan to compare.**
-5. **Write down the environment state** before each run: ECS web and worker task counts, task CPU/memory, `RAILS_MAX_THREADS` (Puma runs one process with 5 threads by default), Aurora min/max ACUs, and the deployed git SHA. Aurora Serverless scales itself, so record ACUs during the run as well.
-6. Run k6 from the loadtester EC2 instance, not a laptop. Check that the instance still exists; it isn't defined in Terraform.
-
-### Comparing fixed capacity with autoscaling
-
-Run **the same command** in both configurations and compare the outputs:
-
-1. **Without autoscaling:** demo at a fixed task count (currently 1 web task).
-2. **With autoscaling:** after the autoscaling Terraform is applied to demo, starting from the same minimum task count.
-
-Start with `smoke` to confirm everything works, then run `capacity`:
-
-```bash
-k6 run --env URL=https://demo.divt.app --env PROFILE=smoke loadTestUserFlow.js
-```
-
-```bash
-K6_WEB_DASHBOARD=true K6_WEB_DASHBOARD_EXPORT=results/userflow-fixed-1task.html k6 run --env URL=https://demo.divt.app --env PROFILE=capacity --tag testid=userflow-fixed-1task --summary-export=results/userflow-fixed-1task.json loadTestUserFlow.js
-```
-
-To include API load, use `loadTestAll.js` with `--env API_KEY=...` (and `--env API_RATE=...`). Note that 100 invitations per second is much more load than the user flows produce, so on its own it can dominate the result.
-
-What to compare between runs:
-
-- p95/p99 latency and error rate **at each VU step**, shown in the web dashboard's time series
-- the step at which latency or errors break down with fixed capacity, compared with the same step under autoscaling
-- (autoscaling) when tasks were added relative to when load rose, and how far latency spiked before the new tasks were in service (ECS console and CloudWatch)
-- ECS CPU/memory, Aurora ACUs/CPU/connections, and ALB target response time and 5xx counts (CloudWatch) over the same window
-
-### Cleanup
-
-Run these from a Rails console or shell on demo after each run:
-
-```bash
-bin/rails 'load_test:cleanup_sessions[true]'
-```
-
-```bash
-bin/rails 'load_test:cleanup_invitations[loadtest-user@example.com,2026-11-12 09:00,true]'
-```
-
-- `cleanup_sessions` deletes every flow tagged `device_id = "load-test"`, with its payroll accounts (including discarded ones), webhook events and applicant. Leave off `[true]` to be asked for confirmation first.
-- `cleanup_invitations` deletes the given user's invitations created at or after that time, along with their applicants. Invitations that have been opened are kept.
-
 ## Developing locally
 
 Local runs are for working on the scripts, not for measuring anything. Install k6 (`brew install k6`, or see https://grafana.com/docs/k6/latest/set-up/install-k6/), start the app (`bin/rails server`), then:
@@ -113,11 +93,17 @@ k6 run --env URL=http://localhost:3000 --env PROFILE=smoke --env SCENARIO=sync l
 
 `k6 inspect --env URL=http://localhost:3000 loadTestUserFlow.js` loads a script and prints its resolved options without sending any traffic, which is a quick way to check edits.
 
-Payment details, summary and PDF need your local `sandbox` partner set to the `mock` Argyle environment (see Preparation step 2).
+Payment details, summary, PDF and webhooks need your local `sandbox` partner set to the `mock` Argyle environment (with `sandbox`, they call the real Argyle sandbox, which doesn't know the test account, and webhooks signed with the `mock` secret are rejected with 401). From `app/`:
+
+```bash
+bin/rails runner 'PartnerConfig.find_by!(partner_id: "sandbox").update_column(:argyle_environment, "mock")'
+```
+
+(`update_column` because the partner-config importer only accepts `sandbox` and `production`.) Smoke each scenario on its own (`--env SCENARIO=webhook`, `user_event`, …) so a failure points at one endpoint, and clean up afterwards with `bin/rails 'load_test:cleanup_sessions[true]'`. Latency thresholds failing locally is normal: development mode is much slower than production.
 
 ### Grafana (optional)
 
-`docker-compose up` starts InfluxDB and Grafana (http://localhost:3001, admin/admin). Add an InfluxDB data source (`http://influxdb:8086`, database `k6`), import dashboard [13719](https://grafana.com/grafana/dashboards/13719-k6-load-testing-results-by-groups/), and run k6 with `K6_OUT=influxdb`. The built-in `K6_WEB_DASHBOARD` shown above is usually enough.
+`docker-compose up` starts InfluxDB and Grafana (http://localhost:3001, admin/admin). Add an InfluxDB data source (`http://influxdb:8086`, database `k6`), import dashboard [13719](https://grafana.com/grafana/dashboards/13719-k6-load-testing-results-by-groups/), and run k6 with `K6_OUT=influxdb`. The built-in web dashboard (`K6_WEB_DASHBOARD=true`, optionally with `K6_WEB_DASHBOARD_EXPORT=results/<name>.html`) is usually enough.
 
 ## Loadtester EC2 setup
 

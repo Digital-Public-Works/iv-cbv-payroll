@@ -39,6 +39,7 @@ class Api::LoadTestSessionsController < ApplicationController
       cbv_flow_id: cbv_flow.id,
       account_id: account_ids.first,
       account_ids: account_ids,
+      argyle_user_id: cbv_flow.argyle_user_id,
       fixture_user: params[:fixture_user],
       client_agency_id: client_agency_id,
       scenario: scenario,
@@ -74,6 +75,12 @@ class Api::LoadTestSessionsController < ApplicationController
     "019571bc-2f60-3955-d972-dbadfe0913a8"
   end
 
+  # Webhooks find their flow by argyle_user_id, so each flow gets a unique one.
+  # The k6 webhook scenario sends signed Argyle webhooks for it.
+  def load_test_argyle_user_id
+    "load-test-#{SecureRandom.uuid}"
+  end
+
   def ensure_non_production_environment
     unless is_not_production?
       render json: { error: "This endpoint is only available in non-production environments" }, status: :forbidden
@@ -89,7 +96,8 @@ class Api::LoadTestSessionsController < ApplicationController
       # A synced flow has passed the applicant-information step; without this
       # the summary page redirects to /cbv/applicant_information.
       applicant_information_completed_at: Time.current,
-      device_id: LOAD_TEST_DEVICE_ID
+      device_id: LOAD_TEST_DEVICE_ID,
+      argyle_user_id: load_test_argyle_user_id
     )
 
     account_ids = argyle_account_ids
@@ -128,7 +136,8 @@ class Api::LoadTestSessionsController < ApplicationController
       client_agency_id: client_agency_id,
       cbv_applicant: cbv_applicant,
       consented_to_authorized_use_at: Time.current,
-      device_id: LOAD_TEST_DEVICE_ID
+      device_id: LOAD_TEST_DEVICE_ID,
+      argyle_user_id: load_test_argyle_user_id
     )
 
     # Create pending payroll account
@@ -155,7 +164,8 @@ class Api::LoadTestSessionsController < ApplicationController
       client_agency_id: client_agency_id,
       cbv_applicant: cbv_applicant,
       consented_to_authorized_use_at: Time.current,
-      device_id: LOAD_TEST_DEVICE_ID
+      device_id: LOAD_TEST_DEVICE_ID,
+      argyle_user_id: load_test_argyle_user_id
     )
 
     # Create failed payroll account

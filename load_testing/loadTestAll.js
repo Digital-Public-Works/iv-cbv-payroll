@@ -2,9 +2,6 @@ import runUserFlow from './loadTestUserFlow.js';
 import runAPITest, { API_RATE } from './loadTestAPI.js';
 import { commonOptions, userFlowStages, userFlowDuration } from './common.js';
 
-// Runs user flows and API invitation creation at the same time. Only this
-// file's `options` apply; the imported scripts' options are ignored.
-// The API scenario runs at a constant rate for the whole user-flow profile.
 export let options = {
     ...commonOptions,
     scenarios: {
@@ -18,10 +15,10 @@ export let options = {
         // API tests - token-based bulk creation
         api_invitations: {
             executor: 'constant-arrival-rate',
-            rate: API_RATE,         // invitations per second (API_RATE env, default 100)
+            rate: API_RATE,         // invitations per second (API_RATE env, default 2)
             timeUnit: '1s',
             duration: userFlowDuration(),
-            preAllocatedVUs: 10,
+            preAllocatedVUs: 5,
             maxVUs: 50,
             exec: 'apiInvitations',
         },

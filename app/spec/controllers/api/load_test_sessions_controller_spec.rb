@@ -211,6 +211,17 @@ RSpec.describe Api::LoadTestSessionsController, type: :controller do
           expect(json_response["success"]).to be(true)
           expect(json_response["scenario"]).to eq("pending")
         end
+
+        it "gives each flow a unique argyle_user_id and returns it, so webhooks can find the flow" do
+          post :create, params: params
+          first_id = JSON.parse(response.body)["argyle_user_id"]
+          post :create, params: params
+          second_id = JSON.parse(response.body)["argyle_user_id"]
+
+          expect(first_id).to start_with("load-test-")
+          expect(second_id).not_to eq(first_id)
+          expect(CbvFlow.find_by(argyle_user_id: second_id)).to eq(CbvFlow.last)
+        end
       end
 
       context "failed scenario" do

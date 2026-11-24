@@ -13,12 +13,38 @@ export const SLA_IN_MILLISECONDS = Number(__ENV.SLA_MS || 2000);
 export const PDF_SLA_IN_MILLISECONDS = Number(__ENV.PDF_SLA_MS || 10000);
 export const SLO = { standard: 'standard', pdf: 'pdf', setup: 'setup' };
 
-// Simulated user delay constants (in seconds)
-export const SIMULATE_DELAY_EMPLOYER_SEARCH_S = 20;
+// Pause after each request (seconds). Only the per-VU request rate depends on
+// these; the request mix is set by SCENARIO_WEIGHTS. With the weights below a
+// VU averages ~5.2s of sleep per request, so ~0.19 requests/second.
+export const SIMULATE_DELAY_EMPLOYER_SEARCH_S = 10; // also stands in for other page views
 export const SIMULATE_DELAY_SYNC_POLLING_S = 2;
 export const SIMULATE_DELAY_PAYMENT_DETAILS_S = 20;
 export const SIMULATE_DELAY_SUMMARY_S = 3;
 export const SIMULATE_DELAY_PDF_DOWNLOAD_S = 30;
+export const SIMULATE_DELAY_USER_EVENT_S = 5;
+export const SIMULATE_DELAY_WEBHOOK_S = 3;
+
+// Share of requests per scenario in the mixed run, in percent. Each iteration
+// makes exactly one request, so these are request shares (see README
+// "Traffic model"):
+//   sync            - PATCH /cbv/synchronizations (status polling)
+//   employer_search - employer search page; also stands in for the other
+//                     light page views (home, entry, add-job pages, etc.)
+//   user_event      - POST /api/events/user_action (front-end analytics)
+//   webhook         - signed Argyle webhooks, a full sync sequence per flow
+//   payment_details, summary, pdf - the heavy pages
+export const SCENARIO_WEIGHTS = {
+    sync: 34,
+    employer_search: 25,
+    user_event: 19,
+    webhook: 19,
+    payment_details: 1,
+    summary: 1,
+    pdf: 1,
+};
+
+// Signs webhook payloads. Partners on the `mock` Argyle environment use "mock".
+export const WEBHOOK_SECRET = __ENV.WEBHOOK_SECRET || 'mock';
 
 // Shared metrics
 export const failedSloCounter = new Counter("failed_slo");
@@ -36,7 +62,7 @@ if(URL === undefined) {
 //              autoscaling to react, so the same profile can be run with and
 //              without autoscaling and compared directly.
 export const PROFILE = __ENV.PROFILE || 'baseline';
-const MAX_VUS = Number(__ENV.MAX_VUS || 200);
+const MAX_VUS = Number(__ENV.MAX_VUS || 400);
 const STEP_HOLD = __ENV.STEP_HOLD || '4m';
 
 const PROFILES = {
