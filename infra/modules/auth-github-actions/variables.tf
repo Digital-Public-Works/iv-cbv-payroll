@@ -36,11 +36,13 @@ variable "project_tag" {
 
 variable "infra_service_actions" {
   type        = list(string)
-  description = "Coarse per-service allow actions for the infra-services policy. RDS is intentionally read-only."
+  description = "Coarse per-service allow actions for the infra-services policy. RDS and CloudFront are intentionally read-only."
   default = [
     "acm:*",
     "apigateway:*",
     "backup:*",
+    "cloudfront:Get*",
+    "cloudfront:List*",
     "cloudwatch:*",
     "dynamodb:*",
     "ec2:*",
