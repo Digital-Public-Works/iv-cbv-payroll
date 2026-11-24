@@ -50,8 +50,8 @@ instead of applying elsewhere.
 4. Verify the setup:
    - An ordinary admin cannot change the bucket's versioning or lock settings.
    - The break-glass role can.
-   - The next Brakeman run on `main` publishes a report. After it does, remove the two
-     `continue-on-error` lines in `.github/workflows/brakeman-analysis.yml`.
+   - The next Brakeman run on `main` publishes a report. The publishing steps in
+     `.github/workflows/brakeman-analysis.yml` fail the run if the upload fails.
 
 Later changes to `infra/log-archive` use `make infra-update-log-archive-account`.
 
