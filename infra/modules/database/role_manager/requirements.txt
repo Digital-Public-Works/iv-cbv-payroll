@@ -4,7 +4,7 @@
 # therefore Dependabot security alerts, can see what the Lambda actually ships.
 
 pg8000==1.31.5
-scramp==1.4.6
+scramp==1.4.18
 asn1crypto==1.5.1
 python-dateutil==2.9.0.post0
 six==1.17.0
