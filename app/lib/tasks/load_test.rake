@@ -1,49 +1,90 @@
 namespace :load_test do
-  # Clean up incomplete test sessions for load testing
+  confirm = lambda do |auto_confirm, prompt|
+    next true if auto_confirm == "true"
+
+    print "#{prompt} (y/n): "
+    STDIN.gets.to_s.chomp.downcase == "y"
+  end
+
+  # Applicants from the given ids that no flow or invitation references anymore.
+  orphaned_applicants = lambda do |applicant_ids|
+    CbvApplicant
+      .where(id: applicant_ids)
+      .where.not(id: CbvFlow.where.not(cbv_applicant_id: nil).select(:cbv_applicant_id))
+      .where.not(id: CbvFlowInvitation.where.not(cbv_applicant_id: nil).select(:cbv_applicant_id))
+  end
+
+  # Delete the CBV flows created by POST /api/load_test/sessions.
+  #
+  # Only flows tagged with Api::LoadTestSessionsController::LOAD_TEST_DEVICE_ID
+  # are touched, so real demo data in the same partner is left alone.
   #
   # Usage:
-  #   # Interactive mode (prompts for confirmation):
-  #   bin/rails load_test:cleanup_cookies[sandbox]
-  #
-  #   # Auto-confirm mode (no prompt):
-  #   bin/rails load_test:cleanup_cookies[sandbox,true]
-  #
-  # Arguments:
-  #   client_agency_id - The client agency to clean up (default: "sandbox")
-  #   auto_confirm     - Skip confirmation prompt if "true" (default: false)
-  desc "Clean up test sessions created by seed_sessions"
-  task :cleanup_cookies, [ :client_agency_id, :auto_confirm ] => :environment do |t, args|
-    client_agency_id = args[:client_agency_id] || "sandbox"
-    auto_confirm = args[:auto_confirm] == "true"
+  #   bin/rails load_test:cleanup_sessions          # prompts before deleting
+  #   bin/rails load_test:cleanup_sessions[true]    # no prompt
+  desc "Delete CBV flows created by the load-test session endpoint"
+  task :cleanup_sessions, [ :auto_confirm ] => :environment do |_t, args|
+    flows = CbvFlow.where(device_id: Api::LoadTestSessionsController::LOAD_TEST_DEVICE_ID)
+    count = flows.count
+    puts "Found #{count} load-test flows"
+    next if count.zero?
+    next puts("Cancelled") unless confirm.call(args[:auto_confirm], "Delete these flows?")
 
-    # Find flows without confirmation codes (incomplete) from the test agency
-    test_flows = CbvFlow.incomplete.where(client_agency_id: client_agency_id)
+    flows.in_batches(of: 500) do |batch|
+      ActiveRecord::Base.transaction do
+        flow_ids = batch.pluck(:id)
+        applicant_ids = batch.where.not(cbv_applicant_id: nil).pluck(:cbv_applicant_id)
+        # with_discarded: soft-deleted accounts still reference the flow.
+        accounts = PayrollAccount.with_discarded.where(cbv_flow_id: flow_ids)
+        account_ids = accounts.pluck(:id)
 
-    puts "Found #{test_flows.count} incomplete test sessions for #{client_agency_id}"
-
-    if auto_confirm
-      response = "y"
-      puts "Auto-confirming deletion..."
-    else
-      print "Delete these sessions? (y/n): "
-      response = STDIN.gets.chomp.downcase
-    end
-
-    if response == "y"
-      count = test_flows.count
-
-      # Delete in proper order to avoid foreign key constraint violations
-      test_flows.each do |flow|
-        flow.payroll_accounts.each do |account|
-          # Use destroy_all to properly delete webhook events
-          account.webhook_events.destroy_all
-        end
-        flow.destroy
+        WebhookEvent.where(payroll_account_id: account_ids).delete_all
+        accounts.delete_all
+        CbvFlowTransmission.where(cbv_flow_id: flow_ids).delete_all
+        CbvFlow.where(id: flow_ids).delete_all
+        # Each load-test flow gets its own applicant; delete it once orphaned.
+        orphaned_applicants.call(applicant_ids).delete_all
       end
-
-      puts "✓ Deleted #{count} test sessions"
-    else
-      puts "Cancelled"
     end
+
+    puts "✓ Deleted #{count} load-test flows"
+  end
+
+  # Delete invitations created by loadTestAPI.js (POST /api/v1/invitations).
+  #
+  # The API test authenticates as one user, so cleanup is scoped to that user's
+  # invitations created at or after `since`. Use a dedicated load-test API user
+  # so this cannot match real invitations. Invitations that have been opened
+  # (have a CBV flow) are skipped.
+  #
+  # Usage:
+  #   bin/rails 'load_test:cleanup_invitations[loadtest@example.com,2026-11-12 09:00]'
+  #   bin/rails 'load_test:cleanup_invitations[loadtest@example.com,2026-11-12 09:00,true]'
+  desc "Delete invitations created by the load-test API user since a given time"
+  task :cleanup_invitations, [ :user_email, :since, :auto_confirm ] => :environment do |_t, args|
+    abort "user_email and since are required" if args[:user_email].blank? || args[:since].blank?
+
+    user = User.find_by(email: args[:user_email])
+    abort "No user with email #{args[:user_email]}" unless user
+    since = Time.zone.parse(args[:since]) or abort("Could not parse since: #{args[:since]}")
+
+    invitations = CbvFlowInvitation
+      .where(user_id: user.id)
+      .where(created_at: since..)
+      .where.not(id: CbvFlow.where.not(cbv_flow_invitation_id: nil).select(:cbv_flow_invitation_id))
+    count = invitations.count
+    puts "Found #{count} invitations from #{user.email} (#{user.client_agency_id}) since #{since}"
+    next if count.zero?
+    next puts("Cancelled") unless confirm.call(args[:auto_confirm], "Delete these invitations?")
+
+    invitations.in_batches(of: 1000) do |batch|
+      ActiveRecord::Base.transaction do
+        applicant_ids = batch.where.not(cbv_applicant_id: nil).pluck(:cbv_applicant_id)
+        batch.delete_all
+        orphaned_applicants.call(applicant_ids).delete_all
+      end
+    end
+
+    puts "✓ Deleted #{count} invitations"
   end
 end
