@@ -186,14 +186,14 @@ function testPaymentDetails(session) {
     group("Payment details (DB + aggregation)", () => {
         const response = http.get(
             `${URL}/cbv/payment_details?user%5Baccount_id%5D=${accountId}`,
-            { headers, tags: { slo: SLO.standard, name: 'payment_details' } }
+            { headers, tags: { slo: SLO.argyle, name: 'payment_details' } }
         );
 
         check(response, {
             'payment details loaded': (r) => r.status === 200,
         });
 
-        checkSlo(response);
+        checkSlo(response, SLO.argyle);
     });
 
     // Time reviewing payment details
@@ -206,14 +206,14 @@ function testSummary(session) {
     group("Summary page (aggregation)", () => {
         const response = http.get(
             `${URL}/cbv/summary`,
-            { headers, tags: { slo: SLO.standard, name: 'summary' } }
+            { headers, tags: { slo: SLO.argyle, name: 'summary' } }
         );
 
         check(response, {
             'summary loaded': (r) => r.status === 200,
         });
 
-        checkSlo(response);
+        checkSlo(response, SLO.argyle);
     });
 
     // Time reviewing summary
@@ -253,14 +253,14 @@ function testEmployerSearch(session) {
     group("Employer search page", () => {
         const response = http.get(
             `${URL}/cbv/employer_search`,
-            { headers, tags: { slo: SLO.standard, name: 'employer_search' } }
+            { headers, tags: { slo: SLO.argyle, name: 'employer_search' } }
         );
 
         check(response, {
             'employer search loaded': (r) => r.status === 200,
         });
 
-        checkSlo(response);
+        checkSlo(response, SLO.argyle);
     });
 
     // Time searching for employer
@@ -299,6 +299,8 @@ function testUserEvent(session) {
     sleep(SIMULATE_DELAY_USER_EVENT_S);
 }
 
+const PAYSTUBS_SYNC_EVENTS = ['paystubs.partially_synced', 'paystubs.fully_synced'];
+
 const WEBHOOK_SEQUENCE = [
     (user, account) => ({ event: 'accounts.updated', data: { user, account, resource: { connection: { status: 'connected' } } } }),
     (user, account) => ({ event: 'accounts.updated', data: { user, account, resource: { connection: { status: 'connected' } } } }),
@@ -321,6 +323,7 @@ function testWebhook() {
 
     const payload = WEBHOOK_SEQUENCE[webhookFlow.step](webhookFlow.argyleUserId, webhookFlow.accountId);
     webhookFlow.step += 1;
+    const slo = PAYSTUBS_SYNC_EVENTS.includes(payload.event) ? SLO.argyle : SLO.standard;
 
     group("Argyle webhook", () => {
         const body = JSON.stringify(payload);
@@ -329,14 +332,14 @@ function testWebhook() {
                 'Content-Type': 'application/json',
                 'X-Argyle-Signature': crypto.hmac('sha512', WEBHOOK_SECRET, body, 'hex'),
             },
-            tags: { slo: SLO.standard, name: 'argyle_webhook', event: payload.event },
+            tags: { slo, name: 'argyle_webhook', event: payload.event },
         });
 
         check(response, {
             'webhook processed': (r) => r.status === 200 && r.body.includes('"status":"ok"'),
         });
 
-        checkSlo(response);
+        checkSlo(response, slo);
     });
 
     sleep(SIMULATE_DELAY_WEBHOOK_S);
