@@ -37,6 +37,11 @@ module "dev_config" {
   # Defaults to `false`. Uncomment the next line to enable.
   enable_command_execution = true
 
+  # mock argyle latency for load testing
+  service_override_extra_environment_variables = {
+    MOCK_ARGYLE_LATENCY_SCALE = "1.3"
+  }
+
   # NewRelic configuration for metrics
   newrelic_account_id = "4619676"
 
