@@ -19,9 +19,15 @@ Rails.application.config.after_initialize do
       end
 
       if Rails.application.config.supported_providers.include?(:argyle)
-        # Argyle webhooks setup
-        argyle_webhooks = ArgyleWebhooksManager.new(logger: ActiveSupport::Logger.new(STDOUT))
-        argyle_webhooks.create_subscriptions_if_necessary(tunnel_url, subscription_name)
+        partner_ids = PartnerConfig.order(:id).select { |c| (c.argyle_environment.presence || "sandbox") == "sandbox" }.map(&:partner_id)
+        agency_id = partner_ids.include?("sandbox") ? "sandbox" : partner_ids.first
+
+        if agency_id
+          argyle_webhooks = ArgyleWebhooksManager.new(agency_id: agency_id, logger: ActiveSupport::Logger.new(STDOUT))
+          argyle_webhooks.create_subscriptions_if_necessary(tunnel_url, subscription_name)
+        else
+          Rails.logger.warn "No partner uses the Argyle sandbox environment; skipping Argyle webhook registration"
+        end
       end
     rescue => ex
       Rails.application.config.webhooks_initialization_error = ex.message
