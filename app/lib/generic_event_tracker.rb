@@ -1,7 +1,12 @@
 # The purpose of this class is to allow us to file events with multiple event providers at once
 # If we no longer need to do this, it may be that this class has outlived its usefulness!
 class GenericEventTracker
+  # k6's default User-Agent, e.g. "Grafana k6/1.4.0 (https://k6.io/)" (older versions: "k6/0.x").
+  K6_USER_AGENT = %r{\A(Grafana )?k6/}
+
   def track(event_type, request, attributes = {})
+    return if load_test_traffic?(request, attributes) || bot_request?(request)
+
     merged_attributes = attributes.with_defaults(prep_request_attributes(request))
     if request.present?
       request_data = { headers: { "User-Agent": request.headers["User-Agent"] }, remote_ip: request.remote_ip }
@@ -15,6 +20,22 @@ class GenericEventTracker
   end
 
   private
+
+  # don't log load test traffic
+  def load_test_traffic?(request, attributes)
+    return true if request.present? && K6_USER_AGENT.match?(request.headers["User-Agent"].to_s)
+
+    device_id = attributes[:device_id] || attributes["device_id"]
+    device_id.present? && device_id == Api::LoadTestSessionsController::LOAD_TEST_DEVICE_ID
+  end
+
+  # don't log bot requests
+  def bot_request?(request)
+    return false if request.blank?
+
+    user_agent = request.headers["User-Agent"]
+    user_agent.present? && DeviceDetector.new(user_agent).bot?
+  end
 
   def prep_request_attributes(request)
     defaults = { time: Time.now.to_i }

@@ -1,239 +1,119 @@
 # Load Testing
 
-## Overview
+k6 scripts that load test VMI. Real runs target the **demo** environment (`https://demo.divt.app`) from the loadtester EC2 instance; local runs are only for developing the scripts.
 
-### Test Files
+## Test files
 
-- **`loadTestUserFlow.js`** - Session-based user flow tests (sync polling, payment details, summary, PDF, employer search)
-- **`loadTestAPI.js`** - API key authenticated bulk invitation creation tests
-- **`loadTestAll.js`** - Orchestrator running both test suites in parallel
-- **`common.js`** - Shared utilities (constants, metrics, helper functions)
+- **`loadTestUserFlow.js`** - applicant traffic in a realistic mix: sync polling, page views, front-end analytics events, signed Argyle webhooks, payment details, summary, PDF download
+- **`loadTestAPI.js`** - `POST /api/v1/invitations` at a constant rate, authenticated with an API token
+- **`loadTestAll.js`** - both of the above at the same time (the most realistic load)
+- **`common.js`** - shared settings: load profiles, scenario weights, thresholds, SLOs
 
-### Architecture
+### How user-flow sessions are created
 
-Each test file can run independently or be orchestrated together via `loadTestAll.js`. Sessions are automatically managed and reused within VUs for realistic user behavior.
+Each virtual user (VU) calls `POST /api/load_test/sessions`, which creates a CBV flow with Argyle payroll data already in place and returns a session cookie. The endpoint only works outside production (`development`, `test`, and `*.divt.app` hosts); elsewhere it returns 403. The flows it creates:
 
-## Running a Load Test
+- use Argyle account `019571bc-…` ("Bob" in the mock Argyle fixtures), so **the partner must use the `mock` Argyle environment**
+- are tagged with `device_id = "load-test"`, so cleanup deletes only these flows, and analytics events from them are not recorded
+- get a unique `argyle_user_id` (`load-test-…`), returned in the response, so the webhook scenario can send Argyle webhooks for the flow
 
-Load tests must be performed from our loadtesting EC2 instance in order for accurate readings to be useful.
+## Load profiles
 
-Follow these steps to perform a load test:
+User-flow load is set by `--env PROFILE=...`:
 
-### Preparation
-1. Ensure you're running k6 within EC2
-2. Ensure you've pre-scaled up the ECS service and database cluster to expected load levels. Standard levels are:
-    * ECS service (app-dev) = 5-10 containers (tasks)
-    * DB cluster (app-dev) = 5-10 ACUs
-3. Pause the "default" queue so we don't track a ton of useless Mixpanel events during the test.
-    * In the AWS Console, find the demo SQS queue and either purge it or temporarily stop the Shoryuken worker ECS service.
+| Profile | Shape | Use it for |
+|---|---|---|
+| `smoke` | 1 VU for 30s | Checking config before a real run (URL, cookie, Argyle mocking, API token) |
+| `baseline` (default) | ramp to 10 VUs, about 2 min | A quick check for regressions; matches historical runs |
+| `capacity` | steps at 12.5/25/50/75/100% of `MAX_VUS` (default 400, so 50/100/200/300/400 VUs), each a 1m ramp then a `STEP_HOLD` hold (default 4m), then a 2m ramp down; about 27 min | Finding where latency and errors start to degrade, and comparing fixed capacity with autoscaling |
 
-### Running the tests
+Each iteration picks one scenario by the weights in `SCENARIO_WEIGHTS` (`common.js`) and makes one request, so the weights are the request mix (see [Traffic model](#traffic-model)):
 
-#### Option 1: User Flow Tests (`loadTestUserFlow.js`)
+| Scenario | Share | Request |
+|---|---|---|
+| `sync` | 34% | `PATCH /cbv/synchronizations` (status polling) |
+| `employer_search` | 25% | `GET /cbv/employer_search`; also stands in for the other light page views (home, entry, add-job pages, etc.) |
+| `user_event` | 19% | `POST /api/events/user_action`, the front-end analytics call. Events from load-test traffic (k6 user agent or `load-test` device) are not sent to analytics, so this measures the request itself, not the analytics jobs a real event would enqueue |
+| `webhook` | 19% | Signed `POST /webhooks/argyle/events`. Each VU walks a fresh pending flow through a sync (`accounts.updated` ×2, `identities.added`, `paystubs.partially_synced`, `paystubs.fully_synced`, `users.fully_synced`); completing the sync builds the Argyle report from the mock fixtures, as in production |
+| `payment_details` / `summary` / `pdf` | 1% each | The heavy pages (`/cbv/payment_details`, `/cbv/summary`, `/cbv/submit.pdf`) |
 
-Tests session-based user flows through the CBV application.
+After each request a VU sleeps as a user (or Argyle) would, about 5.2s on average, so **one VU makes about 0.19–0.2 requests per second**. The webhook scenario also creates a new session every 6 webhooks; those requests are tagged `slo:setup`. Run a single scenario with `--env SCENARIO=<name>`.
 
-**Load pattern:**
-- 10 concurrent VUs (virtual users)
-- Ramp up: 60s, sustain: 30s, ramp down: 30s
-- Mixed scenario distribution: 50% sync polling, 20% employer search, 15% payment details, 10% summary, 5% PDF
+`URL` (the target, e.g. `http://localhost:3000`) is required for every script, and `API_KEY` (an API access token) for `loadTestAPI.js` and `loadTestAll.js`. Everything else is optional:
 
-**Session generation:** Uses dynamic session generation via dev-only API endpoint (`/api/load_test/sessions`)
+| Env var | Default | Meaning |
+|---|---|---|
+| `CLIENT_AGENCY_ID` | `sandbox` | Partner the load-test flows belong to |
+| `MAX_VUS` / `STEP_HOLD` | `400` / `4m` | Size and hold time for the `capacity` profile |
+| `API_RATE` | `2` | Invitations per second (API and combined tests). 2 is the planning target; use 5 as a stress test |
+| `API_DURATION` | `2m` | API-only test length (the combined test runs the API for the whole user-flow profile) |
+| `CUSTOM_ATTRIBUTES` | `{"case_number":"__UNIQUE__"}` | Invitation attributes, as JSON. Must satisfy the API user's partner's required invitation attributes. `"__UNIQUE__"` is replaced with a unique `LOAD_TEST_…` value |
+| `SLA_MS` / `PDF_SLA_MS` | `2000` / `10000` | Responses slower than this are counted in `failed_slo` |
+| `WEBHOOK_SECRET` | `mock` | Secret used to sign webhook payloads; `mock` matches the `mock` Argyle environment |
+
+**Argyle response time (server setting).**
+Set mock argyle latency to replicate the observice latency on argyle calls from prod for more accurate load testing.
+
+## Traffic model
+
+The weights and targets are planning numbers for expected future volume, with headroom. They are set in `common.js` and the env-var defaults; update them there if the plan changes.
+
+- **What is modeled:** applicant requests, Argyle webhooks and invitation API calls, the traffic that grows with the number of invitations. Requests that never reach a controller (redirects for unknown subdomains, 404s, blocked hosts, static files) take a few milliseconds each, don't grow with invitations, and are not modeled.
+- **Mix:** sync polling dominates, followed by light page views, front-end analytics events and webhooks; the heavy pages (payment details, summary, PDF) are a small share. Each scenario's weight is in the table above.
+- **Planning peak:** **about 16–20 requests per second** of combined applicant, webhook and invitation traffic, with invitations at **about 2 per second** (hence `API_RATE=2`). The peak is a busy-minute figure, so it is already on the high side for sustained load.
+
+**Reading a capacity run:** at ~0.19 requests per second per VU, the steps are roughly:
+
+| Step | VUs | Requests/second | Relative to the planning peak |
+|---|---|---|---|
+| 1 | 50 | ~10 | below |
+| 2 | 100 | ~19 | about the planning peak |
+| 3 | 200 | ~38 | **2× margin: the go/no-go step** |
+| 4 | 300 | ~56 | 3× |
+| 5 | 400 | ~75 | 4× |
+
+Go/no-go: **at the step that delivers about 2× the planning peak (≈36–40 requests/second, normally step 3), p95 should stay under 500ms and errors under 1%.** Check the actual request rate per step in the dashboard (`http_reqs`) rather than relying on the VU count. If that step fails, check where the time went: a web-tier limit (ECS CPU high, database comfortable) means more web capacity (tasks, threads or autoscaling) is needed before volume reaches the planning peak.
+
+## Thresholds and metrics
+
+Every request is tagged `slo:standard`, `slo:pdf` or `slo:setup` (session creation, which is excluded from SLOs), plus a `name` tag per endpoint.
+
+- `http_req_duration{slo:standard}`: p95 < 500ms, p99 < 1000ms
+- `http_req_duration{slo:pdf}`: p95 < `PDF_SLA_MS`
+- `http_req_failed{slo:...}`: < 1%
+- `checks`: > 99% for the run to pass. The run **aborts** only if checks fall below 50% (after 30s), which means misconfiguration (bad URL or cookie, endpoint disabled) rather than overload, so a capacity run always finishes.
+- `failed_slo`: count of responses slower than the SLA
+
+A failed threshold makes k6 exit non-zero but does not stop the run. For capacity runs this is expected; the useful output is where things degraded, not pass/fail.
+
+## Developing locally
+
+Local runs are for working on the scripts, not for measuring anything. Install k6 (`brew install k6`, or see https://grafana.com/docs/k6/latest/set-up/install-k6/), start the app (`bin/rails server`), then:
 
 ```bash
-# Run user flow tests with default mixed scenarios
-k6 run loadTestUserFlow.js \
-  --env URL=https://demo.divt.app \
-  --env CLIENT_AGENCY_ID=sandbox
-
-# Run specific scenario only
-k6 run loadTestUserFlow.js \
-  --env URL=https://demo.divt.app \
-  --env CLIENT_AGENCY_ID=sandbox \
-  --env SCENARIO=sync
+k6 run --env URL=http://localhost:3000 --env PROFILE=smoke --env SCENARIO=sync loadTestUserFlow.js
 ```
 
-**Available scenarios:**
-- `mixed` (default) - Weighted distribution across all scenarios
-- `sync` - Database-intensive synchronization polling (tests pending data)
-- `payment_details` - Per-account queries and aggregation
-- `summary` - Full summary with all accounts
-- `pdf` - CPU-intensive PDF generation
-- `employer_search` - Employer search page
+`k6 inspect --env URL=http://localhost:3000 loadTestUserFlow.js` loads a script and prints its resolved options without sending any traffic, which is a quick way to check edits.
 
-**Note:** Sessions are automatically created with the appropriate data state:
-- `sync` scenario → creates sessions with `pending` data (to test polling behavior)
-- All other scenarios → creates sessions with `synced` data (to display results)
-
-#### Option 2: API Tests (`loadTestAPI.js`)
-
-Tests bulk invitation creation via API endpoint.
-
-**Load pattern:**
-- Constant arrival rate: 100 invitations/second
-- Duration: 2 minutes
-- Total invitations created: ~12,000
-- VUs: 10 pre-allocated, scales up to 50 if needed
-
-**Authentication:** Requires API key (Bearer token)
+Payment details, summary, PDF and webhooks need your local `sandbox` partner set to the `mock` Argyle environment (with `sandbox`, they call the real Argyle sandbox, which doesn't know the test account, and webhooks signed with the `mock` secret are rejected with 401). From `app/`:
 
 ```bash
-# Run API bulk creation test
-k6 run loadTestAPI.js \
-  --env URL=https://demo.divt.app \
-  --env API_KEY=your_api_token_here
+bin/rails runner 'PartnerConfig.find_by!(partner_id: "sandbox").update_column(:argyle_environment, "mock")'
 ```
 
-**What it tests:**
-- POST `/api/v1/invitations` endpoint performance
-- Database write throughput
-- Invitation token generation
-- Response time under sustained load
+(`update_column` because the partner-config importer only accepts `sandbox` and `production`.) Smoke each scenario on its own (`--env SCENARIO=webhook`, `user_event`, …) so a failure points at one endpoint, and clean up afterwards with `bin/rails 'load_test:cleanup_sessions[true]'`. Latency thresholds failing locally is normal: development mode is much slower than production.
 
-#### Option 3: Combined Tests (`loadTestAll.js`)
+### Grafana (optional)
 
-Runs both user flow and API tests in parallel to simulate realistic mixed load.
+`docker-compose up` starts InfluxDB and Grafana (http://localhost:3001, admin/admin). Add an InfluxDB data source (`http://influxdb:8086`, database `k6`), import dashboard [13719](https://grafana.com/grafana/dashboards/13719-k6-load-testing-results-by-groups/), and run k6 with `K6_OUT=influxdb`. The built-in web dashboard (`K6_WEB_DASHBOARD=true`, optionally with `K6_WEB_DASHBOARD_EXPORT=results/<name>.html`) is usually enough.
+
+## Loadtester EC2 setup
 
 ```bash
-# Run all tests simultaneously
-k6 run loadTestAll.js \
-  --env URL=https://demo.divt.app \
-  --env CLIENT_AGENCY_ID=sandbox \
-  --env API_KEY=your_api_token_here
+sudo dnf install https://dl.k6.io/rpm/repo.rpm && sudo dnf install k6
 ```
 
-**Combined load:**
-- User flows: 10 VUs doing mixed scenarios
-- API: 100 invitations/second bulk creation
-- Both run concurrently for realistic production simulation
-
-### Metrics
-
-All tests output performance metrics including:
-- Request duration (avg, median, p95, p99, max)
-- Check success rate
-- SLO violations (responses > 2000ms)
-- HTTP request duration thresholds (p95<500ms, p99<1000ms, max<2000ms)
-
-### Cleanup
-1. Delete test sessions from database:
-    ```bash
-    # In the Rails console or via rake task
-    bin/rails 'load_test:cleanup_sessions[sandbox]'
-    ```
-
-2. All queues will be cleared by restarting the Moto server that manages our dev SQS queues
-
-## Developing Locally with K6
-
-The instructions below are for local development/prototyping of the load testing script (not intended to produce calibrated metrics).
-
-### Installing k6 locally
-
 ```bash
-brew install k6
-```
-
-### Running tests locally
-
-**User flow tests:**
-```bash
-# Ensure your local server is running
-bin/rails server
-
-# Run user flow tests
-k6 run loadTestUserFlow.js \
-  --env URL=http://localhost:3000 \
-  --env CLIENT_AGENCY_ID=sandbox
-
-# Run specific scenario
-k6 run loadTestUserFlow.js \
-  --env URL=http://localhost:3000 \
-  --env CLIENT_AGENCY_ID=sandbox \
-  --env SCENARIO=sync
-```
-
-**API tests:**
-```bash
-# First, create an API access token in your local environment
-bin/rails console
-# > user = User.find_by(email: 'your@email.com')
-# > token = user.api_access_tokens.create!
-# > puts token.access_token
-
-# Run API tests with your token
-k6 run loadTestAPI.js \
-  --env URL=http://localhost:3000 \
-  --env API_KEY=your_token_here
-```
-
-**Combined tests:**
-```bash
-k6 run loadTestAll.js \
-  --env URL=http://localhost:3000 \
-  --env CLIENT_AGENCY_ID=sandbox \
-  --env API_KEY=your_token_here
-```
-
-### Monitoring with Grafana (Optional)
-
-For local metrics visualization:
-
-```bash
-docker-compose up
-```
-
-**Grafana setup:**
-1. Visit http://localhost:3001
-2. Login: admin / admin
-3. Add InfluxDB data source:
-   - URL: http://influxdb:8086
-   - Database: k6
-   - HTTP method: GET
-4. Import dashboard: https://grafana.com/grafana/dashboards/13719-k6-load-testing-results-by-groups/
-
-**Run tests with InfluxDB output:**
-```bash
-K6_OUT=influxdb k6 run loadTestUserFlow.js \
-  --env URL=http://localhost:3000 \
-  --env CLIENT_AGENCY_ID=sandbox
-```
-
-
-## Running on EC2 Instance
-
-For production-grade load testing, use the dedicated loadtester EC2 instance.
-
-### Setup
-
-**Checkout repo into EC2 container:**
-```bash
-git checkout https://github.com/Digital-Public-Works/iv-cbv-payroll.git
-cd load_testing
-```
-
-**Install k6 (one-time setup):**
-```bash
-sudo dnf install https://dl.k6.io/rpm/repo.rpm
-sudo dnf install k6
-```
-
-### Running tests on EC2
-
-```bash
-# User flow tests
-k6 run loadTestUserFlow.js \
-  --env URL=https://demo.divt.app \
-  --env CLIENT_AGENCY_ID=sandbox
-
-# API tests
-k6 run loadTestAPI.js \
-  --env URL=https://demo.divt.app \
-  --env API_KEY=your_token_here
-
-# Combined tests
-k6 run loadTestAll.js \
-  --env URL=https://demo.divt.app \
-  --env CLIENT_AGENCY_ID=sandbox \
-  --env API_KEY=your_token_here
+git clone https://github.com/Digital-Public-Works/iv-cbv-payroll.git && cd iv-cbv-payroll/load_testing && mkdir -p results
 ```
