@@ -1,0 +1,14 @@
+<% content_for :head do %>
+  <%# A whole-page load, even when a frame or a Turbo visit lands here %>
+  <meta name="turbo-visit-control" content="reload">
+<% end %>
+<% title = @open_elsewhere ? t("cbv.sessions.switched.open_elsewhere.title") : t("cbv.sessions.switched.title") %>
+<% content_for :title, title %>
+
+<h1><%= title %></h1>
+<% if @open_elsewhere %>
+  <p><%= t("cbv.sessions.switched.open_elsewhere.description") %></p>
+<% else %>
+  <p><%= t("cbv.sessions.switched.description") %></p>
+  <p><%= t("cbv.sessions.switched.next_steps") %></p>
+<% end %>

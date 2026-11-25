@@ -1,9 +1,11 @@
 import CSRF from "./csrf"
+import { cbvFlowHeaders } from "./cbvFlowBinding"
 
 export const fetchInternal = (uri, params) => {
   const defaultHeaders = {
     "X-CSRF-Token": CSRF.token,
     "Content-Type": "application/json",
+    ...cbvFlowHeaders(),
   }
 
   return fetch(uri, addHeadersToParams(defaultHeaders, params)).then((response) => response.json())

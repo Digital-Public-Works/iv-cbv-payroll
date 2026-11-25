@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import CSRF from "../utilities/csrf"
+import { cbvFlowHeaders } from "../utilities/cbvFlowBinding"
 
 export default class extends Controller {
   static values = { url: String }
@@ -8,7 +9,7 @@ export default class extends Controller {
   connect() {
     this.interval = setInterval(() => {
       fetch(this.urlValue, {
-        headers: { ...this.headers, "X-CSRF-Token": CSRF.token },
+        headers: { ...this.headers, "X-CSRF-Token": CSRF.token, ...cbvFlowHeaders() },
         method: "PATCH",
       })
         .then((response) => response.text())

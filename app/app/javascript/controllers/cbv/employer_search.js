@@ -2,6 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 import { createModalAdapter } from "@js/utilities/createModalAdapter"
 import { loadProviderResources } from "@js/utilities/loadProviderResources.ts"
 import { toggleErrorIds, updateAriaLiveRegion } from "@js/utilities/accessibility"
+import { addCbvFlowField } from "@js/utilities/cbvFlowBinding"
 
 export default class extends Controller {
   static targets = [
@@ -190,6 +191,7 @@ export default class extends Controller {
 
   onSuccess(accountId) {
     this.userAccountIdTarget.value = accountId
+    addCbvFlowField(this.formTarget)
     this.formTarget.submit()
   }
 

@@ -27,6 +27,13 @@ RSpec.describe Cbv::SuccessesController do
         expect(response.body).to include(cbv_flow.confirmation_code)
       end
 
+      # The download opens in a new tab (no flow header), so its URL names the
+      # flow; a stale page can't fetch whichever report the session now holds.
+      it "names its own flow in the PDF download link" do
+        get :show
+        expect(response.body).to include(%(href="/cbv/submit.pdf?cbv_flow_tab_id=#{cbv_flow.id}"))
+      end
+
       it "shows copy link button" do
         get :show
         expect(response.body).to include(I18n.t("cbv.successes.show.copy_link"))
