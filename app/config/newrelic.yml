@@ -31,8 +31,8 @@ common: &default_settings
     enabled: true
 
   browser_monitoring:
-    # include js code via partial to comply with CSP settings
-    auto_instrument: true
+    # manual instrument instead; this was causing CSP violations within turbo frames due to dynamic nonce
+    auto_instrument: false
 
   # This line disables agent regardless of other settings if set to false
   agent_enabled: true
