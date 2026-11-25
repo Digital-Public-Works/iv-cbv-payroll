@@ -51,6 +51,9 @@ After each request a VU sleeps as a user (or Argyle) would, about 5.2s on averag
 | `SLA_MS` / `PDF_SLA_MS` | `2000` / `10000` | Responses slower than this are counted in `failed_slo` |
 | `WEBHOOK_SECRET` | `mock` | Secret used to sign webhook payloads; `mock` matches the `mock` Argyle environment |
 
+**Argyle response time (server setting).**
+Set mock argyle latency to replicate the observice latency on argyle calls from prod for more accurate load testing.
+
 ## Traffic model
 
 The weights and targets are planning numbers for expected future volume, with headroom. They are set in `common.js` and the env-var defaults; update them there if the plan changes.

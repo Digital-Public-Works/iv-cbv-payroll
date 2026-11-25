@@ -93,4 +93,47 @@ RSpec.describe Aggregators::Sdk::MockArgyleService do
       expect(missing).to be_empty
     end
   end
+
+  describe "simulated latency" do
+    def service_with_scale(scale)
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with("MOCK_ARGYLE_LATENCY_SCALE").and_return(scale)
+      described_class.new(:mock).tap { |svc| allow(svc).to receive(:sleep) }
+    end
+
+    it "does not sleep when MOCK_ARGYLE_LATENCY_SCALE is unset" do
+      svc = service_with_scale(nil)
+      svc.fetch_paystubs_api(account: "x")
+      expect(svc).not_to have_received(:sleep)
+    end
+
+    it "does not sleep when the scale is 0 or negative" do
+      %w[0 -1].each do |scale|
+        svc = service_with_scale(scale)
+        svc.fetch_identities_api
+        expect(svc).not_to have_received(:sleep)
+      end
+    end
+
+    it "sleeps for the call's typical time times the scale, then returns the fixture" do
+      svc = service_with_scale("2")
+      expect(svc.fetch_accounts_api).to eq(described_class.new(:mock).fetch_accounts_api)
+      expect(svc).to have_received(:sleep).with(0.18)
+
+      svc.employer_search("acme")
+      expect(svc).to have_received(:sleep).with(0.41)
+    end
+
+    it "passes positional and keyword arguments through unchanged" do
+      svc = service_with_scale("1")
+      expect(svc.fetch_paystubs_api(account: "x", limit: 5)).to eq(described_class.new(:mock).fetch_paystubs_api(account: "x", limit: 5))
+      expect(svc.employer_search("acme", %w[healthy])).to eq(described_class.new(:mock).employer_search("acme", %w[healthy]))
+    end
+
+    it "does not delay webhook-subscription management" do
+      svc = service_with_scale("1")
+      svc.get_webhook_subscriptions
+      expect(svc).not_to have_received(:sleep)
+    end
+  end
 end
