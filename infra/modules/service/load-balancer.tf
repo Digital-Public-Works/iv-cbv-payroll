@@ -19,6 +19,7 @@ resource "aws_lb" "alb" {
   # checkov:skip=CKV2_AWS_20:Redirect HTTP to HTTPS as part of implementing HTTPS support; tracked in PF-800
 
   # checkov:skip=CKV2_AWS_28:No WAF in front of the app ALB. see PF-796
+  # checkov:skip=CKV2_AWS_76:The only attached WebACL is scale_to_zero's count-only wake ACL, not a protective WAF (see PF-796); the app is Rails, not Java
 
   # Drop invalid HTTP headers for improved security
   # Note that header names cannot contain underscores
