@@ -23,7 +23,11 @@ module "a11y_config" {
   # https://conchchow.medium.com/aws-ecs-fargate-compute-capacity-planning-a5025cb40bd0
   service_cpu                    = 1024
   service_memory                 = 4096
-  service_desired_instance_count = 1
+  service_desired_instance_count = 0
+
+  # start at 0, scale back to 0 after 6 hours of no activity
+  shoryuken_desired_instance_count = 0
+  service_scale_to_zero_idle_hours = 6
 
   # Create DNS records for these `additional_domains` in the default hosted
   # zone (this is necessary to support CBV agency subdomains).

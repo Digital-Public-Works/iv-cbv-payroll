@@ -56,6 +56,65 @@ variable "shoryuken_desired_instance_count" {
   default     = 1
 }
 
+variable "max_instance_count" {
+  type        = number
+  description = "Autoscaling ceiling for the web service; desired_instance_count is the floor. Null (or equal to the floor) turns web autoscaling off."
+  default     = null
+}
+
+variable "shoryuken_max_instance_count" {
+  type        = number
+  description = "Autoscaling ceiling for the worker service; shoryuken_desired_instance_count is the floor. Null (or equal to the floor) turns worker autoscaling off."
+  default     = null
+}
+
+variable "scale_to_zero_idle_hours" {
+  type        = number
+  description = "Scale web and worker to 0 tasks after this many hours with no CBV flows started and no invitations created, and back to 1 when someone requests a user-facing path (see scale_to_zero.tf). Replaces target-tracking autoscaling: capacity is 0 or 1, and max_instance_count / shoryuken_max_instance_count are ignored. Null turns it off. Ignored for temporary environments."
+  default     = null
+
+  validation {
+    condition     = var.scale_to_zero_idle_hours == null || try(var.scale_to_zero_idle_hours >= 1 && var.scale_to_zero_idle_hours <= 24 && floor(var.scale_to_zero_idle_hours) == var.scale_to_zero_idle_hours, false)
+    error_message = "scale_to_zero_idle_hours must be a whole number from 1 to 24 (CloudWatch alarms can't evaluate more than a day)."
+  }
+}
+
+variable "enable_autoscaling_notifications" {
+  type        = bool
+  description = "Send a VMIAutoscaling event to New Relic (through newrelic_api_destination_arn) on every web or worker scale out, scale in, and when the maximum is reached. A separate flag so the resource count doesn't depend on the ARN being known at plan time."
+  default     = false
+}
+
+variable "newrelic_api_destination_arn" {
+  type        = string
+  description = "EventBridge API destination for New Relic custom events. Required when enable_autoscaling_notifications is true."
+  default     = null
+}
+
+variable "worker_backlog_queue_name" {
+  type        = string
+  description = "SQS queue whose backlog per running worker task drives worker autoscaling (report_sender). Null scales the worker on CPU only."
+  default     = null
+}
+
+variable "worker_backlog_per_task_target" {
+  type        = number
+  description = "Visible messages per running worker task that worker autoscaling aims for. Each worker task runs 10 Shoryuken threads. Sized for report_sender jobs of up to ~30s: 10 waiting is about one round of work per task."
+  default     = 10
+}
+
+variable "worker_event_queue_names" {
+  type        = list(string)
+  description = "Fast analytics event queues (mixpanel_events, newrelic_events) whose combined backlog per running worker task also drives worker autoscaling. Empty leaves them out."
+  default     = []
+}
+
+variable "worker_event_backlog_per_task_target" {
+  type        = number
+  description = "Combined visible messages on worker_event_queue_names per running worker task that worker autoscaling aims for. Higher than report_sender's because these jobs take milliseconds."
+  default     = 50
+}
+
 variable "domain_name" {
   type        = string
   description = "The fully qualified domain name for the application"
