@@ -25,7 +25,7 @@ locals {
   autoscaling_cpu_target         = 60
   autoscaling_puma_thread_target = 50
 
-  autoscaling_requests_per_target = 1000
+  autoscaling_requests_per_target = 800
   autoscaling_scale_out_cooldown  = 60
   autoscaling_scale_in_cooldown   = 300
 }

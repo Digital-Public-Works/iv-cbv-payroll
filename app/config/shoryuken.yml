@@ -1,11 +1,19 @@
-# 10 concurrent workers to pop from queue and handle worker jobs
-concurrency: 10
-# if queue is empty, delay 15 seconds before trying again.
-delay: 15
-# check the report_sender queue twice as often as the events queues
+# no pause after finding empty queue, check again
+delay: 0
 # Queue names are suffixed for non-standard environments (a11y)
 # QUEUE_SUFFIX env var is set by Terraform (empty for demo/prod, "_a11y" for a11y, etc.)
-queues:
-  - ["report_sender<%= ENV.fetch('QUEUE_SUFFIX', '') %>", 2]
-  - ["mixpanel_events<%= ENV.fetch('QUEUE_SUFFIX', '') %>", 1]
-  - ["newrelic_events<%= ENV.fetch('QUEUE_SUFFIX', '') %>", 1]
+groups:
+  # Report transmissions: slow jobs (PDF generation, partner delivery).
+  reports:
+    concurrency: 10
+    queues:
+      - "report_sender<%= ENV.fetch('QUEUE_SUFFIX', '') %>"
+  # Analytics events: fast jobs, each a single API call.
+  mixpanel:
+    concurrency: 4
+    queues:
+      - "mixpanel_events<%= ENV.fetch('QUEUE_SUFFIX', '') %>"
+  newrelic:
+    concurrency: 4
+    queues:
+      - "newrelic_events<%= ENV.fetch('QUEUE_SUFFIX', '') %>"
