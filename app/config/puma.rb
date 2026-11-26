@@ -41,3 +41,17 @@ preload_app!
 
 # Allow puma to be restarted by `bin/rails restart` command.
 plugin :tmp_restart
+
+# for autoscaling
+puma_metrics_service_name = ENV.fetch("PUMA_METRICS_SERVICE_NAME", "").strip
+unless puma_metrics_service_name.empty?
+  require_relative "puma_cloudwatch_metrics"
+  after_booted { PumaCloudWatchMetrics.start(service_name: puma_metrics_service_name) }
+end
+
+# publish stats for use in autoscaling triggers
+activity_metrics_service_name = ENV.fetch("ACTIVITY_METRICS_SERVICE_NAME", "").strip
+unless activity_metrics_service_name.empty?
+  after_booted { ActivityCloudWatchMetrics.start(service_name: activity_metrics_service_name) }
+  before_worker_boot { ActivityCloudWatchMetrics.start(service_name: activity_metrics_service_name) }
+end

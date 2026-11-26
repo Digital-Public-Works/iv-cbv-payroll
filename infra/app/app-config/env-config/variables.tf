@@ -104,6 +104,24 @@ variable "shoryuken_desired_instance_count" {
   default     = 1
 }
 
+variable "service_max_instance_count" {
+  type        = number
+  description = "Web autoscaling ceiling; service_desired_instance_count is the floor. Null leaves web autoscaling off."
+  default     = null
+}
+
+variable "shoryuken_max_instance_count" {
+  type        = number
+  description = "Worker autoscaling ceiling; shoryuken_desired_instance_count is the floor. Null leaves worker autoscaling off."
+  default     = null
+}
+
+variable "service_scale_to_zero_idle_hours" {
+  type        = number
+  description = "Scale web and worker to 0 tasks after this many hours with no CBV flows started or invitations created; a request to a user-facing path wakes them. Replaces autoscaling (capacity is 0 or 1). Null leaves it off."
+  default     = null
+}
+
 variable "service_memory" {
   type    = number
   default = 512

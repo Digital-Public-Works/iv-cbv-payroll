@@ -40,6 +40,7 @@ variable "infra_service_actions" {
   default = [
     "acm:*",
     "apigateway:*",
+    "application-autoscaling:*",
     "backup:*",
     "cloudfront:Get*",
     "cloudfront:List*",
@@ -64,6 +65,7 @@ variable "infra_service_actions" {
     "sqs:*",
     "ssm:*",
     "states:*",
+    "wafv2:*",
   ]
 }
 

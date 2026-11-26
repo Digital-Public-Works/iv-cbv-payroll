@@ -1,4 +1,6 @@
 class CbvFlow < ApplicationRecord
+  include RecordsActivity
+
   has_many :payroll_accounts, dependent: :destroy
   has_many :cbv_flow_transmissions, dependent: :destroy
   belongs_to :cbv_flow_invitation, optional: true

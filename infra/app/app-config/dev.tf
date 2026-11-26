@@ -21,6 +21,10 @@ module "dev_config" {
   service_memory                 = 4096
   service_desired_instance_count = 1
 
+  # autoscaling, scale up to 3 instances
+  service_max_instance_count   = 3
+  shoryuken_max_instance_count = 3
+
   # Create DNS records for these `additional_domains` in the default hosted
   # zone (this is necessary to support CBV agency subdomains).
   additional_domains = ["*.divt.app", "*.demo.divt.app"]
@@ -43,7 +47,7 @@ module "dev_config" {
   }
 
   # NewRelic configuration for metrics
-  newrelic_account_id = "4619676"
+  newrelic_account_id = "7001719"
 
   # Partner-config admin API for the vmi-admin portal. source_vpc_endpoint_id is
   # prod's admin_api_vpc_endpoint_id output: the portal runs in prod's VPC and

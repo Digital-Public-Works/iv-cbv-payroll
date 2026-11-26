@@ -7,11 +7,12 @@ export const CLIENT_AGENCY_ID = __ENV.CLIENT_AGENCY_ID || 'sandbox';
 // Response-time SLOs. Every request is tagged with an `slo` tag so thresholds
 // can be applied per class:
 //   standard - normal page/API requests
+//   argyle   - requests that wait on Argyle API calls, with simulated latency
 //   pdf      - wkhtmltopdf rendering, which is expected to be much slower
 //   setup    - load-test session creation; not real user traffic, excluded from SLOs
 export const SLA_IN_MILLISECONDS = Number(__ENV.SLA_MS || 2000);
 export const PDF_SLA_IN_MILLISECONDS = Number(__ENV.PDF_SLA_MS || 10000);
-export const SLO = { standard: 'standard', pdf: 'pdf', setup: 'setup' };
+export const SLO = { standard: 'standard', argyle: 'argyle', pdf: 'pdf', setup: 'setup' };
 
 // Pause after each request (seconds). Only the per-VU request rate depends on
 // these; the request mix is set by SCENARIO_WEIGHTS. With the weights below a
@@ -120,8 +121,10 @@ export const commonOptions = {
         ],
         failed_slo: ['count<=0'],
         [`http_req_duration{slo:${SLO.standard}}`]: ['p(95)<500', 'p(99)<1000'],
+        [`http_req_duration{slo:${SLO.argyle}}`]: ['p(95)<1500', 'p(99)<3000'],
         [`http_req_duration{slo:${SLO.pdf}}`]: [`p(95)<${PDF_SLA_IN_MILLISECONDS}`],
         [`http_req_failed{slo:${SLO.standard}}`]: ['rate<0.01'],
+        [`http_req_failed{slo:${SLO.argyle}}`]: ['rate<0.01'],
         [`http_req_failed{slo:${SLO.pdf}}`]: ['rate<0.01'],
     },
     summaryTrendStats: ['avg', 'med', 'p(90)', 'p(95)', 'p(99)', 'max'],

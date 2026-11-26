@@ -25,6 +25,13 @@ module "prod_config" {
   service_desired_instance_count   = 1
   shoryuken_desired_instance_count = 2
 
+  # Autoscaling: the desired counts above are the floor. Web scales on Puma
+  # thread use and requests per task (CPU is a backstop); 3 tasks covers the
+  # planned growth with margin, per load testing. Workers scale on queue
+  # backlog and CPU.
+  service_max_instance_count   = 3
+  shoryuken_max_instance_count = 6
+
   # Create DNS records for these `additional_domains` in the default hosted
   # zone (this is necessary to support CBV agency subdomains).
   additional_domains = ["*.verifymyincome.org"]
