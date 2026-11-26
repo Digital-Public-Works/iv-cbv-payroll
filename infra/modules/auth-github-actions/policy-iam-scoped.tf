@@ -78,6 +78,20 @@ data "aws_iam_policy_document" "iam_scoped" {
     resources = local.service_policy_arns
   }
 
+  # ECS service autoscaling needs AWS's service-linked role, which the first
+  # RegisterScalableTarget in an account creates.
+  statement {
+    sid       = "CreateEcsAutoscalingServiceLinkedRole"
+    effect    = "Allow"
+    actions   = ["iam:CreateServiceLinkedRole"]
+    resources = ["arn:aws:iam::${var.aws_account_id}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService"]
+    condition {
+      test     = "StringEquals"
+      variable = "iam:AWSServiceName"
+      values   = ["ecs.application-autoscaling.amazonaws.com"]
+    }
+  }
+
   #  allow runner to hand the app's app-* roles to ECS/EventBridge/Scheduler/Step Functions
   statement {
     sid       = "PassServiceRolesToAwsServices"
