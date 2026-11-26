@@ -47,7 +47,7 @@ module "dev_config" {
   }
 
   # NewRelic configuration for metrics
-  newrelic_account_id = "4619676"
+  newrelic_account_id = "7001719"
 
   # Partner-config admin API for the vmi-admin portal. source_vpc_endpoint_id is
   # prod's admin_api_vpc_endpoint_id output: the portal runs in prod's VPC and

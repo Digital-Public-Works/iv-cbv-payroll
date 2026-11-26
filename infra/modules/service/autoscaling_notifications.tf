@@ -2,7 +2,10 @@
 # Autoscaling notifications to New Relic
 #
 # Sends a `VMIAutoscaling` custom event to New Relic whenever web or worker
-# autoscaling scales out, scales in, or reaches its maximum.
+# autoscaling scales out (action scale_up), scales in (scale_down), reaches
+# its maximum (max_reached), or has stayed at its maximum for
+# autoscaling_at_max_alert_minutes (at_max_sustained, a sign the maximum may
+# be too low).
 #
 #
 # Example NRQL:
@@ -55,6 +58,14 @@ locals {
       })
     }
   ]...)
+
+  autoscaling_at_max_alert_minutes = 30
+
+  # The levels that are each service's maximum.
+  autoscaling_max_levels = {
+    for key, level in local.autoscaling_notification_levels : level.role => level
+    if level.task_count == level.max_capacity
+  }
 }
 
 resource "aws_cloudwatch_metric_alarm" "autoscaling_task_count" {
@@ -154,4 +165,78 @@ resource "aws_iam_role_policy" "autoscaling_notifications" {
       Resource = [var.newrelic_api_destination_arn]
     }]
   })
+}
+
+#---------------------------------------------------------------------------
+# Sustained at maximum
+#
+# ALARM when the desired count has been at the maximum for every minute of
+# the last autoscaling_at_max_alert_minutes: autoscaling wants more tasks than
+# it is allowed, or load stayed high enough to keep it there.
+#---------------------------------------------------------------------------
+
+resource "aws_cloudwatch_metric_alarm" "autoscaling_at_max" {
+  for_each = local.autoscaling_max_levels
+
+  alarm_name        = "${var.service_name}-${each.key}-at-max-${local.autoscaling_at_max_alert_minutes}m"
+  alarm_description = "${each.value.ecs_service} has run its maximum of ${each.value.max_capacity} tasks for ${local.autoscaling_at_max_alert_minutes} minutes. Consider raising the maximum. Notification only."
+
+  namespace           = "ECS/ContainerInsights"
+  metric_name         = "DesiredTaskCount"
+  statistic           = "Minimum"
+  period              = 60
+  evaluation_periods  = local.autoscaling_at_max_alert_minutes
+  datapoints_to_alarm = local.autoscaling_at_max_alert_minutes
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  threshold           = each.value.max_capacity
+  treat_missing_data  = "ignore"
+
+  dimensions = {
+    ClusterName = aws_ecs_cluster.cluster.name
+    ServiceName = each.value.ecs_service
+  }
+}
+
+resource "aws_cloudwatch_event_rule" "autoscaling_at_max" {
+  for_each = local.autoscaling_max_levels
+
+  name        = "${var.service_name}-autoscaling-${each.key}-at-max"
+  description = "Send a VMIAutoscaling at_max_sustained event to New Relic for ${each.value.ecs_service}"
+
+  event_pattern = jsonencode({
+    source        = ["aws.cloudwatch"]
+    "detail-type" = ["CloudWatch Alarm State Change"]
+    resources     = [aws_cloudwatch_metric_alarm.autoscaling_at_max[each.key].arn]
+    detail        = { state = { value = ["ALARM"] } }
+  })
+}
+
+resource "aws_cloudwatch_event_target" "autoscaling_at_max" {
+  for_each = local.autoscaling_max_levels
+
+  rule     = aws_cloudwatch_event_rule.autoscaling_at_max[each.key].name
+  arn      = var.newrelic_api_destination_arn
+  role_arn = aws_iam_role.autoscaling_notifications[0].arn
+
+  input_transformer {
+    input_paths = {
+      time  = "$.time"
+      alarm = "$.detail.alarmName"
+    }
+
+    input_template = <<-EOF
+      {
+        "eventType": "VMIAutoscaling",
+        "service": "${each.value.ecs_service}",
+        "role": "${each.value.role}",
+        "action": "at_max_sustained",
+        "taskCount": ${each.value.max_capacity},
+        "minCapacity": ${each.value.min_capacity},
+        "maxCapacity": ${each.value.max_capacity},
+        "minutesAtMax": ${local.autoscaling_at_max_alert_minutes},
+        "alarmName": "<alarm>",
+        "awsTime": "<time>"
+      }
+    EOF
+  }
 }
