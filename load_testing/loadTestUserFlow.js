@@ -1,37 +1,34 @@
 import http from 'k6/http';
+import crypto from 'k6/crypto';
 import { sleep, check, group } from 'k6';
 import {
     URL,
     CLIENT_AGENCY_ID,
+    SLO,
     checkSlo,
+    commonOptions,
+    userFlowStages,
     SIMULATE_DELAY_SYNC_POLLING_S,
     SIMULATE_DELAY_PAYMENT_DETAILS_S,
     SIMULATE_DELAY_SUMMARY_S,
     SIMULATE_DELAY_PDF_DOWNLOAD_S,
     SIMULATE_DELAY_EMPLOYER_SEARCH_S,
-    SYNC_POLL_COUNT,
-    USER_FLOW_STEPS
+    SIMULATE_DELAY_USER_EVENT_S,
+    SIMULATE_DELAY_WEBHOOK_S,
+    SCENARIO_WEIGHTS,
+    WEBHOOK_SECRET,
 } from './common.js';
 
 export let options = {
-    vus: 0, // start at 0 users, and ramp up linearly
-    stages: [
-        { duration: '60s', target: 10 },
-        { duration: '30s', target: 10 },
-        { duration: '30s', target: 0 },
-    ],
-    maxRedirects: 0,
-    thresholds: {
-        // bail early if more than 10% of checks are failing (bad cookie?)
-        checks: [{ threshold: 'rate>0.1', abortOnFail: true }],
-        // measure against our SLO for p95, p99, and max durations
-        failed_slo: ['count<=0'],
-        http_req_duration: ['p(95)<500', 'p(99)<1000', 'max<2000'],
-    },
-    summaryTrendStats: ['avg', 'med', 'p(95)', 'p(99)', 'max'],
+    ...commonOptions,
+    stages: userFlowStages(), // PROFILE env var; see common.js
 };
 
-const SCENARIO = __ENV.SCENARIO || 'mixed'; // 'mixed', 'sync', 'summary', 'pdf'
+// 'mixed', or one of the SCENARIO_WEIGHTS keys in common.js
+const SCENARIO = __ENV.SCENARIO || 'mixed';
+if (SCENARIO !== 'mixed' && !(SCENARIO in SCENARIO_WEIGHTS)) {
+    throw new Error(`Unknown SCENARIO "${SCENARIO}". Use mixed or one of: ${Object.keys(SCENARIO_WEIGHTS).join(', ')}`);
+}
 
 // Session manager - reuses sessions across iterations per VU
 const getOrCreateSession = (() => {
@@ -53,8 +50,17 @@ const getOrCreateSession = (() => {
     };
 })();
 
+let webhookFlow = null;
+
 export default function () {
     const scenario = SCENARIO === 'mixed' ? selectScenario() : SCENARIO;
+
+    // Webhooks come from Argyle, not the applicant's browser: no cookie needed.
+    if (scenario === 'webhook') {
+        testWebhook();
+        return;
+    }
+
     const session = getOrCreateSession(scenario);
 
     if (session) {
@@ -74,8 +80,13 @@ function createSession(dataState) {
     }), {
         headers: {
             'Content-Type': 'application/json'
-        }
+        },
+        tags: { slo: SLO.setup, name: 'create_session' },
     });
+
+    check(sessionResponse, {
+        'load test session created': (r) => r.status === 201,
+    }, { slo: SLO.setup });
 
     if (sessionResponse.status === 201) {
         // Extract session cookie from Set-Cookie header (Rails automatically encrypts it)
@@ -89,6 +100,7 @@ function createSession(dataState) {
             return {
                 headers: headers,
                 accountId: sessionData.account_id,
+                argyleUserId: sessionData.argyle_user_id,
                 csrfToken: sessionData.csrf_token
             };
         } else {
@@ -118,24 +130,23 @@ function executeTestScenario(scenario, session) {
         case 'employer_search':
             testEmployerSearch(session);
             break;
+        case 'user_event':
+            testUserEvent(session);
+            break;
     }
 }
 
+const WEIGHTED_SCENARIOS = Object.entries(SCENARIO_WEIGHTS);
+const TOTAL_WEIGHT = WEIGHTED_SCENARIOS.reduce((total, [, weight]) => total + weight, 0);
+
+// Pick a scenario with probability proportional to SCENARIO_WEIGHTS.
 function selectScenario() {
-    const rand = Math.random();
-
-    // Distribution based on typical user time per page:
-    // - 77% Synchronization (longest wait, most DB polling)
-    // - 10% Employer search
-    // - 5% Payment details review
-    // - 3% Summary page
-    // - 5% PDF generation
-
-    if (rand < 0.77) return 'sync';
-    if (rand < 0.87) return 'employer_search';
-    if (rand < 0.92) return 'payment_details';
-    if (rand < 0.95) return 'summary';
-    return 'pdf';
+    let rand = Math.random() * TOTAL_WEIGHT;
+    for (const [scenario, weight] of WEIGHTED_SCENARIOS) {
+        if (rand < weight) return scenario;
+        rand -= weight;
+    }
+    return WEIGHTED_SCENARIOS[WEIGHTED_SCENARIOS.length - 1][0];
 }
 
 function testSynchronization(session) {
@@ -155,7 +166,7 @@ function testSynchronization(session) {
 
         const response = http.patch(
             `${URL}/cbv/synchronizations?user%5Baccount_id%5D=${accountId}`, {},
-            { headers: requestHeaders }
+            { headers: requestHeaders, tags: { slo: SLO.standard, name: 'synchronizations' } }
         );
 
         check(response, {
@@ -175,7 +186,7 @@ function testPaymentDetails(session) {
     group("Payment details (DB + aggregation)", () => {
         const response = http.get(
             `${URL}/cbv/payment_details?user%5Baccount_id%5D=${accountId}`,
-            { headers }
+            { headers, tags: { slo: SLO.standard, name: 'payment_details' } }
         );
 
         check(response, {
@@ -195,7 +206,7 @@ function testSummary(session) {
     group("Summary page (aggregation)", () => {
         const response = http.get(
             `${URL}/cbv/summary`,
-            { headers }
+            { headers, tags: { slo: SLO.standard, name: 'summary' } }
         );
 
         check(response, {
@@ -219,7 +230,8 @@ function testPdfGeneration(session) {
                 headers: {
                     ...headers,
                     'Accept': 'application/pdf',
-                }
+                },
+                tags: { slo: SLO.pdf, name: 'submit_pdf' },
             }
         );
 
@@ -228,7 +240,7 @@ function testPdfGeneration(session) {
             'pdf content type': (r) => r.headers['Content-Type'] && r.headers['Content-Type'].includes('pdf'),
         });
 
-        checkSlo(response);
+        checkSlo(response, SLO.pdf);
     });
 
     // PDFs are downloaded less frequently
@@ -241,11 +253,11 @@ function testEmployerSearch(session) {
     group("Employer search page", () => {
         const response = http.get(
             `${URL}/cbv/employer_search`,
-            { headers }
+            { headers, tags: { slo: SLO.standard, name: 'employer_search' } }
         );
 
         check(response, {
-            'is Status 200': (r) => r.status === 200,
+            'employer search loaded': (r) => r.status === 200,
         });
 
         checkSlo(response);
@@ -253,6 +265,81 @@ function testEmployerSearch(session) {
 
     // Time searching for employer
     sleep(SIMULATE_DELAY_EMPLOYER_SEARCH_S);
+}
+
+function testUserEvent(session) {
+    const { headers, csrfToken } = session;
+
+    group("Front-end analytics event", () => {
+        const requestHeaders = {
+            ...headers,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        };
+        if (csrfToken) {
+            requestHeaders['X-CSRF-Token'] = csrfToken;
+        }
+
+        // Same shape as trackUserAction() in app/javascript/utilities/api.js.
+        // The app does not forward load-test events to analytics, so this
+        // measures the request itself, not the analytics jobs.
+        const response = http.post(
+            `${URL}/api/events/user_action`,
+            JSON.stringify({ events: { event_name: 'ApplicantViewedHelpText', attributes: { source: 'load-test' } } }),
+            { headers: requestHeaders, tags: { slo: SLO.standard, name: 'user_event' } }
+        );
+
+        check(response, {
+            'user event accepted': (r) => r.status === 200,
+        });
+
+        checkSlo(response);
+    });
+
+    sleep(SIMULATE_DELAY_USER_EVENT_S);
+}
+
+const WEBHOOK_SEQUENCE = [
+    (user, account) => ({ event: 'accounts.updated', data: { user, account, resource: { connection: { status: 'connected' } } } }),
+    (user, account) => ({ event: 'accounts.updated', data: { user, account, resource: { connection: { status: 'connected' } } } }),
+    (user, account) => ({ event: 'identities.added', data: { user, account } }),
+    (user, account) => ({ event: 'paystubs.partially_synced', data: { user, account, days_synced: 90 } }),
+    (user, account) => ({ event: 'paystubs.fully_synced', data: { user, account } }),
+    (user, account) => ({ event: 'users.fully_synced', data: { user, resource: { accounts_connected: [account] } } }),
+];
+
+function testWebhook() {
+    if (!webhookFlow || webhookFlow.step >= WEBHOOK_SEQUENCE.length) {
+        const session = createSession('pending');
+        if (!session || !session.argyleUserId) {
+            if (session) console.error('Session has no argyle_user_id; is the app on the current load-test session endpoint?');
+            sleep(SIMULATE_DELAY_WEBHOOK_S);
+            return;
+        }
+        webhookFlow = { argyleUserId: session.argyleUserId, accountId: session.accountId, step: 0 };
+    }
+
+    const payload = WEBHOOK_SEQUENCE[webhookFlow.step](webhookFlow.argyleUserId, webhookFlow.accountId);
+    webhookFlow.step += 1;
+
+    group("Argyle webhook", () => {
+        const body = JSON.stringify(payload);
+        const response = http.post(`${URL}/webhooks/argyle/events`, body, {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Argyle-Signature': crypto.hmac('sha512', WEBHOOK_SECRET, body, 'hex'),
+            },
+            tags: { slo: SLO.standard, name: 'argyle_webhook', event: payload.event },
+        });
+
+        check(response, {
+            'webhook processed': (r) => r.status === 200 && r.body.includes('"status":"ok"'),
+        });
+
+        checkSlo(response);
+    });
+
+    sleep(SIMULATE_DELAY_WEBHOOK_S);
 }
 
 // vim: expandtab sw=4 ts=4

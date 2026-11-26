@@ -7,6 +7,14 @@ module Aggregators::Sdk
     # Use Bob's fixtures as the default mock data
     MOCK_FIXTURE_USER = "bob"
 
+    # typical argyle api response times in prod, mocked to be better for load testing
+    DEFAULT_LATENCY_MS = 90
+    LATENCY_MS = {
+      employer_search: 205,
+      create_user: 315,
+      create_user_token: 185
+    }.freeze
+
     # Non-production override so a real CBV flow (which does not pass an explicit
     # fixture_user) can be pointed at a specific demo fixture. Set e.g.
     # MOCK_ARGYLE_FIXTURE_USER=paystubs_some_images before booting the server.
@@ -15,37 +23,46 @@ module Aggregators::Sdk
       @webhook_secret = webhook_secret || @environment[:webhook_secret]
       @fixture_user = fixture_user || ENV["MOCK_ARGYLE_FIXTURE_USER"].presence || MOCK_FIXTURE_USER
       @fixture_path = Rails.root.join("spec", "support", "fixtures", "argyle", @fixture_user)
+      @latency_scale = [ ENV["MOCK_ARGYLE_LATENCY_SCALE"].to_f, 0 ].max
     end
 
     def fetch_identities_api(account: nil, user: nil, employment: nil, limit: 10)
+      simulate_latency(__method__)
       load_fixture("request_identity.json")
     end
 
     def fetch_account_api(account: nil)
+      simulate_latency(__method__)
       load_fixture("request_account.json")
     end
 
     def fetch_paystubs_api(account: nil, user: nil, employment: nil, from_start_date: nil, to_start_date: nil, limit: 200)
+      simulate_latency(__method__)
       filter_results_by_account(load_fixture("request_paystubs.json"), account)
     end
 
     def fetch_gigs_api(account: nil, user: nil, from_start_datetime: nil, to_start_datetime: nil, limit: 200)
+      simulate_latency(__method__)
       filter_results_by_account(load_fixture("request_gigs.json"), account)
     end
 
     def employer_search(query, status = %w[healthy issues])
+      simulate_latency(__method__)
       load_fixture("request_employer_search.json")
     end
 
     def fetch_accounts_api(user: nil, item: nil, ongoing_refresh_status: nil, limit: 10)
+      simulate_latency(__method__)
       load_fixture("request_accounts.json")
     end
 
     def create_user(cbv_flow_end_user_id = nil)
+      simulate_latency(__method__)
       load_fixture("../response_create_user.json")
     end
 
     def create_user_token(user_id)
+      simulate_latency(__method__)
       load_fixture("../response_create_user_token.json")
     end
 
@@ -63,6 +80,7 @@ module Aggregators::Sdk
     end
 
     def delete_user(argyle_user_id:)
+      simulate_latency(__method__)
       nil # 204 No Content
     end
 
@@ -77,6 +95,7 @@ module Aggregators::Sdk
     #     (legacy behavior, not filtered by account).
     # A fixture with neither file returns no documents (the no-images case).
     def fetch_payroll_documents_api(account: nil, user: nil, employment: nil, from_available_date: nil, to_available_date: nil, limit: 200)
+      simulate_latency(__method__)
       plural_path = @fixture_path.join("request_payroll_documents.json")
 
       if File.exist?(plural_path)
@@ -92,6 +111,7 @@ module Aggregators::Sdk
     end
 
     def fetch_payroll_document_api(id:)
+      simulate_latency(__method__)
       load_fixture("request_payroll_document.json")
     end
 
@@ -99,6 +119,7 @@ module Aggregators::Sdk
     # shared fixture) and a PDF content type. Tests that need a different
     # shape (image content type, multi-page, etc.) should stub this method.
     def fetch_payroll_document_file(file_url:)
+      simulate_latency(__method__)
       [ File.binread(SHARED_PAYSTUB_PDF_FIXTURE), "application/pdf" ]
     end
 
@@ -107,6 +128,12 @@ module Aggregators::Sdk
     ).freeze
 
     private
+
+    def simulate_latency(method_name)
+      return unless @latency_scale.positive?
+
+      sleep(LATENCY_MS.fetch(method_name, DEFAULT_LATENCY_MS) * @latency_scale / 1000.0)
+    end
 
     # Real Argyle returns only the requested account's records; the fixtures,
     # however, may bundle several accounts in one file. When the requested

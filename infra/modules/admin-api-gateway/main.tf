@@ -82,6 +82,7 @@ resource "aws_vpc_endpoint" "execute_api" {
 #---------------------------------------------------------------------------
 
 resource "aws_lb" "admin_api" {
+  # checkov:skip=CKV_AWS_150:False positive. enable_deletion_protection below is !var.is_temporary, which Checkov cannot evaluate; it is on in every persistent environment
   # checkov:skip=CKV_AWS_91:Requests are logged by the app's admin API action log; NLB flow logs add nothing here
   name                             = substr("${var.name}-admin-api", 0, 32)
   internal                         = true

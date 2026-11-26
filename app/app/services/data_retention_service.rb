@@ -17,10 +17,27 @@ class DataRetentionService
   # anything, and will log if it does
   REDACT_BACKSTOP = 15.days
 
+  # grace period of what counts as 'overdue' and should have been redacted 'yesterday'. Extra 2 hrs to account for run time
+  OVERDUE_GRACE = 1.day + 2.hours
+
+  RUN_EVENT = "DataRetentionRun"
+
   def redact_all!
+    started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    @run_stats = Hash.new(0)
+    status = "failed"
+    error = nil
+
+    count_overdue
     redact_invitations
     redact_cbv_flows
     redact_backstop!
+    status = "completed"
+  rescue => ex
+    error = ex
+    raise
+  ensure
+    report_run(status: status, error: error, duration: Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at)
   end
 
   # redact invitations that are past their expiration date. does not redact invitations that have
@@ -31,7 +48,7 @@ class DataRetentionService
       .unredacted
       .where("expires_at < ?", Time.current)
       .find_each do |cbv_flow_invitation|
-        redact_invitation_and_applicant(cbv_flow_invitation)
+        run_stats[:invitations_redacted] += 1 if redact_invitation_and_applicant(cbv_flow_invitation)
       end
   end
 
@@ -42,7 +59,8 @@ class DataRetentionService
       .where("created_at < ?", REDACT_CBV_FLOWS_AFTER.ago)
       .includes(:cbv_flow_invitation, :cbv_applicant, :payroll_accounts)
       .find_each do |cbv_flow|
-        redact_cbv_flow(cbv_flow)
+        _argyle_outcome, redacted = redact_cbv_flow_with_result(cbv_flow)
+        run_stats[:cbv_flows_redacted] += 1 if redacted
       end
   end
 
@@ -227,9 +245,12 @@ class DataRetentionService
   #
   # Public rather than private: the manual erasure path is a legitimate caller,
   # and reaching it through #send would break silently on a rename.
+  #
+  # Returns true when both were redacted, false when a failure was reported.
   def redact_invitation_and_applicant(cbv_flow_invitation)
     cbv_flow_invitation.redact!
     cbv_flow_invitation.cbv_applicant&.redact!
+    true
   rescue => ex
     raise ex unless Rails.env.production?
 
@@ -237,6 +258,7 @@ class DataRetentionService
       cbv_flow_invitation_id: cbv_flow_invitation.id,
       client_agency_id: cbv_flow_invitation.client_agency_id
     )
+    false
   end
 
   # Do all redaction necessary on a cbv_flow. Argyle user deletion runs
@@ -250,45 +272,99 @@ class DataRetentionService
   # nothing in our own tables for .verify_erasure to find, so the manual path
   # needs the outcome reported back rather than only logged.
   def redact_cbv_flow(cbv_flow)
+    redact_cbv_flow_with_result(cbv_flow).first
+  end
+
+  private
+
+  def redact_cbv_flow_with_result(cbv_flow)
     argyle_outcome =
       if cbv_flow.argyle_user_id.present?
         delete_argyle_user(cbv_flow.client_agency_id, cbv_flow.argyle_user_id)
       else
         :not_applicable
       end
+    run_stats[:argyle_deletion_failures] += 1 if argyle_outcome == :failed
 
-    begin
-      cbv_flow.cbv_flow_invitation.redact! if cbv_flow.cbv_flow_invitation.present?
-      cbv_flow.cbv_applicant&.redact!
-      cbv_flow.payroll_accounts.with_discarded.each(&:redact!) # Do not scope to kept records, all accounts should be redacted
-      cbv_flow.redact!
-    rescue => ex
-      raise ex unless Rails.env.production?
+    redacted =
+      begin
+        cbv_flow.cbv_flow_invitation.redact! if cbv_flow.cbv_flow_invitation.present?
+        cbv_flow.cbv_applicant&.redact!
+        cbv_flow.payroll_accounts.with_discarded.each(&:redact!) # Do not scope to kept records, all accounts should be redacted
+        cbv_flow.redact!
+        true
+      rescue => ex
+        raise ex unless Rails.env.production?
 
-      report_redaction_failure(ex,
-        cbv_flow_id: cbv_flow.id,
-        client_agency_id: cbv_flow.client_agency_id
-      )
-    end
+        report_redaction_failure(ex,
+          cbv_flow_id: cbv_flow.id,
+          client_agency_id: cbv_flow.client_agency_id
+        )
+        false
+      end
 
-    argyle_outcome
+    [ argyle_outcome, redacted ]
   end
 
-  private
+  def run_stats
+    @run_stats ||= Hash.new(0)
+  end
 
-  # Backstop: CbvFlows older than 30 days that escaped #redact_cbv_flows.
+  def count_overdue
+    run_stats[:overdue_invitations] = CbvFlowInvitation
+      .unstarted
+      .unredacted
+      .where("expires_at < ?", OVERDUE_GRACE.ago)
+      .count
+    run_stats[:overdue_cbv_flows] = CbvFlow
+      .unredacted
+      .where("created_at < ?", (REDACT_CBV_FLOWS_AFTER + OVERDUE_GRACE).ago)
+      .count
+  end
+
+  # send counts to newrelic, so we can alert if needed
+  def report_run(status:, error:, duration:)
+    stats = run_stats
+    total_redacted = stats[:invitations_redacted] + stats[:cbv_flows_redacted] +
+      stats[:backstop_cbv_flows_redacted] + stats[:backstop_applicants_redacted]
+    backstop_hits = stats[:backstop_cbv_flows_found] + stats[:backstop_applicants_found]
+
+    attributes = {
+      status: status,
+      duration_seconds: duration.round(1),
+      invitations_redacted: stats[:invitations_redacted],
+      cbv_flows_redacted: stats[:cbv_flows_redacted],
+      backstop_cbv_flows_redacted: stats[:backstop_cbv_flows_redacted],
+      backstop_applicants_redacted: stats[:backstop_applicants_redacted],
+      total_redacted: total_redacted,
+      overdue_invitations: stats[:overdue_invitations],
+      overdue_cbv_flows: stats[:overdue_cbv_flows],
+      backstop_hits: backstop_hits,
+      overdue_found: (stats[:overdue_invitations] + stats[:overdue_cbv_flows] + backstop_hits).positive?,
+      redaction_failures: stats[:redaction_failures],
+      argyle_deletion_failures: stats[:argyle_deletion_failures]
+    }
+    attributes[:error_class] = error.class.name if error
+
+    Rails.logger.info("#{RUN_EVENT} #{attributes.map { |k, v| "#{k}=#{v}" }.join(' ')}")
+    NewRelic::Agent.record_custom_event(RUN_EVENT, attributes) if defined?(NewRelic::Agent)
+  end
+
+  # Backstop: CbvFlows older than REDACT_BACKSTOP that escaped #redact_cbv_flows.
   def redact_backstop_cbv_flows
     CbvFlow
       .unredacted
       .where("created_at < ?", REDACT_BACKSTOP.ago)
       .includes(:cbv_flow_invitation, :cbv_applicant, :payroll_accounts)
       .find_each do |cbv_flow|
+        run_stats[:backstop_cbv_flows_found] += 1
         report_backstop_hit("CbvFlow",
           cbv_flow_id: cbv_flow.id,
           client_agency_id: cbv_flow.client_agency_id,
           created_at: cbv_flow.created_at
         )
-        redact_cbv_flow(cbv_flow)
+        _argyle_outcome, redacted = redact_cbv_flow_with_result(cbv_flow)
+        run_stats[:backstop_cbv_flows_redacted] += 1 if redacted
       end
   end
 
@@ -304,6 +380,7 @@ class DataRetentionService
       .where.not(id: CbvFlowInvitation.unredacted.select(:cbv_applicant_id))
       .where.not(id: CbvFlow.unredacted.select(:cbv_applicant_id))
       .find_each do |applicant|
+        run_stats[:backstop_applicants_found] += 1
         report_backstop_hit("CbvApplicant",
           cbv_applicant_id: applicant.id,
           client_agency_id: applicant.client_agency_id,
@@ -311,6 +388,7 @@ class DataRetentionService
         )
         begin
           applicant.redact!
+          run_stats[:backstop_applicants_redacted] += 1
         rescue => ex
           raise ex unless Rails.env.production?
 
@@ -336,6 +414,7 @@ class DataRetentionService
 
   # Ensure a redaction failure is sent to NR as an error, and to mixpanel as an event
   def report_redaction_failure(ex, context)
+    run_stats[:redaction_failures] += 1
     Rails.logger.error "Data redaction failed (#{context.inspect}): #{ex.class}: #{ex.message}"
     NewRelic::Agent.notice_error(ex, custom_params: context) if defined?(NewRelic::Agent)
     GenericEventTracker.new.track("DataRedactionFailure", nil, context.merge(error: ex.message))

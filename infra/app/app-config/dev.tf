@@ -41,17 +41,24 @@ module "dev_config" {
   # Defaults to `false`. Uncomment the next line to enable.
   enable_command_execution = true
 
+  # mock argyle latency for load testing
+  service_override_extra_environment_variables = {
+    MOCK_ARGYLE_LATENCY_SCALE = "1.3"
+  }
+
   # NewRelic configuration for metrics
   newrelic_account_id = "4619676"
 
-  # Partner-config admin API for the vmi-admin portal. Turn on after prod's
-  # admin API is applied: source_vpc_endpoint_id is prod's
-  # admin_api_vpc_endpoint_id output (the portal runs in prod's VPC). Needs SSM
-  # /service/app-demo/admin-api-service-secret and the ExternalId parameter below.
-  # admin_api = {
-  #   settings_writable         = true
-  #   portal_task_role_arn      = "arn:aws:iam::850027065051:role/vmi-admin-task"
-  #   source_vpc_endpoint_id    = "vpce-<prod admin_api_vpc_endpoint_id>"
-  #   invoker_external_id_param = "/service/app-demo/admin-api-invoker-external-id"
-  # }
+  # Partner-config admin API for the vmi-admin portal. source_vpc_endpoint_id is
+  # prod's admin_api_vpc_endpoint_id output: the portal runs in prod's VPC and
+  # reaches both environments through that endpoint. Before this is applied,
+  # these must exist: SSM /service/app-demo/admin-api-service-secret, the
+  # ExternalId parameter below, and the portal's vmi-admin-task role
+  # (vmi-admin/infra/identity), which the demo invoker role trusts.
+  admin_api = {
+    settings_writable         = true
+    portal_task_role_arn      = "arn:aws:iam::850027065051:role/vmi-admin-task"
+    source_vpc_endpoint_id    = "vpce-0c28f3dd9e266a9c0"
+    invoker_external_id_param = "/service/app-demo/admin-api-invoker-external-id"
+  }
 }

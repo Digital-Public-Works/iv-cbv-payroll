@@ -63,7 +63,7 @@ bin/rails db:seed
 - Follow existing Rails conventions in the codebase
 
 ## Key Patterns
-- Multi-tenant: partner configs are **database-canonical** (`PartnerConfig`, hydrated by `ClientAgencyConfig` at boot — no runtime YAML; the `partner_config` rake task imports/exports YAML). Partners include PA DHS, AZ DES (live) and sandbox. (LA LDH was a pilot partner and has been removed.) Current term is "partner"; the legacy tenant column is still `client_agency_id`.
+- Multi-tenant: partner configs are **database-canonical** (`PartnerConfig`, loaded lazily per request by `ClientAgencyConfig` into a per-process in-memory cache with a 10-minute TTL, so changes take effect without a restart — no runtime YAML; the `partner_config` rake task imports/exports YAML). Partner settings and API tokens are managed through the separate Admin Portal app (via the admin API). Partners include PA DHS, AZ DES (live) and sandbox. (LA LDH was a pilot partner and has been removed.) Current term is "partner"; the legacy tenant column is still `client_agency_id`.
 - i18n: all user-facing strings should use translation keys
 - Service objects in `app/services/`
 - ViewComponents in `app/components/`

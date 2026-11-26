@@ -103,9 +103,9 @@ fails the build. A finding is therefore either fixed or explicitly dispositioned
 (section 4) before code reaches `main`. This is what keeps `main` at zero warnings
 as a steady state rather than a periodic cleanup target.
 
-Note also that the two evidence-publishing steps carry `continue-on-error: true`
-(see section 6) — a failure to archive does not currently fail the build. That is a
-deliberate, temporary rollout allowance, not part of the gating policy.
+The two evidence-publishing steps (section 6) run on `main` and the weekly schedule
+only. A failure to archive fails the run, so a broken archive cannot pass as a
+green build.
 
 **CodeQL is not a merge gate.** `github/codeql-action/analyze` uploads results to code
 scanning and succeeds whether or not it finds anything; it has no equivalent of
@@ -247,15 +247,19 @@ keyed by date and commit SHA.
 **Why not GitHub Actions artifacts.** Artifact retention is capped at 90 days on public
 repositories, below any plausible AU-11 window.
 
-**Bucket controls** (`infra/app/security-scan-reports/`):
+**Bucket controls** (`infra/app/security-scan-reports/`). The bucket is in the dedicated
+**log-archive account** (`899776212152`, see `infra/log-archive/README.md`), not in prod:
 
 | Control | Setting |
 |---|---|
+| Account isolation | No workloads and no deploy role; the account is in the Security OU |
 | Versioning | Enabled |
 | Object Lock | Enabled, **GOVERNANCE** mode, 3-year (1095-day) default retention — deletion and overwrite are blocked for every principal *except* those holding `s3:BypassGovernanceRetention` |
+| Organization SCP | Prevents anyone in the account, root included, from weakening or deleting archived data, except via a controlled break-glass role |
+| CI writer | `iv-cbv-payroll-security-scan-report-writer`: `s3:PutObject` on `brakeman/*` only, assumable only by runs on `main` in this repository |
 | Encryption | AES256 at rest |
 | Transport | TLS required by bucket policy |
-| Public access | Blocked |
+| Public access | Blocked at the bucket and account level |
 
 **Lifecycle.** Retention is enforced by lifecycle rules:
 
@@ -265,20 +269,11 @@ repositories, below any plausible AU-11 window.
 | Archive | 90 days – expiry | Glacier Instant Retrieval |
 | Expiration | `expiration_days` (default 1095 / 3 years) | Deleted |
 
-> **Status — not yet operational; only the bucket is missing.** The publishing path
-> has been verified end to end on a real CI run (2026-08-12): the report is generated
-> and enriched, Terraform resolves the prod account and role, OIDC federation succeeds
-> (`Assuming role with OIDC` → `Authenticated as assumedRoleId …:GitHubActions`), and
-> the 7.6 KiB report transfers in full before S3 rejects it with `NoSuchBucket`.
-> Nothing in the workflow remains unproven.
+
 >
-> The bucket is created by a
-> manual `make infra-update-app-security-scan-reports APP_NAME=app`, and
-> `object_lock_retention_days` has no default and must be set deliberately, because
-> Object Lock retention can be increased later but never decreased. Until the bucket
-> is applied, the publish steps carry `continue-on-error: true` so they do not take
-> `main` red; **both must be removed once the bucket exists**, otherwise a silently
-> broken archive reads as a passing build.
+> Setup, run as the break-glass profile (details in `infra/log-archive/README.md`):
+> `make infra-set-up-log-archive-account`, then
+> `make infra-update-app-security-scan-reports APP_NAME=app`, then attach the SCP.
 
 ### CodeQL evidence is retained by GitHub
 
@@ -297,7 +292,7 @@ with Brakeman was considered and deliberately not built.
 | 1 | **Confirm the AU-11 retention window against the control matrix.** 3 years (1095 days) has been set for both `object_lock_retention_days` and `expiration_days` as a considered choice, not a matrix citation — GovRAMP inherits NIST 800-53 Rev 5, where AU-11 is an organization-defined parameter. No longer blocking the apply: GOVERNANCE mode means the value can be corrected in either direction. | An evidenced retention claim |
 | 2 | Confirm `Brakeman Scan` is a required status check on `main` (section 3) | Citing the gate as an implemented control |
 | 3 | **Approve this document as policy.** It is new in its entirety, so no section is ratified yet — the remediation windows in section 5 are simply the most visible example. Approval should cover the whole document rather than being attributed section by section. | Citing any section as established policy |
-| 4 | Apply the bucket, then remove both `continue-on-error: true` lines (section 6) | Evidence capture becoming operational |
+| 4 | Confirm the archive SCP is attached to the log-archive account (section 6). | Citing the Organization SCP row as implemented |
 | 5 | Record CodeQL default setup's **query suite** (Default vs Extended) in section 1 — it is set in repository settings and cannot be read from the repo. Extended finds more at some cost in precision. | An accurate ruleset column |
 | 5b | Create a task to enable code scanning merge protection for CodeQL — Settings → Rules → Rulesets → branch ruleset on `main` → Code scanning → tool `CodeQL`, with alert and security-alert thresholds. Requires admin. Note default setup's own check is not a gate on its own. | Gating parity with Brakeman |
 | 5c | Investigate CodeQL's Go coverage (1/2 files) and Ruby (469/473). Small gaps, but an assessor will ask what the unscanned files are. | Complete coverage claim |

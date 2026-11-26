@@ -1,30 +1,42 @@
 import http from 'k6/http';
 import { check, group } from 'k6';
-import { URL, checkSlo } from './common.js';
+import { URL, SLO, checkSlo, commonOptions } from './common.js';
+
+// Invitations per second, and how long to sustain it.
+export const API_RATE = Number(__ENV.API_RATE || 2);
+const API_DURATION = __ENV.API_DURATION || '2m';
 
 export let options = {
+    ...commonOptions,
     scenarios: {
         bulk_create: {
             executor: 'constant-arrival-rate',
-            rate: 100,              // 100 invitations per second
+            rate: API_RATE,
             timeUnit: '1s',
-            duration: '2m',
-            preAllocatedVUs: 50,
-            maxVUs: 100,            // Allow scaling if needed
+            duration: API_DURATION,
+            preAllocatedVUs: 5,
+            maxVUs: 50,
         },
     },
-    thresholds: {
-        checks: [{ threshold: 'rate>0.95', abortOnFail: true }],
-        failed_slo: ['count<=0'],
-        http_req_duration: ['p(95)<500', 'p(99)<1000', 'max<2000'],
-    },
-    summaryTrendStats: ['avg', 'med', 'p(95)', 'p(99)', 'max'],
 };
 
 const API_KEY = __ENV.API_KEY;
 
 if(!API_KEY) {
     throw new Error("API_KEY environment variable is required");
+}
+
+// The attributes an invitation needs depend on the API user's partner config
+// (required invitation attributes, partner identifier name). Override with
+// --env CUSTOM_ATTRIBUTES='{"case_number":"x","date_of_birth":"1990-01-01"}'.
+// Values equal to "__UNIQUE__" are replaced with a unique LOAD_TEST_ id per request.
+const CUSTOM_ATTRIBUTES = JSON.parse(__ENV.CUSTOM_ATTRIBUTES || '{"case_number":"__UNIQUE__"}');
+
+function buildCustomAttributes() {
+    const unique = `LOAD_TEST_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    return Object.fromEntries(
+        Object.entries(CUSTOM_ATTRIBUTES).map(([key, value]) => [key, value === '__UNIQUE__' ? unique : value])
+    );
 }
 
 export default function () {
@@ -35,9 +47,7 @@ function testCreateInvitation() {
     group("Create invitation (API)", () => {
         const payload = JSON.stringify({
             language: 'en',
-            agency_partner_metadata: {
-                case_number: `LOAD_TEST_${Date.now()}_${Math.random().toString(36).substring(7)}`
-            }
+            custom_attributes: buildCustomAttributes(),
         });
 
         const response = http.post(
@@ -47,15 +57,19 @@ function testCreateInvitation() {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${API_KEY}`,
-                }
+                },
+                tags: { slo: SLO.standard, name: 'api_create_invitation' },
             }
         );
 
         check(response, {
             'invitation created': (r) => r.status === 201,
             'has tokenized_url': (r) => {
-                const body = JSON.parse(r.body);
-                return body.tokenized_url !== undefined;
+                try {
+                    return JSON.parse(r.body).tokenized_url !== undefined;
+                } catch (_e) {
+                    return false; // HTML error page, timeout, etc.
+                }
             },
         });
 

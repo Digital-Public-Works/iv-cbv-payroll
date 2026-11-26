@@ -47,6 +47,9 @@
 # -----------------------------------------------------------------------------
 set -euo pipefail
 
+# Infrastructure layers that live under infra/<app_name>/ and are checked for drift.
+APP_INFRA_LAYERS=("build-repository" "database" "service" "static-assets")
+
 # Return the names of Terraform backend configuration files in (without the ".s3.tfbackend" suffix)
 # for the root module given by "infra/${root_module_subdir}".
 #
@@ -64,8 +67,8 @@ function get_backend_config_names() {
 
 # Get deploy status check configurations for the given infrastructure layer (and application name if relevant).
 # Parameters:
-#   - infra_layer: The infrastructure layer (one of "accounts", "networks", "build-repository", "database", "service")
-#   - app_name (optional): The application name (only required for the "build-repository", "database", and "service" layers)
+#   - infra_layer: The infrastructure layer ("accounts", "networks", or one of APP_INFRA_LAYERS)
+#   - app_name (optional): The application name (only required for the APP_INFRA_LAYERS layers)
 # Returns:
 #   - JSON objects containing backend configuration name, infrastructure layer, and root module subdirectory, separated by newlines
 function get_root_module_configs() {
@@ -73,7 +76,7 @@ function get_root_module_configs() {
   local app_name
   local backend_config_names
   local root_module_subdir
-  if [[ "${infra_layer}" == "build-repository" || "${infra_layer}" == "database" || "${infra_layer}" == "service" ]]; then
+  if [[ " ${APP_INFRA_LAYERS[*]} " == *" ${infra_layer} "* ]]; then
     app_name="$2"
     root_module_subdir="${app_name}/${infra_layer}"
   else
@@ -89,7 +92,7 @@ function get_root_module_configs() {
 # and filtering out the directories that are not applications.
 # Returns: A list of application names.
 function get_app_names() {
-  find "infra" -maxdepth 1 -type d -not -name "infra" -not -name "accounts" -not -name "modules" -not -name "networks" -not -name "project-config" -not -name "test" -exec basename {} \;
+  find "infra" -maxdepth 1 -type d -not -name "infra" -not -name "accounts" -not -name "modules" -not -name "networks" -not -name "log-archive" -not -name "project-config" -not -name "test" -exec basename {} \;
 }
 
 function get_account_layer_configs() {
@@ -107,7 +110,7 @@ function get_network_layer_configs() {
 function get_app_configs() {
   local app_name="$1"
   local configs=""
-  for infra_layer in "build-repository" "database" "service"; do
+  for infra_layer in "${APP_INFRA_LAYERS[@]}"; do
     configs+="$(get_root_module_configs "${infra_layer}" "${app_name}")"
     configs+=$'\n'
   done

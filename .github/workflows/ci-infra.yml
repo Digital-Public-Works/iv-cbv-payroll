@@ -79,6 +79,10 @@ jobs:
         run: |
           terraform -chdir="infra/app/security-scan-reports" init -backend=false
           terraform -chdir="infra/app/security-scan-reports" validate
+      - name: Validate log-archive
+        run: |
+          terraform -chdir="infra/log-archive" init -backend=false
+          terraform -chdir="infra/log-archive" validate
   check-compliance-with-checkov:
     name: Check compliance with checkov
     runs-on: ubuntu-latest
@@ -88,11 +92,9 @@ jobs:
         with:
           python-version: "3.10"
       - name: Run Checkov check
-        # Pin to specific checkov version rather than running from checkov@master
-        # since checkov frequently adds new checks that can cause CI checks to fail unpredictably.
-        # There is currently no way to specify the checkov version to pin to (See https://github.com/bridgecrewio/checkov-action/issues/41)
-        # so we need to pin the version of the checkov-action, which indirectly pins the checkov version.
-        uses: bridgecrewio/checkov-action@v12
+        # Pinned to a commit SHA so new checks will not turn main red without any changes to main.
+        # This SHA (v12.3143.0) runs ghcr.io/bridgecrewio/checkov:3.4.7.
+        uses: bridgecrewio/checkov-action@83b08f51b20950f791f5caadcc92e336b371eb12 # v12.3143.0
         with:
           directory: infra
           framework: terraform
@@ -109,8 +111,16 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Run Trivy IaC config scan
-        uses: aquasecurity/trivy-action@master
+        # Action and Trivy binary pinned so their behaviour only changes through a PR. The vulnerability
+        # DB is unpinned: so we catch newly published CVEs.
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          # Use the checks embedded in the pinned binary instead of downloading the latest bundle.
+          TRIVY_SKIP_CHECK_UPDATE: "true"
         with:
+          version: v0.76.2
+          # No cache so results depend on the pinned binary.
+          cache: "false"
           scan-type: config
           scan-ref: infra
           format: table

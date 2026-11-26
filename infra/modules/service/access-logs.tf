@@ -13,9 +13,10 @@ locals {
   }
 
   # set log_file_transition = {} to disable lifecycle transitions. Additional lifecycle transitions can be added via a key value pair of `$STORAGE_CLASS=$DAYS`
+  # Logs must stay instantly accessible (not Glacier) for 12 months: OMB M-21-31, via GovRAMP AU-11.
   log_file_transition = {
     STANDARD_IA = 30
-    GLACIER     = 60
+    GLACIER     = 365
   }
 }
 
