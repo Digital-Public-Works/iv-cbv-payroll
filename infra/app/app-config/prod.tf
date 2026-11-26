@@ -25,8 +25,10 @@ module "prod_config" {
   service_desired_instance_count   = 1
   shoryuken_desired_instance_count = 2
 
-  # Autoscaling: the desired counts above are the floor; scale up to 3x them
-  # on CPU, Puma thread use (web) and report_sender backlog (worker).
+  # Autoscaling: the desired counts above are the floor. Web scales on Puma
+  # thread use and requests per task (CPU is a backstop); 3 tasks covers the
+  # planned growth with margin, per load testing. Workers scale on queue
+  # backlog and CPU.
   service_max_instance_count   = 3
   shoryuken_max_instance_count = 6
 

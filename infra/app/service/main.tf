@@ -217,11 +217,13 @@ module "service" {
   shoryuken_desired_instance_count = local.service_config.shoryuken_desired_instance_count
   enable_command_execution         = local.service_config.enable_command_execution
 
-  max_instance_count           = local.is_temporary ? null : local.service_config.max_instance_count
-  shoryuken_max_instance_count = local.service_config.shoryuken_max_instance_count
-  scale_to_zero_idle_hours     = local.is_temporary ? null : local.service_config.scale_to_zero_idle_hours
-  worker_backlog_queue_name    = local.report_sender_queue_name
-  worker_event_queue_names     = local.event_queue_names
+  max_instance_count               = local.is_temporary ? null : local.service_config.max_instance_count
+  shoryuken_max_instance_count     = local.service_config.shoryuken_max_instance_count
+  scale_to_zero_idle_hours         = local.is_temporary ? null : local.service_config.scale_to_zero_idle_hours
+  enable_autoscaling_notifications = !local.is_temporary
+  newrelic_api_destination_arn     = !local.is_temporary ? module.email[0].newrelic_api_destination_arn : null
+  worker_backlog_queue_name        = local.report_sender_queue_name
+  worker_event_queue_names         = local.event_queue_names
 
   aws_services_security_group_id = data.aws_security_groups.aws_services.ids[0]
 

@@ -21,10 +21,13 @@ locals {
   # Published by the web tasks only while web autoscaling is on.
   puma_metrics_namespace = "VMI/Puma"
 
+
   autoscaling_cpu_target         = 60
-  autoscaling_puma_thread_target = 70
-  autoscaling_scale_out_cooldown = 60
-  autoscaling_scale_in_cooldown  = 300
+  autoscaling_puma_thread_target = 50
+
+  autoscaling_requests_per_target = 1000
+  autoscaling_scale_out_cooldown  = 60
+  autoscaling_scale_in_cooldown   = 300
 }
 
 #---------------------------------------------------------------------------
@@ -92,6 +95,27 @@ resource "aws_appautoscaling_policy" "web_puma_threads" {
         name  = "ServiceName"
         value = var.service_name
       }
+    }
+  }
+}
+
+resource "aws_appautoscaling_policy" "web_requests" {
+  count = local.web_autoscaling_enabled ? 1 : 0
+
+  name               = "${var.service_name}-requests"
+  policy_type        = "TargetTrackingScaling"
+  service_namespace  = aws_appautoscaling_target.web.service_namespace
+  resource_id        = aws_appautoscaling_target.web.resource_id
+  scalable_dimension = aws_appautoscaling_target.web.scalable_dimension
+
+  target_tracking_scaling_policy_configuration {
+    target_value       = local.autoscaling_requests_per_target
+    scale_out_cooldown = local.autoscaling_scale_out_cooldown
+    scale_in_cooldown  = local.autoscaling_scale_in_cooldown
+
+    predefined_metric_specification {
+      predefined_metric_type = "ALBRequestCountPerTarget"
+      resource_label         = "${aws_lb.alb.arn_suffix}/${aws_lb_target_group.app_tg.arn_suffix}"
     }
   }
 }

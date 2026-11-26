@@ -79,6 +79,18 @@ variable "scale_to_zero_idle_hours" {
   }
 }
 
+variable "enable_autoscaling_notifications" {
+  type        = bool
+  description = "Send a VMIAutoscaling event to New Relic (through newrelic_api_destination_arn) on every web or worker scale out, scale in, and when the maximum is reached. A separate flag so the resource count doesn't depend on the ARN being known at plan time."
+  default     = false
+}
+
+variable "newrelic_api_destination_arn" {
+  type        = string
+  description = "EventBridge API destination for New Relic custom events. Required when enable_autoscaling_notifications is true."
+  default     = null
+}
+
 variable "worker_backlog_queue_name" {
   type        = string
   description = "SQS queue whose backlog per running worker task drives worker autoscaling (report_sender). Null scales the worker on CPU only."
